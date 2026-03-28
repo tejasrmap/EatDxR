@@ -76,7 +76,7 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
           </thead>
           <tbody className="text-sm">
             {reviews.map((review, i) => {
-              const date = new Date(review.createdAt);
+              const date = review.createdAt?.toDate ? review.createdAt.toDate() : new Date(review.createdAt || Date.now());
               const month = format(date, "MMM");
               const day = format(date, "dd");
               

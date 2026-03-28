@@ -299,7 +299,11 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
                 )}
               </div>
               <span className="text-[10px] text-white/30 uppercase tracking-widest font-medium">
-                {formatDistanceToNow(new Date(review.createdAt), { addSuffix: true })}
+                {review.createdAt?.toMillis 
+                  ? formatDistanceToNow(review.createdAt.toMillis(), { addSuffix: true }) 
+                  : review.createdAt 
+                    ? formatDistanceToNow(new Date(review.createdAt as any), { addSuffix: true }) 
+                    : 'just now'}
               </span>
             </div>
           </div>
