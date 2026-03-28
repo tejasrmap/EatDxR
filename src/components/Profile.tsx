@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { collection, query, where, onSnapshot, orderBy, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { db } from "../firebase";
 import { Review, User } from "../types";
 import { ReviewCard } from "./ReviewCard";
@@ -11,11 +11,39 @@ import { DiaryTable } from "./DiaryTable";
 
 export const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, dishdUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"profile" | "diary" | "eatlist">("profile");
+  const [followerCount, setFollowerCount] = useState(0);
+  const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
+
+  const isFollowing = dishdUser?.stats?.followingList?.includes(user?.uid || "");
+
+  const toggleFollow = async () => {
+    if (!currentUser || !user) {
+      toast.error("Please log in to follow users");
+      return;
+    }
+    
+    setIsUpdatingFollow(true);
+    try {
+      const currentUserRef = doc(db, "users", currentUser.uid);
+      if (isFollowing) {
+        await updateDoc(currentUserRef, { "stats.followingList": arrayRemove(user.uid) });
+        toast.success(`Unfollowed ${user.displayName}`);
+      } else {
+        await updateDoc(currentUserRef, { "stats.followingList": arrayUnion(user.uid) });
+        toast.success(`Following ${user.displayName}`);
+      }
+    } catch (error) {
+      console.error("Error toggling follow:", error);
+      toast.error("Failed to update follow status");
+    } finally {
+      setIsUpdatingFollow(false);
+    }
+  };
 
   const handleAction = (action: string) => {
     toast.info(`${action} feature coming soon!`);
@@ -55,7 +83,20 @@ export const Profile: React.FC = () => {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    // Fetch follower count dynamically
+    const followersQuery = query(
+      collection(db, "users"),
+      where("stats.followingList", "array-contains", userId)
+    );
+    
+    const unsubscribeFollowers = onSnapshot(followersQuery, (snapshot) => {
+      setFollowerCount(snapshot.size);
+    });
+
+    return () => {
+      unsubscribe();
+      unsubscribeFollowers();
+    };
   }, [userId]);
 
   if (loading) {
@@ -100,10 +141,15 @@ export const Profile: React.FC = () => {
             <h1 className="text-4xl font-bold text-white tracking-tight">{user.displayName}</h1>
             {currentUser?.uid !== user.uid && (
               <button 
-                onClick={() => handleAction("Follow")}
-                className="nav-pill px-6 py-1.5 bg-white text-black border-none hover:bg-white/90 text-xs font-bold uppercase tracking-widest"
+                onClick={toggleFollow}
+                disabled={isUpdatingFollow}
+                className={`nav-pill px-6 py-1.5 text-xs font-bold uppercase tracking-widest border-none transition-colors ${
+                  isFollowing 
+                    ? "bg-white/10 text-white hover:bg-white/20" 
+                    : "bg-white text-black hover:bg-white/90"
+                }`}
               >
-                Follow
+                {isFollowing ? "Following" : "Follow"}
               </button>
             )}
           </div>
@@ -124,11 +170,11 @@ export const Profile: React.FC = () => {
               <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Lists</p>
             </div>
             <div className="text-center md:text-left border-r border-white/10 pr-8 last:border-0">
-              <p className="text-2xl font-bold text-white">0</p>
+              <p className="text-2xl font-bold text-white">{user.stats?.followingList?.length || user.stats?.following || 0}</p>
               <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Following</p>
             </div>
             <div className="text-center md:text-left">
-              <p className="text-2xl font-bold text-white">0</p>
+              <p className="text-2xl font-bold text-white">{followerCount}</p>
               <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Followers</p>
             </div>
           </div>

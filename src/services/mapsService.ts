@@ -16,7 +16,7 @@ export async function searchRestaurants(query: string, latitude?: number, longit
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.5-flash",
       contents: `Find 5 real food places (restaurants, cafes, or street food) matching "${query}" near the location at coordinates ${latitude}, ${longitude} in India.
       
       For each place, you MUST provide:
@@ -27,15 +27,7 @@ export async function searchRestaurants(query: string, latitude?: number, longit
       NAME: [Restaurant Name] | ADDRESS: [Full Address or Specific Area, City] | CUISINE: [Cuisine Type] | MENU: [Dish 1, Dish 2, Dish 3] | IMAGE: [A high-quality Unsplash photo URL specifically for this restaurant or its cuisine type, e.g., https://images.unsplash.com/photo-XXXXX?auto=format&fit=crop&w=800&q=80]`,
       config: {
         thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-        tools: [{ googleMaps: {} }],
-        toolConfig: {
-          retrievalConfig: {
-            latLng: {
-              latitude: latitude || 20.5937,
-              longitude: longitude || 78.9629
-            }
-          }
-        }
+        tools: [{ googleSearch: {} }]
       },
     });
 
@@ -108,16 +100,11 @@ export async function getCurrentCity(latitude: number, longitude: number): Promi
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.5-flash",
       contents: `What is the name of the city or town at coordinates ${latitude}, ${longitude} in India? Return ONLY the name of the city or town (e.g., "Mumbai", "Indiranagar").`,
       config: {
         thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-        tools: [{ googleMaps: {} }],
-        toolConfig: {
-          retrievalConfig: {
-            latLng: { latitude, longitude }
-          }
-        }
+        tools: [{ googleSearch: {} }]
       },
     });
 

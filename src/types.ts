@@ -15,6 +15,7 @@ export interface User {
     reviewsWritten: number;
     followers: number;
     following: number;
+    followingList?: string[];
   };
 }
 
