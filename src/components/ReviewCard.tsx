@@ -15,7 +15,7 @@ interface ReviewCardProps {
 }
 
 export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
-  const { dishdUser: currentUser } = useAuth();
+  const { dishdUser: currentUser, login } = useAuth();
   const [likes, setLikes] = useState<Interaction[]>([]);
   const [comments, setComments] = useState<Interaction[]>([]);
   const [showComments, setShowComments] = useState(false);
@@ -100,7 +100,10 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
   const totalLikes = (review.likes || 0) + likes.length;
 
   const handleLike = async () => {
-    if (!currentUser) return toast.error("Please log in to like this review.");
+    if (!currentUser) {
+      login();
+      return;
+    }
     if (isLikeLoading) return;
     
     setIsLikeLoading(true);
@@ -151,10 +154,13 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
     }
   };
 
-  const handleComment = async (e: React.FormEvent) => {
+  const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser) return toast.error("Please log in to comment.");
-    if (!newComment.trim()) return;
+    if (!currentUser) {
+      login();
+      return;
+    }
+    if (!newComment.trim() || isCommentLoading) return;
     
     setIsCommentLoading(true);
     try {
@@ -382,31 +388,32 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
               </div>
               
               <div className="p-3 border-t border-white/10 bg-black/20">
-                {currentUser ? (
-                  <form onSubmit={handleComment} className="flex items-center gap-2">
-                    <img 
-                      src={currentUser.photoURL} 
-                      className="w-6 h-6 rounded-full border border-white/10"
-                      referrerPolicy="no-referrer"
-                    />
-                    <input 
-                      type="text" 
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Add a review..."
-                      className="flex-1 bg-transparent border-none text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-0"
-                    />
-                    <button 
-                      type="submit" 
-                      disabled={isCommentLoading || !newComment.trim()}
-                      className="p-1.5 text-white/40 hover:text-orange-500 disabled:opacity-50 disabled:hover:text-white/40 transition-colors"
-                    >
-                      {isCommentLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                    </button>
-                  </form>
-                ) : (
-                  <p className="text-xs text-center text-white/40 py-1">Please Sign In to add a review.</p>
-                )}
+                <form 
+                  onSubmit={handleCommentSubmit} 
+                  className="flex gap-2"
+                  onClick={(e) => {
+                    if (!currentUser) login();
+                  }}
+                >
+                  <input 
+                    type="text" 
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    onFocus={() => {
+                      if (!currentUser) login();
+                    }}
+                    placeholder={currentUser ? "Add a comment..." : "Log in to join the discussion..."}
+                    className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-xs text-white focus:outline-none focus:ring-1 ring-orange-500/50 transition-all placeholder:text-white/20 cursor-pointer sm:cursor-text"
+                    readOnly={!currentUser}
+                  />
+                  <button 
+                    type="submit"
+                    disabled={!newComment.trim() || isCommentLoading}
+                    className="p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-400 transition-colors disabled:opacity-50 disabled:hover:bg-orange-50"
+                  >
+                    {isCommentLoading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                  </button>
+                </form>
               </div>
             </div>
           )}

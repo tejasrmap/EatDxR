@@ -16,7 +16,7 @@ interface DiaryTableProps {
 }
 
 export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true }) => {
-  const { dishdUser: currentUser } = useAuth();
+  const { dishdUser: currentUser, login } = useAuth();
   const [editingReview, setEditingReview] = useState<Review | null>(null);
   const [optionsVisibleId, setOptionsVisibleId] = useState<string | null>(null);
   const optionsRef = useRef<HTMLDivElement>(null);
@@ -144,7 +144,12 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                     </div>
                   </td>
                   <td className="py-4 px-6 text-center">
-                    <button className="text-white/20 hover:text-orange-500 transition-colors group/btn inline-flex">
+                    <button 
+                      onClick={() => {
+                        if (!currentUser) login();
+                      }}
+                      className="text-white/20 hover:text-orange-500 transition-colors group/btn inline-flex"
+                    >
                       <Heart size={16} className={`group-hover/btn:fill-orange-500 ${review.likes > 0 ? "fill-orange-500 text-orange-500" : ""}`} />
                     </button>
                   </td>

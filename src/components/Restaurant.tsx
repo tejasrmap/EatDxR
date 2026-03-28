@@ -11,7 +11,7 @@ import { LogMealModal } from "./LogMealModal";
 
 export const Restaurant: React.FC = () => {
   const { restaurantId } = useParams<{ restaurantId: string }>();
-  const { user, dishdUser } = useAuth();
+  const { user, dishdUser, login } = useAuth();
   const [restaurant, setRestaurant] = useState<RestaurantType | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +24,7 @@ export const Restaurant: React.FC = () => {
 
   const toggleEatlist = async () => {
     if (!user || !restaurantId) {
-      toast.error("Please log in to add to your Eatlist!");
+      login();
       return;
     }
     
@@ -48,7 +48,7 @@ export const Restaurant: React.FC = () => {
 
   const toggleLike = async () => {
     if (!user || !restaurantId) {
-      toast.error("Please log in to like restaurants!");
+      login();
       return;
     }
     
@@ -202,7 +202,13 @@ export const Restaurant: React.FC = () => {
 
         <div className="md:ml-auto shrink-0 self-center">
           <button 
-            onClick={() => setIsLogModalOpen(true)}
+            onClick={() => {
+              if (!user) {
+                login();
+              } else {
+                setIsLogModalOpen(true);
+              }
+            }}
             className="bg-[#00e054] hover:bg-[#00c044] text-black text-[10px] font-black uppercase tracking-[0.2em] px-8 py-4 rounded-xl transition-all shadow-xl shadow-[#00e054]/10 hover:-translate-y-1 flex items-center gap-3"
           >
             <Edit3 size={18} />
