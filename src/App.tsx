@@ -17,6 +17,7 @@ import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, User 
 import { collection, onSnapshot, query, orderBy, limit, doc, setDoc, getDoc, getDocFromServer, where } from "firebase/firestore";
 import { Profile } from "./components/Profile";
 import { Restaurant } from "./components/Restaurant";
+import { Restaurants } from "./components/Restaurants";
 import { Journal } from "./components/Journal";
 import { useLocation } from "./hooks/useLocation";
 import { getCurrentCity } from "./services/mapsService";
@@ -415,7 +416,7 @@ export function App() {
               <Route path="/" element={<Home />} />
               <Route path="/profile/:userId" element={<Profile />} />
               <Route path="/restaurant/:restaurantId" element={<Restaurant />} />
-              <Route path="/restaurants" element={<PlaceholderPage title="Restaurants" />} />
+              <Route path="/restaurants" element={<Restaurants />} />
               <Route path="/lists" element={<PlaceholderPage title="Food Lists" />} />
               <Route path="/critics" element={<Critics />} />
               <Route path="/journal" element={<Journal />} />

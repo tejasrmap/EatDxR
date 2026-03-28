@@ -32,6 +32,9 @@ export interface Restaurant {
   image?: string;
   likesCount?: number;
   menuItems?: string[];
+  lat?: number;
+  lng?: number;
+  distance?: number;
 }
 
 export interface ReviewDish {

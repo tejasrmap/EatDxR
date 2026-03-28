@@ -41,7 +41,7 @@ export const AdminSeed: React.FC = () => {
       toast.info(`Fetching OSM data for ${targetRegion} (${radius/1000}km)...`);
       
       // Increased timeout to 60s for larger sweeps
-      const overpassQuery = `[out:json][timeout:60];(node["amenity"="restaurant"](around:${radius},${coords});node["amenity"="cafe"](around:${radius},${coords});node["amenity"="fast_food"](around:${radius},${coords}););out body;`;
+      const overpassQuery = `[out:json][timeout:60];(node["amenity"="restaurant"](around:${radius},${coords});node["amenity"="cafe"](around:${radius},${coords});node["amenity"="fast_food"](around:${radius},${coords}););out center;`;
       
       const res = await fetch('https://overpass-api.de/api/interpreter', {
         method: 'POST',
@@ -82,6 +82,9 @@ export const AdminSeed: React.FC = () => {
         const randomImage = foodImages[Math.floor(Math.random() * foodImages.length)];
         const ratingNum = Number((Math.random() * 2 + 3).toFixed(1)); 
         
+        const lat = place.lat || place.center?.lat;
+        const lng = place.lon || place.center?.lon;
+        
         const docId = `osm-${place.id}`;
 
         const payload = {
@@ -92,7 +95,9 @@ export const AdminSeed: React.FC = () => {
           rating: ratingNum,
           reviewCount: Math.floor(Math.random() * 200) + 10,
           image: randomImage,
-          menuItems: []
+          menuItems: [],
+          lat: lat,
+          lng: lng
         };
         
         await setDoc(doc(db, 'restaurants', docId), payload);
