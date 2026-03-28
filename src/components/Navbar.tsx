@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Search, Plus, User, LogOut } from "lucide-react";
+import { Search, Plus, User, LogOut, UtensilsCrossed } from "lucide-react";
 import { useState } from "react";
 import { LogMealModal } from "./LogMealModal";
 import { useAuth } from "../App";
@@ -13,11 +13,13 @@ export function Navbar() {
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#14181c] border-b border-white/5">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="text-2xl font-black tracking-tighter flex items-center gap-1">
-            <span className="text-[#00e054]">D</span>
-            <span className="text-[#ff8000]">I</span>
-            <span className="text-[#40bcf4]">S</span>
-            <span className="text-white">HD</span>
+          <Link to="/" className="text-2xl font-black tracking-tighter flex items-center gap-2 group">
+            <div className="relative flex items-center justify-center w-8 h-8 bg-gradient-to-br from-orange-500 to-rose-500 rounded-lg group-hover:-rotate-12 transition-transform duration-300 shadow-lg shadow-rose-500/20">
+              <UtensilsCrossed className="text-white w-4 h-4" />
+            </div>
+            <span className="text-white">
+              Dish<span className="text-rose-500">d</span>
+            </span>
           </Link>
 
           <div className="hidden md:flex items-center gap-6">

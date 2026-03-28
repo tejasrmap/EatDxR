@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Navbar } from "./Navbar";
 import { Link } from "react-router-dom";
+import { UtensilsCrossed } from "lucide-react";
 
 interface LayoutProps {
   children: ReactNode;
@@ -16,9 +17,13 @@ export function Layout({ children }: LayoutProps) {
       
       <footer className="border-t border-white/10 py-12 mt-20">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex items-center gap-2 text-xl font-bold tracking-tighter">
-            <span className="bg-white text-black px-2 py-0.5 rounded">D</span>
-            <span>Dishd</span>
+          <div className="flex items-center gap-2 text-xl font-black tracking-tighter group cursor-pointer">
+            <div className="relative flex items-center justify-center w-6 h-6 bg-gradient-to-br from-orange-500 to-rose-500 rounded-md opacity-80 group-hover:opacity-100 group-hover:-rotate-12 transition-all duration-300">
+              <UtensilsCrossed className="text-white w-3 h-3" />
+            </div>
+            <span className="text-white/80 group-hover:text-white transition-colors">
+              Dish<span className="text-rose-500">d</span>
+            </span>
           </div>
           
           <div className="flex gap-8 text-xs font-medium text-white/40 uppercase tracking-widest">
