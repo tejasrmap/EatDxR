@@ -200,23 +200,6 @@ export const Profile: React.FC = () => {
           {user.username && (
             <p className="text-orange-500 font-bold mb-4 tracking-wide text-center md:text-left">@{user.username}</p>
           )}
-
-          {user.bio && (
-            <p className="text-white/60 font-serif italic mb-4 max-w-xl text-center md:text-left text-sm leading-relaxed">
-              {user.bio}
-            </p>
-          )}
-
-          {user.favoriteCuisines && user.favoriteCuisines.length > 0 && (
-            <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-6">
-              {user.favoriteCuisines.map((cuisine, idx) => (
-                <span key={idx} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] uppercase tracking-widest font-bold text-white/60">
-                  {cuisine}
-                </span>
-              ))}
-            </div>
-          )}
-          
           <div className="flex flex-wrap justify-center md:justify-start gap-x-8 gap-y-4">
             <div className="text-center md:text-left border-r border-white/10 pr-8 last:border-0">
               <p className="text-2xl font-bold text-white">{reviews.length}</p>
@@ -340,19 +323,23 @@ export const Profile: React.FC = () => {
           <div>
             <h2 className="text-[10px] uppercase tracking-widest font-bold text-white/40 mb-4 pb-2 border-b border-white/10">Bio</h2>
             <p className="text-sm text-white/60 leading-relaxed font-serif italic">
-              "Passionate about discovering hidden gems and local flavors. Always on the hunt for the perfect meal."
+              {user.bio ? `"${user.bio}"` : "This user hasn't written a bio yet."}
             </p>
           </div>
 
           <div>
             <h2 className="text-[10px] uppercase tracking-widest font-bold text-white/40 mb-4 pb-2 border-b border-white/10">Favorite Cuisines</h2>
-            <div className="flex flex-wrap gap-2">
-              {["Italian", "Japanese", "Indian", "Thai"].map(cuisine => (
-                <span key={cuisine} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] uppercase tracking-widest font-bold text-white/60">
-                  {cuisine}
-                </span>
-              ))}
-            </div>
+            {user.favoriteCuisines && user.favoriteCuisines.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {user.favoriteCuisines.map((cuisine, idx) => (
+                  <span key={idx} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] uppercase tracking-widest font-bold text-white/60">
+                    {cuisine}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-white/40 italic">No favorite cuisines tagged.</p>
+            )}
           </div>
 
           <div>
