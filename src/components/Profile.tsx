@@ -8,6 +8,7 @@ import { useAuth } from "../App";
 import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { DiaryTable } from "./DiaryTable";
+import { FollowListModal } from "./FollowListModal";
 
 export const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -18,6 +19,7 @@ export const Profile: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"profile" | "diary" | "eatlist">("profile");
   const [followerCount, setFollowerCount] = useState(0);
   const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
+  const [followModalType, setFollowModalType] = useState<"followers" | "following" | null>(null);
 
   const isFollowing = dishdUser?.stats?.followingList?.includes(user?.uid || "");
 
@@ -182,13 +184,21 @@ export const Profile: React.FC = () => {
               <p className="text-2xl font-bold text-white">0</p>
               <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Lists</p>
             </div>
-            <div className="text-center md:text-left border-r border-white/10 pr-8 last:border-0">
-              <p className="text-2xl font-bold text-white">{user.stats?.followingList?.length || user.stats?.following || 0}</p>
-              <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Following</p>
+            <div 
+              className="text-center md:text-left border-r border-white/10 pr-8 last:border-0 cursor-pointer group"
+              onClick={() => setFollowModalType("following")}
+            >
+              <p className="text-2xl font-bold text-white group-hover:text-orange-500 transition-colors">
+                {user.stats?.followingList?.length || user.stats?.following || 0}
+              </p>
+              <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold group-hover:text-orange-500/50 transition-colors">Following</p>
             </div>
-            <div className="text-center md:text-left">
-              <p className="text-2xl font-bold text-white">{followerCount}</p>
-              <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Followers</p>
+            <div 
+              className="text-center md:text-left cursor-pointer group"
+              onClick={() => setFollowModalType("followers")}
+            >
+              <p className="text-2xl font-bold text-white group-hover:text-orange-500 transition-colors">{followerCount}</p>
+              <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold group-hover:text-orange-500/50 transition-colors">Followers</p>
             </div>
           </div>
         </div>
@@ -327,6 +337,14 @@ export const Profile: React.FC = () => {
           <p className="text-white/40 italic serif">The Eatlist (Watchlist) is currently empty.</p>
         </div>
       )}
+      
+      <FollowListModal 
+        isOpen={followModalType !== null}
+        onClose={() => setFollowModalType(null)}
+        type={followModalType || "followers"}
+        userId={user.uid}
+        followingListIds={user.stats?.followingList || []}
+      />
     </div>
   );
 };
