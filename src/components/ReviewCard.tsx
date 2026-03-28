@@ -1,12 +1,13 @@
-import { Star, Heart, MessageSquare, MapPin, Send, Loader2 } from "lucide-react";
+import { Star, Heart, MessageSquare, MapPin, Send, Loader2, MoreVertical, Edit2, Trash2 } from "lucide-react";
 import { Review, Interaction } from "../types";
 import { formatDistanceToNow } from "date-fns";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "../App";
 import { db } from "../firebase";
-import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp, getDocs, updateDoc, increment } from "firebase/firestore";
+import { LogMealModal } from "./LogMealModal";
 
 interface ReviewCardProps {
   review: Review;
@@ -20,6 +21,47 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
   const [newComment, setNewComment] = useState("");
   const [isLikeLoading, setIsLikeLoading] = useState(false);
   const [isCommentLoading, setIsCommentLoading] = useState(false);
+
+  const [showOptions, setShowOptions] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const optionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (optionsRef.current && !optionsRef.current.contains(event.target as Node)) {
+        setShowOptions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleDelete = async () => {
+    if (!currentUser || currentUser.uid !== review.userId) return;
+    if (!window.confirm("Are you sure you want to delete this diary entry? This action cannot be undone.")) return;
+    
+    try {
+      // 1. Delete all nested interaction documents (comments & likes)
+      const interactionsQuery = query(collection(db, "interactions"), where("reviewId", "==", review.id));
+      const interactionsSnap = await getDocs(interactionsQuery);
+      const deletePromises = interactionsSnap.docs.map(docSnap => deleteDoc(doc(db, "interactions", docSnap.id)));
+      await Promise.all(deletePromises);
+      
+      // 2. Decrement user's reviewsWritten natively
+      const userRef = doc(db, "users", currentUser.uid);
+      await updateDoc(userRef, {
+        "stats.reviewsWritten": increment(-1)
+      });
+      
+      // 3. Delete the review natively
+      await deleteDoc(doc(db, "reviews", review.id));
+      
+      toast.success("Diary entry deleted successfully.");
+    } catch (error) {
+      console.error("Error deleting review:", error);
+      toast.error("Failed to delete the diary entry.");
+    }
+  };
 
   useEffect(() => {
     const q = query(
@@ -207,15 +249,54 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
             </div>
             
             <div className="flex flex-col items-end gap-1">
-              <div className="flex items-center gap-0.5 text-orange-500">
-                {[...Array(5)].map((_, i) => (
-                  <Star 
-                    key={i} 
-                    size={14} 
-                    fill={i < review.rating ? "currentColor" : "none"} 
-                    className={i < review.rating ? "fill-orange-500" : "text-white/10"}
-                  />
-                ))}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-0.5 text-orange-500">
+                  {[...Array(5)].map((_, i) => (
+                    <Star 
+                      key={i} 
+                      size={14} 
+                      fill={i < review.rating ? "currentColor" : "none"} 
+                      className={i < review.rating ? "fill-orange-500" : "text-white/10"}
+                    />
+                  ))}
+                </div>
+                {currentUser?.uid === review.userId && (
+                  <div className="relative" ref={optionsRef}>
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setShowOptions(!showOptions);
+                      }}
+                      className="p-1 text-white/40 hover:text-white transition-colors"
+                    >
+                      <MoreVertical size={16} />
+                    </button>
+                    {showOptions && (
+                      <div className="absolute right-0 top-full mt-1 w-32 bg-[#2c3440] border border-white/10 rounded-sm shadow-2xl py-1 z-50">
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setShowOptions(false);
+                            setIsEditing(true);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-white/5 text-[10px] font-bold uppercase tracking-widest text-white/80 hover:text-white transition-colors"
+                        >
+                          <Edit2 size={12} /> Edit
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setShowOptions(false);
+                            handleDelete();
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-500/10 text-[10px] font-bold uppercase tracking-widest text-red-400 hover:text-red-300 transition-colors"
+                        >
+                          <Trash2 size={12} /> Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <span className="text-[10px] text-white/30 uppercase tracking-widest font-medium">
                 {formatDistanceToNow(new Date(review.createdAt), { addSuffix: true })}
@@ -330,6 +411,12 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
           )}
         </div>
       </div>
+
+      <LogMealModal 
+        isOpen={isEditing} 
+        onClose={() => setIsEditing(false)} 
+        existingReview={review} 
+      />
     </div>
   );
 }

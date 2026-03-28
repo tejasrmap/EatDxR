@@ -9,7 +9,7 @@ import { db, handleFirestoreError, OperationType } from "../firebase";
 import { collection, doc, setDoc, updateDoc, serverTimestamp, getDoc, increment } from "firebase/firestore";
 import { toast } from "sonner";
 import { searchRestaurants } from "../services/mapsService";
-import { RestaurantSearchResult } from "../types";
+import { RestaurantSearchResult, Review } from "../types";
 
 const logSchema = z.object({
   restaurant: z.string().min(1, "Restaurant is required"),
@@ -26,9 +26,10 @@ type LogFormValues = z.infer<typeof logSchema>;
 interface LogMealModalProps {
   isOpen: boolean;
   onClose: () => void;
+  existingReview?: Review;
 }
 
-export function LogMealModal({ isOpen, onClose }: LogMealModalProps) {
+export function LogMealModal({ isOpen, onClose, existingReview }: LogMealModalProps) {
   const [rating, setRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -59,6 +60,31 @@ export function LogMealModal({ isOpen, onClose }: LogMealModalProps) {
     control,
     name: "dishes"
   });
+
+  // Pre-fill fields if we are in Edit Mode
+  useEffect(() => {
+    if (isOpen && existingReview) {
+      setRating(existingReview.rating);
+      setSearchQuery(existingReview.restaurantName);
+      setSelectedRestaurant({
+        id: existingReview.restaurantId,
+        name: existingReview.restaurantName,
+        cuisine: "Unknown",
+        location: existingReview.restaurantLocation || "Unknown"
+      });
+      reset({
+        restaurant: existingReview.restaurantName,
+        rating: existingReview.rating,
+        review: existingReview.content || "",
+        dishes: existingReview.dishes.length > 0 ? existingReview.dishes : [{ name: "", image: "" }]
+      });
+    } else if (isOpen && !existingReview) {
+      reset({ rating: 0, dishes: [{ name: "", image: "" }], restaurant: "", review: "" });
+      setRating(0);
+      setSearchQuery("");
+      setSelectedRestaurant(null);
+    }
+  }, [isOpen, existingReview, reset]);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -165,30 +191,45 @@ export function LogMealModal({ isOpen, onClose }: LogMealModalProps) {
         }
       }
 
-      const reviewRef = doc(collection(db, "reviews"));
-      const reviewData = {
-        id: reviewRef.id,
-        userId: user.uid,
-        userName: user.displayName || "Anonymous Critic",
-        userPhoto: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}&background=random`,
-        restaurantName: data.restaurant,
-        restaurantId: restaurantId,
-        dishes: data.dishes,
-        rating: data.rating,
-        content: data.review || "",
-        createdAt: serverTimestamp(),
-        likes: 0
-      };
+      if (existingReview) {
+        // Update Document Mode
+        const reviewRef = doc(db, "reviews", existingReview.id);
+        await updateDoc(reviewRef, {
+          restaurantName: data.restaurant,
+          restaurantId: restaurantId,
+          dishes: data.dishes,
+          rating: data.rating,
+          content: data.review || ""
+        });
+        toast.success("Meal updated successfully!");
+      } else {
+        // Create Document Mode
+        const reviewRef = doc(collection(db, "reviews"));
+        const reviewData = {
+          id: reviewRef.id,
+          userId: user.uid,
+          userName: user.displayName || "Anonymous Critic",
+          userPhoto: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}&background=random`,
+          restaurantName: data.restaurant,
+          restaurantId: restaurantId,
+          dishes: data.dishes,
+          rating: data.rating,
+          content: data.review || "",
+          createdAt: serverTimestamp(),
+          likes: 0
+        };
 
-      await setDoc(reviewRef, reviewData);
-      
-      // Increment the user's reviewsWritten stat for the leaderboard
-      const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, {
-        "stats.reviewsWritten": increment(1)
-      });
+        await setDoc(reviewRef, reviewData);
+        
+        // Increment the user's reviewsWritten stat for the leaderboard natively
+        const userRef = doc(db, "users", user.uid);
+        await updateDoc(userRef, {
+          "stats.reviewsWritten": increment(1)
+        });
 
-      toast.success("Meal logged successfully!");
+        toast.success("Meal logged successfully!");
+      }
+
       reset();
       setRating(0);
       setSearchQuery("");
@@ -226,7 +267,7 @@ export function LogMealModal({ isOpen, onClose }: LogMealModalProps) {
             className="relative w-full max-w-lg bg-zinc-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col"
           >
             <div className="p-6 border-b border-white/10 flex items-center justify-between shrink-0">
-              <h2 className="text-xl font-semibold serif italic">Log a Meal</h2>
+              <h2 className="text-xl font-semibold serif italic">{existingReview ? "Edit Meal" : "Log a Meal"}</h2>
               <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
                 <X size={20} />
               </button>
@@ -433,13 +474,20 @@ export function LogMealModal({ isOpen, onClose }: LogMealModalProps) {
                 />
               </div>
 
+              <div className="p-6 bg-black/20 border-t border-white/10 shrink-0">
               <button 
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-white text-black py-3 rounded-lg font-bold hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleSubmit(onSubmit)}
+                disabled={isSubmitting || !selectedRestaurant}
+                className="w-full bg-[#00e054] hover:bg-[#00c044] text-black font-bold uppercase tracking-widest py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? "Saving..." : "Save Review"}
+                {isSubmitting ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Plus size={16} />
+                )}
+                {existingReview ? "Update Meal" : "Log Meal"}
               </button>
+            </div>
             </form>
           </motion.div>
         </div>
@@ -447,4 +495,3 @@ export function LogMealModal({ isOpen, onClose }: LogMealModalProps) {
     </AnimatePresence>
   );
 }
-
