@@ -9,6 +9,7 @@ import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, 
 import { toast } from "sonner";
 import { DiaryTable } from "./DiaryTable";
 import { FollowListModal } from "./FollowListModal";
+import { EditProfileModal } from "./EditProfileModal";
 
 export const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -20,6 +21,7 @@ export const Profile: React.FC = () => {
   const [followerCount, setFollowerCount] = useState(0);
   const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
   const [followModalType, setFollowModalType] = useState<"followers" | "following" | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const isFollowing = dishdUser?.stats?.followingList?.includes(user?.uid || "");
 
@@ -143,16 +145,17 @@ export const Profile: React.FC = () => {
           />
           {currentUser?.uid === user.uid && (
             <div 
-              onClick={() => handleAction("Edit Profile")}
-              className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer"
+              onClick={() => setIsEditModalOpen(true)}
+              className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer flex-col gap-1"
             >
-              <span className="text-[10px] uppercase tracking-widest font-bold">Edit</span>
+              <Edit2 size={16} className="text-white" />
+              <span className="text-[10px] uppercase tracking-widest font-bold text-white">Edit</span>
             </div>
           )}
         </div>
         
         <div className="flex-1 text-center md:text-left">
-          <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+          <div className="flex flex-col md:flex-row md:items-center gap-4 mb-2">
             <h1 className="text-4xl font-bold text-white tracking-tight">{user.displayName}</h1>
             {currentUser?.uid !== user.uid && (
               <button 
@@ -168,6 +171,26 @@ export const Profile: React.FC = () => {
               </button>
             )}
           </div>
+
+          {user.username && (
+            <p className="text-orange-500 font-bold mb-4 tracking-wide text-center md:text-left">@{user.username}</p>
+          )}
+
+          {user.bio && (
+            <p className="text-white/60 font-serif italic mb-4 max-w-xl text-center md:text-left text-sm leading-relaxed">
+              {user.bio}
+            </p>
+          )}
+
+          {user.favoriteCuisines && user.favoriteCuisines.length > 0 && (
+            <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-6">
+              {user.favoriteCuisines.map((cuisine, idx) => (
+                <span key={idx} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] uppercase tracking-widest font-bold text-white/60">
+                  {cuisine}
+                </span>
+              ))}
+            </div>
+          )}
           
           <div className="flex flex-wrap justify-center md:justify-start gap-x-8 gap-y-4">
             <div className="text-center md:text-left border-r border-white/10 pr-8 last:border-0">
@@ -344,6 +367,12 @@ export const Profile: React.FC = () => {
         type={followModalType || "followers"}
         userId={user.uid}
         followingListIds={user.stats?.followingList || []}
+      />
+
+      <EditProfileModal 
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        user={user}
       />
     </div>
   );
