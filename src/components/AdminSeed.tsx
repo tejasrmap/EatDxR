@@ -86,9 +86,15 @@ export const AdminSeed: React.FC = () => {
         const cuisine = type.charAt(0).toUpperCase() + type.slice(1);
         const name = place.tags.name;
         
-        const cityAttr = place.tags['addr:city'] || place.tags['addr:town'] || (targetRegion === 'SRMAP' ? 'Neerukonda (SRMAP)' : 'Vijayawada');
+        const cityAttr = 
+          place.tags['addr:suburb'] || 
+          place.tags['addr:neighbourhood'] || 
+          place.tags['addr:town'] || 
+          place.tags['addr:city'] || 
+          (targetRegion === 'SRMAP' ? 'Guntur/Mangalagiri Area' : 'Vijayawada');
+          
         const streetAttr = place.tags['addr:street'] || '';
-        const _locationStr = streetAttr ? `${streetAttr}, ${cityAttr}` : `${cityAttr}, Andhra Pradesh`;
+        const _locationStr = streetAttr ? `${streetAttr}, ${cityAttr}` : `${cityAttr}`;
 
         const randomImage = foodImages[Math.floor(Math.random() * foodImages.length)];
         const ratingNum = Number((Math.random() * 2 + 3).toFixed(1)); 

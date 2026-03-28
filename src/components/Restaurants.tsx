@@ -4,6 +4,7 @@ import { db } from "../firebase";
 import { Restaurant } from "../types";
 import { Link } from "react-router-dom";
 import { Star, MapPin, Navigation, Loader2, Compass, UtensilsCrossed } from "lucide-react";
+import { toast } from "sonner";
 import { getDistanceKM, formatDistance } from "../lib/distance";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -55,6 +56,12 @@ export function Restaurants() {
     fetchRestaurants();
   }, []);
 
+  const setSRMAPLocation = () => {
+    setUserLocation({ lat: 16.4819, lng: 80.5050 });
+    setLocationStatus('granted');
+    toast.success("Location set to SRMAP Campus Hub.");
+  };
+
   // Calculate distances and sort
   const sortedRestaurants = useMemo(() => {
     if (!userLocation) return restaurants.sort((a,b) => (b.rating || 0) - (a.rating || 0));
@@ -86,21 +93,41 @@ export function Restaurants() {
     <div className="min-h-screen pt-24 pb-20 px-6 max-w-7xl mx-auto">
       <header className="mb-16">
         <h1 className="text-6xl font-black uppercase tracking-tighter mb-4">Discover <span className="text-[#00e054] italic serif lowercase">nearby</span></h1>
-        <div className="flex flex-wrap items-center gap-4">
-           <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full backdrop-blur-md">
-             <MapPin size={14} className="text-[#00e054]" />
-              <span className="text-xs font-bold uppercase tracking-widest text-white/60">
-                {locationStatus === 'granted' ? 'Location Active' : locationStatus === 'denied' ? 'Location Hidden' : 'Locating...'}
-             </span>
+        <div className="flex flex-col gap-6">
+           <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-3 rounded-2xl backdrop-blur-md">
+                 <MapPin size={16} className={locationStatus === 'granted' ? "text-[#00e054]" : "text-rose-500"} />
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase font-black tracking-widest text-white/40">Status</span>
+                    <span className="text-xs font-bold text-white uppercase mt-0.5">
+                      {locationStatus === 'granted' ? 'High Precision Active' : locationStatus === 'denied' ? 'Location Hidden' : 'Locating...'}
+                    </span>
+                  </div>
+              </div>
+
+              {userLocation && (
+                <div className="flex items-center gap-4 bg-[#00e054]/5 border border-[#00e054]/20 px-5 py-3 rounded-2xl">
+                   <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-black tracking-widest text-[#00e054]/60">Detected Coordinates</span>
+                      <span className="text-sm font-mono text-white font-bold mt-0.5">
+                        {userLocation.lat.toFixed(6)}, {userLocation.lng.toFixed(6)}
+                      </span>
+                   </div>
+                </div>
+              )}
+
+              <button 
+                onClick={setSRMAPLocation}
+                className="bg-white hover:bg-[#00e054] text-black px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all hover:-translate-y-1 shadow-xl flex items-center gap-2"
+              >
+                <Navigation size={14} className="fill-black" />
+                I'm at SRMAP Campus
+              </button>
            </div>
-           {userLocation && (
-             <div className="flex items-center gap-2 bg-white/5 border border-white/5 px-3 py-1.5 rounded-full">
-               <span className="text-[9px] font-mono text-white/20 uppercase tracking-widest">
-                 {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
-               </span>
-             </div>
-           )}
-           <p className="text-white/20 text-sm font-serif italic">Showing the best culinary spots in your immediate vicinity.</p>
+           
+           <p className="text-white/30 text-base font-serif italic max-w-2xl border-l-2 border-[#00e054]/40 pl-6 leading-relaxed">
+              If the distances seem wrong, your laptop is likely reporting your internet provider's office location. Click <span className="text-white underline font-bold cursor-pointer" onClick={setSRMAPLocation}>"I'm at SRMAP"</span> to force campus accuracy.
+           </p>
         </div>
       </header>
 
