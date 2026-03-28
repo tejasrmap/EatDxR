@@ -1,16 +1,46 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { collection, query, where, onSnapshot, orderBy, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { db } from "../firebase";
 import { Review, Restaurant as RestaurantType } from "../types";
 import { ReviewCard } from "./ReviewCard";
-import { Star } from "lucide-react";
+import { Star, Bookmark } from "lucide-react";
+import { useAuth } from "../App";
+import { toast } from "sonner";
 
 export const Restaurant: React.FC = () => {
   const { restaurantId } = useParams<{ restaurantId: string }>();
+  const { user, dishdUser } = useAuth();
   const [restaurant, setRestaurant] = useState<RestaurantType | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isUpdatingEatlist, setIsUpdatingEatlist] = useState(false);
+
+  const isInEatlist = dishdUser?.eatlist?.includes(restaurantId || "");
+
+  const toggleEatlist = async () => {
+    if (!user || !restaurantId) {
+      toast.error("Please log in to add to your Eatlist!");
+      return;
+    }
+    
+    setIsUpdatingEatlist(true);
+    try {
+      const userRef = doc(db, "users", user.uid);
+      if (isInEatlist) {
+        await updateDoc(userRef, { eatlist: arrayRemove(restaurantId) });
+        toast.success("Removed from your Eatlist!");
+      } else {
+        await updateDoc(userRef, { eatlist: arrayUnion(restaurantId) });
+        toast.success("Added to your Eatlist!");
+      }
+    } catch (error) {
+      console.error("Error updating eatlist:", error);
+      toast.error("Failed to update Eatlist");
+    } finally {
+      setIsUpdatingEatlist(false);
+    }
+  };
 
   useEffect(() => {
     if (!restaurantId) return;
@@ -92,6 +122,16 @@ export const Restaurant: React.FC = () => {
             <div>
               <p className="text-2xl font-bold">{reviews.length}</p>
               <p className="text-xs text-white/40 uppercase tracking-tighter">Reviews</p>
+            </div>
+            <div className="border-l border-white/10 pl-8 ml-2 flex items-center justify-center">
+              <button 
+                onClick={toggleEatlist}
+                disabled={isUpdatingEatlist}
+                className={`flex flex-col items-center gap-1 transition-all hover:-translate-y-1 ${isInEatlist ? 'text-orange-500' : 'text-white/60 hover:text-white'}`}
+              >
+                <Bookmark className={`w-8 h-8 ${isInEatlist ? 'fill-orange-500 text-orange-500' : ''}`} />
+                <span className="text-[10px] uppercase tracking-widest font-bold">Eatlist</span>
+              </button>
             </div>
           </div>
         </div>

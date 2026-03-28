@@ -9,6 +9,7 @@ export interface User {
   photoURL: string;
   bio?: string;
   favoriteCuisines?: string[];
+  eatlist?: string[];
   stats: {
     mealsLogged: number;
     reviewsWritten: number;

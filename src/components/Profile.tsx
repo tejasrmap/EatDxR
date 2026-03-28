@@ -7,6 +7,7 @@ import { ReviewCard } from "./ReviewCard";
 import { useAuth } from "../App";
 import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings } from "lucide-react";
 import { toast } from "sonner";
+import { DiaryTable } from "./DiaryTable";
 
 export const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -14,6 +15,7 @@ export const Profile: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"profile" | "diary" | "eatlist">("profile");
 
   const handleAction = (action: string) => {
     toast.info(`${action} feature coming soon!`);
@@ -45,8 +47,9 @@ export const Profile: React.FC = () => {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const reviewsData = snapshot.docs.map(doc => ({
+        ...doc.data(),
         id: doc.id,
-        ...doc.data()
+        createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
       })) as Review[];
       setReviews(reviewsData);
       setLoading(false);
@@ -133,46 +136,29 @@ export const Profile: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-8 border-b border-white/10 mb-8">
+      <div className="flex items-center gap-8 border-b border-white/10 mb-8 overflow-x-auto whitespace-nowrap hide-scrollbar">
         <button 
-          onClick={() => handleAction("Switch Tab")}
-          className="pb-4 text-[10px] uppercase tracking-widest font-bold text-white border-b-2 border-orange-500"
+          onClick={() => setActiveTab("profile")}
+          className={`pb-4 text-[10px] uppercase tracking-widest font-bold transition-colors ${activeTab === "profile" ? "text-white border-b-2 border-orange-500" : "text-white/40 hover:text-white"}`}
         >
           Profile
         </button>
         <button 
-          onClick={() => handleAction("Switch Tab")}
-          className="pb-4 text-[10px] uppercase tracking-widest font-bold text-white/40 hover:text-white transition-colors"
-        >
-          Activity
-        </button>
-        <button 
-          onClick={() => handleAction("Switch Tab")}
-          className="pb-4 text-[10px] uppercase tracking-widest font-bold text-white/40 hover:text-white transition-colors"
-        >
-          Meals
-        </button>
-        <button 
-          onClick={() => handleAction("Switch Tab")}
-          className="pb-4 text-[10px] uppercase tracking-widest font-bold text-white/40 hover:text-white transition-colors"
+          onClick={() => setActiveTab("diary")}
+          className={`pb-4 text-[10px] uppercase tracking-widest font-bold transition-colors ${activeTab === "diary" ? "text-white border-b-2 border-orange-500" : "text-white/40 hover:text-white"}`}
         >
           Diary
         </button>
         <button 
-          onClick={() => handleAction("Switch Tab")}
-          className="pb-4 text-[10px] uppercase tracking-widest font-bold text-white/40 hover:text-white transition-colors"
+          onClick={() => setActiveTab("eatlist")}
+          className={`pb-4 text-[10px] uppercase tracking-widest font-bold transition-colors ${activeTab === "eatlist" ? "text-white border-b-2 border-orange-500" : "text-white/40 hover:text-white"}`}
         >
-          Reviews
-        </button>
-        <button 
-          onClick={() => handleAction("Switch Tab")}
-          className="pb-4 text-[10px] uppercase tracking-widest font-bold text-white/40 hover:text-white transition-colors"
-        >
-          Lists
+          Eatlist
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+      {activeTab === "profile" && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         {/* Left Column: Recent Activity Grid */}
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-6">
@@ -268,7 +254,20 @@ export const Profile: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      )}
+
+      {activeTab === "diary" && (
+        <div className="w-full">
+          <DiaryTable reviews={reviews} showUser={false} />
+        </div>
+      )}
+
+      {activeTab === "eatlist" && (
+        <div className="w-full text-center py-20 border border-dashed border-white/10 rounded-2xl">
+          <p className="text-white/40 italic serif">The Eatlist (Watchlist) is currently empty.</p>
+        </div>
+      )}
     </div>
   );
 };

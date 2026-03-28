@@ -16,6 +16,7 @@ import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, User 
 import { collection, onSnapshot, query, orderBy, limit, doc, setDoc, getDoc, getDocFromServer, where } from "firebase/firestore";
 import { Profile } from "./components/Profile";
 import { Restaurant } from "./components/Restaurant";
+import { Journal } from "./components/Journal";
 import { useLocation } from "./hooks/useLocation";
 import { getCurrentCity } from "./services/mapsService";
 import { MapPin, Globe, Star, Loader2 } from "lucide-react";
@@ -403,7 +404,7 @@ export function App() {
               <Route path="/restaurants" element={<PlaceholderPage title="Restaurants" />} />
               <Route path="/lists" element={<PlaceholderPage title="Food Lists" />} />
               <Route path="/critics" element={<Critics />} />
-              <Route path="/journal" element={<PlaceholderPage title="Journal" />} />
+              <Route path="/journal" element={<Journal />} />
               <Route path="*" element={<Home />} />
             </Routes>
           </Layout>
