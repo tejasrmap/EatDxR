@@ -32,24 +32,26 @@ export const AdminSeed: React.FC = () => {
       // 1. Fetch real Overpass API data for Vijayawada (50km radius)
       toast.info('Fetching OpenStreetMap data for Vijayawada (50km radius)...');
       
-      const query = `
-      [out:json][timeout:25];
-      (
-        node["amenity"="restaurant"](around:50000,16.5062,80.6480);
-        node["amenity"="cafe"](around:50000,16.5062,80.6480);
-        node["amenity"="fast_food"](around:50000,16.5062,80.6480);
-      );
-      out body;
-      `;
+      const query = `[out:json][timeout:25];(node["amenity"="restaurant"](around:50000,16.5062,80.6480);node["amenity"="cafe"](around:50000,16.5062,80.6480);node["amenity"="fast_food"](around:50000,16.5062,80.6480););out body;`;
       
       const res = await fetch('https://overpass-api.de/api/interpreter', {
         method: 'POST',
-        body: `data=${encodeURIComponent(query)}`,
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        body: query
       });
       
-      const data = await res.json();
-      const validElements = data.elements.filter((e: any) => e.tags && e.tags.name);
+      if (!res.ok) throw new Error(`Overpass API blocked with HTTP ${res.status}`);
+      
+      const text = await res.text();
+      // Catch Overpass XML Errors (often Syntax or Rate Limits)
+      if (text.trim().startsWith('<')) {
+        console.error("OVERPASS ERROR:", text);
+        throw new Error('Mapping API returned an XML Error! Likely syntax or rate limit block.');
+      }
+      
+      const data = JSON.parse(text);
+      const validElements = data.elements?.filter((e: any) => e.tags && e.tags.name) || [];
+      
+      if (validElements.length === 0) throw new Error("No payload elements found.");
       
       // Shuffle & limit to top 300 to not kill Firebase Free Tier instantly
       let topPlaces = validElements.sort(() => 0.5 - Math.random()).slice(0, 300);
