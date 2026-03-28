@@ -1,5 +1,5 @@
 import { RestaurantSearchResult } from "../types";
-import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
@@ -160,30 +160,4 @@ export async function getCurrentCity(latitude: number, longitude: number): Promi
   } catch (error) {
     return null;
   }
-}
-}
-
-let cachedUsers: any[] | null = null;
-export async function searchUsers(queryStr: string) {
-  if (!queryStr.trim()) return [];
-  
-  if (!cachedUsers) {
-    try {
-      const q = query(
-        collection(db, "users"),
-        limit(100) // Fetch top active users or a good chunk for client-side matching
-      );
-      const snap = await getDocs(q);
-      cachedUsers = snap.docs.map(doc => doc.data());
-    } catch (e) {
-      console.error("Failed to fetch users for search:", e);
-      return [];
-    }
-  }
-
-  const normalizedQuery = queryStr.toLowerCase();
-  return cachedUsers.filter(u => 
-    (u.displayName?.toLowerCase() || "").includes(normalizedQuery) || 
-    (u.username?.toLowerCase() || "").includes(normalizedQuery)
-  ).slice(0, 5); // Return top 5 matches
 }
