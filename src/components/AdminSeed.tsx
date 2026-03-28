@@ -3,15 +3,12 @@ import { useAuth } from '../App';
 import { db } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { MapPin, Zap, Database, Loader2, IndianRupee, Globe, Lock, ShieldCheck, Map } from 'lucide-react';
-import { getDistanceKM } from '../lib/distance';
+import { MapPin, Zap, Database, Loader2, IndianRupee, Globe, Lock, ShieldCheck } from 'lucide-react';
 
 type SeedingRegion = 'SRMAP' | 'VIJAYAWADA';
 
 // Admin Security Constants
 const ADMIN_PASSWORD = "SRMAP-ADMIN-DXR";
-const CAMPUS_COORDS = { lat: 16.48, lng: 80.50 }; // SRMAP Coordinates
-const MAX_RADIUS_KM = 5; // Must be within 5km of campus
 
 export const AdminSeed: React.FC = () => {
   const { user } = useAuth();
@@ -22,19 +19,6 @@ export const AdminSeed: React.FC = () => {
   // Security States
   const [accessKey, setAccessKey] = useState("");
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [locationError, setLocationError] = useState(false);
-
-  useEffect(() => {
-    // Request location for coordinate lock
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => setLocationError(true),
-        { enableHighAccuracy: true }
-      );
-    }
-  }, []);
 
   const handleAuthorize = () => {
     if (accessKey === ADMIN_PASSWORD) {
@@ -63,18 +47,6 @@ export const AdminSeed: React.FC = () => {
       return;
     }
 
-    // Coordinate Lock Check
-    if (userLocation) {
-      const dist = getDistanceKM(userLocation.lat, userLocation.lng, CAMPUS_COORDS.lat, CAMPUS_COORDS.lng);
-      if (dist > MAX_RADIUS_KM) {
-        toast.error(`Out of Range: Must be near SRMAP campus to seed. (Detected distance: ${dist.toFixed(1)}km)`);
-        return;
-      }
-    } else if (locationError) {
-      toast.error("Location Required: Geolocation must be enabled to verify proximity.");
-      return;
-    }
-    
     setIsSeeding(true);
     try {
       const coords = targetRegion === 'SRMAP' ? '16.4819,80.5050' : '16.5062,80.6480';
@@ -195,14 +167,6 @@ export const AdminSeed: React.FC = () => {
         </div>
         <h1 className="text-4xl font-black uppercase tracking-tighter text-white mb-4">Database Initialization</h1>
         
-        {/* Proximity Indicator */}
-        <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-full mb-8">
-           <Map size={12} className={userLocation ? "text-[#00e054]" : "text-rose-500"} />
-           <span className="text-[9px] uppercase font-black tracking-widest text-white/40">
-              Coordinate Lock: {userLocation ? `VERIFIED (${userLocation.lat.toFixed(2)}, ${userLocation.lng.toFixed(2)})` : "LOCATING..."}
-           </span>
-        </div>
-
         {!isSeeding ? (
           <div className="w-full max-w-lg space-y-8 bg-zinc-900/50 p-8 rounded-3xl border border-white/5 backdrop-blur-xl">
              <div className="space-y-4">
