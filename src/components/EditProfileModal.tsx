@@ -15,6 +15,7 @@ interface EditProfileModalProps {
 export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, user }) => {
   const [displayName, setDisplayName] = useState(user.displayName || "");
   const [username, setUsername] = useState(user.username || "");
+  const [pronouns, setPronouns] = useState(user.pronouns || "");
   const [photoURL, setPhotoURL] = useState(user.photoURL || "");
   const [bio, setBio] = useState(user.bio || "");
   const [cuisines, setCuisines] = useState(user.favoriteCuisines?.join(", ") || "");
@@ -67,6 +68,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
         displayName: displayName.trim(),
         photoURL: photoURL.trim(),
         username: username.trim().toLowerCase() || undefined,
+        pronouns: pronouns.trim() || undefined,
         bio: bio.trim() || undefined,
         favoriteCuisines: favoriteCuisines.length > 0 ? favoriteCuisines : undefined
       };
@@ -134,6 +136,18 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                   placeholder="foodie_lover (No spaces)"
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] uppercase tracking-widest font-bold text-white/60">Pronouns</label>
+              <input
+                type="text"
+                value={pronouns}
+                onChange={(e) => setPronouns(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-md px-4 py-2.5 text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500 focus:bg-white/10 transition-colors text-sm"
+                placeholder="e.g. she/her, they/them"
+                maxLength={20}
+              />
             </div>
 
             <div className="space-y-2">

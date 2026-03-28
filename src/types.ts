@@ -8,6 +8,7 @@ export interface User {
   displayName: string;
   photoURL: string;
   username?: string;
+  pronouns?: string;
   bio?: string;
   favoriteCuisines?: string[];
   eatlist?: string[];

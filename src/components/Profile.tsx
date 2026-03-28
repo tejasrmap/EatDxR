@@ -180,13 +180,16 @@ export const Profile: React.FC = () => {
         </div>
         
         <div className="flex-1 text-center md:text-left">
-          <div className="flex flex-col md:flex-row md:items-center gap-4 mb-2">
+          <div className="flex flex-col md:flex-row md:items-end gap-3 mb-2">
             <h1 className="text-4xl font-bold text-white tracking-tight">{user.displayName}</h1>
+            {user.pronouns && (
+              <span className="text-sm font-medium text-white/40 italic mb-1.5">{user.pronouns}</span>
+            )}
             {currentUser?.uid !== user.uid && (
               <button 
                 onClick={toggleFollow}
                 disabled={isUpdatingFollow}
-                className={`px-6 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest transition-colors ${
+                className={`px-6 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest transition-colors md:ml-4 ${
                   isFollowing 
                     ? "bg-white/10 text-white hover:bg-white/20" 
                     : "bg-white text-black hover:bg-white/90"
