@@ -28,7 +28,8 @@ export function Restaurants() {
           console.error("Geolocation error:", error);
           if (error.code === 1) setLocationStatus('denied');
           else setLocationStatus('error');
-        }
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
     } else {
       setLocationStatus('error');
@@ -88,10 +89,17 @@ export function Restaurants() {
         <div className="flex flex-wrap items-center gap-4">
            <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full backdrop-blur-md">
              <MapPin size={14} className="text-[#00e054]" />
-             <span className="text-xs font-bold uppercase tracking-widest text-white/60">
+              <span className="text-xs font-bold uppercase tracking-widest text-white/60">
                 {locationStatus === 'granted' ? 'Location Active' : locationStatus === 'denied' ? 'Location Hidden' : 'Locating...'}
              </span>
            </div>
+           {userLocation && (
+             <div className="flex items-center gap-2 bg-white/5 border border-white/5 px-3 py-1.5 rounded-full">
+               <span className="text-[9px] font-mono text-white/20 uppercase tracking-widest">
+                 {userLocation.lat.toFixed(4)}, {userLocation.lng.toFixed(4)}
+               </span>
+             </div>
+           )}
            <p className="text-white/20 text-sm font-serif italic">Showing the best culinary spots in your immediate vicinity.</p>
         </div>
       </header>
