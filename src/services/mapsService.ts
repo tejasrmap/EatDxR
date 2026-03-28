@@ -1,11 +1,35 @@
-import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { RestaurantSearchResult } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 
 // Simple in-memory cache
 const searchCache = new Map<string, RestaurantSearchResult[]>();
 const cityCache = new Map<string, string>();
+
+async function fetchOpenRouter(prompt: string, expectJson: boolean = false) {
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": window.location.origin, 
+      "X-Title": "EatDxR", 
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash", // Running via OpenRouter
+      messages: [{ role: "user", content: prompt }],
+      response_format: expectJson ? { type: "json_object" } : undefined
+    })
+  });
+  
+  if (!response.ok) {
+    const errData = await response.json();
+    throw new Error(errData.error?.message || "OpenRouter API error");
+  }
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || "";
+}
 
 export async function searchRestaurants(query: string, latitude?: number, longitude?: number): Promise<RestaurantSearchResult[]> {
   const cacheKey = `${query.toLowerCase()}_${latitude?.toFixed(2) || 'default'}_${longitude?.toFixed(2) || 'default'}`;
@@ -19,28 +43,25 @@ export async function searchRestaurants(query: string, latitude?: number, longit
     : `in India or globally based on the query.`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: `Find 5 real food places (restaurants, cafes, or street food) matching "${query}" ${locationPrompt}
-      
-      Return a raw JSON array of objects. Each object MUST contain EXACTLY these keys:
-      - "name": string
-      - "location": string (full address)
-      - "city": string (city name)
-      - "cuisine": string
-      - "menuItems": array of strings (3-4 popular dishes)
-      - "image": string (a high-quality real unsplash image URL for this specific cuisine)
-      
-      Do NOT return markdown blocks. Just return the raw JSON array.`,
-      config: {
-        responseMimeType: "application/json"
-      }
-    });
+    const prompt = `Find 5 real food places (restaurants, cafes, or street food) matching "${query}" ${locationPrompt}
+    
+    Return a raw JSON object containing a single key "results" which holds an array of objects. Each object MUST contain EXACTLY these keys:
+    - "name": string
+    - "location": string (full address)
+    - "city": string (city name)
+    - "cuisine": string
+    - "menuItems": array of strings (3-4 popular dishes)
+    - "image": string (a high-quality real unsplash image URL for this specific cuisine)
+    
+    Do NOT return markdown blocks. Just return the valid JSON object.`;
 
-    const text = response.text?.replace(/```json/gi, '').replace(/```/g, '').trim() || "[]";
+    const responseText = await fetchOpenRouter(prompt, true);
+
+    const text = responseText.replace(/```json/gi, '').replace(/```/g, '').trim() || '{"results":[]}';
     let resultsList = [];
     try {
-      resultsList = JSON.parse(text);
+      const parsed = JSON.parse(text);
+      resultsList = parsed.results || [];
     } catch(e) {
       console.error("Failed to parse JSON from AI response:", text);
     }
@@ -64,7 +85,7 @@ export async function searchRestaurants(query: string, latitude?: number, longit
     searchCache.set(cacheKey, finalResults);
     return finalResults;
   } catch (error) {
-    console.error("Search error:", error);
+    console.error("Search error via OpenRouter:", error);
     return [];
   }
 }
@@ -74,12 +95,10 @@ export async function getCurrentCity(latitude: number, longitude: number): Promi
   if (cityCache.has(cacheKey)) return cityCache.get(cacheKey)!;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: `What is the name of the city or town at coordinates ${latitude}, ${longitude} in India? Return ONLY the name of the city or town (e.g., "Mumbai", "Indiranagar").`,
-    });
+    const prompt = `What is the name of the city or town at coordinates ${latitude}, ${longitude} in India? Return ONLY the name of the city or town (e.g., "Mumbai", "Indiranagar").`;
+    const responseText = await fetchOpenRouter(prompt, false);
 
-    const city = response.text?.trim().split('\n')[0].replace(/[^\w\s]/gi, '') || null;
+    const city = responseText.trim().split('\n')[0].replace(/[^\w\s]/gi, '') || null;
     if (city && city.toLowerCase() !== 'nearby') {
       cityCache.set(cacheKey, city);
       return city;
