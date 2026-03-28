@@ -19,6 +19,7 @@ import { Restaurant } from "./components/Restaurant";
 import { useLocation } from "./hooks/useLocation";
 import { getCurrentCity } from "./services/mapsService";
 import { MapPin, Globe, Star, Loader2 } from "lucide-react";
+import { Critics } from "./components/Critics";
 
 // --- Error Boundary ---
 interface ErrorBoundaryProps {
@@ -401,7 +402,7 @@ export function App() {
               <Route path="/restaurant/:restaurantId" element={<Restaurant />} />
               <Route path="/restaurants" element={<PlaceholderPage title="Restaurants" />} />
               <Route path="/lists" element={<PlaceholderPage title="Food Lists" />} />
-              <Route path="/critics" element={<PlaceholderPage title="Top Critics" />} />
+              <Route path="/critics" element={<Critics />} />
               <Route path="/journal" element={<PlaceholderPage title="Journal" />} />
               <Route path="*" element={<Home />} />
             </Routes>

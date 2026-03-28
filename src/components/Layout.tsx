@@ -14,7 +14,7 @@ export function Layout({ children }: LayoutProps) {
       <main className="pt-16">
         {children}
       </main>
-      
+
       <footer className="border-t border-white/10 py-12 mt-20">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-2 text-xl font-black tracking-tighter group cursor-pointer">
@@ -22,10 +22,10 @@ export function Layout({ children }: LayoutProps) {
               <UtensilsCrossed className="text-white w-3 h-3" />
             </div>
             <span className="text-white/80 group-hover:text-white transition-colors">
-              Dish<span className="text-rose-500">d</span>
+              Eat<span className="text-rose-500">D</span>
             </span>
           </div>
-          
+
           <div className="flex gap-8 text-xs font-medium text-white/40 uppercase tracking-widest">
             <Link to="/" className="hover:text-white transition-colors">About</Link>
             <Link to="/journal" className="hover:text-white transition-colors">Journal</Link>
@@ -33,9 +33,9 @@ export function Layout({ children }: LayoutProps) {
             <Link to="/restaurants" className="hover:text-white transition-colors">Restaurants</Link>
             <Link to="/lists" className="hover:text-white transition-colors">Lists</Link>
           </div>
-          
+
           <p className="text-xs text-white/20">
-            © Dishd. Made by food lovers, for food lovers.
+            © EatD. Made by food lovers, for food lovers.
           </p>
         </div>
       </footer>

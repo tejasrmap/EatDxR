@@ -18,7 +18,7 @@ export function Navbar() {
               <UtensilsCrossed className="text-white w-4 h-4" />
             </div>
             <span className="text-white">
-              Dish<span className="text-rose-500">d</span>
+              Eat<span className="text-rose-500">D</span>
             </span>
           </Link>
 
@@ -33,10 +33,10 @@ export function Navbar() {
             <button className="p-2 text-white/40 hover:text-white transition-colors">
               <Search size={18} />
             </button>
-            
+
             {user ? (
               <>
-                <button 
+                <button
                   onClick={() => setIsLogModalOpen(true)}
                   className="bg-[#00e054] hover:bg-[#00c044] text-black text-[10px] uppercase tracking-widest font-bold px-4 py-2 rounded-sm transition-colors flex items-center gap-2"
                 >
@@ -44,29 +44,29 @@ export function Navbar() {
                   <span>Log</span>
                 </button>
                 <div className="relative">
-                  <button 
+                  <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     className="w-8 h-8 rounded-full overflow-hidden border border-white/10 hover:border-white/40 transition-colors"
                   >
-                    <img 
-                      src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}&background=random`} 
-                      alt="Profile" 
+                    <img
+                      src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}&background=random`}
+                      alt="Profile"
                       className="w-full h-full object-cover"
                       referrerPolicy="no-referrer"
                     />
                   </button>
-                  
+
                   {showUserMenu && (
                     <div className="absolute right-0 mt-2 w-48 bg-[#2c3440] border border-white/10 rounded shadow-2xl py-2 z-[100]">
-                      <Link 
-                        to={`/profile/${user.uid}`} 
+                      <Link
+                        to={`/profile/${user.uid}`}
                         className="flex items-center gap-3 px-4 py-2 hover:bg-[#445566] transition-colors text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white"
                         onClick={() => setShowUserMenu(false)}
                       >
                         <User size={14} />
                         Profile
                       </Link>
-                      <button 
+                      <button
                         onClick={() => { logout(); setShowUserMenu(false); }}
                         className="w-full flex items-center gap-3 px-4 py-2 hover:bg-[#445566] transition-colors text-xs font-bold uppercase tracking-widest text-red-400"
                       >
@@ -78,7 +78,7 @@ export function Navbar() {
                 </div>
               </>
             ) : (
-              <button 
+              <button
                 onClick={login}
                 className="text-[10px] uppercase tracking-widest font-bold text-white/60 hover:text-white transition-colors"
               >
@@ -89,9 +89,9 @@ export function Navbar() {
         </div>
       </nav>
 
-      <LogMealModal 
-        isOpen={isLogModalOpen} 
-        onClose={() => setIsLogModalOpen(false)} 
+      <LogMealModal
+        isOpen={isLogModalOpen}
+        onClose={() => setIsLogModalOpen(false)}
       />
     </>
   );
