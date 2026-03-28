@@ -67,6 +67,9 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
       
       if (hasLiked) {
         await deleteDoc(likeRef);
+        if (currentUser.uid !== review.userId) {
+          await deleteDoc(doc(db, "notifications", likeId)).catch(() => {});
+        }
       } else {
         await setDoc(likeRef, {
           id: likeId,
@@ -77,6 +80,20 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
           type: "LIKE",
           createdAt: serverTimestamp()
         });
+
+        if (currentUser.uid !== review.userId) {
+          await setDoc(doc(db, "notifications", likeId), {
+            id: likeId,
+            recipientId: review.userId,
+            actorId: currentUser.uid,
+            actorName: currentUser.displayName,
+            actorPhoto: currentUser.photoURL,
+            type: "LIKE",
+            targetId: review.id,
+            read: false,
+            createdAt: serverTimestamp()
+          });
+        }
       }
     } catch (error: any) {
       console.error("Like error:", error);
@@ -109,6 +126,22 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
         content: newComment.trim(),
         createdAt: serverTimestamp()
       });
+
+      if (currentUser.uid !== review.userId) {
+        const notifRef = doc(collection(db, "notifications"));
+        await setDoc(notifRef, {
+          id: notifRef.id,
+          recipientId: review.userId,
+          actorId: currentUser.uid,
+          actorName: currentUser.displayName,
+          actorPhoto: currentUser.photoURL,
+          type: "COMMENT",
+          targetId: review.id,
+          read: false,
+          createdAt: serverTimestamp()
+        });
+      }
+
       setNewComment("");
       toast.success("Comment posted!");
     } catch (error: any) {

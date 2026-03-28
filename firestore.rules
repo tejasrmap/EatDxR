@@ -132,6 +132,20 @@ service cloud.firestore {
              data.createdAt is timestamp;
     }
 
+    function isValidNotification(data) {
+      return data.keys().hasAll(['id', 'recipientId', 'actorId', 'actorName', 'actorPhoto', 'type', 'read', 'createdAt']) &&
+             hasOnlyAllowedFields(['id', 'recipientId', 'actorId', 'actorName', 'actorPhoto', 'type', 'targetId', 'read', 'createdAt']) &&
+             data.id is string && data.id.size() > 0 &&
+             data.recipientId is string && data.recipientId.size() > 0 &&
+             data.actorId == request.auth.uid &&
+             data.actorName is string && data.actorName.size() > 0 &&
+             data.actorPhoto is string &&
+             data.type in ['LIKE', 'COMMENT', 'FOLLOW'] &&
+             (!('targetId' in data) || (data.targetId is string)) &&
+             data.read is bool &&
+             data.createdAt is timestamp;
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -168,6 +182,12 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isAuthenticated() && isValidInteraction(request.resource.data);
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    match /notifications/{notifId} {
+      allow read, update: if isAuthenticated() && resource.data.recipientId == request.auth.uid;
+      allow create: if isAuthenticated() && isValidNotification(request.resource.data);
+      allow delete: if isAuthenticated() && (resource.data.recipientId == request.auth.uid || resource.data.actorId == request.auth.uid);
     }
   }
 }

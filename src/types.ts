@@ -84,3 +84,16 @@ export interface Interaction {
   content?: string; // Only used if type is "COMMENT"
   createdAt: any; // Firestore Timestamp
 }
+
+export interface AppNotification {
+  id: string;
+  recipientId: string;
+  actorId: string;
+  actorName: string;
+  actorPhoto: string;
+  type: "LIKE" | "COMMENT" | "FOLLOW";
+  targetId?: string; // ID of the review if applicable
+  read: boolean;
+  createdAt: any;
+}
+

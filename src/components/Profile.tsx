@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { collection, query, where, onSnapshot, orderBy, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, doc, getDoc, updateDoc, arrayUnion, arrayRemove, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { Review, User } from "../types";
 import { ReviewCard } from "./ReviewCard";
@@ -30,11 +30,24 @@ export const Profile: React.FC = () => {
     setIsUpdatingFollow(true);
     try {
       const currentUserRef = doc(db, "users", currentUser.uid);
+      const notifId = `${currentUser.uid}_${user.uid}_FOLLOW`;
+      
       if (isFollowing) {
         await updateDoc(currentUserRef, { "stats.followingList": arrayRemove(user.uid) });
+        await deleteDoc(doc(db, "notifications", notifId)).catch(() => {});
         toast.success(`Unfollowed ${user.displayName}`);
       } else {
         await updateDoc(currentUserRef, { "stats.followingList": arrayUnion(user.uid) });
+        await setDoc(doc(db, "notifications", notifId), {
+          id: notifId,
+          recipientId: user.uid,
+          actorId: currentUser.uid,
+          actorName: currentUser.displayName,
+          actorPhoto: currentUser.photoURL,
+          type: "FOLLOW",
+          read: false,
+          createdAt: serverTimestamp()
+        });
         toast.success(`Following ${user.displayName}`);
       }
     } catch (error) {
