@@ -154,6 +154,8 @@ export function Restaurants() {
 }
 
 function RestaurantCard({ restaurant, index, isSmall = false }: { restaurant: any, index: number, isSmall?: boolean }) {
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant.name)}+${restaurant.lat},${restaurant.lng}`;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -162,6 +164,18 @@ function RestaurantCard({ restaurant, index, isSmall = false }: { restaurant: an
       whileHover={{ y: -5 }}
       className="group relative"
     >
+      <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+        <a 
+          href={mapsUrl} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="bg-white/10 hover:bg-[#00e054] text-white hover:text-black p-2 rounded-full backdrop-blur-md border border-white/20 transition-all flex items-center justify-center shadow-xl"
+          title="Open in Google Maps"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Navigation size={14} />
+        </a>
+      </div>
       <Link to={`/restaurant/${restaurant.id}`} className="block">
         <div className={`relative overflow-hidden rounded-3xl bg-zinc-900 border border-white/10 shadow-xl transition-all ${isSmall ? 'aspect-[4/3]' : 'aspect-square md:aspect-video'}`}>
           <img 

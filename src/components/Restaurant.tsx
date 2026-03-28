@@ -4,7 +4,7 @@ import { collection, query, where, onSnapshot, doc, getDoc, updateDoc, arrayUnio
 import { db } from "../firebase";
 import { Review, Restaurant as RestaurantType } from "../types";
 import { ReviewCard } from "./ReviewCard";
-import { Star, Bookmark, Heart, Edit3 } from "lucide-react";
+import { Star, Bookmark, Heart, Edit3, Map } from "lucide-react";
 import { useAuth } from "../App";
 import { toast } from "sonner";
 import { LogMealModal } from "./LogMealModal";
@@ -200,7 +200,7 @@ export const Restaurant: React.FC = () => {
           </div>
         </div>
 
-        <div className="md:ml-auto shrink-0 self-center">
+        <div className="md:ml-auto shrink-0 self-center flex flex-col gap-3">
           <button 
             onClick={() => {
               if (!user) {
@@ -214,6 +214,18 @@ export const Restaurant: React.FC = () => {
             <Edit3 size={18} />
             Write a Review
           </button>
+          
+          {restaurant.lat && restaurant.lng && (
+            <a 
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant.name)}+${restaurant.lat},${restaurant.lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-[9px] font-bold uppercase tracking-[0.2em] px-8 py-3 rounded-xl transition-all border border-white/10 flex items-center justify-center gap-2"
+            >
+              <Map size={14} className="text-[#00e054]" />
+              Open in Maps
+            </a>
+          )}
         </div>
       </div>
 
