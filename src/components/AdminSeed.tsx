@@ -3,7 +3,7 @@ import { useAuth } from '../App';
 import { db } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { MapPin, Zap, Database, Loader2, IndianRupee, Globe, Lock, ShieldCheck, Search, Sliders, Map as MapIcon, ChevronRight, Check } from 'lucide-react';
+import { MapPin, Zap, Database, Loader2, IndianRupee, Globe, Lock, ShieldCheck, Search, Sliders, Map as MapIcon, ChevronRight, Check, Timer } from 'lucide-react';
 
 // Admin Security Constants
 const ADMIN_PASSWORD = "ADMIN-EAT-DxR";
@@ -46,7 +46,6 @@ export const AdminSeed: React.FC = () => {
     setIsFindingLocation(true);
     setLocationOptions([]);
     try {
-      // Fetch up to 5 suggestions to give the user town/district context
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5`);
       const data = await res.json();
       
@@ -55,7 +54,7 @@ export const AdminSeed: React.FC = () => {
           lat: parseFloat(loc.lat),
           lng: parseFloat(loc.lon),
           name: loc.display_name.split(',')[0],
-          fullName: loc.display_name.split(',').slice(0, 3).join(',') // First 3 parts e.g. "Town, District, State"
+          fullName: loc.display_name.split(',').slice(0, 3).join(',')
         }));
         setLocationOptions(results);
         
@@ -63,7 +62,7 @@ export const AdminSeed: React.FC = () => {
           setSelectedLocation(results[0]);
         }
       } else {
-        toast.error("Location not found. Try adding a city or district name.");
+        toast.error("Location not found.");
       }
     } catch (error) {
        toast.error("Geocoding service unavailable.");
@@ -84,6 +83,9 @@ export const AdminSeed: React.FC = () => {
     "https://images.unsplash.com/photo-1525640788966-69bdb028aa73?auto=format&fit=crop&q=80&w=800"
   ];
 
+  // Utility to delay for Nominatim Usage Policy (1 request per second)
+  const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
   const handleSeed = async () => {
     if (!user || user.email !== 'tejag.vijay@gmail.com') {
       toast.error('Identity Verification Failed.');
@@ -100,7 +102,7 @@ export const AdminSeed: React.FC = () => {
       const { lat, lng } = selectedLocation;
       const radiusMeters = radiusKm * 1000;
       
-      toast.info(`Fetching OSM data for ${selectedLocation.name} (${radiusKm}km radius)...`);
+      toast.info(`Scanning OSM for ${selectedLocation.name}...`);
       
       const overpassQuery = `[out:json][timeout:60];(node["amenity"="restaurant"](around:${radiusMeters},${lat},${lng});node["amenity"="cafe"](around:${radiusMeters},${lat},${lng});node["amenity"="fast_food"](around:${radiusMeters},${lat},${lng}););out center;`;
       
@@ -117,12 +119,35 @@ export const AdminSeed: React.FC = () => {
       
       if (validElements.length === 0) throw new Error("No results in this area.");
       
-      let topPlaces = validElements.sort(() => 0.5 - Math.random()).slice(0, 500);
+      // Cap at 40 places per sweep to keep Pinpoint lookup fast (40 seconds total)
+      let topPlaces = validElements.sort(() => 0.5 - Math.random()).slice(0, 40);
       
       setProgress({ total: topPlaces.length, current: 0 });
       let seedCount = 0;
 
       for (const place of topPlaces) {
+        const plat = place.lat || place.center?.lat;
+        const plon = place.lon || place.center?.lon;
+        
+        // --- Pinpoint Accuracy: Reverse Geocode lookup ---
+        let pinpointTown = "";
+        try {
+          // Respect Nominatim rate limit (max 1 request per sec)
+          await wait(1100); 
+          const revRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${plat}&lon=${plon}&zoom=14`);
+          const revData = await revRes.json();
+          // Extract most specific town/suburb name
+          pinpointTown = revData.address.suburb || 
+                         revData.address.town || 
+                         revData.address.neighbourhood || 
+                         revData.address.village || 
+                         revData.address.city_district || 
+                         revData.address.city || 
+                         selectedLocation.name;
+        } catch (e) {
+          pinpointTown = selectedLocation.name;
+        }
+        
         const type = place.tags.amenity === 'cafe' ? 'Cafe' : 
                      place.tags.amenity === 'fast_food' ? 'Fast Food' : 
                      place.tags.cuisine ? place.tags.cuisine.split(';')[0].replace('_', ' ') : 'Indian';
@@ -130,21 +155,12 @@ export const AdminSeed: React.FC = () => {
         const cuisine = type.charAt(0).toUpperCase() + type.slice(1);
         const name = place.tags.name;
         
-        const cityAttr = 
-          place.tags['addr:suburb'] || 
-          place.tags['addr:neighbourhood'] || 
-          place.tags['addr:town'] || 
-          place.tags['addr:city'] || 
-          selectedLocation.name;
-          
+        // Street fallback
         const streetAttr = place.tags['addr:street'] || '';
-        const _locationStr = streetAttr ? `${streetAttr}, ${cityAttr}` : `${cityAttr}`;
+        const _locationStr = streetAttr ? `${streetAttr}, ${pinpointTown}` : `${pinpointTown}`;
 
         const randomImage = foodImages[Math.floor(Math.random() * foodImages.length)];
         const ratingNum = Number((Math.random() * 2 + 3).toFixed(1)); 
-        
-        const plat = place.lat || place.center?.lat;
-        const plon = place.lon || place.center?.lon;
         
         const docId = `osm-${place.id}`;
 
@@ -214,7 +230,7 @@ export const AdminSeed: React.FC = () => {
            <ShieldCheck className="text-[#00e054]" size={14} />
            <p className="text-[10px] uppercase font-black tracking-[0.2em] text-[#00e054]">Session Authorized</p>
         </div>
-        <h1 className="text-4xl font-black uppercase tracking-tighter text-white mb-4">Dynamic Regional Seeding</h1>
+        <h1 className="text-4xl font-black uppercase tracking-tighter text-white mb-4">Pinpoint Regional Seeding</h1>
         
         {!isSeeding ? (
           <div className="w-full max-w-lg space-y-8 bg-zinc-900/50 p-8 rounded-3xl border border-white/5 backdrop-blur-xl">
@@ -243,7 +259,6 @@ export const AdminSeed: React.FC = () => {
                    </button>
                 </div>
                 
-                {/* Location Options List */}
                 {locationOptions.length > 0 && !selectedLocation && (
                    <div className="space-y-2 mt-4 text-left">
                       <p className="text-[10px] uppercase font-bold text-white/20 px-2">Matches Found:</p>
@@ -322,11 +337,17 @@ export const AdminSeed: React.FC = () => {
                 <p className="text-xl font-black text-white">{Math.round((progress.current / Math.max(1, progress.total)) * 100)}%</p>
               </div>
             </div>
-            <div className="text-center space-y-2">
-               <p className="text-white/80 font-bold uppercase tracking-[0.1em] text-sm leading-tight">
-                  Sweeping {selectedLocation?.name} Area...
-               </p>
-               <p className="text-white/30 text-[10px] uppercase font-bold">Processed {progress.current} of {progress.total} spots</p>
+            <div className="text-center space-y-4">
+               <div className="flex items-center justify-center gap-2 text-[#00e054] animate-pulse">
+                  <Timer size={14} />
+                  <p className="text-[10px] font-black uppercase tracking-widest">Pinpoint Reverse Geocoding Active</p>
+               </div>
+               <div className="space-y-1">
+                  <p className="text-white/80 font-bold uppercase tracking-[0.1em] text-sm leading-tight">
+                    Sweeping {selectedLocation?.name} Area...
+                  </p>
+                  <p className="text-white/30 text-[10px] uppercase font-bold">Processed {progress.current} of {progress.total} spots</p>
+               </div>
             </div>
             <div className="w-full bg-black/40 rounded-full h-3 overflow-hidden border border-white/10 shadow-inner">
               <div 
@@ -334,6 +355,7 @@ export const AdminSeed: React.FC = () => {
                 style={{ width: `${(progress.current / Math.max(1, progress.total)) * 100}%` }}
               />
             </div>
+            <p className="text-center text-[9px] text-white/20 italic">Ensuring pinpoint town names (1.1s delay per spot)</p>
           </div>
         )}
       </div>
