@@ -70,6 +70,12 @@ export const Profile: React.FC = () => {
   useEffect(() => {
     if (!identifier) return;
 
+    // Aggressively flush all old user state when the URL changes so we don't leak User A's data into User B's screen while fetching
+    setLoading(true);
+    setUser(null);
+    setReviews([]);
+    setFollowerCount(0);
+
     let unsubscribeReviews: any;
     let unsubscribeFollowers: any;
 
