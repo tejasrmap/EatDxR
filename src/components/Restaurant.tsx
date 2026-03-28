@@ -62,8 +62,7 @@ export const Restaurant: React.FC = () => {
     // Fetch restaurant reviews
     const q = query(
       collection(db, "reviews"),
-      where("restaurantId", "==", restaurantId),
-      orderBy("createdAt", "desc")
+      where("restaurantId", "==", restaurantId)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -71,7 +70,18 @@ export const Restaurant: React.FC = () => {
         id: doc.id,
         ...doc.data()
       })) as Review[];
+      
+      // Sort in descending order client-side to bypass Firebase composite index requirements
+      reviewsData.sort((a, b) => {
+        const timeA = a.createdAt?.toMillis?.() || 0;
+        const timeB = b.createdAt?.toMillis?.() || 0;
+        return timeB - timeA;
+      });
+      
       setReviews(reviewsData);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching restaurant reviews:", error);
       setLoading(false);
     });
 
