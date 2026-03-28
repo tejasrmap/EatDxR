@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../App";
 import { db, handleFirestoreError, OperationType } from "../firebase";
-import { collection, doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
+import { collection, doc, setDoc, updateDoc, serverTimestamp, getDoc, increment } from "firebase/firestore";
 import { toast } from "sonner";
 import { searchRestaurants } from "../services/mapsService";
 import { RestaurantSearchResult } from "../types";
@@ -144,41 +144,50 @@ export function LogMealModal({ isOpen, onClose }: LogMealModalProps) {
       let restaurantId = selectedRestaurant?.id || `manual_${Date.now()}`;
       
       if (selectedRestaurant) {
-        const restRef = doc(db, "restaurants", selectedRestaurant.id);
-        const restDoc = await getDoc(restRef);
-        
-        if (!restDoc.exists()) {
-          await setDoc(restRef, {
-            id: selectedRestaurant.id,
-            name: selectedRestaurant.name,
-            cuisine: selectedRestaurant.cuisine || "Various",
-            location: manualLocation || selectedRestaurant.location || "India",
-            rating: selectedRestaurant.rating || 0,
-            reviewCount: selectedRestaurant.reviewCount || 0,
-            image: selectedRestaurant.image || "",
-            menuItems: selectedRestaurant.menuItems || []
-          });
+        try {
+          const restRef = doc(db, "restaurants", selectedRestaurant.id);
+          const restDoc = await getDoc(restRef);
+          
+          if (!restDoc.exists()) {
+            await setDoc(restRef, {
+              id: selectedRestaurant.id,
+              name: selectedRestaurant.name,
+              cuisine: selectedRestaurant.cuisine || "Various",
+              location: manualLocation || selectedRestaurant.location || "India",
+              rating: selectedRestaurant.rating || 0,
+              reviewCount: selectedRestaurant.reviewCount || 0,
+              image: selectedRestaurant.image || "",
+              menuItems: selectedRestaurant.menuItems || []
+            });
+          }
+        } catch (restaurantError) {
+          console.warn("Could not save restaurant data (likely due to permissions). Proceeding with review log.");
         }
       }
 
-        const reviewRef = doc(collection(db, "reviews"));
-        const reviewData = {
-          id: reviewRef.id,
-          userId: user.uid,
-          userName: user.displayName || "Anonymous Critic",
-          userPhoto: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}&background=random`,
-          restaurantName: data.restaurant,
-          restaurantId: restaurantId,
-          restaurantLocation: manualLocation || selectedRestaurant?.location || "",
-          city: selectedRestaurant?.city || currentCity || "",
-          dishes: data.dishes,
-          rating: data.rating,
-          content: data.review || "",
-          createdAt: serverTimestamp(),
-          likes: 0
-        };
+      const reviewRef = doc(collection(db, "reviews"));
+      const reviewData = {
+        id: reviewRef.id,
+        userId: user.uid,
+        userName: user.displayName || "Anonymous Critic",
+        userPhoto: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}&background=random`,
+        restaurantName: data.restaurant,
+        restaurantId: restaurantId,
+        dishes: data.dishes,
+        rating: data.rating,
+        content: data.review || "",
+        createdAt: serverTimestamp(),
+        likes: 0
+      };
 
       await setDoc(reviewRef, reviewData);
+      
+      // Increment the user's reviewsWritten stat for the leaderboard
+      const userRef = doc(db, "users", user.uid);
+      await updateDoc(userRef, {
+        "stats.reviewsWritten": increment(1)
+      });
+
       toast.success("Meal logged successfully!");
       reset();
       setRating(0);
