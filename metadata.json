@@ -1,0 +1,5 @@
+{
+  "name": "Dishd",
+  "description": "A social platform for food critics and lovers to log, rate, and review their culinary experiences, inspired by Letterboxd.",
+  "requestFramePermissions": ["geolocation"]
+}

@@ -1,0 +1,90 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the Dishd platform.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique ID of the user." },
+        "displayName": { "type": "string", "description": "The user's display name." },
+        "photoURL": { "type": "string", "description": "The user's profile photo URL." },
+        "bio": { "type": "string", "description": "A short bio about the user." },
+        "favoriteCuisines": { "type": "array", "items": { "type": "string" }, "description": "A list of favorite cuisines." },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "mealsLogged": { "type": "integer" },
+            "reviewsWritten": { "type": "integer" },
+            "followers": { "type": "integer" },
+            "following": { "type": "integer" }
+          }
+        }
+      },
+      "required": ["uid", "displayName", "photoURL"]
+    },
+    "Restaurant": {
+      "title": "Restaurant",
+      "description": "A restaurant that can be reviewed.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "cuisine": { "type": "string" },
+        "location": { "type": "string" },
+        "rating": { "type": "number" },
+        "reviewCount": { "type": "integer" },
+        "image": { "type": "string" }
+      },
+      "required": ["id", "name", "cuisine", "location"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "A review of a dish at a restaurant.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userPhoto": { "type": "string" },
+        "restaurantId": { "type": "string" },
+        "restaurantName": { "type": "string" },
+        "dishes": { 
+          "type": "array", 
+          "items": { 
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "image": { "type": "string" }
+            }
+          } 
+        },
+        "rating": { "type": "number" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "likes": { "type": "integer" }
+      },
+      "required": ["id", "userId", "restaurantId", "dishes", "rating", "content", "createdAt"]
+    },
+    "FoodList": {
+      "title": "FoodList",
+      "description": "A curated list of restaurants.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "restaurantIds": { "type": "array", "items": { "type": "string" } },
+        "likes": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "title", "restaurantIds", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": { "schema": "User", "description": "User profiles." },
+    "/restaurants/{restaurantId}": { "schema": "Restaurant", "description": "Restaurant information." },
+    "/reviews/{reviewId}": { "schema": "Review", "description": "Dish reviews." },
+    "/lists/{listId}": { "schema": "FoodList", "description": "Curated food lists." }
+  }
+}
