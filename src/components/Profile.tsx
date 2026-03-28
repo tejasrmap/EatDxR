@@ -156,7 +156,7 @@ export const Profile: React.FC = () => {
               <button 
                 onClick={toggleFollow}
                 disabled={isUpdatingFollow}
-                className={`nav-pill px-6 py-1.5 text-xs font-bold uppercase tracking-widest border-none transition-colors ${
+                className={`px-6 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest transition-colors ${
                   isFollowing 
                     ? "bg-white/10 text-white hover:bg-white/20" 
                     : "bg-white text-black hover:bg-white/90"

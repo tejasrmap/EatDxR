@@ -91,7 +91,9 @@ function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    let unsubscribeUserDoc: (() => void) | undefined;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
         // Sync user to Firestore
@@ -106,19 +108,28 @@ function AuthProvider({ children }: { children: ReactNode }) {
               stats: { mealsLogged: 0, reviewsWritten: 0, followers: 0, following: 0 }
             };
             await setDoc(userRef, newUser);
-            setDishdUser(newUser);
-          } else {
-            setDishdUser(userSnap.data() as DishdUser);
           }
+          
+          // Stream updates for live data changes (like following/unfollowing)
+          unsubscribeUserDoc = onSnapshot(userRef, (snapshot) => {
+            if (snapshot.exists()) {
+              setDishdUser(snapshot.data() as DishdUser);
+            }
+          });
         } catch (error) {
           console.error("Error syncing user:", error);
         }
       } else {
         setDishdUser(null);
+        if (unsubscribeUserDoc) unsubscribeUserDoc();
       }
       setLoading(false);
     });
-    return unsubscribe;
+    
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeUserDoc) unsubscribeUserDoc();
+    };
   }, []);
 
   const login = async () => {
