@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { collection, query, where, onSnapshot, orderBy, doc, getDoc, getDocs, updateDoc, arrayUnion, arrayRemove, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
-import { Review, User } from "../types";
+import { Review, User, Restaurant } from "../types";
 import { ReviewCard } from "./ReviewCard";
 import { useAuth } from "../App";
 import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings } from "lucide-react";
@@ -23,6 +23,8 @@ export const Profile: React.FC = () => {
   const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
   const [followModalType, setFollowModalType] = useState<"followers" | "following" | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [eatlistRestaurants, setEatlistRestaurants] = useState<Restaurant[]>([]);
+  const [loadingEatlist, setLoadingEatlist] = useState(false);
 
   const isFollowing = dishdUser?.stats?.followingList?.includes(user?.uid || "");
 
@@ -146,6 +148,28 @@ export const Profile: React.FC = () => {
       if (unsubscribeFollowers) unsubscribeFollowers();
     };
   }, [identifier, navigate]);
+
+  useEffect(() => {
+    if (activeTab === "eatlist" && user?.eatlist && user.eatlist.length > 0) {
+      setLoadingEatlist(true);
+      const fetchEatlist = async () => {
+        try {
+          const restaurantDocs = await Promise.all(
+            user.eatlist!.map(id => getDoc(doc(db, "restaurants", id)))
+          );
+          const restaurantData = restaurantDocs
+            .filter(d => d.exists())
+            .map(d => ({ ...d.data(), id: d.id })) as Restaurant[];
+          setEatlistRestaurants(restaurantData);
+        } catch (error) {
+          console.error("Error fetching eatlist:", error);
+        } finally {
+          setLoadingEatlist(false);
+        }
+      };
+      fetchEatlist();
+    }
+  }, [activeTab, user?.eatlist]);
 
   if (loading) {
     return (
@@ -377,8 +401,37 @@ export const Profile: React.FC = () => {
       )}
 
       {activeTab === "eatlist" && (
-        <div className="w-full text-center py-20 border border-dashed border-white/10 rounded-2xl">
-          <p className="text-white/40 italic serif">The Eatlist (Watchlist) is currently empty.</p>
+        <div className="w-full">
+          {loadingEatlist ? (
+            <div className="py-20 flex flex-col items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-white/20 mb-4" />
+              <p className="text-xs uppercase tracking-widest font-bold text-white/20">Loading Eatlist...</p>
+            </div>
+          ) : eatlistRestaurants.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {eatlistRestaurants.map(rest => (
+                <Link 
+                  key={rest.id} 
+                  to={`/restaurant/${rest.id}`}
+                  className="group bg-zinc-900 border border-white/5 rounded-2xl overflow-hidden hover:border-white/20 transition-all p-4 flex gap-4"
+                >
+                  <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-white/10">
+                    <img src={rest.image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  </div>
+                  <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    <h3 className="font-bold text-white group-hover:text-orange-500 transition-colors truncate">{rest.name}</h3>
+                    <p className="text-[10px] uppercase tracking-widest text-white/40 mt-1">{rest.cuisine}</p>
+                    <p className="text-[10px] text-white/20 mt-1 truncate">{rest.location}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="w-full text-center py-20 border border-dashed border-white/10 rounded-2xl">
+              <p className="text-white/40 italic serif">Your Eatlist (Watchlist) is currently empty.</p>
+              <Link to="/restaurants" className="inline-block mt-4 text-[10px] uppercase tracking-widest font-bold text-orange-500 hover:text-orange-400">Explore Restaurants</Link>
+            </div>
+          )}
         </div>
       )}
       
