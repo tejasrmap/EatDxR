@@ -154,7 +154,7 @@ export function Restaurants() {
 }
 
 function RestaurantCard({ restaurant, index, isSmall = false }: { restaurant: any, index: number, isSmall?: boolean }) {
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant.name)}+${restaurant.lat},${restaurant.lng}`;
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${restaurant.lat},${restaurant.lng}`;
 
   return (
     <motion.div
