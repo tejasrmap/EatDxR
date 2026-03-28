@@ -1,8 +1,13 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Review } from "../types";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
-import { MapPin, Star, Heart } from "lucide-react";
+import { MapPin, Star, Heart, MoreVertical, Edit2, Trash2 } from "lucide-react";
+import { useAuth } from "../App";
+import { LogMealModal } from "./LogMealModal";
+import { db } from "../firebase";
+import { deleteDoc, doc, updateDoc, increment, collection, query, where, getDocs } from "firebase/firestore";
+import { toast } from "sonner";
 
 interface DiaryTableProps {
   reviews: Review[];
@@ -10,6 +15,48 @@ interface DiaryTableProps {
 }
 
 export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true }) => {
+  const { dishdUser: currentUser } = useAuth();
+  const [editingReview, setEditingReview] = useState<Review | null>(null);
+  const [optionsVisibleId, setOptionsVisibleId] = useState<string | null>(null);
+  const optionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (optionsRef.current && !optionsRef.current.contains(event.target as Node)) {
+        setOptionsVisibleId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleDelete = async (review: Review) => {
+    if (!currentUser || currentUser.uid !== review.userId) return;
+    if (!window.confirm("Are you sure you want to delete this diary entry? This action cannot be undone.")) return;
+    
+    try {
+      // 1. Delete all nested interaction documents (comments & likes)
+      const interactionsQuery = query(collection(db, "interactions"), where("reviewId", "==", review.id));
+      const interactionsSnap = await getDocs(interactionsQuery);
+      const deletePromises = interactionsSnap.docs.map(docSnap => deleteDoc(doc(db, "interactions", docSnap.id)));
+      await Promise.all(deletePromises);
+      
+      // 2. Decrement user's reviewsWritten natively
+      const userRef = doc(db, "users", currentUser.uid);
+      await updateDoc(userRef, {
+        "stats.reviewsWritten": increment(-1)
+      });
+      
+      // 3. Delete the review natively
+      await deleteDoc(doc(db, "reviews", review.id));
+      
+      toast.success("Diary entry deleted successfully.");
+    } catch (error) {
+      console.error("Error deleting review:", error);
+      toast.error("Failed to delete the diary entry.");
+    }
+  };
+
   return (
     <div className="bg-zinc-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
       <div className="overflow-x-auto">
@@ -24,6 +71,7 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
               {showUser && <th className="py-4 px-6 font-bold">Critic</th>}
               <th className="py-4 px-6 font-bold text-center">Rating</th>
               <th className="py-4 px-6 font-bold text-center">Like</th>
+              <th className="py-4 px-6"></th>
             </tr>
           </thead>
           <tbody className="text-sm">
@@ -99,6 +147,45 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                       <Heart size={16} className={`group-hover/btn:fill-orange-500 ${review.likes > 0 ? "fill-orange-500 text-orange-500" : ""}`} />
                     </button>
                   </td>
+                  <td className="py-4 px-6 text-center text-right border-l border-white/5">
+                    {currentUser && currentUser.uid === review.userId && (
+                      <div className="relative inline-block" ref={optionsVisibleId === review.id ? optionsRef : null}>
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setOptionsVisibleId(optionsVisibleId === review.id ? null : review.id);
+                          }}
+                          className="p-1 text-white/20 hover:text-white transition-colors cursor-pointer inline-flex items-center"
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                        {optionsVisibleId === review.id && (
+                          <div className="absolute right-0 top-full mt-1 w-32 bg-[#2c3440] border border-white/10 rounded-sm shadow-2xl py-1 z-50">
+                            <button 
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setOptionsVisibleId(null);
+                                setEditingReview(review);
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-white/5 text-[10px] font-bold uppercase tracking-widest text-white/80 hover:text-white transition-colors"
+                            >
+                              <Edit2 size={12} /> Edit
+                            </button>
+                            <button 
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setOptionsVisibleId(null);
+                                handleDelete(review);
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-500/10 text-[10px] font-bold uppercase tracking-widest text-red-400 hover:text-red-300 transition-colors"
+                            >
+                              <Trash2 size={12} /> Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </td>
                 </tr>
               );
             })}
@@ -113,6 +200,12 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
           </tbody>
         </table>
       </div>
+
+      <LogMealModal 
+        isOpen={editingReview !== null}
+        onClose={() => setEditingReview(null)}
+        existingReview={editingReview || undefined}
+      />
     </div>
   );
 };
