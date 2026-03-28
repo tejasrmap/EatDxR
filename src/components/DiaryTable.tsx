@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Review } from "../types";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
+import { parseFirebaseDate } from "../lib/utils";
 import { MapPin, Star, Heart, MoreVertical, Edit2, Trash2 } from "lucide-react";
 import { useAuth } from "../App";
 import { LogMealModal } from "./LogMealModal";
@@ -76,7 +77,7 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
           </thead>
           <tbody className="text-sm">
             {reviews.map((review, i) => {
-              const date = new Date(review.createdAt);
+              const date = parseFirebaseDate(review.createdAt);
               const month = format(date, "MMM");
               const day = format(date, "dd");
               

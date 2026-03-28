@@ -1,6 +1,7 @@
 import { Star, Heart, MessageSquare, MapPin, Send, Loader2, MoreVertical, Edit2, Trash2 } from "lucide-react";
 import { Review, Interaction } from "../types";
 import { formatDistanceToNow } from "date-fns";
+import { parseFirebaseDate } from "../lib/utils";
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -299,7 +300,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
                 )}
               </div>
               <span className="text-[10px] text-white/30 uppercase tracking-widest font-medium">
-                {formatDistanceToNow(new Date(review.createdAt), { addSuffix: true })}
+                {formatDistanceToNow(parseFirebaseDate(review.createdAt), { addSuffix: true })}
               </span>
             </div>
           </div>
