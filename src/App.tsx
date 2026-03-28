@@ -9,6 +9,7 @@ import { motion } from "motion/react";
 import { Layout } from "./components/Layout";
 import { Hero } from "./components/Hero";
 import { ReviewCard } from "./components/ReviewCard";
+import { AdminSeed } from "./components/AdminSeed";
 import { Toaster, toast } from "sonner";
 import { Review, User as DishdUser } from "./types";
 import { auth, db, handleFirestoreError, OperationType } from "./firebase";
@@ -416,6 +417,7 @@ export function App() {
               <Route path="/lists" element={<PlaceholderPage title="Food Lists" />} />
               <Route path="/critics" element={<Critics />} />
               <Route path="/journal" element={<Journal />} />
+              <Route path="/admin/seed" element={<AdminSeed />} />
               <Route path="*" element={<Home />} />
             </Routes>
           </Layout>

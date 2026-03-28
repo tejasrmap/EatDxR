@@ -1,10 +1,36 @@
 import { RestaurantSearchResult } from "../types";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 
 // Simple in-memory cache
 const searchCache = new Map<string, RestaurantSearchResult[]>();
 const cityCache = new Map<string, string>();
+let cachedFirebaseRestaurants: RestaurantSearchResult[] | null = null;
+
+async function preloadFirebaseRestaurants() {
+  if (cachedFirebaseRestaurants) return cachedFirebaseRestaurants;
+  try {
+    const snap = await getDocs(collection(db, "restaurants"));
+    cachedFirebaseRestaurants = snap.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: data.id || doc.id,
+        name: data.name,
+        location: data.location || "Unknown",
+        city: data.location ? data.location.split(',').pop()?.trim() : "Unknown",
+        cuisine: data.cuisine || "Various",
+        menuItems: data.menuItems || [],
+        image: data.image
+      } as RestaurantSearchResult;
+    });
+    return cachedFirebaseRestaurants;
+  } catch (e) {
+    console.error("Failed to preload firebase restaurants", e);
+    return [];
+  }
+}
 
 async function fetchOpenRouter(prompt: string, expectJson: boolean = false) {
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -38,6 +64,33 @@ export async function searchRestaurants(query: string, latitude?: number, longit
     return searchCache.get(cacheKey)!;
   }
 
+  // 1. Check Native Firebase Database First!
+  try {
+    const fbRestaurants = await preloadFirebaseRestaurants();
+    const lQuery = query.toLowerCase().trim();
+    if (lQuery.length > 0) {
+      const matched = fbRestaurants.filter(r => 
+        r.name.toLowerCase().includes(lQuery) || 
+        r.cuisine?.toLowerCase().includes(lQuery) ||
+        r.location?.toLowerCase().includes(lQuery)
+      );
+      
+      // If we found local db authentic results, return immediately!
+      if (matched.length > 0) {
+        // Sort matches (exact name first)
+        matched.sort((a,b) => {
+          if (a.name.toLowerCase() === lQuery) return -1;
+          if (b.name.toLowerCase() === lQuery) return 1;
+          return 0;
+        });
+        const finalResults = matched.slice(0, 5);
+        searchCache.set(cacheKey, finalResults);
+        return finalResults;
+      }
+    }
+  } catch(e) { console.error("Firebase Search Error:", e); }
+
+  // 2. Fallback to AI Generation if not found locally
   const locationPrompt = (latitude && longitude) 
     ? `near the location at coordinates ${latitude}, ${longitude}.`
     : `in India or globally based on the query.`;
