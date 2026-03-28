@@ -147,42 +147,29 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                       <Heart size={16} className={`group-hover/btn:fill-orange-500 ${review.likes > 0 ? "fill-orange-500 text-orange-500" : ""}`} />
                     </button>
                   </td>
-                  <td className="py-4 px-6 text-center text-right border-l border-white/5">
+                  <td className="py-4 px-6 text-right">
                     {currentUser && currentUser.uid === review.userId && (
-                      <div className="relative inline-block" ref={optionsVisibleId === review.id ? optionsRef : null}>
+                      <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
                           onClick={(e) => {
                             e.preventDefault();
-                            setOptionsVisibleId(optionsVisibleId === review.id ? null : review.id);
+                            setEditingReview(review);
                           }}
-                          className="p-1 text-white/20 hover:text-white transition-colors cursor-pointer inline-flex items-center"
+                          className="text-white/20 hover:text-white transition-colors cursor-pointer"
+                          title="Edit"
                         >
-                          <MoreVertical size={16} />
+                          <Edit2 size={16} />
                         </button>
-                        {optionsVisibleId === review.id && (
-                          <div className="absolute right-0 top-full mt-1 w-32 bg-[#2c3440] border border-white/10 rounded-sm shadow-2xl py-1 z-50">
-                            <button 
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setOptionsVisibleId(null);
-                                setEditingReview(review);
-                              }}
-                              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-white/5 text-[10px] font-bold uppercase tracking-widest text-white/80 hover:text-white transition-colors"
-                            >
-                              <Edit2 size={12} /> Edit
-                            </button>
-                            <button 
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setOptionsVisibleId(null);
-                                handleDelete(review);
-                              }}
-                              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-500/10 text-[10px] font-bold uppercase tracking-widest text-red-400 hover:text-red-300 transition-colors"
-                            >
-                              <Trash2 size={12} /> Delete
-                            </button>
-                          </div>
-                        )}
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleDelete(review);
+                          }}
+                          className="text-white/20 hover:text-red-500 transition-colors cursor-pointer"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     )}
                   </td>
