@@ -13,6 +13,7 @@ import { toast } from "sonner";
 export function Navbar() {
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const { user, dishdUser, login, logout } = useAuth();
+  const isAdmin = user?.email === 'tejag.vijay@gmail.com';
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -246,7 +247,7 @@ export function Navbar() {
             ) : (
               <button 
                 onClick={login}
-                className="bg-white text-black text-[10px] uppercase tracking-widest font-bold px-4 py-2 rounded-sm hover:bg-zinc-200 transition-colors"
+                className="bg-white text-black text-[11px] uppercase tracking-widest font-black px-5 py-2.5 rounded-sm hover:bg-zinc-200 transition-colors"
               >
                 Sign In
               </button>
@@ -269,7 +270,9 @@ export function Navbar() {
             <Link onClick={() => setIsMobileMenuOpen(false)} to="/lists" className="text-sm uppercase tracking-widest font-bold text-white/80 hover:text-white transition-colors p-2 bg-white/5 rounded">Lists</Link>
             <Link onClick={() => setIsMobileMenuOpen(false)} to="/critics" className="text-sm uppercase tracking-widest font-bold text-white/80 hover:text-white transition-colors p-2 bg-white/5 rounded">Critics</Link>
             <Link onClick={() => setIsMobileMenuOpen(false)} to="/journal" className="text-sm uppercase tracking-widest font-bold text-white/80 hover:text-white transition-colors p-2 bg-white/5 rounded">Journal</Link>
-            <Link onClick={() => setIsMobileMenuOpen(false)} to="/admin/seed" className="text-sm uppercase tracking-widest font-bold text-[#00e054] hover:text-[#00c044] transition-colors p-2 bg-[#00e054]/10 border border-[#00e054]/20 rounded mt-2">Seed Database</Link>
+            {isAdmin && (
+              <Link onClick={() => setIsMobileMenuOpen(false)} to="/admin/seed" className="text-sm uppercase tracking-widest font-bold text-[#00e054] hover:text-[#00c044] transition-colors p-2 bg-[#00e054]/10 border border-[#00e054]/20 rounded mt-2">Seed Database</Link>
+            )}
           </div>
         )}
       </nav>

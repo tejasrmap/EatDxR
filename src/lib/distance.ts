@@ -18,7 +18,13 @@ function deg2rad(deg: number): number {
   return deg * (Math.PI / 180);
 }
 
-export function formatDistance(km: number): string {
+export function formatDistance(km: number | undefined | null): string {
+  if (km === undefined || km === null || isNaN(km)) {
+    return "Calculating...";
+  }
+  if (km === Infinity) {
+    return "Location Unknown";
+  }
   if (km < 1) {
     return `${Math.round(km * 1000)}m away`;
   }

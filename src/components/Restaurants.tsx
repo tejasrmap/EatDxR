@@ -191,7 +191,7 @@ function RestaurantCard({ restaurant, index, isSmall = false }: { restaurant: an
                </span>
                <div className="flex items-center gap-1 text-[10px] font-bold text-white/60">
                   <Star className="w-3 h-3 fill-[#00e054] text-[#00e054]" />
-                  {restaurant.rating}
+                  {restaurant.rating?.toFixed ? restaurant.rating.toFixed(1) : restaurant.rating || "0.0"}
                </div>
             </div>
             <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight line-clamp-1">{restaurant.name}</h3>

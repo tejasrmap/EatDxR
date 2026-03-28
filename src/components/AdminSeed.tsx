@@ -30,6 +30,11 @@ export const AdminSeed: React.FC = () => {
       toast.error('Must be logged in to seed.');
       return;
     }
+
+    if (user.email !== 'tejag.vijay@gmail.com') {
+      toast.error('Permission Denied: Unrecognized Administrator.');
+      return;
+    }
     
     setIsSeeding(true);
     try {

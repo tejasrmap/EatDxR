@@ -18,11 +18,12 @@ import { collection, onSnapshot, query, orderBy, limit, doc, setDoc, getDoc, get
 import { Profile } from "./components/Profile";
 import { Restaurant } from "./components/Restaurant";
 import { Restaurants } from "./components/Restaurants";
+import { Critics } from "./components/Critics";
 import { Journal } from "./components/Journal";
+import { Navigate } from "react-router-dom";
 import { useLocation } from "./hooks/useLocation";
 import { getCurrentCity } from "./services/mapsService";
 import { MapPin, Globe, Star, Loader2 } from "lucide-react";
-import { Critics } from "./components/Critics";
 
 // --- Error Boundary ---
 interface ErrorBoundaryProps {
@@ -420,7 +421,14 @@ export function App() {
               <Route path="/lists" element={<PlaceholderPage title="Food Lists" />} />
               <Route path="/critics" element={<Critics />} />
               <Route path="/journal" element={<Journal />} />
-              <Route path="/admin/seed" element={<AdminSeed />} />
+              <Route 
+                path="/admin/seed" 
+                element={
+                  <AdminRoute>
+                    <AdminSeed />
+                  </AdminRoute>
+                } 
+              />
               <Route path="*" element={<Home />} />
             </Routes>
           </Layout>
@@ -429,6 +437,18 @@ export function App() {
       </AuthProvider>
     </ErrorBoundary>
   );
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  
+  if (loading) return null;
+  
+  if (user?.email !== 'tejag.vijay@gmail.com') {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <>{children}</>;
 }
 
 function PlaceholderPage({ title }: { title: string }) {
