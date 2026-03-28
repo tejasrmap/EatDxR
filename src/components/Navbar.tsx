@@ -270,9 +270,6 @@ export function Navbar() {
             <Link onClick={() => setIsMobileMenuOpen(false)} to="/lists" className="text-sm uppercase tracking-widest font-bold text-white/80 hover:text-white transition-colors p-2 bg-white/5 rounded">Lists</Link>
             <Link onClick={() => setIsMobileMenuOpen(false)} to="/critics" className="text-sm uppercase tracking-widest font-bold text-white/80 hover:text-white transition-colors p-2 bg-white/5 rounded">Critics</Link>
             <Link onClick={() => setIsMobileMenuOpen(false)} to="/journal" className="text-sm uppercase tracking-widest font-bold text-white/80 hover:text-white transition-colors p-2 bg-white/5 rounded">Journal</Link>
-            {isAdmin && (
-              <Link onClick={() => setIsMobileMenuOpen(false)} to="/admin/seed" className="text-sm uppercase tracking-widest font-bold text-[#00e054] hover:text-[#00c044] transition-colors p-2 bg-[#00e054]/10 border border-[#00e054]/20 rounded mt-2">Seed Database</Link>
-            )}
           </div>
         )}
       </nav>

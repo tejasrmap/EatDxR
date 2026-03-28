@@ -1,17 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../App';
 import { db } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { MapPin, Zap, Database, Loader2, IndianRupee, Globe } from 'lucide-react';
+import { MapPin, Zap, Database, Loader2, IndianRupee, Globe, Lock, ShieldCheck, Map } from 'lucide-react';
+import { getDistanceKM } from '../lib/distance';
 
 type SeedingRegion = 'SRMAP' | 'VIJAYAWADA';
+
+// Admin Security Constants
+const ADMIN_PASSWORD = "SRMAP-ADMIN-DXR";
+const CAMPUS_COORDS = { lat: 16.48, lng: 80.50 }; // SRMAP Coordinates
+const MAX_RADIUS_KM = 5; // Must be within 5km of campus
 
 export const AdminSeed: React.FC = () => {
   const { user } = useAuth();
   const [isSeeding, setIsSeeding] = useState(false);
   const [targetRegion, setTargetRegion] = useState<SeedingRegion>('SRMAP');
   const [progress, setProgress] = useState({ total: 0, current: 0 });
+  
+  // Security States
+  const [accessKey, setAccessKey] = useState("");
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationError, setLocationError] = useState(false);
+
+  useEffect(() => {
+    // Request location for coordinate lock
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => setLocationError(true),
+        { enableHighAccuracy: true }
+      );
+    }
+  }, []);
+
+  const handleAuthorize = () => {
+    if (accessKey === ADMIN_PASSWORD) {
+      setIsAuthorized(true);
+      toast.success("Secondary Authentication Successful.");
+    } else {
+      toast.error("Invalid Access Key.");
+    }
+  };
 
   const foodImages = [
     "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=800",
@@ -26,26 +58,30 @@ export const AdminSeed: React.FC = () => {
   ];
 
   const handleSeed = async () => {
-    if (!user) {
-      toast.error('Must be logged in to seed.');
+    if (!user || user.email !== 'tejag.vijay@gmail.com') {
+      toast.error('Identity Verification Failed.');
       return;
     }
 
-    if (user.email !== 'tejag.vijay@gmail.com') {
-      toast.error('Permission Denied: Unrecognized Administrator.');
+    // Coordinate Lock Check
+    if (userLocation) {
+      const dist = getDistanceKM(userLocation.lat, userLocation.lng, CAMPUS_COORDS.lat, CAMPUS_COORDS.lng);
+      if (dist > MAX_RADIUS_KM) {
+        toast.error(`Out of Range: Must be near SRMAP campus to seed. (Detected distance: ${dist.toFixed(1)}km)`);
+        return;
+      }
+    } else if (locationError) {
+      toast.error("Location Required: Geolocation must be enabled to verify proximity.");
       return;
     }
     
     setIsSeeding(true);
     try {
-      // SRM AP Coordinates: 16.4819, 80.5050
-      // Vijayawada Coordinates: 16.5062, 80.6480
       const coords = targetRegion === 'SRMAP' ? '16.4819,80.5050' : '16.5062,80.6480';
       const radius = targetRegion === 'SRMAP' ? 30000 : 15000;
       
-      toast.info(`Fetching OSM data for ${targetRegion} (${radius/1000}km)...`);
+      toast.info(`Fetching OSM data for ${targetRegion}...`);
       
-      // Increased timeout to 60s for larger sweeps
       const overpassQuery = `[out:json][timeout:60];(node["amenity"="restaurant"](around:${radius},${coords});node["amenity"="cafe"](around:${radius},${coords});node["amenity"="fast_food"](around:${radius},${coords}););out center;`;
       
       const res = await fetch('https://overpass-api.de/api/interpreter', {
@@ -57,7 +93,7 @@ export const AdminSeed: React.FC = () => {
       
       const text = await res.text();
       if (text.trim().startsWith('<')) {
-        throw new Error('Mapping API returned an XML Error! Likely syntax or rate limit block.');
+        throw new Error('Mapping API returned an XML Error!');
       }
       
       const data = JSON.parse(text);
@@ -65,7 +101,6 @@ export const AdminSeed: React.FC = () => {
       
       if (validElements.length === 0) throw new Error("No payload elements found.");
       
-      // Shuffle & limit to 500
       let topPlaces = validElements.sort(() => 0.5 - Math.random()).slice(0, 500);
       
       setProgress({ total: topPlaces.length, current: 0 });
@@ -79,7 +114,6 @@ export const AdminSeed: React.FC = () => {
         const cuisine = type.charAt(0).toUpperCase() + type.slice(1);
         const name = place.tags.name;
         
-        // Smarter location discovery
         const cityAttr = place.tags['addr:city'] || place.tags['addr:town'] || (targetRegion === 'SRMAP' ? 'Neerukonda (SRMAP)' : 'Vijayawada');
         const streetAttr = place.tags['addr:street'] || '';
         const _locationStr = streetAttr ? `${streetAttr}, ${cityAttr}` : `${cityAttr}, Andhra Pradesh`;
@@ -110,14 +144,44 @@ export const AdminSeed: React.FC = () => {
         setProgress({ total: topPlaces.length, current: seedCount });
       }
 
-      toast.success(`Injected ${seedCount} restaurants for ${targetRegion}!`);
+      toast.success(`${targetRegion} sweep complete!`);
     } catch (error: any) {
       console.error('Seeding error:', error);
-      toast.error(`Admin Error: ${error.message || 'Check console'}`);
+      toast.error(`Admin Error: ${error.message}`);
     } finally {
       setIsSeeding(false);
     }
   };
+
+  // 1. Password Protection View
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center px-6">
+        <div className="w-full max-w-md bg-zinc-900 border border-white/5 p-10 rounded-[2.5rem] text-center shadow-2xl">
+           <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Lock className="text-white/40" />
+           </div>
+           <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Access Key Required</h2>
+           <p className="text-white/30 text-xs font-serif italic mb-8">This tool is in Stealth Mode. Please provide your secondary credential.</p>
+           
+           <input 
+              type="password"
+              placeholder="Enter Access Key..."
+              value={accessKey}
+              onChange={(e) => setAccessKey(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAuthorize()}
+              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-center text-white placeholder:text-white/10 focus:ring-1 ring-[#00e054] outline-none transition-all mb-4"
+           />
+           <button 
+             onClick={handleAuthorize}
+             className="w-full bg-[#00e054] text-black font-black uppercase tracking-widest py-3 rounded-xl hover:bg-[#00c044] transition-colors"
+           >
+             Unlock Tool
+           </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-20">
@@ -125,11 +189,19 @@ export const AdminSeed: React.FC = () => {
         <div className="w-16 h-16 bg-gradient-to-br from-[#00e054] to-cyan-500 rounded-3xl flex items-center justify-center mb-6 shadow-2xl shadow-[#00e054]/20">
           <Database className="text-black w-8 h-8" />
         </div>
+        <div className="flex items-center gap-2 mb-4">
+           <ShieldCheck className="text-[#00e054]" size={14} />
+           <p className="text-[10px] uppercase font-black tracking-[0.2em] text-[#00e054]">Session Authorized</p>
+        </div>
         <h1 className="text-4xl font-black uppercase tracking-tighter text-white mb-4">Database Initialization</h1>
-        <p className="text-white/40 mb-12 font-serif leading-relaxed max-w-xl text-lg italic">
-          Connect securely to the global OSM graph to gather regional culinary data. 
-          The sweep includes coordinates, cuisines, and high-fidelity simulated ratings.
-        </p>
+        
+        {/* Proximity Indicator */}
+        <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-full mb-8">
+           <Map size={12} className={userLocation ? "text-[#00e054]" : "text-rose-500"} />
+           <span className="text-[9px] uppercase font-black tracking-widest text-white/40">
+              Coordinate Lock: {userLocation ? `VERIFIED (${userLocation.lat.toFixed(2)}, ${userLocation.lng.toFixed(2)})` : "LOCATING..."}
+           </span>
+        </div>
 
         {!isSeeding ? (
           <div className="w-full max-w-lg space-y-8 bg-zinc-900/50 p-8 rounded-3xl border border-white/5 backdrop-blur-xl">
@@ -166,11 +238,6 @@ export const AdminSeed: React.FC = () => {
               <Zap className="fill-black group-hover:scale-110 transition-transform" size={20} />
               Execute Regional Sweep
             </button>
-
-            <div className="flex items-center gap-2 justify-center text-white/20">
-              <IndianRupee size={12} />
-              <p className="text-[9px] uppercase font-bold tracking-[0.2em]">Regional data sweep is free of charge</p>
-            </div>
           </div>
         ) : (
           <div className="space-y-8 w-full max-w-md bg-zinc-900 p-10 rounded-3xl border border-[#00e054]/20 shadow-2xl">
@@ -182,7 +249,7 @@ export const AdminSeed: React.FC = () => {
             </div>
             <div className="space-y-2">
               <p className="text-white/80 font-bold uppercase tracking-[0.2em] text-sm">
-                 Gathering {targetRegion} Establishments...
+                 Gathering Establishments...
               </p>
               <p className="text-white/30 text-[10px] uppercase font-bold">Injecting {progress.current} of {progress.total} locations</p>
             </div>
