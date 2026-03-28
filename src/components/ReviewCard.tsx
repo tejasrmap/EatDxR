@@ -1,21 +1,130 @@
-import { Star, Heart, MessageSquare, MapPin } from "lucide-react";
-import { Review } from "../types";
+import { Star, Heart, MessageSquare, MapPin, Send, Loader2 } from "lucide-react";
+import { Review, Interaction } from "../types";
 import { formatDistanceToNow } from "date-fns";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { useAuth } from "../App";
+import { db } from "../firebase";
+import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 
 interface ReviewCardProps {
   review: Review;
 }
 
 export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
+  const { dishdUser: currentUser } = useAuth();
+  const [likes, setLikes] = useState<Interaction[]>([]);
+  const [comments, setComments] = useState<Interaction[]>([]);
+  const [showComments, setShowComments] = useState(false);
+  const [newComment, setNewComment] = useState("");
+  const [isLikeLoading, setIsLikeLoading] = useState(false);
+  const [isCommentLoading, setIsCommentLoading] = useState(false);
+
+  useEffect(() => {
+    const q = query(
+      collection(db, "interactions"),
+      where("reviewId", "==", review.id)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const interactions = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      })) as Interaction[];
+      
+      setLikes(interactions.filter(i => i.type === "LIKE"));
+      
+      const fetchedComments = interactions
+        .filter(i => i.type === "COMMENT")
+        .sort((a, b) => {
+          const timeA = a.createdAt?.toMillis?.() || 0;
+          const timeB = b.createdAt?.toMillis?.() || 0;
+          return timeA - timeB; // Ascending order (oldest first)
+        });
+        
+      setComments(fetchedComments);
+    }, (error) => {
+      // Intentionally swallow "missing perm" errors on render for unauthenticated/unconfigured users 
+      // so it doesn't spam the console, but the app won't crash.
+    });
+
+    return unsubscribe;
+  }, [review.id]);
+
+  const hasLiked = currentUser ? likes.some(l => l.userId === currentUser.uid) : false;
+  // Dynamic additive likes (new interactions hook into old legacy number, if any)
+  const totalLikes = (review.likes || 0) + likes.length;
+
+  const handleLike = async () => {
+    if (!currentUser) return toast.error("Please log in to like this review.");
+    if (isLikeLoading) return;
+    
+    setIsLikeLoading(true);
+    try {
+      const likeId = `${review.id}_${currentUser.uid}_LIKE`;
+      const likeRef = doc(db, "interactions", likeId);
+      
+      if (hasLiked) {
+        await deleteDoc(likeRef);
+      } else {
+        await setDoc(likeRef, {
+          id: likeId,
+          reviewId: review.id,
+          userId: currentUser.uid,
+          userName: currentUser.displayName,
+          userPhoto: currentUser.photoURL,
+          type: "LIKE",
+          createdAt: serverTimestamp()
+        });
+      }
+    } catch (error: any) {
+      console.error("Like error:", error);
+      
+      if(error.message.includes('Missing or insufficient permissions')) {
+         toast.error("Database denied. Did you deploy the new firestore.rules?");
+      } else {
+         toast.error("Failed to toggle like.");
+      }
+    } finally {
+      setIsLikeLoading(false);
+    }
+  };
+
+  const handleComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) return toast.error("Please log in to comment.");
+    if (!newComment.trim()) return;
+    
+    setIsCommentLoading(true);
+    try {
+      const commentRef = doc(collection(db, "interactions"));
+      await setDoc(commentRef, {
+        id: commentRef.id,
+        reviewId: review.id,
+        userId: currentUser.uid,
+        userName: currentUser.displayName,
+        userPhoto: currentUser.photoURL,
+        type: "COMMENT",
+        content: newComment.trim(),
+        createdAt: serverTimestamp()
+      });
+      setNewComment("");
+      toast.success("Comment posted!");
+    } catch (error: any) {
+      console.error("Comment error:", error);
+      if(error.message.includes('Missing or insufficient permissions')) {
+         toast.error("Database denied. Did you deploy the new firestore.rules?");
+      } else {
+         toast.error("Failed to post comment.");
+      }
+    } finally {
+      setIsCommentLoading(false);
+    }
+  };
+
   const dishesWithImages = review.dishes?.filter(d => d.image) || [];
   const firstImage = dishesWithImages[0]?.image;
-
-  const handleAction = (action: string) => {
-    toast.info(`${action} feature coming soon!`);
-  };
 
   return (
     <div className="group py-6 border-b border-white/5 last:border-0">
@@ -108,20 +217,84 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
 
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => handleAction("Like")}
-              className="flex items-center gap-1.5 text-white/30 hover:text-orange-500 transition-colors group/btn"
+              onClick={handleLike}
+              disabled={isLikeLoading}
+              className={`flex items-center gap-1.5 text-white/30 hover:text-orange-500 transition-colors group/btn ${hasLiked ? 'text-orange-500' : ''} ${isLikeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <Heart size={14} className="group-hover/btn:fill-orange-500" />
-              <span className="text-[10px] uppercase tracking-widest font-bold">{review.likes || 0}</span>
+              <Heart size={14} className={hasLiked ? "fill-orange-500" : "group-hover/btn:fill-orange-500"} />
+              <span className="text-[10px] uppercase tracking-widest font-bold">{totalLikes}</span>
             </button>
             <button 
-              onClick={() => handleAction("Comment")}
-              className="flex items-center gap-1.5 text-white/30 hover:text-white transition-colors"
+              onClick={() => setShowComments(!showComments)}
+              className={`flex items-center gap-1.5 transition-colors ${showComments ? 'text-white' : 'text-white/30 hover:text-white'}`}
             >
               <MessageSquare size={14} />
-              <span className="text-[10px] uppercase tracking-widest font-bold">Review</span>
+              <span className="text-[10px] uppercase tracking-widest font-bold">
+                {comments.length > 0 ? comments.length : 'Review'}
+              </span>
             </button>
           </div>
+
+          {/* Comments Section Overlay */}
+          {showComments && (
+            <div className="mt-4 bg-white/5 rounded-lg border border-white/10 overflow-hidden">
+              <div className="max-h-60 overflow-y-auto p-4 space-y-4">
+                {comments.length === 0 ? (
+                  <p className="text-xs text-center text-white/40 italic serif">No reviews yet. Be the first to share your thoughts!</p>
+                ) : (
+                  comments.map(comment => (
+                    <div key={comment.id} className="flex gap-3">
+                      <Link to={`/profile/${comment.userId}`}>
+                        <img 
+                          src={comment.userPhoto} 
+                          alt={comment.userName}
+                          className="w-6 h-6 rounded-full border border-white/10 shrink-0 mt-0.5"
+                          referrerPolicy="no-referrer"
+                        />
+                      </Link>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Link to={`/profile/${comment.userId}`} className="text-xs font-bold text-white hover:underline decoration-white/30">{comment.userName}</Link>
+                          <span className="text-[10px] text-white/30">
+                            {comment.createdAt?.toMillis ? formatDistanceToNow(comment.createdAt.toMillis(), { addSuffix: true }) : 'just now'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-white/80 leading-relaxed font-serif">{comment.content}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              
+              <div className="p-3 border-t border-white/10 bg-black/20">
+                {currentUser ? (
+                  <form onSubmit={handleComment} className="flex items-center gap-2">
+                    <img 
+                      src={currentUser.photoURL} 
+                      className="w-6 h-6 rounded-full border border-white/10"
+                      referrerPolicy="no-referrer"
+                    />
+                    <input 
+                      type="text" 
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Add a review..."
+                      className="flex-1 bg-transparent border-none text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-0"
+                    />
+                    <button 
+                      type="submit" 
+                      disabled={isCommentLoading || !newComment.trim()}
+                      className="p-1.5 text-white/40 hover:text-orange-500 disabled:opacity-50 disabled:hover:text-white/40 transition-colors"
+                    >
+                      {isCommentLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                    </button>
+                  </form>
+                ) : (
+                  <p className="text-xs text-center text-white/40 py-1">Please Sign In to add a review.</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

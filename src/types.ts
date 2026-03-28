@@ -73,3 +73,14 @@ export interface RestaurantSearchResult {
   mapsUrl?: string;
   menuItems?: string[];
 }
+
+export interface Interaction {
+  id: string;
+  reviewId: string;
+  userId: string;
+  userName: string;
+  userPhoto: string;
+  type: "LIKE" | "COMMENT";
+  content?: string; // Only used if type is "COMMENT"
+  createdAt: any; // Firestore Timestamp
+}
