@@ -259,6 +259,15 @@ export const AdminSeed: React.FC = () => {
                    </button>
                 </div>
                 
+                <div className="flex gap-2">
+                   <button 
+                     onClick={() => { setSearchQuery("SRMAP Campus"); setTimeout(handleSearchLocation, 100); }}
+                     className="text-[10px] font-black uppercase tracking-widest bg-white/5 hover:bg-[#00e054]/20 text-white/40 hover:text-[#00e054] px-4 py-2 rounded-lg border border-white/5 transition-all"
+                   >
+                     Quick Start: SRMAP
+                   </button>
+                </div>
+                
                 {locationOptions.length > 0 && !selectedLocation && (
                    <div className="space-y-2 mt-4 text-left">
                       <p className="text-[10px] uppercase font-bold text-white/20 px-2">Matches Found:</p>
