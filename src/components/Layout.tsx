@@ -16,8 +16,8 @@ export function Layout({ children }: LayoutProps) {
       </main>
 
       <footer className="border-t border-white/10 py-12 mt-20">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex items-center gap-2 text-xl font-black tracking-tighter group cursor-pointer">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8 text-center md:text-left">
+          <div className="flex items-center gap-2 text-xl font-black tracking-tighter group cursor-pointer justify-center md:justify-start">
             <div className="relative flex items-center justify-center w-6 h-6 bg-gradient-to-br from-orange-500 to-rose-500 rounded-md opacity-80 group-hover:opacity-100 group-hover:-rotate-12 transition-all duration-300">
               <UtensilsCrossed className="text-white w-3 h-3" />
             </div>
@@ -26,7 +26,7 @@ export function Layout({ children }: LayoutProps) {
             </span>
           </div>
 
-          <div className="flex gap-8 text-xs font-medium text-white/40 uppercase tracking-widest">
+          <div className="flex flex-wrap justify-center md:justify-end gap-x-8 gap-y-4 text-xs font-medium text-white/40 uppercase tracking-widest">
             <Link to="/" className="hover:text-white transition-colors">About</Link>
             <Link to="/journal" className="hover:text-white transition-colors">Journal</Link>
             <Link to="/critics" className="hover:text-white transition-colors">Critics</Link>

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Plus, User, LogOut, UtensilsCrossed, Bell } from "lucide-react";
+import { Search, Plus, User, LogOut, UtensilsCrossed, Bell, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { LogMealModal } from "./LogMealModal";
 import { useAuth } from "../App";
@@ -13,6 +13,7 @@ export function Navbar() {
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const { user, dishdUser, login, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Notification States
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -135,7 +136,7 @@ export function Navbar() {
                   </button>
                   
                   {showNotifMenu && (
-                    <div className="absolute right-[-60px] md:right-0 mt-2 w-80 bg-[#2c3440] border border-white/10 rounded shadow-2xl z-[100] max-h-96 flex flex-col overflow-hidden">
+                    <div className="absolute right-[-40px] sm:right-0 md:right-0 mt-2 w-[300px] sm:w-80 bg-[#2c3440] border border-white/10 rounded shadow-2xl z-[100] max-h-96 flex flex-col overflow-hidden">
                       <div className="p-3 border-b border-white/10 bg-black/20 flex justify-between items-center">
                         <span className="text-xs font-bold uppercase tracking-widest text-white/80">Activity</span>
                       </div>
@@ -215,15 +216,34 @@ export function Navbar() {
                 </div>
               </>
             ) : (
-              <button
+              <button 
                 onClick={login}
-                className="text-[10px] uppercase tracking-widest font-bold text-white/60 hover:text-white transition-colors ml-4"
+                className="bg-white text-black text-[10px] uppercase tracking-widest font-bold px-4 py-2 rounded-sm hover:bg-zinc-200 transition-colors"
               >
                 Sign In
               </button>
             )}
+
+            {/* Mobile Hamburger Menu Toggle */}
+            <button 
+              className="md:hidden p-2 text-white hover:text-orange-500 transition-colors"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Dropdown Tray */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden absolute top-16 left-0 right-0 bg-[#14181c] border-b border-white/10 z-[90] p-4 flex flex-col gap-4 shadow-2xl">
+            <Link onClick={() => setIsMobileMenuOpen(false)} to="/restaurants" className="text-sm uppercase tracking-widest font-bold text-white/80 hover:text-white transition-colors p-2 bg-white/5 rounded">Restaurants</Link>
+            <Link onClick={() => setIsMobileMenuOpen(false)} to="/lists" className="text-sm uppercase tracking-widest font-bold text-white/80 hover:text-white transition-colors p-2 bg-white/5 rounded">Lists</Link>
+            <Link onClick={() => setIsMobileMenuOpen(false)} to="/critics" className="text-sm uppercase tracking-widest font-bold text-white/80 hover:text-white transition-colors p-2 bg-white/5 rounded">Critics</Link>
+            <Link onClick={() => setIsMobileMenuOpen(false)} to="/journal" className="text-sm uppercase tracking-widest font-bold text-white/80 hover:text-white transition-colors p-2 bg-white/5 rounded">Journal</Link>
+            <Link onClick={() => setIsMobileMenuOpen(false)} to="/admin/seed" className="text-sm uppercase tracking-widest font-bold text-[#00e054] hover:text-[#00c044] transition-colors p-2 bg-[#00e054]/10 border border-[#00e054]/20 rounded mt-2">Seed Database</Link>
+          </div>
+        )}
       </nav>
 
       <LogMealModal

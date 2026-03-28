@@ -179,14 +179,14 @@ export function Hero() {
             </AnimatePresence>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full px-4">
             <button 
               onClick={handleGetStarted}
-              className="bg-white text-black px-8 py-3 rounded-full font-semibold hover:bg-white/90 transition-colors"
+              className="bg-white text-black px-8 py-3 rounded-full font-semibold hover:bg-white/90 transition-colors w-full sm:w-auto"
             >
               Get Started — It's Free
             </button>
-            <Link to="/restaurants" className="nav-pill px-8 py-3 flex items-center justify-center">
+            <Link to="/restaurants" className="nav-pill px-8 py-3 flex items-center justify-center w-full sm:w-auto">
               Browse Popular Dishes
             </Link>
           </div>

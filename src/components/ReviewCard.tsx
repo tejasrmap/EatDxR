@@ -203,11 +203,11 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
 
   return (
     <div className="group py-6 border-b border-white/5 last:border-0">
-      <div className="flex gap-6">
+      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
         {/* Poster-style image */}
         <Link 
           to={`/restaurant/${review.restaurantId}`}
-          className="w-24 h-36 bg-zinc-800 rounded-sm overflow-hidden flex-shrink-0 border border-white/10 shadow-lg relative"
+          className="w-full h-48 sm:w-24 sm:h-36 bg-zinc-800 rounded-lg sm:rounded-sm overflow-hidden flex-shrink-0 border border-white/10 shadow-lg relative"
         >
           {firstImage ? (
             <img 
