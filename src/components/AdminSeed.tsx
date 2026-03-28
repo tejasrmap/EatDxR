@@ -91,9 +91,9 @@ export const AdminSeed: React.FC = () => {
       }
 
       toast.success(`Successfully injected ${seedCount} restaurants into the database!`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Seeding error:', error);
-      toast.error('Failed to run the seed script. Check console.');
+      toast.error(`Admin Error: ${error.message || 'Check console'}`);
     } finally {
       setIsSeeding(false);
     }
