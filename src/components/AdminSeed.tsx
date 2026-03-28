@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../App';
 import { db } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { MapPin, Zap, Database, Loader2, IndianRupee, Globe, Lock, ShieldCheck } from 'lucide-react';
-
-type SeedingRegion = 'SRMAP' | 'VIJAYAWADA';
+import { MapPin, Zap, Database, Loader2, IndianRupee, Globe, Lock, ShieldCheck, Search, Sliders, Map as MapIcon, ChevronRight } from 'lucide-react';
 
 // Admin Security Constants
 const ADMIN_PASSWORD = "ADMIN-EAT-DxR";
@@ -13,12 +11,17 @@ const ADMIN_PASSWORD = "ADMIN-EAT-DxR";
 export const AdminSeed: React.FC = () => {
   const { user } = useAuth();
   const [isSeeding, setIsSeeding] = useState(false);
-  const [targetRegion, setTargetRegion] = useState<SeedingRegion>('SRMAP');
   const [progress, setProgress] = useState({ total: 0, current: 0 });
   
   // Security States
   const [accessKey, setAccessKey] = useState("");
   const [isAuthorized, setIsAuthorized] = useState(false);
+
+  // Search & Radius States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [radiusKm, setRadiusKm] = useState(15);
+  const [isFindingLocation, setIsFindingLocation] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{ lat: number, lng: number, name: string } | null>(null);
 
   const handleAuthorize = () => {
     if (accessKey === ADMIN_PASSWORD) {
@@ -26,6 +29,32 @@ export const AdminSeed: React.FC = () => {
       toast.success("Secondary Authentication Successful.");
     } else {
       toast.error("Invalid Access Key.");
+    }
+  };
+
+  const handleSearchLocation = async () => {
+    if (!searchQuery.trim()) return;
+    
+    setIsFindingLocation(true);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`);
+      const data = await res.json();
+      
+      if (data && data.length > 0) {
+        const loc = data[0];
+        setSelectedLocation({
+          lat: parseFloat(loc.lat),
+          lng: parseFloat(loc.lon),
+          name: loc.display_name.split(',')[0]
+        });
+        toast.success(`Location identified: ${loc.display_name.split(',')[0]}`);
+      } else {
+        toast.error("City or Location not found. Please be more specific.");
+      }
+    } catch (error) {
+       toast.error("Geocoding service unavailable.");
+    } finally {
+      setIsFindingLocation(false);
     }
   };
 
@@ -47,14 +76,19 @@ export const AdminSeed: React.FC = () => {
       return;
     }
 
+    if (!selectedLocation) {
+      toast.error("Please search and select a location first.");
+      return;
+    }
+
     setIsSeeding(true);
     try {
-      const coords = targetRegion === 'SRMAP' ? '16.4819,80.5050' : '16.5062,80.6480';
-      const radius = targetRegion === 'SRMAP' ? 30000 : 15000;
+      const { lat, lng } = selectedLocation;
+      const radiusMeters = radiusKm * 1000;
       
-      toast.info(`Fetching OSM data for ${targetRegion}...`);
+      toast.info(`Fetching OSM data for ${selectedLocation.name} (${radiusKm}km radius)...`);
       
-      const overpassQuery = `[out:json][timeout:60];(node["amenity"="restaurant"](around:${radius},${coords});node["amenity"="cafe"](around:${radius},${coords});node["amenity"="fast_food"](around:${radius},${coords}););out center;`;
+      const overpassQuery = `[out:json][timeout:60];(node["amenity"="restaurant"](around:${radiusMeters},${lat},${lng});node["amenity"="cafe"](around:${radiusMeters},${lat},${lng});node["amenity"="fast_food"](around:${radiusMeters},${lat},${lng}););out center;`;
       
       const res = await fetch('https://overpass-api.de/api/interpreter', {
         method: 'POST',
@@ -64,14 +98,10 @@ export const AdminSeed: React.FC = () => {
       if (!res.ok) throw new Error(`Overpass API blocked with HTTP ${res.status}`);
       
       const text = await res.text();
-      if (text.trim().startsWith('<')) {
-        throw new Error('Mapping API returned an XML Error!');
-      }
-      
       const data = JSON.parse(text);
       const validElements = data.elements?.filter((e: any) => e.tags && e.tags.name) || [];
       
-      if (validElements.length === 0) throw new Error("No payload elements found.");
+      if (validElements.length === 0) throw new Error("No payload elements found in this area.");
       
       let topPlaces = validElements.sort(() => 0.5 - Math.random()).slice(0, 500);
       
@@ -91,7 +121,7 @@ export const AdminSeed: React.FC = () => {
           place.tags['addr:neighbourhood'] || 
           place.tags['addr:town'] || 
           place.tags['addr:city'] || 
-          (targetRegion === 'SRMAP' ? 'Guntur/Mangalagiri Area' : 'Vijayawada');
+          selectedLocation.name;
           
         const streetAttr = place.tags['addr:street'] || '';
         const _locationStr = streetAttr ? `${streetAttr}, ${cityAttr}` : `${cityAttr}`;
@@ -99,8 +129,8 @@ export const AdminSeed: React.FC = () => {
         const randomImage = foodImages[Math.floor(Math.random() * foodImages.length)];
         const ratingNum = Number((Math.random() * 2 + 3).toFixed(1)); 
         
-        const lat = place.lat || place.center?.lat;
-        const lng = place.lon || place.center?.lon;
+        const plat = place.lat || place.center?.lat;
+        const plon = place.lon || place.center?.lon;
         
         const docId = `osm-${place.id}`;
 
@@ -113,8 +143,8 @@ export const AdminSeed: React.FC = () => {
           reviewCount: Math.floor(Math.random() * 200) + 10,
           image: randomImage,
           menuItems: [],
-          lat: lat,
-          lng: lng
+          lat: plat,
+          lng: plon
         };
         
         await setDoc(doc(db, 'restaurants', docId), payload);
@@ -122,7 +152,7 @@ export const AdminSeed: React.FC = () => {
         setProgress({ total: topPlaces.length, current: seedCount });
       }
 
-      toast.success(`${targetRegion} sweep complete!`);
+      toast.success(`Sweep for ${selectedLocation.name} complete! Added ${seedCount} places.`);
     } catch (error: any) {
       console.error('Seeding error:', error);
       toast.error(`Admin Error: ${error.message}`);
@@ -131,33 +161,33 @@ export const AdminSeed: React.FC = () => {
     }
   };
 
-  // 1. Password Protection View
+  // 1. Password Protection View (already implemented)
   if (!isAuthorized) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center px-6">
-        <div className="w-full max-w-md bg-zinc-900 border border-white/5 p-10 rounded-[2.5rem] text-center shadow-2xl">
-           <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <Lock className="text-white/40" />
-           </div>
-           <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Access Key Required</h2>
-           <p className="text-white/30 text-xs font-serif italic mb-8">This tool is in Stealth Mode. Please provide your secondary credential.</p>
-           
-           <input 
-              type="password"
-              placeholder="Enter Access Key..."
-              value={accessKey}
-              onChange={(e) => setAccessKey(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAuthorize()}
-              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-center text-white placeholder:text-white/10 focus:ring-1 ring-[#00e054] outline-none transition-all mb-4"
-           />
-           <button 
-             onClick={handleAuthorize}
-             className="w-full bg-[#00e054] text-black font-black uppercase tracking-widest py-3 rounded-xl hover:bg-[#00c044] transition-colors"
-           >
-             Unlock Tool
-           </button>
-        </div>
-      </div>
+       <div className="min-h-[80vh] flex items-center justify-center px-6">
+          <div className="w-full max-w-md bg-zinc-900 border border-white/5 p-10 rounded-[2.5rem] text-center shadow-2xl">
+             <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Lock className="text-white/40" />
+             </div>
+             <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Access Key Required</h2>
+             <p className="text-white/30 text-xs font-serif italic mb-8">This tool is in Stealth Mode. Please provide your secondary credential.</p>
+             
+             <input 
+                type="password"
+                placeholder="Enter Access Key..."
+                value={accessKey}
+                onChange={(e) => setAccessKey(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAuthorize()}
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-center text-white placeholder:text-white/10 focus:ring-1 ring-[#00e054] outline-none transition-all mb-4"
+             />
+             <button 
+               onClick={handleAuthorize}
+               className="w-full bg-[#00e054] text-black font-black uppercase tracking-widest py-3 rounded-xl hover:bg-[#00c044] transition-colors"
+             >
+               Unlock Tool
+             </button>
+          </div>
+       </div>
     );
   }
 
@@ -171,42 +201,79 @@ export const AdminSeed: React.FC = () => {
            <ShieldCheck className="text-[#00e054]" size={14} />
            <p className="text-[10px] uppercase font-black tracking-[0.2em] text-[#00e054]">Session Authorized</p>
         </div>
-        <h1 className="text-4xl font-black uppercase tracking-tighter text-white mb-4">Database Initialization</h1>
+        <h1 className="text-4xl font-black uppercase tracking-tighter text-white mb-4">Regional Seeding</h1>
         
         {!isSeeding ? (
           <div className="w-full max-w-lg space-y-8 bg-zinc-900/50 p-8 rounded-3xl border border-white/5 backdrop-blur-xl">
+             
+             {/* Dynamic Search Section */}
              <div className="space-y-4">
-                <label className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/30 text-left block w-full px-2">Regional Sweep Target</label>
-                <div className="grid grid-cols-2 gap-4">
-                  <button 
-                    onClick={() => setTargetRegion('SRMAP')}
-                    className={`p-6 rounded-2xl border transition-all flex flex-col items-center gap-3 ${targetRegion === 'SRMAP' ? 'bg-[#00e054]/10 border-[#00e054] ring-2 ring-[#00e054]/20' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
-                  >
-                    <Globe className={targetRegion === 'SRMAP' ? 'text-[#00e054]' : 'text-white/20'} />
-                    <div className="text-center">
-                      <p className="font-bold text-sm">SRMAP Region</p>
-                      <p className="text-[10px] text-white/30 uppercase mt-1">30km Radius</p>
-                    </div>
-                  </button>
-                  <button 
-                    onClick={() => setTargetRegion('VIJAYAWADA')}
-                    className={`p-6 rounded-2xl border transition-all flex flex-col items-center gap-3 ${targetRegion === 'VIJAYAWADA' ? 'bg-[#00e054]/10 border-[#00e054] ring-2 ring-[#00e054]/20' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
-                  >
-                    <MapPin className={targetRegion === 'VIJAYAWADA' ? 'text-[#00e054]' : 'text-white/20'} />
-                    <div className="text-center">
-                      <p className="font-bold text-sm">Vijayawada</p>
-                      <p className="text-[10px] text-white/30 uppercase mt-1">15km Radius</p>
-                    </div>
-                  </button>
+                <label className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/30 text-left block w-full px-2">Target City/Point</label>
+                <div className="flex gap-2">
+                   <div className="relative flex-1">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={16} />
+                      <input 
+                        type="text"
+                        placeholder="e.g., Guntur, Hyderabad, SRMAP..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearchLocation()}
+                        className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white placeholder:text-white/10 focus:ring-1 ring-[#00e054] outline-none transition-all"
+                      />
+                   </div>
+                   <button 
+                     disabled={isFindingLocation}
+                     onClick={handleSearchLocation}
+                     className="bg-zinc-800 hover:bg-zinc-700 text-white p-4 rounded-2xl transition-colors disabled:opacity-50"
+                   >
+                     {isFindingLocation ? <Loader2 className="animate-spin" /> : <ChevronRight />}
+                   </button>
+                </div>
+                
+                {selectedLocation && (
+                   <div className="bg-[#00e054]/5 border border-[#00e054]/20 p-4 rounded-2xl flex items-start gap-3 text-left">
+                      <MapIcon size={18} className="text-[#00e054] mt-0.5" />
+                      <div>
+                         <p className="text-[10px] uppercase font-black tracking-widest text-[#00e054]/60">Geocoded Location</p>
+                         <p className="text-white font-bold">{selectedLocation.name}</p>
+                         <p className="text-[10px] font-mono text-white/30 uppercase mt-1">
+                            {selectedLocation.lat.toFixed(4)}, {selectedLocation.lng.toFixed(4)}
+                         </p>
+                      </div>
+                   </div>
+                )}
+             </div>
+
+             {/* Radius Section */}
+             <div className="space-y-4">
+                <div className="flex justify-between items-center px-2">
+                   <label className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/30">Search Radius</label>
+                   <span className="text-xs font-black text-[#00e054]">{radiusKm} KM</span>
+                </div>
+                <div className="relative pt-2">
+                   <input 
+                     type="range"
+                     min="1"
+                     max="50"
+                     value={radiusKm}
+                     onChange={(e) => setRadiusKm(parseInt(e.target.value))}
+                     className="w-full h-2 bg-black/40 rounded-lg appearance-none cursor-pointer accent-[#00e054]"
+                   />
+                </div>
+                <div className="flex justify-between text-[8px] font-black tracking-widest text-white/10 uppercase">
+                   <span>1km</span>
+                   <span>25km</span>
+                   <span>50km</span>
                 </div>
              </div>
 
             <button 
               onClick={handleSeed}
-              className="w-full bg-[#00e054] text-black px-8 py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-[#00c044] transition-all hover:-translate-y-1 shadow-2xl shadow-[#00e054]/20 flex items-center justify-center gap-3 group"
+              disabled={!selectedLocation}
+              className="w-full bg-[#00e054] text-black px-8 py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-[#00c044] transition-all hover:-translate-y-1 shadow-2xl shadow-[#00e054]/20 flex items-center justify-center gap-3 group disabled:opacity-50 disabled:grayscale disabled:transform-none"
             >
               <Zap className="fill-black group-hover:scale-110 transition-transform" size={20} />
-              Execute Regional Sweep
+              Execute Dynamic Sweep
             </button>
           </div>
         ) : (
@@ -218,8 +285,8 @@ export const AdminSeed: React.FC = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <p className="text-white/80 font-bold uppercase tracking-[0.2em] text-sm">
-                 Gathering Establishments...
+              <p className="text-white/80 font-bold uppercase tracking-[0.2em] text-sm leading-tight text-center">
+                 Sweeping {selectedLocation?.name}...
               </p>
               <p className="text-white/30 text-[10px] uppercase font-bold">Injecting {progress.current} of {progress.total} locations</p>
             </div>
@@ -229,7 +296,7 @@ export const AdminSeed: React.FC = () => {
                 style={{ width: `${(progress.current / Math.max(1, progress.total)) * 100}%` }}
               />
             </div>
-            <p className="text-white/20 text-[10px] uppercase font-bold tracking-widest animate-pulse">Security Sweep In Progress • Please stand by</p>
+            <p className="text-white/20 text-[10px] uppercase font-bold tracking-widest animate-pulse">Regional Sweep In Progress • Please stand by</p>
           </div>
         )}
       </div>
