@@ -3,10 +3,14 @@ import { useAuth } from '../App';
 import { db } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
+import { MapPin, Zap, Database, Loader2, IndianRupee, Globe } from 'lucide-react';
+
+type SeedingRegion = 'SRMAP' | 'VIJAYAWADA';
 
 export const AdminSeed: React.FC = () => {
   const { user } = useAuth();
   const [isSeeding, setIsSeeding] = useState(false);
+  const [targetRegion, setTargetRegion] = useState<SeedingRegion>('SRMAP');
   const [progress, setProgress] = useState({ total: 0, current: 0 });
 
   const foodImages = [
@@ -29,22 +33,25 @@ export const AdminSeed: React.FC = () => {
     
     setIsSeeding(true);
     try {
-      // 1. Fetch real Overpass API data for Vijayawada (15km radius)
-      toast.info('Fetching OpenStreetMap data for Vijayawada (15km radius)...');
+      // SRM AP Coordinates: 16.4819, 80.5050
+      // Vijayawada Coordinates: 16.5062, 80.6480
+      const coords = targetRegion === 'SRMAP' ? '16.4819,80.5050' : '16.5062,80.6480';
+      const radius = targetRegion === 'SRMAP' ? 30000 : 15000;
       
-      const query = `[out:json][timeout:25];(node["amenity"="restaurant"](around:15000,16.5062,80.6480);node["amenity"="cafe"](around:15000,16.5062,80.6480);node["amenity"="fast_food"](around:15000,16.5062,80.6480););out body;`;
+      toast.info(`Fetching OSM data for ${targetRegion} (${radius/1000}km)...`);
+      
+      // Increased timeout to 60s for larger sweeps
+      const overpassQuery = `[out:json][timeout:60];(node["amenity"="restaurant"](around:${radius},${coords});node["amenity"="cafe"](around:${radius},${coords});node["amenity"="fast_food"](around:${radius},${coords}););out body;`;
       
       const res = await fetch('https://overpass-api.de/api/interpreter', {
         method: 'POST',
-        body: query
+        body: overpassQuery
       });
       
       if (!res.ok) throw new Error(`Overpass API blocked with HTTP ${res.status}`);
       
       const text = await res.text();
-      // Catch Overpass XML Errors (often Syntax or Rate Limits)
       if (text.trim().startsWith('<')) {
-        console.error("OVERPASS ERROR:", text);
         throw new Error('Mapping API returned an XML Error! Likely syntax or rate limit block.');
       }
       
@@ -53,8 +60,8 @@ export const AdminSeed: React.FC = () => {
       
       if (validElements.length === 0) throw new Error("No payload elements found.");
       
-      // Shuffle & limit to top 300 to not kill Firebase Free Tier instantly
-      let topPlaces = validElements.sort(() => 0.5 - Math.random()).slice(0, 300);
+      // Shuffle & limit to 500
+      let topPlaces = validElements.sort(() => 0.5 - Math.random()).slice(0, 500);
       
       setProgress({ total: topPlaces.length, current: 0 });
       let seedCount = 0;
@@ -66,13 +73,14 @@ export const AdminSeed: React.FC = () => {
                      
         const cuisine = type.charAt(0).toUpperCase() + type.slice(1);
         const name = place.tags.name;
-        // Basic location format
-        const _locationStr = place.tags['addr:street'] ? 
-          `${place.tags['addr:street']}, ${place.tags['addr:city'] || 'Vijayawada'}` : 
-          (Math.random() > 0.5 ? 'Vijayawada, Andhra Pradesh' : 'Guntur, Andhra Pradesh');
+        
+        // Smarter location discovery
+        const cityAttr = place.tags['addr:city'] || place.tags['addr:town'] || (targetRegion === 'SRMAP' ? 'Neerukonda (SRMAP)' : 'Vijayawada');
+        const streetAttr = place.tags['addr:street'] || '';
+        const _locationStr = streetAttr ? `${streetAttr}, ${cityAttr}` : `${cityAttr}, Andhra Pradesh`;
 
         const randomImage = foodImages[Math.floor(Math.random() * foodImages.length)];
-        const ratingNum = Number((Math.random() * 2 + 3).toFixed(1)); // 3.0 to 5.0
+        const ratingNum = Number((Math.random() * 2 + 3).toFixed(1)); 
         
         const docId = `osm-${place.id}`;
 
@@ -92,7 +100,7 @@ export const AdminSeed: React.FC = () => {
         setProgress({ total: topPlaces.length, current: seedCount });
       }
 
-      toast.success(`Successfully injected ${seedCount} restaurants into the database!`);
+      toast.success(`Injected ${seedCount} restaurants for ${targetRegion}!`);
     } catch (error: any) {
       console.error('Seeding error:', error);
       toast.error(`Admin Error: ${error.message || 'Check console'}`);
@@ -102,34 +110,82 @@ export const AdminSeed: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-20 text-center">
-      <h1 className="text-3xl font-black uppercase tracking-widest text-[#00e054] mb-4">Admin Database Injection</h1>
-      <p className="text-white/60 mb-8 font-serif leading-relaxed">
-        This tool connects securely to the OpenStreetMap graph, scrapes all restaurants, cafes, and bakeries within a 15km radius of Vijayawada and Guntur, injects high-res Unsplash restaurant-interior stock imagery, and writes them into your Firebase database.
-      </p>
-
-      {!isSeeding ? (
-        <button 
-          onClick={handleSeed}
-          className="bg-[#00e054] text-black px-8 py-3 rounded-full font-bold uppercase tracking-widest hover:bg-[#00c044] transition-colors"
-        >
-          Initialize Mass-Seed Operation
-        </button>
-      ) : (
-        <div className="space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#00e054] mx-auto"></div>
-          <p className="text-white/80 font-bold tracking-widest">
-            INJECTING {progress.current} / {progress.total}...
-          </p>
-          <div className="w-full bg-black/40 rounded-full h-2 mt-4 overflow-hidden border border-white/10">
-            <div 
-              className="bg-[#00e054] h-full transition-all duration-300" 
-              style={{ width: `${(progress.current / Math.max(1, progress.total)) * 100}%` }}
-            />
-          </div>
-          <p className="text-white/40 text-xs italic">Do not close this page.</p>
+    <div className="max-w-3xl mx-auto px-6 py-20">
+      <div className="flex flex-col items-center text-center">
+        <div className="w-16 h-16 bg-gradient-to-br from-[#00e054] to-cyan-500 rounded-3xl flex items-center justify-center mb-6 shadow-2xl shadow-[#00e054]/20">
+          <Database className="text-black w-8 h-8" />
         </div>
-      )}
+        <h1 className="text-4xl font-black uppercase tracking-tighter text-white mb-4">Database Initialization</h1>
+        <p className="text-white/40 mb-12 font-serif leading-relaxed max-w-xl text-lg italic">
+          Connect securely to the global OSM graph to gather regional culinary data. 
+          The sweep includes coordinates, cuisines, and high-fidelity simulated ratings.
+        </p>
+
+        {!isSeeding ? (
+          <div className="w-full max-w-lg space-y-8 bg-zinc-900/50 p-8 rounded-3xl border border-white/5 backdrop-blur-xl">
+             <div className="space-y-4">
+                <label className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/30 text-left block w-full px-2">Regional Sweep Target</label>
+                <div className="grid grid-cols-2 gap-4">
+                  <button 
+                    onClick={() => setTargetRegion('SRMAP')}
+                    className={`p-6 rounded-2xl border transition-all flex flex-col items-center gap-3 ${targetRegion === 'SRMAP' ? 'bg-[#00e054]/10 border-[#00e054] ring-2 ring-[#00e054]/20' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
+                  >
+                    <Globe className={targetRegion === 'SRMAP' ? 'text-[#00e054]' : 'text-white/20'} />
+                    <div className="text-center">
+                      <p className="font-bold text-sm">SRMAP Region</p>
+                      <p className="text-[10px] text-white/30 uppercase mt-1">30km Radius</p>
+                    </div>
+                  </button>
+                  <button 
+                    onClick={() => setTargetRegion('VIJAYAWADA')}
+                    className={`p-6 rounded-2xl border transition-all flex flex-col items-center gap-3 ${targetRegion === 'VIJAYAWADA' ? 'bg-[#00e054]/10 border-[#00e054] ring-2 ring-[#00e054]/20' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
+                  >
+                    <MapPin className={targetRegion === 'VIJAYAWADA' ? 'text-[#00e054]' : 'text-white/20'} />
+                    <div className="text-center">
+                      <p className="font-bold text-sm">Vijayawada</p>
+                      <p className="text-[10px] text-white/30 uppercase mt-1">15km Radius</p>
+                    </div>
+                  </button>
+                </div>
+             </div>
+
+            <button 
+              onClick={handleSeed}
+              className="w-full bg-[#00e054] text-black px-8 py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-[#00c044] transition-all hover:-translate-y-1 shadow-2xl shadow-[#00e054]/20 flex items-center justify-center gap-3 group"
+            >
+              <Zap className="fill-black group-hover:scale-110 transition-transform" size={20} />
+              Execute Regional Sweep
+            </button>
+
+            <div className="flex items-center gap-2 justify-center text-white/20">
+              <IndianRupee size={12} />
+              <p className="text-[9px] uppercase font-bold tracking-[0.2em]">Regional data sweep is free of charge</p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-8 w-full max-w-md bg-zinc-900 p-10 rounded-3xl border border-[#00e054]/20 shadow-2xl">
+            <div className="relative">
+              <Loader2 className="w-20 h-20 animate-spin text-[#00e054] mx-auto opacity-20" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <p className="text-xl font-black text-white">{Math.round((progress.current / Math.max(1, progress.total)) * 100)}%</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-white/80 font-bold uppercase tracking-[0.2em] text-sm">
+                 Gathering {targetRegion} Establishments...
+              </p>
+              <p className="text-white/30 text-[10px] uppercase font-bold">Injecting {progress.current} of {progress.total} locations</p>
+            </div>
+            <div className="w-full bg-black/40 rounded-full h-3 overflow-hidden border border-white/10 shadow-inner">
+              <div 
+                className="bg-gradient-to-r from-[#00e054] to-cyan-400 h-full transition-all duration-300" 
+                style={{ width: `${(progress.current / Math.max(1, progress.total)) * 100}%` }}
+              />
+            </div>
+            <p className="text-white/20 text-[10px] uppercase font-bold tracking-widest animate-pulse">Security Sweep In Progress • Please stand by</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
