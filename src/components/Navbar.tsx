@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Search, Plus, User, LogOut, UtensilsCrossed, Bell, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { LogMealModal } from "./LogMealModal";
+import { SearchOverlay } from "./SearchOverlay";
 import { useAuth } from "../App";
 import { collection, query, where, onSnapshot, doc, updateDoc, orderBy } from "firebase/firestore";
 import { db } from "../firebase";
@@ -14,11 +15,32 @@ export function Navbar() {
   const { user, dishdUser, login, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   
   // Notification States
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const navigate = useNavigate();
+
+  // Keyboard shortcut listener for Global Search (CMD+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setIsSearchOpen(prev => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    
+    // Support for components to trigger search via custom event
+    const handleOpenSearch = () => setIsSearchOpen(true);
+    window.addEventListener("OPEN_GLOBAL_SEARCH", handleOpenSearch);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("OPEN_GLOBAL_SEARCH", handleOpenSearch);
+    };
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -104,8 +126,14 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="p-2 text-white/40 hover:text-white transition-colors" onClick={() => toast.info('Advanced search coming soon!')}>
+            <button 
+              className="p-2 text-white/40 hover:text-white transition-colors flex items-center gap-2 group" 
+              onClick={() => setIsSearchOpen(true)}
+            >
               <Search size={18} />
+              <span className="hidden lg:flex items-center gap-1 px-1.5 py-0.5 rounded border border-white/10 bg-white/5 text-[8px] font-bold text-white/30 group-hover:text-white/60 transition-colors">
+                <span className="scale-110">⌘</span>K
+              </span>
             </button>
 
             {user ? (
@@ -249,6 +277,11 @@ export function Navbar() {
       <LogMealModal
         isOpen={isLogModalOpen}
         onClose={() => setIsLogModalOpen(false)}
+      />
+
+      <SearchOverlay 
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
       />
     </>
   );

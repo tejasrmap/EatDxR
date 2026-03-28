@@ -4,7 +4,7 @@ import { db, handleFirestoreError, OperationType } from "../firebase";
 import { User } from "../types";
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
-import { Medal, Star, Users, Loader2, Award, TrendingUp } from "lucide-react";
+import { Medal, Star, Users, Loader2, Award, TrendingUp, Search } from "lucide-react";
 
 export function Critics() {
   const [critics, setCritics] = useState<User[]>([]);
@@ -85,10 +85,35 @@ export function Critics() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="text-white/60 max-w-lg mx-auto text-lg leading-relaxed"
+          className="text-white/60 max-w-lg mx-auto text-lg leading-relaxed mb-10"
         >
           The most prolific and trusted voices in the culinary community. Ranked by total reviews written.
         </motion.p>
+
+        {/* Search Trigger */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="w-full max-w-md mx-auto relative group flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-2xl cursor-pointer hover:bg-white/10 hover:border-white/20 transition-all"
+        >
+          <Search size={18} className="text-white/40 group-hover:text-white/60 transition-colors" />
+          <span className="text-sm text-white/20 group-hover:text-white/40 transition-colors font-medium">Search across all critics and users...</span>
+          <div className="ml-auto flex items-center gap-1.5 px-2 py-1 rounded border border-white/10 bg-black/20 text-[10px] font-bold text-white/20">
+            <span className="scale-110">⌘</span>K
+          </div>
+          {/* Invisible Overlay to catch clicks in Navbar context is not needed here as we use a button click handler */}
+          <button 
+            type="button"
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+            onClick={() => {
+              // We need a way to open the Navbar search from here.
+              // Since the state is in Navbar, we could use a custom event or context.
+              // For simplicity, I'll trigger a 'CLICK_GLOBAL_SEARCH' event.
+              window.dispatchEvent(new Event('OPEN_GLOBAL_SEARCH'));
+            }} 
+          />
+        </motion.div>
       </div>
 
       {loading ? (
