@@ -8,7 +8,7 @@ import { MapPin, Zap, Database, Loader2, IndianRupee, Globe, Lock, ShieldCheck }
 type SeedingRegion = 'SRMAP' | 'VIJAYAWADA';
 
 // Admin Security Constants
-const ADMIN_PASSWORD = "SRMAP-ADMIN-DXR";
+const ADMIN_PASSWORD = "ADMIN-EAT-DxR";
 
 export const AdminSeed: React.FC = () => {
   const { user } = useAuth();
