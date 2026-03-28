@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { collection, query, where, onSnapshot, orderBy, doc, getDoc, updateDoc, arrayUnion, arrayRemove, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { collection, query, where, onSnapshot, orderBy, doc, getDoc, getDocs, updateDoc, arrayUnion, arrayRemove, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { Review, User } from "../types";
 import { ReviewCard } from "./ReviewCard";
@@ -12,7 +12,8 @@ import { FollowListModal } from "./FollowListModal";
 import { EditProfileModal } from "./EditProfileModal";
 
 export const Profile: React.FC = () => {
-  const { userId } = useParams<{ userId: string }>();
+  const { userId: identifier } = useParams<{ userId: string }>();
+  const navigate = useNavigate();
   const { user: currentUser, dishdUser } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -67,54 +68,78 @@ export const Profile: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!userId) return;
+    if (!identifier) return;
 
-    // Fetch user profile
-    const fetchUser = async () => {
+    let unsubscribeReviews: any;
+    let unsubscribeFollowers: any;
+
+    const resolveProfile = async () => {
       try {
-        const userDoc = await getDoc(doc(db, "users", userId));
-        if (userDoc.exists()) {
-          setUser(userDoc.data() as User);
+        let resolvedUser: User | null = null;
+
+        // 1. Try treating identifier as a username natively
+        const usernameQuery = query(collection(db, "users"), where("username", "==", identifier.toLowerCase()));
+        const snap = await getDocs(usernameQuery);
+        
+        if (!snap.empty) {
+          resolvedUser = snap.docs[0].data() as User;
+        } else {
+          // 2. Fallback to raw Firebase ID lookup
+          const docSnap = await getDoc(doc(db, "users", identifier));
+          if (docSnap.exists()) {
+            resolvedUser = docSnap.data() as User;
+            // 3. The "Snap-Route"
+            if (resolvedUser.username) {
+              navigate(`/profile/${resolvedUser.username}`, { replace: true });
+              return;
+            }
+          }
+        }
+
+        if (resolvedUser) {
+          setUser(resolvedUser);
+
+          // Now that we have the TRUE uid, attach the streams
+          const q = query(
+            collection(db, "reviews"),
+            where("userId", "==", resolvedUser.uid),
+            orderBy("createdAt", "desc")
+          );
+
+          unsubscribeReviews = onSnapshot(q, (snapshot) => {
+            const reviewsData = snapshot.docs.map(doc => ({
+              ...doc.data(),
+              id: doc.id,
+              createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
+            })) as Review[];
+            setReviews(reviewsData);
+            setLoading(false);
+          });
+
+          const followersQuery = query(
+            collection(db, "users"),
+            where("stats.followingList", "array-contains", resolvedUser.uid)
+          );
+          
+          unsubscribeFollowers = onSnapshot(followersQuery, (snapshot) => {
+            setFollowerCount(snapshot.size);
+          });
+        } else {
+          setLoading(false); // User not found
         }
       } catch (error) {
         console.error("Error fetching user:", error);
+        setLoading(false);
       }
     };
 
-    fetchUser();
-
-    // Fetch user reviews
-    const q = query(
-      collection(db, "reviews"),
-      where("userId", "==", userId),
-      orderBy("createdAt", "desc")
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const reviewsData = snapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id,
-        createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
-      })) as Review[];
-      setReviews(reviewsData);
-      setLoading(false);
-    });
-
-    // Fetch follower count dynamically
-    const followersQuery = query(
-      collection(db, "users"),
-      where("stats.followingList", "array-contains", userId)
-    );
-    
-    const unsubscribeFollowers = onSnapshot(followersQuery, (snapshot) => {
-      setFollowerCount(snapshot.size);
-    });
+    resolveProfile();
 
     return () => {
-      unsubscribe();
-      unsubscribeFollowers();
+      if (unsubscribeReviews) unsubscribeReviews();
+      if (unsubscribeFollowers) unsubscribeFollowers();
     };
-  }, [userId]);
+  }, [identifier, navigate]);
 
   if (loading) {
     return (

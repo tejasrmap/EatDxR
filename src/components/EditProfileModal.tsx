@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { User } from "../types";
 import { X, Loader2, Save } from "lucide-react";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
 import { db, auth } from "../firebase";
 import { toast } from "sonner";
@@ -35,6 +35,21 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
         .map(c => c.trim())
         .filter(c => c.length > 0);
 
+      // 2. Enforce Username Uniqueness
+      if (username.trim()) {
+        const usernameQuery = query(
+          collection(db, "users"),
+          where("username", "==", username.trim().toLowerCase())
+        );
+        const usernameSnap = await getDocs(usernameQuery);
+        
+        if (!usernameSnap.empty && usernameSnap.docs[0].id !== user.uid) {
+          toast.error("That username is already taken!");
+          setIsSaving(false);
+          return;
+        }
+      }
+
       // 2. Safely structure Firebase Auth update parallel to Firestore update
       const currentUser = auth.currentUser;
       if (currentUser) {
@@ -51,7 +66,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
       const payload: Partial<User> = {
         displayName: displayName.trim(),
         photoURL: photoURL.trim(),
-        username: username.trim() || undefined,
+        username: username.trim().toLowerCase() || undefined,
         bio: bio.trim() || undefined,
         favoriteCuisines: favoriteCuisines.length > 0 ? favoriteCuisines : undefined
       };
@@ -114,7 +129,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                 <input
                   type="text"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))} // Auto strip spaces
+                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} // Auto strip spaces/caps
                   className="w-full bg-white/5 border border-white/10 rounded-md pl-8 pr-4 py-2.5 text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500 focus:bg-white/10 transition-colors"
                   placeholder="foodie_lover (No spaces)"
                 />

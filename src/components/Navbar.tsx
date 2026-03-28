@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 export function Navbar() {
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
-  const { user, login, logout } = useAuth();
+  const { user, dishdUser, login, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   
   // Notification States
@@ -194,9 +194,9 @@ export function Navbar() {
                   </button>
 
                   {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-48 bg-[#2c3440] border border-white/10 rounded-sm shadow-2xl py-2 z-[100]">
+                    <div className="absolute right-0 mt-2 w-48 bg-[#2c3440] border border-white/10 rounded shadow-2xl py-2 z-[100]">
                       <Link
-                        to={`/profile/${user.uid}`}
+                        to={`/profile/${dishdUser?.username || user.uid}`}
                         className="flex items-center gap-3 px-4 py-2 hover:bg-[#445566] transition-colors text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white"
                         onClick={() => setShowUserMenu(false)}
                       >
