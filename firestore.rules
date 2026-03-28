@@ -73,8 +73,8 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-          request.auth.token.email == "tejag.vijay@gmail.com");
+        (request.auth.token.email == "tejag.vijay@gmail.com" ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') == 'admin');
     }
 
     // Validate that the document contains only the allowed fields
@@ -161,7 +161,7 @@ service cloud.firestore {
 
     match /restaurants/{restaurantId} {
       allow read: if true;
-      allow create, update: if isAdmin() && isValidRestaurant(request.resource.data);
+      allow create, update: if isAuthenticated();
     }
 
     match /reviews/{reviewId} {
