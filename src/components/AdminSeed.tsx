@@ -29,10 +29,10 @@ export const AdminSeed: React.FC = () => {
     
     setIsSeeding(true);
     try {
-      // 1. Fetch real Overpass API data for Vijayawada (50km radius)
-      toast.info('Fetching OpenStreetMap data for Vijayawada (50km radius)...');
+      // 1. Fetch real Overpass API data for Vijayawada (15km radius)
+      toast.info('Fetching OpenStreetMap data for Vijayawada (15km radius)...');
       
-      const query = `[out:json][timeout:25];(node["amenity"="restaurant"](around:50000,16.5062,80.6480);node["amenity"="cafe"](around:50000,16.5062,80.6480);node["amenity"="fast_food"](around:50000,16.5062,80.6480););out body;`;
+      const query = `[out:json][timeout:25];(node["amenity"="restaurant"](around:15000,16.5062,80.6480);node["amenity"="cafe"](around:15000,16.5062,80.6480);node["amenity"="fast_food"](around:15000,16.5062,80.6480););out body;`;
       
       const res = await fetch('https://overpass-api.de/api/interpreter', {
         method: 'POST',
@@ -105,7 +105,7 @@ export const AdminSeed: React.FC = () => {
     <div className="max-w-2xl mx-auto px-6 py-20 text-center">
       <h1 className="text-3xl font-black uppercase tracking-widest text-[#00e054] mb-4">Admin Database Injection</h1>
       <p className="text-white/60 mb-8 font-serif leading-relaxed">
-        This tool connects securely to the OpenStreetMap graph, scrapes all restaurants, cafes, and bakeries within a 50km radius of Vijayawada and Guntur, injects high-res Unsplash restaurant-interior stock imagery, and writes them into your Firebase database.
+        This tool connects securely to the OpenStreetMap graph, scrapes all restaurants, cafes, and bakeries within a 15km radius of Vijayawada and Guntur, injects high-res Unsplash restaurant-interior stock imagery, and writes them into your Firebase database.
       </p>
 
       {!isSeeding ? (
