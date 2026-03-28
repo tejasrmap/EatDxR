@@ -27,9 +27,10 @@ interface LogMealModalProps {
   isOpen: boolean;
   onClose: () => void;
   existingReview?: Review;
+  initialRestaurant?: RestaurantSearchResult;
 }
 
-export function LogMealModal({ isOpen, onClose, existingReview }: LogMealModalProps) {
+export function LogMealModal({ isOpen, onClose, existingReview, initialRestaurant }: LogMealModalProps) {
   const [rating, setRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -78,13 +79,24 @@ export function LogMealModal({ isOpen, onClose, existingReview }: LogMealModalPr
         review: existingReview.content || "",
         dishes: existingReview.dishes.length > 0 ? existingReview.dishes : [{ name: "", image: "" }]
       });
+    } else if (isOpen && initialRestaurant) {
+      setRating(0);
+      setSearchQuery(initialRestaurant.name);
+      setSelectedRestaurant(initialRestaurant);
+      setValue("restaurant", initialRestaurant.name);
+      reset({
+        rating: 0,
+        dishes: [{ name: "", image: "" }],
+        restaurant: initialRestaurant.name,
+        review: ""
+      });
     } else if (isOpen && !existingReview) {
       reset({ rating: 0, dishes: [{ name: "", image: "" }], restaurant: "", review: "" });
       setRating(0);
       setSearchQuery("");
       setSelectedRestaurant(null);
     }
-  }, [isOpen, existingReview, reset]);
+  }, [isOpen, existingReview, initialRestaurant, reset]);
 
   useEffect(() => {
     if (navigator.geolocation) {

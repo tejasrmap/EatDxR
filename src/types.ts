@@ -12,6 +12,7 @@ export interface User {
   bio?: string;
   favoriteCuisines?: string[];
   eatlist?: string[];
+  likes?: string[];
   stats: {
     mealsLogged: number;
     reviewsWritten: number;
@@ -29,6 +30,7 @@ export interface Restaurant {
   rating: number;
   reviewCount: number;
   image?: string;
+  likesCount?: number;
   menuItems?: string[];
 }
 

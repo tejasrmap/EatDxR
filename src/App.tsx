@@ -107,7 +107,8 @@ function AuthProvider({ children }: { children: ReactNode }) {
               displayName: firebaseUser.displayName || "Anonymous Critic",
               photoURL: firebaseUser.photoURL || `https://ui-avatars.com/api/?name=${firebaseUser.displayName || 'User'}&background=random`,
               stats: { mealsLogged: 0, reviewsWritten: 0, followers: 0, following: 0, followingList: [] },
-              eatlist: []
+              eatlist: [],
+              likes: []
             };
             await setDoc(userRef, newUser);
           }
