@@ -62,8 +62,8 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
           id: likeId,
           reviewId: review.id,
           userId: currentUser.uid,
-          userName: currentUser.displayName,
-          userPhoto: currentUser.photoURL,
+          userName: currentUser.displayName || "User",
+          userPhoto: currentUser.photoURL || "",
           type: "LIKE",
           createdAt: serverTimestamp()
         });

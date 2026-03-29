@@ -127,7 +127,7 @@ service cloud.firestore {
              data.id is string && data.id.size() > 0 &&
              data.reviewId is string && data.reviewId.size() > 0 &&
              data.userId == request.auth.uid &&
-             data.userName is string && data.userName.size() > 0 &&
+             data.userName is string &&
              data.userPhoto is string &&
              data.type in ['LIKE', 'COMMENT'] &&
              (!('content' in data) || (data.content is string && data.content.size() > 0 && data.content.size() < 2000)) &&
