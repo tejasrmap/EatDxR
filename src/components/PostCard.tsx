@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Star, Heart, MessageSquare, MapPin, MoreVertical } from "lucide-react";
-import { Review } from "../types";
+import { Review, Interaction } from "../types";
 import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { parseFirebaseDate } from "../lib/utils";
 import { useAuth } from "../App";
+import { db } from "../firebase";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { motion } from "motion/react";
 
 interface PostCardProps {
@@ -13,7 +15,33 @@ interface PostCardProps {
 
 export const PostCard: React.FC<PostCardProps> = ({ review }) => {
   const { dishdUser: currentUser } = useAuth();
-  const [isLiked, setIsLiked] = useState(false); // Local state for immediate feedback
+  const [isLiked, setIsLiked] = useState(false);
+  const [likes, setLikes] = useState<Interaction[]>([]);
+  const [comments, setComments] = useState<Interaction[]>([]);
+  
+  useEffect(() => {
+    const q = query(
+      collection(db, "interactions"),
+      where("reviewId", "==", review.id)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const interactions = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      })) as Interaction[];
+      
+      setLikes(interactions.filter(i => i.type === "LIKE"));
+      setComments(interactions.filter(i => i.type === "COMMENT"));
+    }, (error) => {
+      console.warn("Interactions subscription error:", error.message);
+    });
+
+    return unsubscribe;
+  }, [review.id]);
+
+  const hasLiked = currentUser ? likes.some(l => l.userId === currentUser.uid) : false;
+  const totalLikes = (review.likes || 0) + likes.length;
   
   const firstImage = review.dishes?.find(d => d.image)?.image;
 
@@ -88,14 +116,14 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
         <div className="flex items-center gap-6 mb-4">
            <button 
              onClick={() => setIsLiked(!isLiked)}
-             className={`flex items-center gap-2 transition-all ${isLiked ? 'text-rose-500' : 'text-white/40 hover:text-white'}`}
+             className={`flex items-center gap-2 transition-all ${hasLiked ? 'text-rose-500' : 'text-white/40 hover:text-white'}`}
            >
-             <Heart size={22} className={isLiked ? "fill-rose-500" : ""} />
-             <span className="text-xs font-black">{review.likes || 0}</span>
+             <Heart size={22} className={hasLiked ? "fill-rose-500" : ""} />
+             <span className="text-xs font-black">{totalLikes}</span>
            </button>
            <button className="flex items-center gap-2 text-white/40 hover:text-white transition-all">
-             <MessageSquare size={22} />
-             <span className="text-xs font-black">0</span>
+             <MessageSquare size={22} className={comments.length > 0 ? "text-white/80" : ""} />
+             <span className="text-xs font-black">{comments.length}</span>
              <span className="text-[10px] font-black uppercase tracking-widest ml-1 hidden md:inline">Discuss</span>
            </button>
         </div>

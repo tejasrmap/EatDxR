@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Star, Heart, MessageSquare, MapPin, Compass, Navigation } from "lucide-react";
-import { Review } from "../types";
+import { Review, Interaction } from "../types";
 import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { parseFirebaseDate } from "../lib/utils";
 import { useAuth } from "../App";
+import { db } from "../firebase";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { motion, AnimatePresence } from "motion/react";
 
 interface ReelCardProps {
@@ -14,6 +16,32 @@ interface ReelCardProps {
 export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
   const { dishdUser: currentUser } = useAuth();
   const [isLiked, setIsLiked] = useState(false);
+  const [likes, setLikes] = useState<Interaction[]>([]);
+  const [comments, setComments] = useState<Interaction[]>([]);
+  
+  useEffect(() => {
+    const q = query(
+      collection(db, "interactions"),
+      where("reviewId", "==", review.id)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const interactions = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      })) as Interaction[];
+      
+      setLikes(interactions.filter(i => i.type === "LIKE"));
+      setComments(interactions.filter(i => i.type === "COMMENT"));
+    }, (error) => {
+      console.warn("Interactions subscription error:", error.message);
+    });
+
+    return unsubscribe;
+  }, [review.id]);
+
+  const hasLiked = currentUser ? likes.some(l => l.userId === currentUser.uid) : false;
+  const totalLikes = (review.likes || 0) + likes.length;
   
   const firstImage = review.dishes?.find(d => d.image)?.image;
 
@@ -86,22 +114,22 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
             <div className="flex flex-col items-center gap-1.5 group/btn">
                 <button 
                   onClick={() => setIsLiked(!isLiked)}
-                  className={`w-10 h-10 md:w-14 md:h-14 rounded-full bg-black/40 md:bg-white/5 backdrop-blur-3xl border border-white/5 flex items-center justify-center transition-all active:scale-95 ${isLiked ? 'text-rose-500 shadow-lg shadow-rose-500/20' : 'text-white/40 hover:text-white group-hover/btn:bg-white/10'}`}
+                  className={`w-10 h-10 md:w-14 md:h-14 rounded-full bg-black/40 md:bg-white/5 backdrop-blur-3xl border border-white/5 flex items-center justify-center transition-all active:scale-95 ${hasLiked ? 'text-rose-500 shadow-lg shadow-rose-500/20' : 'text-white/40 hover:text-white group-hover/btn:bg-white/10'}`}
                 >
-                  <Heart size={isLiked ? 24 : 22} className={isLiked ? "fill-rose-500" : ""} />
+                  <Heart size={hasLiked ? 24 : 22} className={hasLiked ? "fill-rose-500" : ""} />
                 </button>
                 <div className="flex flex-col items-center">
-                    <span className="text-[10px] md:text-sm font-black text-white">{review.likes ?? 0}</span>
+                    <span className="text-[10px] md:text-sm font-black text-white">{totalLikes}</span>
                     <span className="text-[8px] md:text-[9px] font-black uppercase text-white/40 tracking-[0.2em] -mt-1">Likes</span>
                 </div>
             </div>
             
             <div className="flex flex-col items-center gap-1.5 group/btn">
                 <Link to={`/restaurant/${review.id}`} className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-white/5 backdrop-blur-3xl border border-white/5 flex items-center justify-center text-white/40 hover:text-[#00e054] group-hover/btn:bg-white/10 transition-all active:scale-95">
-                   <MessageSquare size={22} />
+                   <MessageSquare size={22} className={comments.length > 0 ? "text-white/80" : ""} />
                 </Link>
                 <div className="flex flex-col items-center">
-                    <span className="text-[10px] md:text-sm font-black text-white">0</span>
+                    <span className="text-[10px] md:text-sm font-black text-white">{comments.length}</span>
                     <span className="text-[8px] md:text-[9px] font-black uppercase text-white/40 tracking-[0.2em] -mt-1">Chat</span>
                 </div>
             </div>
