@@ -51,8 +51,8 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
             </div>
         </div>
 
-        {/* 3. Bottom-Left Content Overlay */}
-        <div className="absolute bottom-6 md:bottom-8 left-6 right-6 z-20 space-y-4">
+        {/* 3. Bottom-Left Content Overlay (Mobile-Only) */}
+        <div className="absolute bottom-6 left-6 right-6 z-20 space-y-4 md:hidden">
              <div className="space-y-1.5">
                 <div className="flex items-center gap-2 text-[#00e054] text-[9px] md:text-[10px] font-black uppercase tracking-widest opacity-80">
                     <MapPin size={10} />
@@ -76,9 +76,8 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
              </div>
         </div>
 
-        {/* 4. Side Interaction Column (Right) */}
-        {/* On Mobile: Absolute right; On Desktop: Pushed outside the container */}
-        <div className="absolute right-4 bottom-24 md:bottom-0 md:-right-24 flex flex-col items-center gap-6 md:gap-8 z-30 pointer-events-auto">
+        {/* 4. Side Interaction Column (Floating - Desktop Left, Mobile Right) */}
+        <div className="absolute right-4 bottom-24 md:bottom-0 md:-left-20 flex flex-col items-center gap-6 md:gap-8 z-30 pointer-events-auto">
             <div className="flex flex-col items-center gap-1.5 group/btn">
                 <button 
                   onClick={() => setIsLiked(!isLiked)}
@@ -102,6 +101,33 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
                 </Link>
                 <span className="text-[9px] md:text-[11px] font-black uppercase text-white/40 tracking-widest">Go</span>
             </div>
+        </div>
+
+        {/* 5. Desktop-Only Data Column (Floating Left Side) */}
+        <div className="hidden md:flex absolute right-[calc(100%+6rem)] bottom-0 flex-col items-end text-right gap-6 w-80 z-30 pointer-events-none">
+             <div className="space-y-3 pointer-events-auto">
+                <div className="flex items-center justify-end gap-2 text-[#00e054] text-[10px] font-black uppercase tracking-[0.2em] opacity-60">
+                    <span>{review.city || "Nearby Spot"}</span>
+                    <MapPin size={12} />
+                </div>
+                <h2 className="text-4xl font-black uppercase tracking-tighter leading-[0.8] text-white break-words">{review.restaurantName}</h2>
+                
+                {review.content && review.content.trim() && (
+                  <div className="relative group">
+                    <p className="text-lg font-medium text-white/60 italic serif leading-relaxed">
+                      "{review.content}"
+                    </p>
+                  </div>
+                )}
+             </div>
+
+             <div className="flex flex-wrap justify-end gap-3 pt-4 pointer-events-auto">
+                {review.dishes?.slice(0, 4).map((dish, i) => (
+                    <div key={i} className="px-5 py-2 bg-white/5 hover:bg-white/10 transition-colors rounded-full border border-white/10">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-white/40">{dish.name}</span>
+                    </div>
+                ))}
+             </div>
         </div>
       </div>
     </div>
