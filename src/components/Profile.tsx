@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { collection, query, where, onSnapshot, orderBy, doc, getDoc, getDocs, updateDoc, arrayUnion, arrayRemove, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, doc, getDoc, getDocs, updateDoc, arrayUnion, arrayRemove, setDoc, deleteDoc, serverTimestamp, increment } from "firebase/firestore";
 import { db } from "../firebase";
 import { Review, User, Restaurant } from "../types";
 import { ReviewCard } from "./ReviewCard";
@@ -37,14 +37,17 @@ export const Profile: React.FC = () => {
     setIsUpdatingFollow(true);
     try {
       const currentUserRef = doc(db, "users", currentUser.uid);
+      const targetUserRef = doc(db, "users", user.uid);
       const notifId = `${currentUser.uid}_${user.uid}_FOLLOW`;
       
       if (isFollowing) {
         await updateDoc(currentUserRef, { "stats.followingList": arrayRemove(user.uid) });
+        await updateDoc(targetUserRef, { "stats.followers": increment(-1) });
         await deleteDoc(doc(db, "notifications", notifId)).catch(() => {});
         toast.success(`Unfollowed ${user.displayName}`);
       } else {
         await updateDoc(currentUserRef, { "stats.followingList": arrayUnion(user.uid) });
+        await updateDoc(targetUserRef, { "stats.followers": increment(1) });
         await setDoc(doc(db, "notifications", notifId), {
           id: notifId,
           recipientId: user.uid,
