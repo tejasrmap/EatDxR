@@ -3,7 +3,8 @@ import { useAuth } from '../App';
 import { db } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { MapPin, Zap, Database, Loader2, IndianRupee, Globe, Lock, ShieldCheck, Search, Sliders, Map as MapIcon, ChevronRight, Check, Timer } from 'lucide-react';
+import { MapPin, Zap, Database, Loader2, IndianRupee, Globe, Lock, ShieldCheck, Search, Sliders, Map as MapIcon, ChevronRight, Check, Timer, Trash2, Rocket } from 'lucide-react';
+import { VIJAYAWADA_RESTAURANTS, GUDIVADA_RESTAURANTS } from '../data/apRestaurants';
 
 // Admin Security Constants
 const ADMIN_PASSWORD = "ADMIN-EAT-DxR";
@@ -31,6 +32,62 @@ export const AdminSeed: React.FC = () => {
   const [usePinpoint, setUsePinpoint] = useState(true);
   const [locationOptions, setLocationOptions] = useState<LocationResult[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
+
+  const purgeRestaurants = async () => {
+    const { collection, getDocs, deleteDoc, writeBatch } = await import('firebase/firestore');
+    const snap = await getDocs(collection(db, "restaurants"));
+    const batch = writeBatch(db);
+    snap.docs.forEach((d) => {
+      batch.delete(d.ref);
+    });
+    await batch.commit();
+    return snap.size;
+  };
+
+  const handleMegaSeedAP = async () => {
+    if (!user || user.email !== 'tejag.vijay@gmail.com') {
+      toast.error('Identity Verification Failed.');
+      return;
+    }
+
+    setIsSeeding(true);
+    setProgress({ total: 1, current: 0 }); // Visual indicator starting
+    
+    try {
+      const { collection, writeBatch, doc } = await import('firebase/firestore');
+      
+      toast.info("Purging old inaccuracies...");
+      const deletedCount = await purgeRestaurants();
+      toast.success(`Cleared ${deletedCount} entries. Preparing transplant...`);
+
+      const allData = [...VIJAYAWADA_RESTAURANTS, ...GUDIVADA_RESTAURANTS];
+      setProgress({ total: allData.length, current: 0 });
+
+      // Firestore batches have a limit of 500 operations
+      const batch = writeBatch(db);
+      let count = 0;
+      
+      for (const item of allData) {
+        const ref = doc(collection(db, 'restaurants'));
+        batch.set(ref, {
+          ...item,
+          id: ref.id,
+          likesCount: 0,
+          menuItems: item.mustTry || []
+        });
+        count++;
+        setProgress(prev => ({ ...prev, current: count }));
+      }
+
+      await batch.commit();
+      toast.success(`Success! Seeded ${count} premium restaurants.`);
+    } catch (error: any) {
+      console.error('Mega-Seed error:', error);
+      toast.error(`Transplant Error: ${error.message}`);
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   const handleAuthorize = () => {
     if (accessKey === ADMIN_PASSWORD) {
@@ -201,41 +258,6 @@ export const AdminSeed: React.FC = () => {
     }
   };
 
-  const handleClear = async () => {
-    if (!user || user.email !== 'tejag.vijay@gmail.com') {
-      toast.error('Identity Verification Failed.');
-      return;
-    }
-
-    if (!window.confirm("CRITICAL WARNING: This will delete ALL restaurants from the global database. This action is irreversible. Proceed?")) {
-      return;
-    }
-
-    setIsSeeding(true);
-    try {
-      toast.info("Initializing Global Wipe...");
-      const { getDocs, deleteDoc, collection } = await import('firebase/firestore');
-      const snap = await getDocs(collection(db, 'restaurants'));
-      
-      const total = snap.docs.length;
-      let deleted = 0;
-      setProgress({ total, current: 0 });
-
-      for (const docSnap of snap.docs) {
-        await deleteDoc(doc(db, 'restaurants', docSnap.id));
-        deleted++;
-        setProgress({ total, current: deleted });
-      }
-
-      toast.success(`Database Cleared: ${deleted} establishments removed.`);
-    } catch (error: any) {
-      toast.error(`Wipe Failed: ${error.message}`);
-    } finally {
-      setIsSeeding(false);
-      setProgress({ total: 0, current: 0 });
-    }
-  };
-
   if (!isAuthorized) {
     return (
        <div className="min-h-[80vh] flex items-center justify-center px-6">
@@ -272,145 +294,81 @@ export const AdminSeed: React.FC = () => {
           <Database className="text-black w-8 h-8" />
         </div>
         <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-4">
            <ShieldCheck className="text-[#00e054]" size={14} />
            <p className="text-[10px] uppercase font-black tracking-[0.2em] text-[#00e054]">Session Authorized</p>
         </div>
-        <h1 className="text-4xl font-black uppercase tracking-tighter text-white mb-4">Pinpoint Regional Seeding</h1>
+        <h1 className="text-4xl font-black uppercase tracking-tighter text-white mb-4">Database & Content Admin</h1>
         
-        {!isSeeding ? (
-          <div className="w-full max-w-lg space-y-8 bg-zinc-900/50 p-8 rounded-3xl border border-white/5 backdrop-blur-xl">
-             
-             {/* Dynamic Search Section */}
-             <div className="space-y-4">
-                <label className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/30 text-left block w-full px-2">Discovery Town / Point</label>
-                <div className="flex gap-2">
-                   <div className="relative flex-1">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={16} />
-                      <input 
-                        type="text"
-                        placeholder="e.g., Guntur, Mangalagiri, Tenali..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSearchLocation()}
-                        className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white placeholder:text-white/10 focus:ring-1 ring-[#00e054] outline-none transition-all"
-                      />
-                   </div>
-                   <button 
-                     disabled={isFindingLocation}
-                     onClick={handleSearchLocation}
-                     className="bg-zinc-800 hover:bg-zinc-700 text-white p-4 rounded-2xl transition-colors disabled:opacity-50"
-                   >
-                     {isFindingLocation ? <Loader2 className="animate-spin text-[#00e054]" /> : <ChevronRight />}
-                   </button>
-                </div>
-                
-                <div className="flex gap-2">
-                   <button 
-                     onClick={() => { setSearchQuery("SRMAP Campus"); setTimeout(handleSearchLocation, 100); }}
-                     className="text-[10px] font-black uppercase tracking-widest bg-white/5 hover:bg-[#00e054]/20 text-white/40 hover:text-[#00e054] px-4 py-2 rounded-lg border border-white/5 transition-all"
-                   >
-                     Quick Start: SRMAP
-                   </button>
-                </div>
-                
-                {locationOptions.length > 0 && !selectedLocation && (
-                   <div className="space-y-2 mt-4 text-left">
-                      <p className="text-[10px] uppercase font-bold text-white/20 px-2">Matches Found:</p>
-                      {locationOptions.map((opt, i) => (
-                         <div 
-                           key={i}
-                           onClick={() => setSelectedLocation(opt)}
-                           className="bg-white/5 hover:bg-[#00e054]/10 border border-white/5 hover:border-[#00e054]/40 p-4 rounded-2xl cursor-pointer transition-all flex items-center justify-between group"
-                         >
-                            <div className="flex items-center gap-3">
-                               <MapIcon size={16} className="text-white/20 group-hover:text-[#00e054]" />
-                               <div>
-                                  <p className="text-sm font-bold text-white group-hover:text-[#00e054]">{opt.fullName}</p>
-                                  <p className="text-[10px] font-mono text-white/20 uppercase mt-0.5">
-                                     {opt.lat.toFixed(4)}, {opt.lng.toFixed(4)}
-                                  </p>
-                               </div>
-                            </div>
-                            <ChevronRight size={14} className="text-white/10" />
-                         </div>
-                      ))}
-                   </div>
-                )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl mt-8">
+           {/* AP Mega-Transplant: The Definitive Seed */}
+           <div className="bg-zinc-900/50 p-8 rounded-[2.5rem] border border-white/5 backdrop-blur-xl hover:border-red-500/50 transition-all group text-left relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                <Rocket size={120} />
+              </div>
+              <div className="flex items-center gap-2 mb-4">
+                 <Zap className="text-red-500" size={16} />
+                 <span className="text-[10px] uppercase tracking-widest font-black text-white/40">Operation: Mega-Seed</span>
+              </div>
+              <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">AP Mega-Transplant</h2>
+              <p className="text-white/40 text-xs font-serif italic mb-8 leading-relaxed">
+                Reconstruct the entire database for Vijayawada & Gudivada. Clears all old data and injects 50+ legendary icons with real addresses and GPS.
+              </p>
+              <button 
+                onClick={handleMegaSeedAP}
+                disabled={isSeeding}
+                className="w-full bg-red-600 text-white font-black uppercase tracking-widest py-4 rounded-2xl hover:bg-red-500 transition-all flex items-center justify-center gap-3 shadow-xl shadow-red-600/20 active:scale-[0.98]"
+              >
+                {isSeeding ? <Loader2 className="animate-spin" size={18} /> : <Trash2 size={18} />}
+                Purge & Seed AP Icons
+              </button>
+           </div>
 
-                {selectedLocation && (
-                   <div className="bg-[#00e054]/5 border border-[#00e054]/20 p-4 rounded-2xl flex items-start justify-between text-left">
-                      <div className="flex items-start gap-3">
-                        <MapIcon size={18} className="text-[#00e054] mt-0.5" />
-                        <div>
-                           <p className="text-[10px] uppercase font-black tracking-widest text-[#00e054]/60">Target Confirmed</p>
-                           <p className="text-white font-bold">{selectedLocation.fullName}</p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => setSelectedLocation(null)}
-                        className="text-[9px] uppercase font-black text-rose-500 hover:underline"
-                      >
-                        Change
-                      </button>
-                   </div>
-                )}
-             </div>
- 
-             {/* Pinpoint Toggle */}
-             <div className="flex items-center justify-between bg-black/40 p-4 rounded-2xl border border-white/5">
-                <div className="flex items-center gap-3">
-                   <div className={`p-2 rounded-lg ${usePinpoint ? 'bg-[#00e054]/20' : 'bg-white/5'}`}>
-                      <Timer size={16} className={usePinpoint ? 'text-[#00e054]' : 'text-white/20'} />
-                   </div>
-                   <div className="text-left">
-                      <p className="text-[10px] uppercase font-black tracking-widest text-white">Pinpoint Mode</p>
-                      <p className="text-[9px] text-white/30 font-serif italic">Hyper-local address lookup (Slower)</p>
-                   </div>
-                </div>
-                <button 
-                  onClick={() => setUsePinpoint(!usePinpoint)}
-                  className={`w-12 h-6 rounded-full transition-all relative ${usePinpoint ? 'bg-[#00e054]' : 'bg-white/10'}`}
-                >
-                   <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${usePinpoint ? 'left-7' : 'left-1'}`} />
-                </button>
-             </div>
- 
-             {/* Radius Section */}
-             <div className="space-y-4">
-                <div className="flex justify-between items-center px-2">
-                   <label className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/30">Discovery Radius</label>
-                   <span className="text-xs font-black text-[#00e054]">{radiusKm} KM</span>
-                </div>
-                <div className="relative pt-2">
-                   <input 
-                     type="range"
-                     min="1"
-                     max="50"
-                     value={radiusKm}
-                     onChange={(e) => setRadiusKm(parseInt(e.target.value))}
-                     className="w-full h-2 bg-black/40 rounded-lg appearance-none cursor-pointer accent-[#00e054]"
-                   />
-                </div>
-             </div>
+           {/* OSM Pinpoint Seeding: The Discovery Engine */}
+           <div className="bg-zinc-900/50 p-8 rounded-[2.5rem] border border-white/5 backdrop-blur-xl hover:border-[#00e054]/50 transition-all group text-left">
+              <div className="flex items-center gap-2 mb-4">
+                 <Search className="text-[#00e054]" size={16} />
+                 <span className="text-[10px] uppercase tracking-widest font-black text-white/40">Operation: Discovery</span>
+              </div>
+              <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Pinpoint Discovery</h2>
+              <p className="text-white/40 text-xs font-serif italic mb-8 leading-relaxed">
+                Scan any global region using OpenStreetMap. Latent discovery of fast food, cafes, and local eateries within a custom radius.
+              </p>
+              
+              <div className="space-y-4">
+                 <div className="flex gap-2">
+                    <input 
+                      type="text"
+                      placeholder="Discovery Town..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearchLocation()}
+                      className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/10 focus:ring-1 ring-[#00e054] outline-none"
+                    />
+                    <button 
+                      onClick={handleSearchLocation}
+                      className="bg-zinc-800 p-3 rounded-xl"
+                    >
+                       {isFindingLocation ? <Loader2 className="animate-spin" /> : <ChevronRight />}
+                    </button>
+                 </div>
+                 
+                 {selectedLocation && (
+                    <button 
+                      onClick={handleSeed}
+                      disabled={isSeeding}
+                      className="w-full bg-[#00e054] text-black font-black uppercase tracking-widest py-4 rounded-2xl hover:bg-[#00f064] transition-all flex items-center justify-center gap-3 shadow-xl shadow-[#00e054]/20"
+                    >
+                       <Zap size={18} />
+                       Inject {selectedLocation.name}
+                    </button>
+                 )}
+              </div>
+           </div>
+        </div>
 
-            <button 
-              onClick={handleSeed}
-              disabled={!selectedLocation}
-              className="w-full bg-[#00e054] text-black px-8 py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-[#00c044] transition-all hover:-translate-y-1 shadow-2xl shadow-[#00e054]/20 flex items-center justify-center gap-3 group disabled:opacity-50 disabled:grayscale disabled:transform-none"
-            >
-              <Zap className="fill-black group-hover:scale-110 transition-transform" size={20} />
-              Inject Region Data
-            </button>
-
-            <button 
-              onClick={handleClear}
-              className="w-full bg-transparent border border-rose-500/20 text-rose-500/40 px-8 py-3 rounded-xl font-bold uppercase tracking-widest hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all flex items-center justify-center gap-2 group text-[10px]"
-            >
-              Wipe Global Database
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-8 w-full max-w-md bg-zinc-900 p-10 rounded-3xl border border-[#00e054]/20 shadow-2xl">
+        {isSeeding && (
+          <div className="mt-12 w-full max-w-lg mx-auto bg-zinc-900 p-10 rounded-3xl border border-[#00e054]/20 shadow-2xl">
             <div className="relative">
               <Loader2 className="w-20 h-20 animate-spin text-[#00e054] mx-auto opacity-20" />
               <div className="absolute inset-0 flex items-center justify-center">
