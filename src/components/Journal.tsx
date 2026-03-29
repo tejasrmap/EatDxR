@@ -140,7 +140,7 @@ export const Journal: React.FC = () => {
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden"
             >
-                 <div className="h-svh md:h-[90vh] w-full max-w-6xl relative shadow-2xl snap-y-container scrollbar-hide md:rounded-3xl md:overflow-hidden">
+                 <div className="h-svh md:h-[95vh] w-full max-w-6xl relative shadow-2xl snap-y-container scrollbar-hide md:rounded-3xl md:overflow-hidden">
                     {reviews.length > 0 ? (
                         reviews.map(review => (
                             <ReelCard key={review.id} review={review} />

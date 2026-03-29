@@ -21,7 +21,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
     <div className="snap-child relative w-full h-svh md:h-screen bg-black overflow-hidden md:flex md:items-center md:justify-center">
       
       {/* 1. Centered Media Container (Aspect-Ratio controlled on Desktop) */}
-      <div className="relative w-full h-full md:h-[85vh] md:aspect-[9/16] md:max-w-md bg-zinc-900 md:rounded-3xl shadow-2xl md:overflow-visible overflow-hidden group">
+      <div className="relative w-full h-full md:h-[92vh] md:aspect-[9/16] md:max-w-md bg-zinc-900 md:rounded-3xl shadow-2xl md:overflow-visible overflow-hidden group">
         
         {/* Background Image */}
         {firstImage ? (
