@@ -48,7 +48,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
       </div>
 
       {/* Top Header - User Info */}
-      <div className="absolute top-10 left-6 right-6 md:left-auto md:right-auto md:w-full md:max-w-[400px] flex items-center justify-between z-30">
+      <div className="absolute top-28 md:top-24 left-6 right-6 md:left-auto md:right-auto md:w-full md:max-w-[400px] flex items-center justify-between z-30">
         <Link to={`/profile/${review.userId}`} className="flex items-center gap-3 bg-black/40 backdrop-blur-3xl px-3 py-2 rounded-full border border-white/10 group">
            <img 
              src={review.userPhoto} 

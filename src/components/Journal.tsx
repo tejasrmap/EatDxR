@@ -61,42 +61,59 @@ export const Journal: React.FC = () => {
   return (
     <div className={`min-h-screen bg-black ${mode === 'posts' ? 'pt-24 pb-32 px-4 md:px-6' : 'pt-0 pb-0 overflow-hidden'}`}>
       
-      {/* Feed Toggle Header - Adjusted for Posts vs Reels */}
-      <div className={`flex items-center justify-between transition-all duration-700 z-[110] ${mode === 'reels' ? 'fixed top-10 left-1/2 -translate-x-1/2 w-full max-w-xs md:max-w-md px-6' : 'relative mb-12'}`}>
-        <div className={`flex flex-col transition-all duration-700 ${mode === 'reels' ? 'opacity-0 scale-90 invisible absolute' : 'opacity-100 scale-100 visible'}`}>
-            <h1 className="text-3xl md:text-5xl lg:text-7xl font-black uppercase tracking-tighter text-white">The <span className="text-[#00e054] italic serif lowercase">feed</span></h1>
-            <p className="text-[10px] md:text-xs uppercase font-black tracking-[0.2em] text-white/30 truncate max-w-[200px]">Regional Live Diary • {reviews.length} logs</p>
-        </div>
+      {/* Elegant Integrated Header - Responsive */}
+      <div className={`transition-all duration-700 z-[120] ${mode === 'reels' ? 'fixed top-6 left-1/2 -translate-x-1/2 w-full max-w-[90vw] md:max-w-xl' : 'relative mb-12'}`}>
+        <div className={`flex items-center justify-between bg-black/40 border border-white/10 rounded-full p-1.5 backdrop-blur-3xl shadow-2xl transition-all duration-700 ${mode === 'reels' ? 'px-4 md:px-6' : 'bg-transparent border-none backdrop-blur-none shadow-none'}`}>
+            
+            {/* Minimal Logo - Only in Reels Mode or always for Journal Header */}
+            <Link to="/" className={`flex items-center gap-2 transition-all duration-700 ${mode === 'reels' ? 'opacity-100' : 'opacity-100'}`}>
+                <div className="flex items-center justify-center w-7 h-7 md:w-8 md:h-8 bg-gradient-to-br from-orange-500 to-rose-500 rounded-lg shadow-lg shadow-rose-500/20">
+                    <LayoutGrid className="text-white w-3.5 h-3.5" />
+                </div>
+                {mode === 'reels' && (
+                  <span className="hidden md:block text-sm font-black tracking-tighter text-white">
+                    Eat<span className="text-rose-500">D</span>
+                  </span>
+                )}
+                {mode === 'posts' && (
+                  <div className="flex flex-col ml-2">
+                    <h1 className="text-xl md:text-3xl font-black uppercase tracking-tighter text-white leading-none">The <span className="text-[#00e054] italic serif lowercase">feed</span></h1>
+                    <p className="text-[8px] md:text-[9px] uppercase font-black tracking-[0.2em] text-white/30 truncate mt-0.5">Regional Live Diary • {reviews.length} logs</p>
+                  </div>
+                )}
+            </Link>
 
-        <div className={`flex items-center bg-black/40 border border-white/10 rounded-full p-1 backdrop-blur-3xl shadow-2xl transition-all duration-700 ${mode === 'reels' ? 'opacity-70 hover:opacity-100' : 'opacity-100'}`}>
-            <button 
-              onClick={() => updateMode('posts')}
-              className={`relative flex items-center justify-center gap-2 px-6 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] transition-all z-10 ${mode === 'posts' ? 'text-black' : 'text-white/40 hover:text-white'}`}
-            >
-              {mode === 'posts' && (
-                <motion.div 
-                  layoutId="active-pill"
-                  className="absolute inset-0 bg-[#00e054] rounded-full -z-10 shadow-lg shadow-[#00e054]/20"
-                  transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-                />
-              )}
-              <LayoutGrid size={14} />
-              <span>Posts</span>
-            </button>
-            <button 
-              onClick={() => updateMode('reels')}
-              className={`relative flex items-center justify-center gap-2 px-6 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] transition-all z-10 ${mode === 'reels' ? 'text-black' : 'text-white/40 hover:text-white'}`}
-            >
-              {mode === 'reels' && (
-                <motion.div 
-                  layoutId="active-pill"
-                  className="absolute inset-0 bg-[#00e054] rounded-full -z-10 shadow-lg shadow-[#00e054]/20"
-                  transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-                />
-              )}
-              <PlayCircle size={14} />
-              <span>Reels</span>
-            </button>
+            {/* Toggle Group */}
+            <div className="flex items-center bg-white/5 rounded-full p-0.5 border border-white/5">
+                <button 
+                  onClick={() => updateMode('posts')}
+                  className={`relative flex items-center justify-center gap-2 px-4 md:px-6 h-8 md:h-9 rounded-full text-[9px] md:text-[11px] font-black uppercase tracking-[0.2em] transition-all z-10 ${mode === 'posts' ? 'text-black' : 'text-white/40 hover:text-white'}`}
+                >
+                  {mode === 'posts' && (
+                    <motion.div 
+                      layoutId="active-pill"
+                      className="absolute inset-0 bg-[#00e054] rounded-full -z-10 shadow-lg shadow-[#00e054]/20"
+                      transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                    />
+                  )}
+                  <LayoutGrid size={12} className={mode === 'posts' ? 'text-black' : 'text-white/40'} />
+                  <span>Posts</span>
+                </button>
+                <button 
+                  onClick={() => updateMode('reels')}
+                  className={`relative flex items-center justify-center gap-2 px-4 md:px-6 h-8 md:h-9 rounded-full text-[9px] md:text-[11px] font-black uppercase tracking-[0.2em] transition-all z-10 ${mode === 'reels' ? 'text-black' : 'text-white/40 hover:text-white'}`}
+                >
+                  {mode === 'reels' && (
+                    <motion.div 
+                      layoutId="active-pill"
+                      className="absolute inset-0 bg-[#00e054] rounded-full -z-10 shadow-lg shadow-[#00e054]/20"
+                      transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                    />
+                  )}
+                  <PlayCircle size={12} className={mode === 'reels' ? 'text-black' : 'text-white/40'} />
+                  <span>Reels</span>
+                </button>
+            </div>
         </div>
       </div>
 
