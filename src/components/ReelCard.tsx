@@ -21,7 +21,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
     <div className="snap-child relative w-full h-svh md:h-screen bg-black overflow-hidden md:flex md:items-center md:justify-center">
       
       {/* 1. Centered Media Container (Aspect-Ratio controlled on Desktop) */}
-      <div className="relative w-full h-full md:h-[92vh] md:aspect-[9/16] md:max-w-md bg-zinc-900 md:rounded-3xl shadow-2xl md:overflow-visible overflow-hidden group">
+      <div className="relative w-full h-full md:h-[88vh] md:aspect-[9/16] md:max-w-md bg-zinc-900 md:rounded-3xl shadow-2xl md:overflow-visible overflow-hidden group">
         
         {/* Background Image */}
         {firstImage ? (
@@ -77,7 +77,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
         </div>
 
         {/* 4. Side Interaction Column (Floating - Desktop Right, Mobile Right) */}
-        <div className="absolute right-4 bottom-24 md:bottom-0 md:right-auto md:left-[calc(100%+1.5rem)] flex flex-col items-center gap-6 md:gap-8 z-30 pointer-events-auto">
+        <div className="absolute right-4 bottom-24 md:bottom-10 md:right-auto md:left-[calc(100%+1.5rem)] flex flex-col items-center gap-6 md:gap-8 z-30 pointer-events-auto">
             <div className="flex flex-col items-center gap-1.5 group/btn">
                 <button 
                   onClick={() => setIsLiked(!isLiked)}
@@ -104,7 +104,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
         </div>
 
         {/* 5. Desktop-Only Data Column (Floating Left Side) */}
-        <div className="hidden md:flex absolute right-[calc(100%+1.5rem)] md:left-auto bottom-0 flex-col items-end text-right gap-6 w-96 z-30 pointer-events-none">
+        <div className="hidden md:flex absolute right-[calc(100%+1.5rem)] md:left-auto md:bottom-10 flex-col items-end text-right gap-6 w-96 z-30 pointer-events-none">
              {/* Desktop Author Info Addition */}
              <div className="flex items-center gap-3 mb-2 pointer-events-auto">
                 <div className="flex flex-col items-end">
