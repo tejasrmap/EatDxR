@@ -62,13 +62,13 @@ export const Journal: React.FC = () => {
     <div className={`min-h-screen bg-black ${mode === 'posts' ? 'pt-24 pb-32 px-4 md:px-6' : 'pt-0 pb-0 overflow-hidden'}`}>
       
       {/* Feed Toggle Header - Adjusted for Posts vs Reels */}
-      <div className={`flex items-center justify-between mb-8 z-[110] transition-all ${mode === 'reels' ? 'fixed top-6 left-6 right-6 opacity-0 hover:opacity-100 pointer-events-none' : 'relative'}`}>
-        <div className={`flex flex-col transition-opacity ${mode === 'reels' ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`flex items-center justify-between transition-all duration-500 z-[110] ${mode === 'reels' ? 'fixed top-6 left-0 right-0 justify-center px-6' : 'relative mb-8'}`}>
+        <div className={`flex flex-col transition-all duration-500 ${mode === 'reels' ? 'opacity-0 scale-90 absolute left-6' : 'opacity-100 scale-100'}`}>
             <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-white">The <span className="text-[#00e054] italic serif lowercase">feed</span></h1>
             <p className="text-[10px] uppercase font-black tracking-widest text-white/30 truncate max-w-[150px]">Regional Live Diary • {reviews.length} logs</p>
         </div>
 
-        <div className="flex items-center bg-white/5 border border-white/10 rounded-full p-1 backdrop-blur-3xl shadow-2xl pointer-events-auto">
+        <div className={`flex items-center bg-white/5 border border-white/10 rounded-full p-1 backdrop-blur-3xl shadow-2xl transition-all duration-500 ${mode === 'reels' ? 'opacity-50 hover:opacity-100' : 'opacity-100'}`}>
             <button 
               onClick={() => updateMode('posts')}
               className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'posts' ? 'bg-[#00e054] text-black shadow-lg shadow-[#00e054]/20 scale-105' : 'text-white/40 hover:text-white'}`}
