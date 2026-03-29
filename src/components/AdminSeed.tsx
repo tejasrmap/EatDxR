@@ -201,6 +201,41 @@ export const AdminSeed: React.FC = () => {
     }
   };
 
+  const handleClear = async () => {
+    if (!user || user.email !== 'tejag.vijay@gmail.com') {
+      toast.error('Identity Verification Failed.');
+      return;
+    }
+
+    if (!window.confirm("CRITICAL WARNING: This will delete ALL restaurants from the global database. This action is irreversible. Proceed?")) {
+      return;
+    }
+
+    setIsSeeding(true);
+    try {
+      toast.info("Initializing Global Wipe...");
+      const { getDocs, deleteDoc, collection } = await import('firebase/firestore');
+      const snap = await getDocs(collection(db, 'restaurants'));
+      
+      const total = snap.docs.length;
+      let deleted = 0;
+      setProgress({ total, current: 0 });
+
+      for (const docSnap of snap.docs) {
+        await deleteDoc(doc(db, 'restaurants', docSnap.id));
+        deleted++;
+        setProgress({ total, current: deleted });
+      }
+
+      toast.success(`Database Cleared: ${deleted} establishments removed.`);
+    } catch (error: any) {
+      toast.error(`Wipe Failed: ${error.message}`);
+    } finally {
+      setIsSeeding(false);
+      setProgress({ total: 0, current: 0 });
+    }
+  };
+
   if (!isAuthorized) {
     return (
        <div className="min-h-[80vh] flex items-center justify-center px-6">
@@ -365,6 +400,13 @@ export const AdminSeed: React.FC = () => {
             >
               <Zap className="fill-black group-hover:scale-110 transition-transform" size={20} />
               Inject Region Data
+            </button>
+
+            <button 
+              onClick={handleClear}
+              className="w-full bg-transparent border border-rose-500/20 text-rose-500/40 px-8 py-3 rounded-xl font-bold uppercase tracking-widest hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all flex items-center justify-center gap-2 group text-[10px]"
+            >
+              Wipe Global Database
             </button>
           </div>
         ) : (
