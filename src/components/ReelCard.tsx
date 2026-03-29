@@ -64,13 +64,13 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
                   alt=""
                 />
                 <div className="flex flex-col">
-                  <span className="text-sm font-black uppercase tracking-[0.2em] text-white/40 group-hover:text-white transition-all">Shared By</span>
-                  <span className="text-base md:text-lg font-black uppercase tracking-widest text-[#00e054]">{review.userName}</span>
+                  <span className="text-xs font-black uppercase tracking-[0.2em] text-white/40 group-hover:text-white transition-all">Shared By</span>
+                  <span className="text-sm md:text-base font-black uppercase tracking-widest text-[#00e054]">{review.userName}</span>
                 </div>
             </Link>
-            <div className="ml-auto bg-white/5 px-6 py-3 rounded-full border border-white/10 flex items-center gap-2">
-               <Star size={18} className="fill-yellow-500 text-yellow-500" />
-               <span className="text-lg font-black text-white">{review.rating.toFixed(1)}</span>
+            <div className="ml-auto bg-white/5 px-4 py-2 rounded-full border border-white/10 flex items-center gap-2">
+               <Star size={16} className="fill-yellow-500 text-yellow-500" />
+               <span className="text-base font-black text-white">{review.rating.toFixed(1)}</span>
             </div>
         </div>
 
@@ -90,15 +90,15 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
         <div className="space-y-6">
             <div className="space-y-2">
                 <div className="flex items-center gap-2 text-[#00e054] text-[10px] md:text-xs font-black uppercase tracking-[0.2em]">
-                    <MapPin size={16} />
+                    <MapPin size={14} />
                     <span>{review.city || "Nearby Spot"}</span>
                 </div>
-                <h2 className="text-4xl md:text-8xl font-black uppercase tracking-tighter leading-[0.8] text-white">{review.restaurantName}</h2>
+                <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-tight text-white">{review.restaurantName}</h2>
             </div>
             
             {review.content && review.content.trim() && (
-              <div className="bg-white/5 md:bg-transparent md:border-l-4 md:border-white/10 md:pl-10 p-6 md:p-0 rounded-2xl md:rounded-none relative overflow-hidden group">
-                  <p className="text-base md:text-2xl font-serif italic text-white/90 leading-relaxed md:leading-[1.5] max-w-xl">
+              <div className="bg-white/5 md:bg-transparent md:border-l-2 md:border-white/10 md:pl-8 p-6 md:p-0 rounded-2xl md:rounded-none relative overflow-hidden group">
+                  <p className="text-base md:text-lg font-medium text-white/80 leading-relaxed max-w-lg">
                     "{review.content}"
                   </p>
               </div>

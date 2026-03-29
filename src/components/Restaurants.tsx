@@ -91,8 +91,8 @@ export function Restaurants() {
 
   return (
     <div className="min-h-screen pt-20 md:pt-24 pb-32 md:pb-20 px-4 md:px-6 max-w-7xl mx-auto">
-      <header className="mb-12 md:mb-20">
-        <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tighter mb-6 animate-in fade-in slide-in-from-left-4 duration-700 leading-[0.8]">Discover <span className="text-[#00e054] italic serif lowercase">nearby</span></h1>
+      <header className="mb-10 md:mb-16">
+        <h1 className="text-3xl md:text-6xl font-black uppercase tracking-tighter mb-4 animate-in fade-in slide-in-from-left-4 duration-700 leading-tight">Discover <span className="text-[#00e054] italic serif lowercase">nearby</span></h1>
         
         <div className="flex flex-col gap-4">
            <div className="flex flex-wrap items-center gap-2 md:gap-4">
@@ -215,8 +215,8 @@ function RestaurantCard({ restaurant, index, isSmall = false }: { restaurant: an
                    {restaurant.rating?.toFixed ? restaurant.rating.toFixed(1) : restaurant.rating || "0.0"}
                 </div>
             </div>
-            <h3 className="text-xl md:text-3xl font-black text-white uppercase tracking-tight line-clamp-1 leading-none">{restaurant.name}</h3>
-            <p className="text-white/40 text-[9px] md:text-xs uppercase font-bold tracking-widest mt-1.5 truncate">{restaurant.location}</p>
+            <h3 className="text-base md:text-xl font-black text-white uppercase tracking-tight line-clamp-1 leading-none">{restaurant.name}</h3>
+            <p className="text-white/40 text-[7px] md:text-[10px] uppercase font-bold tracking-widest mt-1 truncate">{restaurant.location}</p>
           </div>
         </div>
       </Link>

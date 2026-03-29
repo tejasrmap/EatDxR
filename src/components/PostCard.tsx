@@ -33,8 +33,8 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
             className="w-8 h-8 rounded-full border border-white/10"
           />
           <div className="flex flex-col">
-            <span className="text-sm md:text-base font-black uppercase tracking-[0.2em] text-white/90">{review.userName}</span>
-            <span className="text-[10px] md:text-xs text-white/40 font-bold uppercase tracking-widest">
+            <span className="text-xs md:text-sm font-black uppercase tracking-[0.2em] text-white/90">{review.userName}</span>
+            <span className="text-[9px] md:text-[10px] text-white/40 font-bold uppercase tracking-widest">
                 {formatDistanceToNow(parseFirebaseDate(review.createdAt), { addSuffix: true })}
             </span>
           </div>
@@ -101,8 +101,8 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
 
         <div className="space-y-2">
             <div className="flex items-baseline gap-2">
-                <span className="text-xs md:text-sm font-black uppercase tracking-wider text-white">{review.userName}</span>
-                <p className="text-base md:text-xl font-serif italic text-white/80 leading-relaxed md:leading-[1.6]">
+                <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-white shrink-0">{review.userName}</span>
+                <p className="text-sm md:text-base font-medium text-white/80 leading-relaxed max-w-lg">
                    "{review.content}"
                 </p>
             </div>

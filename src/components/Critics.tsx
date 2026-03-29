@@ -76,7 +76,7 @@ export function Critics() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
-          className="text-4xl md:text-8xl font-black uppercase tracking-tighter text-white leading-[0.8]"
+          className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-white leading-tight"
         >
           Top Critics
         </motion.h1>
@@ -169,11 +169,11 @@ export function Critics() {
                       </div>
 
                       <div className="flex-1 text-center sm:text-left min-w-0">
-                        <h2 className="text-xl md:text-4xl font-black uppercase tracking-tighter truncate group-hover:text-[#00e054] transition-colors mb-2">
+                        <h2 className="text-xl md:text-3xl font-black uppercase tracking-tighter truncate group-hover:text-[#00e054] transition-colors mb-1">
                           {critic.displayName}
                         </h2>
                         {critic.bio && (
-                          <p className="text-sm md:text-base text-white/50 truncate mb-4 italic serif">
+                          <p className="text-xs md:text-sm text-white/50 truncate mb-3 italic serif">
                             "{critic.bio}"
                           </p>
                         )}
@@ -197,7 +197,7 @@ export function Critics() {
                             <Star size={14} className={isTopThree ? rankTextClass : ""} />
                             <span className="text-[10px] font-black uppercase tracking-widest leading-none">Reviews</span>
                           </div>
-                          <span className={`text-2xl md:text-4xl font-black leading-none ${isTopThree ? rankTextClass : 'text-white'}`}>
+                          <span className={`text-2xl md:text-3xl font-black leading-none ${isTopThree ? rankTextClass : 'text-white'}`}>
                             {critic.stats?.reviewsWritten || 0}
                           </span>
                         </div>
