@@ -18,10 +18,12 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
   const firstImage = review.dishes?.find(d => d.image)?.image;
 
   return (
-    <div className="snap-child relative w-full h-svh md:h-full bg-black overflow-hidden flex flex-col md:flex-row">
+    <div className="snap-child relative w-full h-svh md:h-screen bg-black overflow-hidden md:flex md:items-center md:justify-center">
       
-      {/* Media Section: Hero on Desktop, Full-bleed on Mobile */}
-      <div className="relative w-full h-full md:w-[65%] shrink-0 overflow-hidden bg-zinc-900 shadow-2xl">
+      {/* 1. Centered Media Container (Aspect-Ratio controlled on Desktop) */}
+      <div className="relative w-full h-full md:h-[85vh] md:aspect-[9/16] md:max-w-md bg-zinc-900 md:rounded-3xl shadow-2xl overflow-hidden group">
+        
+        {/* Background Image */}
         {firstImage ? (
           <img 
             src={firstImage} 
@@ -31,99 +33,75 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full mesh-gradient flex items-center justify-center">
-             <div className="text-white/5 font-black text-9xl absolute -rotate-12 select-none">MOMENT</div>
-          </div>
+          <div className="w-full h-full mesh-gradient opacity-10" />
         )}
-        {/* Mobile-only Gradient for legibility - Very Subtle Bottom-only */}
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent md:hidden pointer-events-none" />
 
-        {/* Desktop-only Action Overlay (Minimal) */}
-        <div className="hidden md:flex absolute bottom-6 left-6 gap-4 z-20">
-             <button 
-               onClick={() => setIsLiked(!isLiked)}
-               className={`w-14 h-14 rounded-full bg-black/60 backdrop-blur-2xl border border-white/10 flex items-center justify-center transition-all hover:scale-110 active:scale-90 ${isLiked ? 'text-rose-500' : 'text-white'}`}
-             >
-               <Heart size={28} className={isLiked ? "fill-rose-500" : ""} />
-             </button>
-             <Link to={`/restaurant/${review.restaurantId}`} className="w-14 h-14 rounded-full bg-[#00e054] flex items-center justify-center text-black shadow-lg shadow-[#00e054]/20 hover:scale-110 active:scale-90 transition-all">
-                <Navigation size={28} />
-             </Link>
-        </div>
-      </div>
+        {/* Unified Bottom Gradient for Text Legibility */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none z-10" />
 
-      {/* Details Section: Sidebar on Desktop, Bottom-Floating on Mobile (Tucked Low) */}
-      <div className="absolute bottom-20 left-6 right-20 z-20 md:relative md:inset-0 md:flex-1 md:bg-black md:p-12 md:pb-32 md:flex md:flex-col md:justify-center md:border-l md:border-white/5 overflow-y-auto scrollbar-hide">
-        
-        {/* User Info - Top Left on Mobile, Header on Desktop Sidebar */}
-        <div className="hidden md:flex items-center gap-4 mb-12">
-            <Link to={`/profile/${review.userId}`} className="flex items-center gap-4 group">
-                <img 
-                  src={review.userPhoto} 
-                  className="w-12 h-12 rounded-full border-2 border-white/10 group-hover:border-[#00e054] transition-all"
-                  alt=""
-                />
-                <div className="flex flex-col">
-                  <span className="text-xs font-black uppercase tracking-[0.2em] text-white/40 group-hover:text-white transition-all">Shared By</span>
-                  <span className="text-sm md:text-base font-black uppercase tracking-widest text-[#00e054]">{review.userName}</span>
-                </div>
-            </Link>
-            <div className="ml-auto bg-white/5 px-4 py-2 rounded-full border border-white/10 flex items-center gap-2">
-               <Star size={16} className="fill-yellow-500 text-yellow-500" />
-               <span className="text-base font-black text-white">{review.rating.toFixed(1)}</span>
-            </div>
-        </div>
-
-        {/* Mobile Header (Floating - Tucked at the Top) */}
-        <div className="md:hidden fixed top-20 left-6 right-6 flex items-center justify-between z-30 pointer-events-none">
+        {/* 2. Top-Periphery Header (Author Info) */}
+        <div className="absolute top-20 md:top-6 left-6 right-6 flex items-center justify-between z-30 pointer-events-none">
             <Link to={`/profile/${review.userId}`} className="flex items-center gap-2 bg-black/40 backdrop-blur-3xl px-2 py-1.5 rounded-full border border-white/5 pointer-events-auto">
                <img src={review.userPhoto} className="w-6 h-6 rounded-full border border-white/10" alt="" />
-               <span className="text-[9px] font-black uppercase tracking-widest text-white/80">{review.userName}</span>
+               <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white/80">{review.userName}</span>
             </Link>
             <div className="bg-black/40 backdrop-blur-3xl px-3 py-1.5 rounded-full border border-white/5 flex items-center gap-1">
                <Star size={10} className="fill-[#00e054] text-[#00e054]" />
-               <span className="text-[10px] font-black text-white">{review.rating.toFixed(1)}</span>
+               <span className="text-[10px] md:text-xs font-black text-white">{review.rating.toFixed(1)}</span>
             </div>
         </div>
 
-        {/* Main Content */}
-        <div className="space-y-6">
-            <div className="space-y-2">
-                <div className="flex items-center gap-2 text-[#00e054] text-[10px] md:text-xs font-black uppercase tracking-[0.2em]">
-                    <MapPin size={12} />
+        {/* 3. Bottom-Left Content Overlay */}
+        <div className="absolute bottom-6 md:bottom-8 left-6 right-6 z-20 space-y-4">
+             <div className="space-y-1.5">
+                <div className="flex items-center gap-2 text-[#00e054] text-[9px] md:text-[10px] font-black uppercase tracking-widest opacity-80">
+                    <MapPin size={10} />
                     <span>{review.city || "Nearby Spot"}</span>
                 </div>
-                <h2 className="text-2xl md:text-5xl font-black uppercase tracking-tighter leading-tight text-white">{review.restaurantName}</h2>
-            </div>
-            
-            {review.content && review.content.trim() && (
-              <div className="bg-white/5 md:bg-transparent md:border-l-2 md:border-white/10 md:pl-8 p-6 md:p-0 rounded-2xl md:rounded-none relative overflow-hidden group">
-                  <p className="text-base md:text-lg font-medium text-white/80 leading-relaxed max-w-lg">
+                <h2 className="text-xl md:text-2xl font-black uppercase tracking-tighter leading-tight text-white">{review.restaurantName}</h2>
+                
+                {review.content && review.content.trim() && (
+                  <p className="text-sm md:text-base font-medium text-white/90 leading-relaxed max-w-[280px] line-clamp-3">
                     "{review.content}"
                   </p>
-              </div>
-            )}
+                )}
+             </div>
 
-            <div className="flex flex-wrap gap-3 md:pt-6">
-              {review.dishes?.slice(0, 4).map((dish, i) => (
-                  <div key={i} className="px-6 py-2.5 bg-white/5 md:bg-white/10 backdrop-blur-md rounded-full border border-white/10 flex items-center gap-2">
-                      <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-white/60">{dish.name}</span>
-                  </div>
-              ))}
-            </div>
+             <div className="flex flex-wrap gap-2">
+                {review.dishes?.slice(0, 3).map((dish, i) => (
+                    <div key={i} className="px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/5">
+                        <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-white/60">{dish.name}</span>
+                    </div>
+                ))}
+             </div>
         </div>
 
-        {/* Mobile Side Actions - Tucked Low Right (Peripheral) */}
-        <div className="md:hidden fixed right-4 bottom-20 flex flex-col gap-4 z-30">
-            <button 
-              onClick={() => setIsLiked(!isLiked)}
-              className={`w-10 h-10 rounded-full bg-black/40 backdrop-blur-3xl border border-white/5 flex items-center justify-center ${isLiked ? 'text-rose-500' : 'text-white/40'}`}
-            >
-              <Heart size={18} className={isLiked ? "fill-rose-500" : ""} />
-            </button>
-            <Link to={`/restaurant/${review.restaurantId}`} className="w-10 h-10 rounded-full bg-[#00e054]/40 backdrop-blur-3xl border border-white/5 flex items-center justify-center text-white shadow-lg shadow-[#00e054]/5">
-               <Navigation size={18} />
-            </Link>
+        {/* 4. Side Interaction Column (Right) */}
+        {/* On Mobile: Absolute right; On Desktop: Pushed outside the container */}
+        <div className="absolute right-4 bottom-24 md:bottom-2 md:-right-20 flex flex-col items-center gap-6 md:gap-8 z-30">
+            <div className="flex flex-col items-center gap-1.5">
+                <button 
+                  onClick={() => setIsLiked(!isLiked)}
+                  className={`w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/40 md:bg-zinc-800 backdrop-blur-3xl border border-white/5 flex items-center justify-center transition-all active:scale-90 ${isLiked ? 'text-rose-500 shadow-lg shadow-rose-500/20' : 'text-white/40 hover:text-white'}`}
+                >
+                  <Heart size={isLiked ? 22 : 20} className={isLiked ? "fill-rose-500" : ""} />
+                </button>
+                <span className="text-[9px] md:text-[10px] font-black uppercase text-white/40">Like</span>
+            </div>
+            
+            <div className="flex flex-col items-center gap-1.5">
+                <Link to={`/restaurant/${review.id}`} className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/5 md:bg-zinc-800 backdrop-blur-3xl border border-white/5 flex items-center justify-center text-white/40 hover:text-[#00e054] transition-all active:scale-90">
+                   <MessageSquare size={20} />
+                </Link>
+                <span className="text-[9px] md:text-[10px] font-black uppercase text-white/40">Chat</span>
+            </div>
+
+            <div className="flex flex-col items-center gap-1.5">
+                <Link to={`/restaurant/${review.restaurantId}`} className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#00e054]/20 md:bg-[#00e054]/10 backdrop-blur-3xl border border-white/5 flex items-center justify-center text-[#00e054] shadow-lg shadow-[#00e054]/5 active:scale-90 transition-all">
+                   <Navigation size={18} />
+                </Link>
+                <span className="text-[9px] md:text-[10px] font-black uppercase text-white/40">Go</span>
+            </div>
         </div>
       </div>
     </div>
