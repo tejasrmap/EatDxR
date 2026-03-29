@@ -13,7 +13,7 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white selection:bg-[#00e054] selection:text-black">
-      <Navbar />
+      {!isReelsMode && <Navbar />}
       <main className={`${isReelsMode ? 'pt-0' : 'pt-16'} pb-28 md:pb-40 lg:pb-52`}>
         {children}
       </main>
