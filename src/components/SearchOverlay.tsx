@@ -5,6 +5,7 @@ import { collection, query, where, getDocs, limit, orderBy } from "firebase/fire
 import { db } from "../firebase";
 import { User, Restaurant } from "../types";
 import { Link, useNavigate } from "react-router-dom";
+import { searchRestaurants } from "../services/mapsService";
 
 interface SearchOverlayProps {
   isOpen: boolean;
@@ -24,8 +25,7 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        onClose(); // If open, close? No, if closed, open.
-        // Actually the logic for toggle should be in the parent.
+        onClose(); 
       }
       if (e.key === "Escape" && isOpen) {
         onClose();
@@ -51,7 +51,8 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
   // Debounced Search Logic
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
-      if (searchQuery.trim().length < 2) {
+      const q = searchQuery.trim();
+      if (q.length < 2) {
         setUserResults([]);
         setRestaurantResults([]);
         return;
@@ -59,11 +60,9 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
 
       setIsSearching(true);
       try {
-        const q = searchQuery.trim();
-        // Capitalize first letter for Firestore prefix search consistency (assuming names are somewhat capitalized)
+        // 1. Search Local Firestore first
         const capitalized = q.charAt(0).toUpperCase() + q.slice(1);
         
-        // 1. Search Users (by displayName)
         const userQuery = query(
           collection(db, "users"),
           where("displayName", ">=", capitalized),
@@ -71,7 +70,6 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
           limit(5)
         );
         
-        // 2. Search Restaurants (by name)
         const restQuery = query(
           collection(db, "restaurants"),
           where("name", ">=", capitalized),
@@ -84,14 +82,41 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
           getDocs(restQuery)
         ]);
 
-        setUserResults(userSnap.docs.map(d => d.data() as User));
-        setRestaurantResults(restSnap.docs.map(d => ({ ...d.data(), id: d.id } as Restaurant)));
+        const localUsers = userSnap.docs.map(d => d.data() as User);
+        const localRests = restSnap.docs.map(d => ({ ...d.data(), id: d.id } as Restaurant));
+        
+        setUserResults(localUsers);
+        setRestaurantResults(localRests);
+
+        // 2. If fewer than 2 local restaurants, trigger AI Backfill
+        if (localRests.length < 2) {
+          const aiRests = await searchRestaurants(q);
+          
+          // Merge AI results with local ones, ensuring no duplicates by name
+          setRestaurantResults(prev => {
+            const existingNames = new Set(prev.map(r => r.name.toLowerCase()));
+            const uniqueAiRests = aiRests
+              .filter(r => !existingNames.has(r.name.toLowerCase()))
+              .map(r => ({ 
+                ...r, 
+                id: r.id || `ai_${Math.random()}`,
+                name: r.name,
+                cuisine: r.cuisine,
+                location: r.location,
+                rating: r.rating || 4.5,
+                reviewCount: r.reviewCount || 10,
+                isAiGenerated: true 
+              } as Restaurant & { isAiGenerated?: boolean })); 
+            
+            return [...prev, ...uniqueAiRests];
+          });
+        }
       } catch (error) {
         console.error("Search error:", error);
       } finally {
         setIsSearching(false);
       }
-    }, 400);
+    }, 500); // 500ms debounce to avoid overwhelming OpenRouter
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
@@ -146,8 +171,17 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
 
               {isSearching && (
                 <div className="p-12 flex flex-col items-center justify-center gap-4">
-                  <Loader2 className="animate-spin text-orange-500" size={32} />
-                  <p className="text-white/40 italic">Scanning the database...</p>
+                  <div className="relative">
+                    <Loader2 className="animate-spin text-orange-500" size={32} />
+                    <motion.div 
+                      animate={{ opacity: [0, 1, 0] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full"
+                    />
+                  </div>
+                  <p className="text-white/40 italic flex items-center gap-2">
+                    Discovering hidden gems via AI...
+                  </p>
                 </div>
               )}
 
@@ -162,7 +196,14 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
                   {/* Restaurant Results */}
                   {restaurantResults.length > 0 && (
                     <section>
-                      <h3 className="px-4 text-[10px] uppercase tracking-[0.2em] font-black text-white/20 mb-3 ml-1">Establishments</h3>
+                      <h3 className="px-4 text-[10px] uppercase tracking-[0.2em] font-black text-white/20 mb-3 ml-1 flex justify-between items-center">
+                        Establishments
+                        {restaurantResults.some(r => (r as any).isAiGenerated) && (
+                          <span className="text-blue-500 flex items-center gap-1 normal-case tracking-normal font-medium">
+                            AI Backfilled
+                          </span>
+                        )}
+                      </h3>
                       <div className="space-y-1">
                         {restaurantResults.map(rest => (
                           <Link 
@@ -171,11 +212,19 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
                             onClick={handleResultClick}
                             className="flex items-center gap-4 p-4 hover:bg-white/5 rounded-xl transition-all group"
                           >
-                            <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center border border-orange-500/20 text-orange-500 shrink-0">
+                            <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center border border-orange-500/20 text-orange-500 shrink-0 relative">
                               <UtensilsCrossed size={18} />
+                              {(rest as any).isAiGenerated && (
+                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-zinc-900" />
+                              )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-lg text-white group-hover:text-orange-500 transition-colors truncate">{rest.name}</h4>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-bold text-lg text-white group-hover:text-orange-500 transition-colors truncate">{rest.name}</h4>
+                                {(rest as any).isAiGenerated && (
+                                  <span className="px-1.5 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-[8px] text-blue-400 font-bold uppercase tracking-wider">AI</span>
+                                )}
+                              </div>
                               <div className="flex items-center gap-2 text-white/40 text-xs">
                                 <span className="uppercase tracking-widest">{rest.cuisine}</span>
                                 <span>•</span>
