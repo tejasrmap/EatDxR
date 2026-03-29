@@ -68,12 +68,13 @@ export const AdminSeed: React.FC = () => {
       let count = 0;
 
       for (const item of allData) {
+        const { mustTry, ...rest } = item;
         const ref = doc(collection(db, 'restaurants'));
         batch.set(ref, {
-          ...item,
+          ...rest,
           id: ref.id,
           likesCount: 0,
-          menuItems: item.mustTry || []
+          menuItems: mustTry || []
         });
         count++;
         setProgress(prev => ({ ...prev, current: count }));
