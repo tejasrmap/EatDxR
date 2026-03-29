@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Search, Plus, User, LogOut, UtensilsCrossed, Bell, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { LogMealModal } from "./LogMealModal";
@@ -83,7 +83,8 @@ export function Navbar() {
     }
   };
 
-  const isReelsMode = new URLSearchParams(window.location.search).get('mode') === 'reels';
+  const location = useLocation();
+  const isReelsMode = new URLSearchParams(location.search).get('mode') === 'reels';
 
   if (isReelsMode) return null;
 
