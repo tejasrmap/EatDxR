@@ -61,22 +61,12 @@ export const Journal: React.FC = () => {
   return (
     <div className={`min-h-screen bg-black transition-all duration-500 ${mode === 'posts' ? 'pt-12 pb-32 px-4 md:px-6' : 'pt-0 pb-0 overflow-hidden'}`}>
       
-      {/* Elegant Integrated Header - Responsive Toggle */}
-      <div className={`transition-all duration-500 z-[120] ${mode === 'reels' ? 'fixed top-0 left-0 right-0 py-6 px-6 md:top-6 md:left-1/2 md:-translate-x-1/2 md:w-max md:max-w-4xl' : 'relative mb-6'}`}>
-        <div className={`flex items-center justify-between w-full transition-all duration-500 ${mode === 'reels' ? 'md:bg-black/40 md:border md:border-white/10 md:rounded-full md:p-1.5 md:backdrop-blur-3xl md:shadow-2xl' : 'bg-transparent border-none backdrop-blur-none shadow-none justify-center'}`}>
+      {/* Elegant Integrated Header - Original Centered Toggle */}
+      <div className={`transition-all duration-500 z-[120] ${mode === 'reels' ? 'fixed top-6 left-1/2 -translate-x-1/2 w-max max-w-[95vw] md:max-w-4xl' : 'relative mb-6'}`}>
+        <div className={`flex items-center justify-center bg-black/40 border border-white/10 rounded-full p-1.5 backdrop-blur-3xl shadow-2xl transition-all duration-500 ${mode === 'reels' ? 'px-1' : 'bg-transparent border-none backdrop-blur-none shadow-none'}`}>
             
-            {/* 1. Mobile-Only Instagram-Style Header (Reels Mode) */}
-            {mode === 'reels' && (
-              <div className="flex md:hidden items-center justify-between w-full">
-                <h1 className="text-2xl font-black text-white tracking-tighter">Reels</h1>
-                <div className="bg-white/10 backdrop-blur-3xl p-2 rounded-full border border-white/5">
-                  <LayoutGrid size={20} className="text-white" />
-                </div>
-              </div>
-            )}
-
-            {/* 2. Toggle Group (Desktop Always, Mobile Posts-Only) */}
-            <div className={`items-center bg-white/5 rounded-full p-0.5 border border-white/5 ${mode === 'reels' ? 'hidden md:flex' : 'flex'}`}>
+            {/* Toggle Group Left-Aligned or Centered depending on mode */}
+            <div className={`flex items-center bg-white/5 rounded-full p-0.5 border border-white/5 ${mode === 'posts' ? 'ml-0' : ''}`}>
                 <button 
                   onClick={() => updateMode('posts')}
                   className={`relative flex items-center justify-center gap-2 px-4 md:px-6 h-8 md:h-9 rounded-full text-[9px] md:text-[11px] font-black uppercase tracking-[0.2em] transition-all z-10 ${mode === 'posts' ? 'text-black' : 'text-white/40 hover:text-white'}`}

@@ -18,10 +18,10 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
   const firstImage = review.dishes?.find(d => d.image)?.image;
 
   return (
-    <div className="snap-child relative w-full h-svh md:h-screen bg-black overflow-hidden md:flex md:items-center md:justify-center">
+    <div className="snap-child relative w-full h-svh md:h-screen bg-black overflow-hidden flex items-center justify-center">
       
-      {/* 1. Centered Media Container (Aspect-Ratio controlled on Desktop) */}
-      <div className="relative w-full h-full md:h-[88vh] md:aspect-[9/16] md:max-w-md bg-zinc-900 md:rounded-3xl shadow-2xl md:overflow-visible overflow-hidden group">
+      {/* 1. Centered Media Container (Aspect-Ratio controlled on Desktop, Card-centric on Mobile) */}
+      <div className="relative w-[92%] h-[78vh] md:w-full md:h-[88vh] md:aspect-[9/16] md:max-w-md bg-zinc-900 rounded-3xl md:rounded-3xl shadow-2xl md:overflow-visible overflow-hidden group mb-12 md:mb-0">
         
         {/* Background Image */}
         {firstImage ? (
@@ -40,44 +40,42 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
         <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none z-10" />
 
 
-        {/* 3. Bottom-Left Content Overlay (Instagram-Native Mobile Style) */}
-        <div className="absolute bottom-6 left-5 right-16 z-20 space-y-4 md:hidden">
+        {/* 3. Bottom-Left Content Overlay (Refined Mobile View - 'Before the Bar') */}
+        <div className="absolute bottom-6 left-5 right-20 z-20 space-y-4 md:hidden">
              <div className="space-y-3">
                 {/* Author + Follow Row */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <Link to={`/profile/${review.userId}`} className="flex items-center gap-2 group">
-                        <img src={review.userPhoto} className="w-9 h-9 rounded-full border border-white/20 shadow-lg" alt="" />
-                        <span className="text-sm font-black text-white tracking-tight">{review.userName}</span>
+                        <img src={review.userPhoto} className="w-8 h-8 rounded-full border border-white/20" alt="" />
+                        <span className="text-[11px] font-black text-white/80 tracking-tight">{review.userName}</span>
                     </Link>
-                    <div className="px-3 py-1 border border-white/40 rounded-lg">
-                        <span className="text-[10px] font-black uppercase text-white tracking-widest">Follow</span>
-                    </div>
+                    <div className="w-1 h-1 bg-white/20 rounded-full" />
+                    <span className="text-[10px] font-black uppercase text-[#00e054] tracking-widest">Follow</span>
                 </div>
 
                 <div className="space-y-1">
-                   <div className="flex items-center gap-2 text-[#00e054] text-[9px] font-bold uppercase tracking-widest opacity-90">
-                       <MapPin size={10} />
+                   <div className="flex items-center gap-2 text-[#00e054] text-[9px] font-bold uppercase tracking-widest opacity-70">
+                       <MapPin size={9} />
                        <span>{review.city || "Nearby Spot"}</span>
-                       <div className="w-1 h-1 bg-white/40 rounded-full mx-1" />
-                       <div className="flex items-center gap-1">
-                          <Star size={10} className="fill-[#00e054] text-[#00e054]" />
+                       <div className="flex items-center gap-0.5 ml-1">
+                          <Star size={9} className="fill-[#00e054] text-[#00e054]" />
                           <span className="text-white">{review.rating.toFixed(1)}</span>
                        </div>
                    </div>
-                   <h2 className="text-xl font-black uppercase tracking-tighter leading-tight text-white shadow-black/20 text-shadow-sm">{review.restaurantName}</h2>
+                   <h2 className="text-lg font-black uppercase tracking-tighter leading-[1.1] text-white">{review.restaurantName}</h2>
                    
                    {review.content && review.content.trim() && (
-                     <p className="text-sm font-medium text-white/90 leading-relaxed max-w-[280px] line-clamp-2">
+                     <p className="text-[13px] font-medium text-white/80 leading-relaxed max-w-[240px] line-clamp-2 italic serif">
                        "{review.content}"
                      </p>
                    )}
                 </div>
              </div>
 
-             <div className="flex flex-wrap gap-2 pt-1">
+             <div className="flex flex-wrap gap-1.5 pt-1">
                 {review.dishes?.slice(0, 2).map((dish, i) => (
-                    <div key={i} className="px-2.5 py-1 bg-black/20 backdrop-blur-md rounded-md border border-white/10">
-                        <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/70">{dish.name}</span>
+                    <div key={i} className="px-2 py-0.5 bg-black/40 backdrop-blur-md rounded-md border border-white/5">
+                        <span className="text-[8px] font-black uppercase tracking-wider text-white/50">{dish.name}</span>
                     </div>
                 ))}
              </div>
