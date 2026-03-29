@@ -20,6 +20,7 @@ import { Restaurant } from "./components/Restaurant";
 import { Restaurants } from "./components/Restaurants";
 import { Critics } from "./components/Critics";
 import { Journal } from "./components/Journal";
+import { EditProfileModal } from "./components/EditProfileModal";
 import { Navigate } from "react-router-dom";
 import { MobileBottomNav } from "./components/MobileBottomNav";
 import { useLocation } from "./hooks/useLocation";
@@ -166,9 +167,19 @@ function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const isOnboarding = !!user && !!dishdUser && !dishdUser.username;
+
   return (
     <AuthContext.Provider value={{ user, dishdUser, loading, login, logout }}>
       {children}
+      {isOnboarding && (
+        <EditProfileModal 
+          isOpen={true}
+          onClose={() => {}} // Non-dismissible
+          user={dishdUser}
+          isOnboarding={true}
+        />
+      )}
     </AuthContext.Provider>
   );
 }

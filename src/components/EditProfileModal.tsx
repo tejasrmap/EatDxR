@@ -10,9 +10,10 @@ interface EditProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User;
+  isOnboarding?: boolean;
 }
 
-export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, user }) => {
+export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, user, isOnboarding }) => {
   const [displayName, setDisplayName] = useState(user.displayName || "");
   const [username, setUsername] = useState(user.username || "");
   const [pronouns, setPronouns] = useState(user.pronouns || "");
@@ -26,9 +27,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!displayName.trim()) return toast.error("Display name is required.");
+    if (isOnboarding && !username.trim()) return toast.error("A username is required to continue.");
     
     setIsSaving(true);
-
+    // ... same saving logic ...
     try {
       // 1. Process array payloads
       const favoriteCuisines = cuisines
@@ -78,7 +80,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
 
       await updateDoc(userRef, cleanPayload);
       
-      toast.success("Profile updated successfully!");
+      toast.success(isOnboarding ? "Welcome to EatDxR! Profile set up." : "Profile updated successfully!");
       onClose();
     } catch (error: any) {
       console.error("Error updating profile:", error);
@@ -93,20 +95,27 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
       <div 
-        className="w-full max-w-lg bg-[#1a202c] border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col"
+        className="w-full max-w-lg bg-[#1a202c] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
         style={{ maxHeight: '90vh' }}
       >
-        <div className="flex items-center justify-between p-5 border-b border-white/10 bg-white/5">
-          <h2 className="text-sm font-bold uppercase tracking-widest text-white">Edit Profile</h2>
-          <button 
-            onClick={onClose}
-            disabled={isSaving}
-            className="p-1 text-white/40 hover:text-white transition-colors"
-          >
-            <X size={20} />
-          </button>
+        <div className="flex items-center justify-between p-6 border-b border-white/10 bg-white/5">
+          <div className="flex flex-col">
+            <h2 className="text-sm font-black uppercase tracking-[0.2em] text-[#00e054]">
+              {isOnboarding ? "Welcome to EatDxR" : "Edit Profile"}
+            </h2>
+            {isOnboarding && <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-1">First, let's claim your unique username</p>}
+          </div>
+          {!isOnboarding && (
+            <button 
+              onClick={onClose}
+              disabled={isSaving}
+              className="p-1 text-white/40 hover:text-white transition-colors"
+            >
+              <X size={20} />
+            </button>
+          )}
         </div>
 
         <div className="overflow-y-auto p-6 flex-1">
