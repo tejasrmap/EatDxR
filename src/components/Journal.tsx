@@ -62,8 +62,8 @@ export const Journal: React.FC = () => {
     <div className={`min-h-screen bg-black transition-all duration-500 ${mode === 'posts' ? 'pt-12 pb-32 px-4 md:px-6' : 'pt-0 pb-0 overflow-hidden'}`}>
       
       {/* Elegant Integrated Header - Responsive */}
-      <div className={`transition-all duration-500 z-[120] ${mode === 'reels' ? 'fixed top-6 left-1/2 -translate-x-1/2 w-max max-w-[95vw]' : 'relative mb-6'}`}>
-        <div className={`flex items-center gap-6 md:gap-12 bg-black/40 border border-white/10 rounded-full p-1.5 backdrop-blur-3xl shadow-2xl transition-all duration-500 ${mode === 'reels' ? 'px-6' : 'bg-transparent border-none backdrop-blur-none shadow-none'}`}>
+      <div className={`transition-all duration-500 z-[120] ${mode === 'reels' ? 'fixed top-6 left-1/2 -translate-x-1/2 w-max max-w-[95vw] md:max-w-4xl' : 'relative mb-6'}`}>
+        <div className={`flex items-center gap-6 md:gap-12 bg-black/40 border border-white/10 rounded-full p-1.5 backdrop-blur-3xl shadow-2xl transition-all duration-500 ${mode === 'reels' ? 'px-6 md:px-10' : 'bg-transparent border-none backdrop-blur-none shadow-none'}`}>
             
             {/* Minimal Logo - Only in Reels Mode or always for Journal Header */}
             <Link to="/" className={`flex items-center gap-2 transition-all duration-700 ${mode === 'reels' ? 'opacity-100' : 'opacity-100'}`}>
@@ -142,13 +142,13 @@ export const Journal: React.FC = () => {
           ) : (
             <motion.div 
               key="reels"
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 50 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed inset-0 z-50 bg-zinc-950 flex items-center justify-center"
+              initial={{ opacity: 0, y: 100 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -100 }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="fixed inset-0 z-50 bg-black flex items-center justify-center p-0 md:p-12 overflow-hidden"
             >
-                 <div className="h-full w-full max-w-[540px] relative shadow-[0_0_100px_rgba(0,0,0,0.8)] snap-y-container scrollbar-hide border-x border-white/5">
+                 <div className="h-full w-full max-w-6xl relative shadow-2xl snap-y-container scrollbar-hide">
                     {reviews.length > 0 ? (
                         reviews.map(review => (
                             <ReelCard key={review.id} review={review} />
