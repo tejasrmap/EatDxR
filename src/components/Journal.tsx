@@ -62,7 +62,7 @@ export const Journal: React.FC = () => {
     <div className={`min-h-screen bg-black ${mode === 'posts' ? 'pt-24 pb-32 px-4 md:px-6' : 'pt-0 pb-0 overflow-hidden'}`}>
       
       {/* Feed Toggle Header - Adjusted for Posts vs Reels */}
-      <div className={`flex items-center justify-between transition-all duration-500 z-[110] ${mode === 'reels' ? 'fixed top-6 left-0 right-0 justify-center px-6' : 'relative mb-8'}`}>
+      <div className={`flex items-center justify-between transition-all duration-500 z-[110] ${mode === 'reels' ? 'fixed top-10 left-0 right-0 justify-center px-6' : 'relative mb-8'}`}>
         <div className={`flex flex-col transition-all duration-500 ${mode === 'reels' ? 'opacity-0 scale-90 absolute left-6' : 'opacity-100 scale-100'}`}>
             <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-white">The <span className="text-[#00e054] italic serif lowercase">feed</span></h1>
             <p className="text-[10px] uppercase font-black tracking-widest text-white/30 truncate max-w-[150px]">Regional Live Diary • {reviews.length} logs</p>
