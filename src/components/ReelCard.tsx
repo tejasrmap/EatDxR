@@ -39,38 +39,45 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
         {/* Unified Bottom Gradient for Text Legibility */}
         <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none z-10" />
 
-        {/* 2. Top-Periphery Header (Author Info - Mobile Only) */}
-        <div className="absolute top-20 left-6 right-6 flex items-center justify-between z-30 pointer-events-none md:hidden">
-            <Link to={`/profile/${review.userId}`} className="flex items-center gap-2 bg-black/40 backdrop-blur-3xl px-2 py-1.5 rounded-full border border-white/5 pointer-events-auto">
-               <img src={review.userPhoto} className="w-6 h-6 rounded-full border border-white/10" alt="" />
-               <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white/80">{review.userName}</span>
-            </Link>
-            <div className="bg-black/40 backdrop-blur-3xl px-3 py-1.5 rounded-full border border-white/5 flex items-center gap-1">
-               <Star size={10} className="fill-[#00e054] text-[#00e054]" />
-               <span className="text-[10px] md:text-xs font-black text-white">{review.rating.toFixed(1)}</span>
-            </div>
-        </div>
 
-        {/* 3. Bottom-Left Content Overlay (Mobile-Only) */}
-        <div className="absolute bottom-6 left-6 right-6 z-20 space-y-4 md:hidden">
-             <div className="space-y-1.5">
-                <div className="flex items-center gap-2 text-[#00e054] text-[9px] md:text-[10px] font-black uppercase tracking-widest opacity-80">
-                    <MapPin size={10} />
-                    <span>{review.city || "Nearby Spot"}</span>
+        {/* 3. Bottom-Left Content Overlay (Instagram-Native Mobile Style) */}
+        <div className="absolute bottom-6 left-5 right-16 z-20 space-y-4 md:hidden">
+             <div className="space-y-3">
+                {/* Author + Follow Row */}
+                <div className="flex items-center gap-3">
+                    <Link to={`/profile/${review.userId}`} className="flex items-center gap-2 group">
+                        <img src={review.userPhoto} className="w-9 h-9 rounded-full border border-white/20 shadow-lg" alt="" />
+                        <span className="text-sm font-black text-white tracking-tight">{review.userName}</span>
+                    </Link>
+                    <div className="px-3 py-1 border border-white/40 rounded-lg">
+                        <span className="text-[10px] font-black uppercase text-white tracking-widest">Follow</span>
+                    </div>
                 </div>
-                <h2 className="text-xl md:text-2xl font-black uppercase tracking-tighter leading-tight text-white">{review.restaurantName}</h2>
-                
-                {review.content && review.content.trim() && (
-                  <p className="text-sm md:text-base font-medium text-white/90 leading-relaxed max-w-[280px] line-clamp-3">
-                    "{review.content}"
-                  </p>
-                )}
+
+                <div className="space-y-1">
+                   <div className="flex items-center gap-2 text-[#00e054] text-[9px] font-bold uppercase tracking-widest opacity-90">
+                       <MapPin size={10} />
+                       <span>{review.city || "Nearby Spot"}</span>
+                       <div className="w-1 h-1 bg-white/40 rounded-full mx-1" />
+                       <div className="flex items-center gap-1">
+                          <Star size={10} className="fill-[#00e054] text-[#00e054]" />
+                          <span className="text-white">{review.rating.toFixed(1)}</span>
+                       </div>
+                   </div>
+                   <h2 className="text-xl font-black uppercase tracking-tighter leading-tight text-white shadow-black/20 text-shadow-sm">{review.restaurantName}</h2>
+                   
+                   {review.content && review.content.trim() && (
+                     <p className="text-sm font-medium text-white/90 leading-relaxed max-w-[280px] line-clamp-2">
+                       "{review.content}"
+                     </p>
+                   )}
+                </div>
              </div>
 
-             <div className="flex flex-wrap gap-2">
-                {review.dishes?.slice(0, 3).map((dish, i) => (
-                    <div key={i} className="px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/5">
-                        <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-white/60">{dish.name}</span>
+             <div className="flex flex-wrap gap-2 pt-1">
+                {review.dishes?.slice(0, 2).map((dish, i) => (
+                    <div key={i} className="px-2.5 py-1 bg-black/20 backdrop-blur-md rounded-md border border-white/10">
+                        <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/70">{dish.name}</span>
                     </div>
                 ))}
              </div>
