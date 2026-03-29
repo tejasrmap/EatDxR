@@ -60,16 +60,27 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
 
       setIsSearching(true);
       try {
-        // 1. Search Local Firestore first
-        const capitalized = q.charAt(0).toUpperCase() + q.slice(1);
+        // 1. Process variants for multi-field case-insensitive search
+        const rawQ = searchQuery.trim().replace(/^@/, ''); // Strip leading @
+        const capitalized = rawQ.charAt(0).toUpperCase() + rawQ.slice(1);
+        const lowercase = rawQ.toLowerCase();
         
-        const userQuery = query(
+        // --- 1. SEARCH USERS (Multi-field & Case Strategy) ---
+        const userDisplayNameQuery = query(
           collection(db, "users"),
           where("displayName", ">=", capitalized),
           where("displayName", "<=", capitalized + "\uf8ff"),
           limit(5)
         );
+
+        const userUsernameQuery = query(
+          collection(db, "users"),
+          where("username", ">=", lowercase),
+          where("username", "<=", lowercase + "\uf8ff"),
+          limit(5)
+        );
         
+        // --- 2. SEARCH RESTAURANTS ---
         const restQuery = query(
           collection(db, "restaurants"),
           where("name", ">=", capitalized),
@@ -77,12 +88,20 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
           limit(5)
         );
 
-        const [userSnap, restSnap] = await Promise.all([
-          getDocs(userQuery),
+        const [userDNSnap, userUNSnap, restSnap] = await Promise.all([
+          getDocs(userDisplayNameQuery),
+          getDocs(userUsernameQuery),
           getDocs(restQuery)
         ]);
 
-        const localUsers = userSnap.docs.map(d => d.data() as User);
+        // Merge and Deduplicate Users by uid
+        const userMap = new Map<string, User>();
+        [...userDNSnap.docs, ...userUNSnap.docs].forEach(doc => {
+          const u = doc.data() as User;
+          userMap.set(u.uid, u);
+        });
+        const localUsers = Array.from(userMap.values());
+
         const localRests = restSnap.docs.map(d => ({ ...d.data(), id: d.id } as Restaurant));
         
         setUserResults(localUsers);
@@ -90,7 +109,7 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
 
         // 2. If fewer than 2 local restaurants, trigger AI Backfill
         if (localRests.length < 2) {
-          const aiRests = await searchRestaurants(q);
+          const aiRests = await searchRestaurants(rawQ);
           
           // Merge AI results with local ones, ensuring no duplicates by name
           setRestaurantResults(prev => {
