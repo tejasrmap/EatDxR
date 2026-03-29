@@ -103,7 +103,7 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-20 px-4">
+        <div className="fixed inset-0 z-[400] flex items-start justify-center pt-20 px-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
