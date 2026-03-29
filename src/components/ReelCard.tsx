@@ -21,7 +21,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
     <div className="snap-child relative w-full h-svh md:h-screen bg-black overflow-hidden md:flex md:items-center md:justify-center">
       
       {/* 1. Centered Media Container (Aspect-Ratio controlled on Desktop) */}
-      <div className="relative w-full h-full md:h-[85vh] md:aspect-[9/16] md:max-w-md bg-zinc-900 md:rounded-3xl shadow-2xl overflow-hidden group">
+      <div className="relative w-full h-full md:h-[85vh] md:aspect-[9/16] md:max-w-md bg-zinc-900 md:rounded-3xl shadow-2xl md:overflow-visible overflow-hidden group">
         
         {/* Background Image */}
         {firstImage ? (
@@ -78,29 +78,29 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
 
         {/* 4. Side Interaction Column (Right) */}
         {/* On Mobile: Absolute right; On Desktop: Pushed outside the container */}
-        <div className="absolute right-4 bottom-24 md:bottom-2 md:-right-20 flex flex-col items-center gap-6 md:gap-8 z-30">
-            <div className="flex flex-col items-center gap-1.5">
+        <div className="absolute right-4 bottom-24 md:bottom-0 md:-right-24 flex flex-col items-center gap-6 md:gap-8 z-30 pointer-events-auto">
+            <div className="flex flex-col items-center gap-1.5 group/btn">
                 <button 
                   onClick={() => setIsLiked(!isLiked)}
-                  className={`w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/40 md:bg-zinc-800 backdrop-blur-3xl border border-white/5 flex items-center justify-center transition-all active:scale-90 ${isLiked ? 'text-rose-500 shadow-lg shadow-rose-500/20' : 'text-white/40 hover:text-white'}`}
+                  className={`w-10 h-10 md:w-14 md:h-14 rounded-full bg-black/40 md:bg-white/5 backdrop-blur-3xl border border-white/5 flex items-center justify-center transition-all active:scale-95 ${isLiked ? 'text-rose-500 shadow-lg shadow-rose-500/20' : 'text-white/40 hover:text-white group-hover/btn:bg-white/10'}`}
                 >
-                  <Heart size={isLiked ? 22 : 20} className={isLiked ? "fill-rose-500" : ""} />
+                  <Heart size={isLiked ? 24 : 22} className={isLiked ? "fill-rose-500" : ""} />
                 </button>
-                <span className="text-[9px] md:text-[10px] font-black uppercase text-white/40">Like</span>
+                <span className="text-[9px] md:text-[11px] font-black uppercase text-white/40 tracking-widest">Like</span>
             </div>
             
-            <div className="flex flex-col items-center gap-1.5">
-                <Link to={`/restaurant/${review.id}`} className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/5 md:bg-zinc-800 backdrop-blur-3xl border border-white/5 flex items-center justify-center text-white/40 hover:text-[#00e054] transition-all active:scale-90">
-                   <MessageSquare size={20} />
+            <div className="flex flex-col items-center gap-1.5 group/btn">
+                <Link to={`/restaurant/${review.id}`} className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-white/5 backdrop-blur-3xl border border-white/5 flex items-center justify-center text-white/40 hover:text-[#00e054] group-hover/btn:bg-white/10 transition-all active:scale-95">
+                   <MessageSquare size={22} />
                 </Link>
-                <span className="text-[9px] md:text-[10px] font-black uppercase text-white/40">Chat</span>
+                <span className="text-[9px] md:text-[11px] font-black uppercase text-white/40 tracking-widest">Chat</span>
             </div>
 
-            <div className="flex flex-col items-center gap-1.5">
-                <Link to={`/restaurant/${review.restaurantId}`} className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#00e054]/20 md:bg-[#00e054]/10 backdrop-blur-3xl border border-white/5 flex items-center justify-center text-[#00e054] shadow-lg shadow-[#00e054]/5 active:scale-90 transition-all">
-                   <Navigation size={18} />
+            <div className="flex flex-col items-center gap-1.5 group/btn">
+                <Link to={`/restaurant/${review.restaurantId}`} className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-[#00e054]/20 md:bg-[#00e054]/5 backdrop-blur-3xl border border-white/5 flex items-center justify-center text-[#00e054] shadow-lg shadow-[#00e054]/5 active:scale-95 transition-all group-hover/btn:bg-[#00e054]/10">
+                   <Navigation size={22} />
                 </Link>
-                <span className="text-[9px] md:text-[10px] font-black uppercase text-white/40">Go</span>
+                <span className="text-[9px] md:text-[11px] font-black uppercase text-white/40 tracking-widest">Go</span>
             </div>
         </div>
       </div>
