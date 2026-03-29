@@ -495,7 +495,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
               <div className="p-6 bg-black/20 border-t border-white/10 shrink-0">
               <button 
                 onClick={handleSubmit(onSubmit)}
-                disabled={isSubmitting || !selectedRestaurant}
+                disabled={isSubmitting || !searchQuery.trim()}
                 className="w-full bg-[#00e054] hover:bg-[#00c044] text-black font-bold uppercase tracking-widest py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
