@@ -45,7 +45,7 @@ export const AdminSeed: React.FC = () => {
   };
 
   const handleMegaSeedAP = async () => {
-    if (!user || user.email !== 'gtinnovix@gmail.com') {
+    if (!user || user.email !== 'tejag.vijay@gmail.com') {
       toast.error('Identity Verification Failed.');
       return;
     }
@@ -145,7 +145,7 @@ export const AdminSeed: React.FC = () => {
   const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   const handleSeed = async () => {
-    if (!user || user.email !== 'gtinnovix@gmail.com') {
+    if (!user || user.email !== 'tejag.vijay@gmail.com') {
       toast.error('Identity Verification Failed.');
       return;
     }
