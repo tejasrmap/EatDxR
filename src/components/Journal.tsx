@@ -62,7 +62,7 @@ export const Journal: React.FC = () => {
     <div className={`min-h-screen bg-black transition-all duration-500 ${mode === 'posts' ? 'pt-12 pb-32 px-4 md:px-6' : 'pt-0 pb-0 overflow-hidden'}`}>
       
       {/* Elegant Integrated Header - Original Centered Toggle */}
-      <div className={`transition-all duration-500 z-[50] ${mode === 'reels' ? 'fixed top-6 left-1/2 -translate-x-1/2 w-max max-w-[95vw] md:max-w-4xl' : 'relative mb-6'}`}>
+      <div className={`transition-all duration-500 z-[120] ${mode === 'reels' ? 'fixed top-6 left-1/2 -translate-x-1/2 w-max max-w-[95vw] md:max-w-4xl' : 'relative mb-6'}`}>
         <div className={`flex items-center justify-center bg-black/40 border border-white/10 rounded-full p-1.5 backdrop-blur-3xl shadow-2xl transition-all duration-500 ${mode === 'reels' ? 'px-1' : 'bg-transparent border-none backdrop-blur-none shadow-none'}`}>
             
             {/* Toggle Group Left-Aligned or Centered depending on mode */}

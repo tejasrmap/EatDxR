@@ -2,7 +2,7 @@ import { RestaurantSearchResult } from "../types";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || "";
 
 // Simple in-memory cache
 const searchCache = new Map<string, RestaurantSearchResult[]>();
@@ -42,7 +42,7 @@ async function fetchOpenRouter(prompt: string, expectJson: boolean = false) {
       "X-Title": "EatDxR", 
     },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash", // Running via OpenRouter
+      model: "google/gemini-2.0-flash-001", // Corrected OpenRouter model path
       messages: [{ role: "user", content: prompt }],
       response_format: expectJson ? { type: "json_object" } : undefined
     })

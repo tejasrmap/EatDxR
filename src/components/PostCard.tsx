@@ -59,6 +59,7 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
         await deleteDoc(likeRef);
       } else {
         await setDoc(likeRef, {
+          id: likeId,
           reviewId: review.id,
           userId: currentUser.uid,
           userName: currentUser.displayName,

@@ -59,6 +59,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
         await deleteDoc(likeRef);
       } else {
         await setDoc(likeRef, {
+          id: likeId,
           reviewId: review.id,
           userId: currentUser.uid,
           userName: currentUser.displayName,
