@@ -18,7 +18,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
   const firstImage = review.dishes?.find(d => d.image)?.image;
 
   return (
-    <div className="snap-child relative w-full h-svh md:h-screen bg-black overflow-hidden flex items-start justify-center pt-24 md:items-center md:pt-0">
+    <div className="snap-child relative w-full h-svh md:h-screen bg-black overflow-hidden flex items-center justify-center">
       
       {/* 1. Centered Media Container (Aspect-Ratio controlled on Desktop, Card-centric on Mobile) */}
       <div className="relative w-[92%] h-[78vh] md:w-full md:h-[88vh] md:aspect-[9/16] md:max-w-md bg-zinc-900 rounded-3xl md:rounded-3xl shadow-2xl md:overflow-visible overflow-hidden group mb-12 md:mb-0">

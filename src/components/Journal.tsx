@@ -138,9 +138,9 @@ export const Journal: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -100 }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed inset-0 z-50 bg-black flex items-start justify-center overflow-hidden pt-24"
+              className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden"
             >
-                 <div className="h-svh md:h-[92vh] w-full max-w-6xl relative shadow-2xl snap-y-container scrollbar-hide md:rounded-3xl md:overflow-hidden md:mt-2">
+                 <div className="h-svh md:h-[90vh] w-full max-w-6xl relative shadow-2xl snap-y-container scrollbar-hide md:rounded-3xl md:overflow-hidden">
                     {reviews.length > 0 ? (
                         reviews.map(review => (
                             <ReelCard key={review.id} review={review} />
