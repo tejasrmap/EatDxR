@@ -96,7 +96,7 @@ service cloud.firestore {
 
     function isValidReview(data) {
       return data.keys().hasAll(['id', 'userId', 'userName', 'userPhoto', 'restaurantId', 'restaurantName', 'dishes', 'rating', 'content', 'createdAt', 'likes']) &&
-             hasOnlyAllowedFields(['id', 'userId', 'userName', 'userPhoto', 'restaurantId', 'restaurantName', 'dishes', 'rating', 'content', 'createdAt', 'likes']) &&
+             hasOnlyAllowedFields(['id', 'userId', 'userName', 'userPhoto', 'restaurantId', 'restaurantName', 'dishes', 'rating', 'content', 'createdAt', 'likes', 'city', 'restaurantLocation']) &&
              data.id is string && data.id.size() > 0 &&
              data.userId == request.auth.uid &&
              data.userName is string && data.userName.size() > 0 && data.userName.size() < 200 &&
@@ -112,7 +112,7 @@ service cloud.firestore {
 
     function isValidRestaurant(data) {
       return data.keys().hasAll(['id', 'name', 'cuisine', 'location']) &&
-             hasOnlyAllowedFields(['id', 'name', 'cuisine', 'location', 'rating', 'reviewCount', 'image']) &&
+             hasOnlyAllowedFields(['id', 'name', 'cuisine', 'location', 'rating', 'reviewCount', 'image', 'menuItems']) &&
              data.id is string && data.id.size() > 0 &&
              data.name is string && data.name.size() > 0 && data.name.size() < 300 &&
              data.cuisine is string && data.cuisine.size() > 0 && data.cuisine.size() < 200 &&

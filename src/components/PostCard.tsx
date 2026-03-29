@@ -149,7 +149,7 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
 
         <div className="mt-6 pt-4 border-t border-white/5 flex items-center gap-2 text-white/20">
             <MapPin size={12} />
-            <span className="text-[9px] uppercase font-bold tracking-widest">{review.city || "Nearby Spot"}</span>
+            <span className="text-[9px] uppercase font-bold tracking-widest">{review.city || review.restaurantLocation || "Nearby Spot"}</span>
         </div>
       </div>
     </motion.div>

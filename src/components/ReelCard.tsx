@@ -84,7 +84,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
                 <div className="space-y-1">
                    <div className="flex items-center gap-2 text-[#00e054] text-[9px] font-bold uppercase tracking-widest opacity-70">
                        <MapPin size={9} />
-                       <span>{review.city || "Nearby Spot"}</span>
+                       <span>{review.city || review.restaurantLocation || "Nearby Spot"}</span>
                        <div className="flex items-center gap-0.5 ml-1">
                           <Star size={9} className="fill-[#00e054] text-[#00e054]" />
                           <span className="text-white">{review.rating.toFixed(1)}</span>
@@ -158,7 +158,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
 
              <div className="space-y-1.5 pointer-events-auto">
                 <div className="flex items-center justify-end gap-2 text-[#00e054] text-[9px] font-black uppercase tracking-[0.2em] opacity-40">
-                    <span>{review.city || "Nearby Spot"}</span>
+                    <span>{review.city || review.restaurantLocation || "Nearby Spot"}</span>
                     <MapPin size={10} />
                 </div>
                 <h2 className="text-xl md:text-2xl font-black uppercase tracking-tighter leading-tight text-white mb-1">{review.restaurantName}</h2>

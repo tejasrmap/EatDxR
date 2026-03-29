@@ -217,6 +217,10 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
       } else {
         // Create Document Mode
         const reviewRef = doc(collection(db, "reviews"));
+        
+        // Extract city from selected restaurant or try to parse from manual location
+        const city = selectedRestaurant?.city || manualLocation.split(',').pop()?.trim() || "Nearby";
+
         const reviewData = {
           id: reviewRef.id,
           userId: user.uid,
@@ -224,6 +228,8 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
           userPhoto: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}&background=random`,
           restaurantName: data.restaurant,
           restaurantId: restaurantId,
+          restaurantLocation: manualLocation,
+          city: city,
           dishes: data.dishes,
           rating: data.rating,
           content: data.review || "",
