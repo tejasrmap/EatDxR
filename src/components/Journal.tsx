@@ -71,31 +71,31 @@ export const Journal: React.FC = () => {
         <div className={`flex items-center bg-black/40 border border-white/10 rounded-full p-1 backdrop-blur-3xl shadow-2xl transition-all duration-700 ${mode === 'reels' ? 'opacity-70 hover:opacity-100' : 'opacity-100'}`}>
             <button 
               onClick={() => updateMode('posts')}
-              className={`relative flex items-center gap-2 px-6 py-2.5 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] transition-all z-10 ${mode === 'posts' ? 'text-black' : 'text-white/40 hover:text-white'}`}
+              className={`relative flex items-center justify-center gap-2 px-6 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] transition-all z-10 ${mode === 'posts' ? 'text-black' : 'text-white/40 hover:text-white'}`}
             >
               {mode === 'posts' && (
                 <motion.div 
                   layoutId="active-pill"
                   className="absolute inset-0 bg-[#00e054] rounded-full -z-10 shadow-lg shadow-[#00e054]/20"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                 />
               )}
               <LayoutGrid size={14} />
-              Posts
+              <span>Posts</span>
             </button>
             <button 
               onClick={() => updateMode('reels')}
-              className={`relative flex items-center gap-2 px-6 py-2.5 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] transition-all z-10 ${mode === 'reels' ? 'text-black' : 'text-white/40 hover:text-white'}`}
+              className={`relative flex items-center justify-center gap-2 px-6 h-9 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] transition-all z-10 ${mode === 'reels' ? 'text-black' : 'text-white/40 hover:text-white'}`}
             >
               {mode === 'reels' && (
                 <motion.div 
                   layoutId="active-pill"
                   className="absolute inset-0 bg-[#00e054] rounded-full -z-10 shadow-lg shadow-[#00e054]/20"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                 />
               )}
               <PlayCircle size={14} />
-              Reels
+              <span>Reels</span>
             </button>
         </div>
       </div>
@@ -129,9 +129,9 @@ export const Journal: React.FC = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 50 }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed inset-0 z-50 bg-black pt-0 pb-20"
+              className="fixed inset-0 z-50 bg-zinc-950 flex items-center justify-center"
             >
-                 <div className="h-full snap-y-container scrollbar-hide">
+                 <div className="h-full w-full max-w-[450px] relative shadow-[0_0_100px_rgba(0,0,0,0.8)] snap-y-container scrollbar-hide">
                     {reviews.length > 0 ? (
                         reviews.map(review => (
                             <ReelCard key={review.id} review={review} />
