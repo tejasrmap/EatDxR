@@ -30,7 +30,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     if (isOnboarding && !username.trim()) return toast.error("A username is required to continue.");
     
     setIsSaving(true);
-    // ... same saving logic ...
     try {
       // 1. Process array payloads
       const favoriteCuisines = cuisines
