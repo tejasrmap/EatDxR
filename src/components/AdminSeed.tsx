@@ -299,8 +299,9 @@ export const AdminSeed: React.FC = () => {
             <p className="text-[10px] uppercase font-black tracking-[0.2em] text-[#00e054]">Session Authorized</p>
           </div>
           <h1 className="text-4xl font-black uppercase tracking-tighter text-white mb-4">Database & Content Admin</h1>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl mt-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl mt-8">
             {/* AP Mega-Transplant: The Definitive Seed */}
             <div className="bg-zinc-900/50 p-8 rounded-[2.5rem] border border-white/5 backdrop-blur-xl hover:border-red-500/50 transition-all group text-left relative overflow-hidden">
               <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
