@@ -21,6 +21,7 @@ import { Restaurants } from "./components/Restaurants";
 import { Critics } from "./components/Critics";
 import { Journal } from "./components/Journal";
 import { Navigate } from "react-router-dom";
+import { MobileBottomNav } from "./components/MobileBottomNav";
 import { useLocation } from "./hooks/useLocation";
 import { getCurrentCity } from "./services/mapsService";
 import { MapPin, Globe, Star, Loader2 } from "lucide-react";
@@ -432,6 +433,7 @@ export function App() {
               <Route path="*" element={<Home />} />
             </Routes>
           </Layout>
+          <MobileBottomNav />
           <Toaster theme="dark" position="bottom-right" />
         </Router>
       </AuthProvider>

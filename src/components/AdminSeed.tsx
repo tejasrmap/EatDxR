@@ -28,6 +28,7 @@ export const AdminSeed: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [radiusKm, setRadiusKm] = useState(15);
   const [isFindingLocation, setIsFindingLocation] = useState(false);
+  const [usePinpoint, setUsePinpoint] = useState(true);
   const [locationOptions, setLocationOptions] = useState<LocationResult[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<LocationResult | null>(null);
 
@@ -130,22 +131,31 @@ export const AdminSeed: React.FC = () => {
         const plon = place.lon || place.center?.lon;
         
         // --- Pinpoint Accuracy: Reverse Geocode lookup ---
-        let pinpointTown = "";
-        try {
-          // Respect Nominatim rate limit (max 1 request per sec)
-          await wait(1100); 
-          const revRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${plat}&lon=${plon}&zoom=14`);
-          const revData = await revRes.json();
-          // Extract most specific town/suburb name
-          pinpointTown = revData.address.suburb || 
-                         revData.address.town || 
-                         revData.address.neighbourhood || 
-                         revData.address.village || 
-                         revData.address.city_district || 
-                         revData.address.city || 
-                         selectedLocation.name;
-        } catch (e) {
-          pinpointTown = selectedLocation.name;
+        let pinpointTown = selectedLocation.name;
+        
+        if (usePinpoint) {
+          try {
+            // Respect Nominatim rate limit (max 1 request per sec)
+            await wait(1100); 
+            const revRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${plat}&lon=${plon}&zoom=14`);
+            
+            if (revRes.status === 429) {
+              toast.error("API Quota Reached. Switching to standard mode...");
+              setUsePinpoint(false); // Auto-disable for the rest of the run
+            } else if (revRes.ok) {
+              const revData = await revRes.json();
+              // Extract most specific town/suburb name
+              pinpointTown = revData.address.suburb || 
+                             revData.address.town || 
+                             revData.address.neighbourhood || 
+                             revData.address.village || 
+                             revData.address.city_district || 
+                             revData.address.city || 
+                             selectedLocation.name;
+            }
+          } catch (e) {
+            console.error("Reverse geocode failed", e);
+          }
         }
         
         const type = place.tags.amenity === 'cafe' ? 'Cafe' : 
@@ -310,7 +320,26 @@ export const AdminSeed: React.FC = () => {
                    </div>
                 )}
              </div>
-
+ 
+             {/* Pinpoint Toggle */}
+             <div className="flex items-center justify-between bg-black/40 p-4 rounded-2xl border border-white/5">
+                <div className="flex items-center gap-3">
+                   <div className={`p-2 rounded-lg ${usePinpoint ? 'bg-[#00e054]/20' : 'bg-white/5'}`}>
+                      <Timer size={16} className={usePinpoint ? 'text-[#00e054]' : 'text-white/20'} />
+                   </div>
+                   <div className="text-left">
+                      <p className="text-[10px] uppercase font-black tracking-widest text-white">Pinpoint Mode</p>
+                      <p className="text-[9px] text-white/30 font-serif italic">Hyper-local address lookup (Slower)</p>
+                   </div>
+                </div>
+                <button 
+                  onClick={() => setUsePinpoint(!usePinpoint)}
+                  className={`w-12 h-6 rounded-full transition-all relative ${usePinpoint ? 'bg-[#00e054]' : 'bg-white/10'}`}
+                >
+                   <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${usePinpoint ? 'left-7' : 'left-1'}`} />
+                </button>
+             </div>
+ 
              {/* Radius Section */}
              <div className="space-y-4">
                 <div className="flex justify-between items-center px-2">
