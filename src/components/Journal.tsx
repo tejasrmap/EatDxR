@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { collection, query, onSnapshot, orderBy, limit } from "firebase/firestore";
 import { db } from "../firebase";
 import { Review } from "../types";
-import { Link } from "react-router-dom";
-import { Loader2, LayoutGrid, PlayCircle, Info } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Loader2, LayoutGrid, PlayCircle, Info, MapPin } from "lucide-react";
 import { PostCard } from "./PostCard";
 import { ReelCard } from "./ReelCard";
 import { motion, AnimatePresence } from "motion/react";
@@ -13,16 +13,16 @@ type FeedMode = 'posts' | 'reels';
 export const Journal: React.FC = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState<FeedMode>(() => {
-    const params = new URLSearchParams(window.location.search);
-    return (params.get('mode') as FeedMode) || 'posts';
-  });
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const mode = (new URLSearchParams(location.search).get('mode') as FeedMode) || 'posts';
 
   const updateMode = (newMode: FeedMode) => {
-    setMode(newMode);
-    const url = new URL(window.location.href);
-    url.searchParams.set('mode', newMode);
-    window.history.replaceState({}, '', url.toString());
+    navigate({
+      pathname: location.pathname,
+      search: `?mode=${newMode}`
+    }, { replace: true });
   };
 
   useEffect(() => {
@@ -62,8 +62,8 @@ export const Journal: React.FC = () => {
     <div className={`min-h-screen bg-black ${mode === 'posts' ? 'pt-24 pb-32 px-4 md:px-6' : 'pt-0 pb-0 overflow-hidden'}`}>
       
       {/* Elegant Integrated Header - Responsive */}
-      <div className={`transition-all duration-700 z-[120] ${mode === 'reels' ? 'fixed top-6 left-1/2 -translate-x-1/2 w-full max-w-[90vw] md:max-w-xl' : 'relative mb-12'}`}>
-        <div className={`flex items-center justify-between bg-black/40 border border-white/10 rounded-full p-1.5 backdrop-blur-3xl shadow-2xl transition-all duration-700 ${mode === 'reels' ? 'px-4 md:px-6' : 'bg-transparent border-none backdrop-blur-none shadow-none'}`}>
+      <div className={`transition-all duration-500 z-[120] ${mode === 'reels' ? 'fixed top-6 left-1/2 -translate-x-1/2 w-max max-w-[95vw]' : 'relative mb-12'}`}>
+        <div className={`flex items-center gap-6 md:gap-12 bg-black/40 border border-white/10 rounded-full p-1.5 backdrop-blur-3xl shadow-2xl transition-all duration-500 ${mode === 'reels' ? 'px-6' : 'bg-transparent border-none backdrop-blur-none shadow-none'}`}>
             
             {/* Minimal Logo - Only in Reels Mode or always for Journal Header */}
             <Link to="/" className={`flex items-center gap-2 transition-all duration-700 ${mode === 'reels' ? 'opacity-100' : 'opacity-100'}`}>
