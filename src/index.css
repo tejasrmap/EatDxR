@@ -68,6 +68,17 @@ body {
   }
 }
 
+.snap-y-container {
+  scroll-snap-type: y mandatory;
+  overflow-y: scroll;
+  height: calc(100vh - 80px); /* Account for bottom nav */
+}
+
+.snap-child {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
 @media (max-width: 768px) {
   .hide-on-mobile {
     display: none !important;

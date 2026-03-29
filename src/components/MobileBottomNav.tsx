@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Compass, Search, Plus, Bell, User, PlusCircle } from 'lucide-react';
+import { Compass, Search, Plus, User, LayoutGrid } from 'lucide-react';
 import { useAuth } from '../App';
 import { LogMealModal } from './LogMealModal';
 
@@ -48,7 +48,7 @@ export function MobileBottomNav() {
               to="/journal" 
               className={`flex flex-col items-center gap-1 transition-all active:scale-95 ${isActive('/journal') ? 'text-[#00e054]' : 'text-white/40 hover:text-white'}`}
             >
-              <Bell size={18} className={isActive('/journal') ? "fill-[#00e054]/20" : ""} />
+              <LayoutGrid size={18} className={isActive('/journal') ? "fill-[#00e054]/20" : ""} />
               <span className="text-[8px] font-black uppercase tracking-widest">Feed</span>
             </Link>
 
