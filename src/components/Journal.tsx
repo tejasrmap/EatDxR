@@ -61,30 +61,12 @@ export const Journal: React.FC = () => {
   return (
     <div className={`min-h-screen bg-black transition-all duration-500 ${mode === 'posts' ? 'pt-12 pb-32 px-4 md:px-6' : 'pt-0 pb-0 overflow-hidden'}`}>
       
-      {/* Elegant Integrated Header - Responsive */}
+      {/* Elegant Integrated Header - Responsive Toggle Only */}
       <div className={`transition-all duration-500 z-[120] ${mode === 'reels' ? 'fixed top-6 left-1/2 -translate-x-1/2 w-max max-w-[95vw] md:max-w-4xl' : 'relative mb-6'}`}>
-        <div className={`flex items-center gap-6 md:gap-12 bg-black/40 border border-white/10 rounded-full p-1.5 backdrop-blur-3xl shadow-2xl transition-all duration-500 ${mode === 'reels' ? 'px-6 md:px-10' : 'bg-transparent border-none backdrop-blur-none shadow-none'}`}>
+        <div className={`flex items-center justify-center bg-black/40 border border-white/10 rounded-full p-1.5 backdrop-blur-3xl shadow-2xl transition-all duration-500 ${mode === 'reels' ? 'px-1' : 'bg-transparent border-none backdrop-blur-none shadow-none'}`}>
             
-            {/* Minimal Logo - Only in Reels Mode or always for Journal Header */}
-            <Link to="/" className={`flex items-center gap-2 transition-all duration-700 ${mode === 'reels' ? 'opacity-100' : 'opacity-100'}`}>
-                <div className="flex items-center justify-center w-7 h-7 md:w-8 md:h-8 bg-gradient-to-br from-orange-500 to-rose-500 rounded-lg shadow-lg shadow-rose-500/20">
-                    <LayoutGrid className="text-white w-3.5 h-3.5" />
-                </div>
-                {mode === 'reels' && (
-                  <span className="hidden md:block text-sm font-black tracking-tighter text-white">
-                    Eat<span className="text-rose-500">D</span>
-                  </span>
-                )}
-                {mode === 'posts' && (
-                  <div className="flex flex-col ml-2">
-                    <h1 className="text-xl md:text-3xl font-black uppercase tracking-tighter text-white leading-none">The <span className="text-[#00e054] italic serif lowercase">feed</span></h1>
-                    <p className="text-[8px] md:text-[9px] uppercase font-black tracking-[0.2em] text-white/30 truncate mt-0.5">Regional Live Diary • {reviews.length} logs</p>
-                  </div>
-                )}
-            </Link>
-
-            {/* Toggle Group */}
-            <div className="flex items-center bg-white/5 rounded-full p-0.5 border border-white/5">
+            {/* Toggle Group Left-Aligned or Centered depending on mode */}
+            <div className={`flex items-center bg-white/5 rounded-full p-0.5 border border-white/5 ${mode === 'posts' ? 'ml-0' : ''}`}>
                 <button 
                   onClick={() => updateMode('posts')}
                   className={`relative flex items-center justify-center gap-2 px-4 md:px-6 h-8 md:h-9 rounded-full text-[9px] md:text-[11px] font-black uppercase tracking-[0.2em] transition-all z-10 ${mode === 'posts' ? 'text-black' : 'text-white/40 hover:text-white'}`}
