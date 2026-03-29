@@ -72,7 +72,9 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isAuthenticated() && request.auth.token.email == "tejag.vijay@gmail.com";
+      return isAuthenticated() &&
+        (request.auth.token.email == "tejag.vijay@gmail.com" ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') == 'admin');
     }
 
     // Validate that the document contains only the allowed fields
@@ -110,12 +112,11 @@ service cloud.firestore {
 
     function isValidRestaurant(data) {
       return data.keys().hasAll(['id', 'name', 'cuisine', 'location']) &&
-             hasOnlyAllowedFields(['id', 'name', 'cuisine', 'location', 'address', 'rating', 'reviewCount', 'image', 'menuItems', 'lat', 'lng', 'likesCount']) &&
+             hasOnlyAllowedFields(['id', 'name', 'cuisine', 'location', 'rating', 'reviewCount', 'image', 'menuItems']) &&
              data.id is string && data.id.size() > 0 &&
              data.name is string && data.name.size() > 0 && data.name.size() < 300 &&
              data.cuisine is string && data.cuisine.size() > 0 && data.cuisine.size() < 200 &&
              data.location is string && data.location.size() > 0 && data.location.size() < 1000 &&
-             (!('address' in data) || (data.address is string && data.address.size() < 1000)) &&
              (!('rating' in data) || (data.rating is number && data.rating >= 0 && data.rating <= 5)) &&
              (!('reviewCount' in data) || (data.reviewCount is int && data.reviewCount >= 0)) &&
              (!('image' in data) || (data.image is string && data.image.size() < 2000));
@@ -160,8 +161,7 @@ service cloud.firestore {
 
     match /restaurants/{restaurantId} {
       allow read: if true;
-      allow create, update: if isAuthenticated() && isValidRestaurant(request.resource.data);
-      allow delete: if isAuthenticated(); // EMERGENCY: Temporarily allow deletion to clear the inaccurate database.
+      allow create, update: if isAuthenticated();
     }
 
     match /reviews/{reviewId} {
