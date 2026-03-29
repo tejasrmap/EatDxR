@@ -110,6 +110,16 @@ export const Journal: React.FC = () => {
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="space-y-8"
             >
+              {/* Dynamic Page Header */}
+              <div className="mb-12">
+                <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter text-white leading-[0.8]">
+                  The <span className="text-[#00e054] italic serif lowercase">feed</span>
+                </h1>
+                <p className="text-[10px] md:text-xs uppercase font-black tracking-[0.3em] text-white/20 mt-4 ml-1">
+                  Regional Live Diary • {reviews.length} logs
+                </p>
+              </div>
+
               {reviews.length > 0 ? (
                 reviews.map(review => (
                   <PostCard key={review.id} review={review} />

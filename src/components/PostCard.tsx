@@ -33,8 +33,8 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
             className="w-8 h-8 rounded-full border border-white/10"
           />
           <div className="flex flex-col">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-white/90">{review.userName}</span>
-            <span className="text-[10px] text-white/30 font-bold uppercase tracking-widest">
+            <span className="text-sm md:text-base font-black uppercase tracking-[0.2em] text-white/90">{review.userName}</span>
+            <span className="text-[10px] md:text-xs text-white/40 font-bold uppercase tracking-widest">
                 {formatDistanceToNow(parseFirebaseDate(review.createdAt), { addSuffix: true })}
             </span>
           </div>
@@ -64,7 +64,7 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
         {/* Restaurant Badge Layer */}
         <div className="absolute top-4 left-4 flex flex-col gap-2">
             <Link to={`/restaurant/${review.restaurantId}`} className="bg-black/60 backdrop-blur-3xl border border-white/10 px-4 py-2 rounded-full inline-flex items-center gap-2 group/rest transform group-hover:translate-x-1 transition-transform">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#00e054] group-hover/rest:text-white transition-colors">{review.restaurantName}</span>
+                <span className="text-xs md:text-sm font-black uppercase tracking-[0.2em] text-[#00e054] group-hover/rest:text-white transition-colors">{review.restaurantName}</span>
             </Link>
         </div>
 
@@ -101,8 +101,8 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
 
         <div className="space-y-2">
             <div className="flex items-baseline gap-2">
-                <span className="text-xs font-black uppercase tracking-wider text-white">{review.userName}</span>
-                <p className="text-sm font-serif italic text-white/70 leading-relaxed">
+                <span className="text-xs md:text-sm font-black uppercase tracking-wider text-white">{review.userName}</span>
+                <p className="text-base md:text-xl font-serif italic text-white/80 leading-relaxed md:leading-[1.6]">
                    "{review.content}"
                 </p>
             </div>
@@ -110,7 +110,7 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
             {review.dishes && review.dishes.length > 0 && (
                 <div className="flex flex-wrap gap-2 pt-2">
                     {review.dishes.map((dish, i) => (
-                        <span key={i} className="text-[10px] uppercase font-black tracking-widest text-[#00e054]/60 bg-[#00e054]/5 px-3 py-1 rounded-full border border-[#00e054]/10">
+                        <span key={i} className="text-[10px] md:text-xs uppercase font-black tracking-widest text-[#00e054]/60 bg-[#00e054]/5 px-3 py-1 rounded-full border border-[#00e054]/10">
                             {dish.name}
                         </span>
                     ))}

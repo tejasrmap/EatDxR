@@ -64,13 +64,13 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
                   alt=""
                 />
                 <div className="flex flex-col">
-                  <span className="text-xs font-black uppercase tracking-[0.2em] text-white/40 group-hover:text-white transition-all">Shared By</span>
-                  <span className="text-sm font-black uppercase tracking-widest text-[#00e054]">{review.userName}</span>
+                  <span className="text-sm font-black uppercase tracking-[0.2em] text-white/40 group-hover:text-white transition-all">Shared By</span>
+                  <span className="text-base md:text-lg font-black uppercase tracking-widest text-[#00e054]">{review.userName}</span>
                 </div>
             </Link>
-            <div className="ml-auto bg-white/5 px-4 py-2 rounded-full border border-white/10 flex items-center gap-2">
-               <Star size={14} className="fill-yellow-500 text-yellow-500" />
-               <span className="text-sm font-black text-white">{review.rating.toFixed(1)}</span>
+            <div className="ml-auto bg-white/5 px-6 py-3 rounded-full border border-white/10 flex items-center gap-2">
+               <Star size={18} className="fill-yellow-500 text-yellow-500" />
+               <span className="text-lg font-black text-white">{review.rating.toFixed(1)}</span>
             </div>
         </div>
 
@@ -90,24 +90,24 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
         <div className="space-y-6">
             <div className="space-y-2">
                 <div className="flex items-center gap-2 text-[#00e054] text-[10px] md:text-xs font-black uppercase tracking-[0.2em]">
-                    <MapPin size={12} />
+                    <MapPin size={16} />
                     <span>{review.city || "Nearby Spot"}</span>
                 </div>
-                <h2 className="text-3xl md:text-6xl font-black uppercase tracking-tighter leading-[0.9] text-white">{review.restaurantName}</h2>
+                <h2 className="text-4xl md:text-8xl font-black uppercase tracking-tighter leading-[0.8] text-white">{review.restaurantName}</h2>
             </div>
             
             {review.content && review.content.trim() && (
-              <div className="bg-white/5 md:bg-transparent md:border-l-2 md:border-white/10 md:pl-8 p-6 md:p-0 rounded-2xl md:rounded-none relative overflow-hidden group">
-                  <p className="text-sm md:text-xl font-serif italic text-white/90 leading-relaxed relative z-10 md:max-w-md">
+              <div className="bg-white/5 md:bg-transparent md:border-l-4 md:border-white/10 md:pl-10 p-6 md:p-0 rounded-2xl md:rounded-none relative overflow-hidden group">
+                  <p className="text-base md:text-2xl font-serif italic text-white/90 leading-relaxed md:leading-[1.5] max-w-xl">
                     "{review.content}"
                   </p>
               </div>
             )}
 
-            <div className="flex flex-wrap gap-2 md:pt-4">
+            <div className="flex flex-wrap gap-3 md:pt-6">
               {review.dishes?.slice(0, 4).map((dish, i) => (
-                  <div key={i} className="px-4 py-1.5 bg-white/5 md:bg-white/10 backdrop-blur-md rounded-full border border-white/10 flex items-center gap-2">
-                      <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white/60">{dish.name}</span>
+                  <div key={i} className="px-6 py-2.5 bg-white/5 md:bg-white/10 backdrop-blur-md rounded-full border border-white/10 flex items-center gap-2">
+                      <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-white/60">{dish.name}</span>
                   </div>
               ))}
             </div>

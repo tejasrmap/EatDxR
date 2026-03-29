@@ -91,8 +91,8 @@ export function Restaurants() {
 
   return (
     <div className="min-h-screen pt-20 md:pt-24 pb-32 md:pb-20 px-4 md:px-6 max-w-7xl mx-auto">
-      <header className="mb-10 md:mb-16">
-        <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black uppercase tracking-tighter mb-4 animate-in fade-in slide-in-from-left-4 duration-700">Discover <span className="text-[#00e054] italic serif lowercase">nearby</span></h1>
+      <header className="mb-12 md:mb-20">
+        <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tighter mb-6 animate-in fade-in slide-in-from-left-4 duration-700 leading-[0.8]">Discover <span className="text-[#00e054] italic serif lowercase">nearby</span></h1>
         
         <div className="flex flex-col gap-4">
            <div className="flex flex-wrap items-center gap-2 md:gap-4">
@@ -182,14 +182,14 @@ function RestaurantCard({ restaurant, index, isSmall = false }: { restaurant: an
       transition={{ delay: index * 0.05 }}
       className="group relative"
     >
-      <div className="absolute top-3 right-3 z-10 hidden md:block opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute top-4 right-4 z-10 hidden md:block opacity-0 group-hover:opacity-100 transition-opacity">
         <a 
           href={mapsUrl} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="bg-white/10 hover:bg-[#00e054] text-white hover:text-black p-2 rounded-full backdrop-blur-md border border-white/20 transition-all flex items-center justify-center shadow-xl"
+          className="bg-black/40 hover:bg-[#00e054] text-white hover:text-black p-3 rounded-full backdrop-blur-3xl border border-white/10 transition-all flex items-center justify-center shadow-2xl"
         >
-          <Navigation size={12} />
+          <Navigation size={14} />
         </a>
       </div>
       <Link to={`/restaurant/${restaurant.id}`} className="block">
@@ -205,18 +205,18 @@ function RestaurantCard({ restaurant, index, isSmall = false }: { restaurant: an
           ) : (
             <div className="absolute inset-0 w-full h-full mesh-gradient opacity-40" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent p-4 md:p-8 flex flex-col justify-end">
-            <div className="flex items-center justify-between mb-1 md:mb-2">
-               <span className="bg-[#00e054] text-black text-[7px] md:text-[9px] font-black uppercase tracking-[0.1em] md:tracking-[0.2em] px-2 md:px-3 py-0.5 md:py-1 rounded-full">
-                  {formatDistance(restaurant.distance)}
-               </span>
-               <div className="flex items-center gap-0.5 md:gap-1 text-[9px] md:text-[10px] font-bold text-white/80">
-                  <Star className="w-2 md:w-3 h-2 md:h-3 fill-[#00e054] text-[#00e054]" />
-                  {restaurant.rating?.toFixed ? restaurant.rating.toFixed(1) : restaurant.rating || "0.0"}
-               </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent p-4 md:p-10 flex flex-col justify-end">
+            <div className="flex items-center justify-between mb-2 md:mb-4">
+                <span className="bg-[#00e054] text-black text-[8px] md:text-[11px] font-black uppercase tracking-[0.1em] md:tracking-[0.2em] px-2 md:px-4 py-0.5 md:py-1.5 rounded-full shadow-lg shadow-[#00e054]/20">
+                   {formatDistance(restaurant.distance)}
+                </span>
+                <div className="flex items-center gap-1 md:gap-1.5 text-[10px] md:text-sm font-black text-white px-2 py-1 bg-black/40 backdrop-blur-3xl rounded-full border border-white/10 shadow-2xl">
+                   <Star size={14} className="fill-[#00e054] text-[#00e054]" />
+                   {restaurant.rating?.toFixed ? restaurant.rating.toFixed(1) : restaurant.rating || "0.0"}
+                </div>
             </div>
-            <h3 className="text-sm md:text-2xl font-black text-white uppercase tracking-tight line-clamp-1 leading-tight">{restaurant.name}</h3>
-            <p className="text-white/40 text-[7px] md:text-[10px] uppercase font-bold tracking-widest mt-0.5 truncate">{restaurant.location}</p>
+            <h3 className="text-xl md:text-3xl font-black text-white uppercase tracking-tight line-clamp-1 leading-none">{restaurant.name}</h3>
+            <p className="text-white/40 text-[9px] md:text-xs uppercase font-bold tracking-widest mt-1.5 truncate">{restaurant.location}</p>
           </div>
         </div>
       </Link>
