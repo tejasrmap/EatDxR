@@ -71,16 +71,30 @@ export const Journal: React.FC = () => {
         <div className={`flex items-center bg-black/40 border border-white/10 rounded-full p-1 backdrop-blur-3xl shadow-2xl transition-all duration-700 ${mode === 'reels' ? 'opacity-70 hover:opacity-100' : 'opacity-100'}`}>
             <button 
               onClick={() => updateMode('posts')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'posts' ? 'bg-[#00e054] text-black shadow-lg shadow-[#00e054]/20 scale-105' : 'text-white/40 hover:text-white'}`}
+              className={`relative flex items-center gap-2 px-6 py-2.5 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] transition-all z-10 ${mode === 'posts' ? 'text-black' : 'text-white/40 hover:text-white'}`}
             >
-              <LayoutGrid size={12} />
+              {mode === 'posts' && (
+                <motion.div 
+                  layoutId="active-pill"
+                  className="absolute inset-0 bg-[#00e054] rounded-full -z-10 shadow-lg shadow-[#00e054]/20"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <LayoutGrid size={14} />
               Posts
             </button>
             <button 
               onClick={() => updateMode('reels')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'reels' ? 'bg-[#00e054] text-black shadow-lg shadow-[#00e054]/20 scale-105' : 'text-white/40 hover:text-white'}`}
+              className={`relative flex items-center gap-2 px-6 py-2.5 rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] transition-all z-10 ${mode === 'reels' ? 'text-black' : 'text-white/40 hover:text-white'}`}
             >
-              <PlayCircle size={12} />
+              {mode === 'reels' && (
+                <motion.div 
+                  layoutId="active-pill"
+                  className="absolute inset-0 bg-[#00e054] rounded-full -z-10 shadow-lg shadow-[#00e054]/20"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <PlayCircle size={14} />
               Reels
             </button>
         </div>
@@ -91,9 +105,10 @@ export const Journal: React.FC = () => {
           {mode === 'posts' ? (
             <motion.div 
               key="posts"
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
+              exit={{ opacity: 0, x: -50 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="space-y-8"
             >
               {reviews.length > 0 ? (
@@ -110,9 +125,10 @@ export const Journal: React.FC = () => {
           ) : (
             <motion.div 
               key="reels"
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -50 }}
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 50 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="fixed inset-0 z-50 bg-black pt-0 pb-20"
             >
                  <div className="h-full snap-y-container scrollbar-hide">
