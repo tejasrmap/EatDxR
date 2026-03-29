@@ -59,10 +59,10 @@ export const Journal: React.FC = () => {
   }
 
   return (
-    <div className={`min-h-screen bg-black ${mode === 'posts' ? 'pt-24 pb-32 px-4 md:px-6' : 'pt-0 pb-0 overflow-hidden'}`}>
+    <div className={`min-h-screen bg-black transition-all duration-500 ${mode === 'posts' ? 'pt-12 pb-32 px-4 md:px-6' : 'pt-0 pb-0 overflow-hidden'}`}>
       
       {/* Elegant Integrated Header - Responsive */}
-      <div className={`transition-all duration-500 z-[120] ${mode === 'reels' ? 'fixed top-6 left-1/2 -translate-x-1/2 w-max max-w-[95vw]' : 'relative mb-12'}`}>
+      <div className={`transition-all duration-500 z-[120] ${mode === 'reels' ? 'fixed top-6 left-1/2 -translate-x-1/2 w-max max-w-[95vw]' : 'relative mb-6'}`}>
         <div className={`flex items-center gap-6 md:gap-12 bg-black/40 border border-white/10 rounded-full p-1.5 backdrop-blur-3xl shadow-2xl transition-all duration-500 ${mode === 'reels' ? 'px-6' : 'bg-transparent border-none backdrop-blur-none shadow-none'}`}>
             
             {/* Minimal Logo - Only in Reels Mode or always for Journal Header */}
@@ -148,7 +148,7 @@ export const Journal: React.FC = () => {
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="fixed inset-0 z-50 bg-zinc-950 flex items-center justify-center"
             >
-                 <div className="h-full w-full max-w-[450px] relative shadow-[0_0_100px_rgba(0,0,0,0.8)] snap-y-container scrollbar-hide">
+                 <div className="h-full w-full max-w-[540px] relative shadow-[0_0_100px_rgba(0,0,0,0.8)] snap-y-container scrollbar-hide border-x border-white/5">
                     {reviews.length > 0 ? (
                         reviews.map(review => (
                             <ReelCard key={review.id} review={review} />
