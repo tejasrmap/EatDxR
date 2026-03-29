@@ -76,8 +76,8 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
              </div>
         </div>
 
-        {/* 4. Side Interaction Column (Floating - Desktop Left, Mobile Right) */}
-        <div className="absolute right-4 bottom-24 md:bottom-0 md:right-[calc(100%+2.5rem)] flex flex-col items-center gap-6 md:gap-8 z-30 pointer-events-auto">
+        {/* 4. Side Interaction Column (Floating - Desktop Right, Mobile Right) */}
+        <div className="absolute right-4 bottom-24 md:bottom-0 md:left-[calc(100%+2.5rem)] flex flex-col items-center gap-6 md:gap-8 z-30 pointer-events-auto">
             <div className="flex flex-col items-center gap-1.5 group/btn">
                 <button 
                   onClick={() => setIsLiked(!isLiked)}
@@ -104,7 +104,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
         </div>
 
         {/* 5. Desktop-Only Data Column (Floating Left Side) */}
-        <div className="hidden md:flex absolute right-[calc(100%+6rem)] bottom-0 flex-col items-end text-right gap-6 w-96 z-30 pointer-events-none">
+        <div className="hidden md:flex absolute right-[calc(100%+2.5rem)] bottom-0 flex-col items-end text-right gap-6 w-96 z-30 pointer-events-none">
              {/* Desktop Author Info Addition */}
              <div className="flex items-center gap-4 mb-4 pointer-events-auto">
                 <div className="flex flex-col items-end">
