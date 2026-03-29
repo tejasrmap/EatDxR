@@ -27,10 +27,12 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
             alt={review.restaurantName}
             className="w-full h-full object-cover opacity-80"
             referrerPolicy="no-referrer"
+            loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 border border-white/10">
+          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-900 via-zinc-900 to-rose-950">
              <div className="text-white/5 font-black text-9xl absolute -rotate-12 select-none">MOMENT</div>
+             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,224,84,0.1),transparent_70%)] animate-pulse" />
              <p className="relative z-10 text-[10px] uppercase tracking-[0.4em] text-white/20 font-black">Visual missing, flavor remains.</p>
           </div>
         )}
@@ -91,12 +93,14 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
               </div>
           </div>
           
-          <div className="bg-black/20 backdrop-blur-3xl border border-white/5 p-4 rounded-2xl relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#00e054]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <p className="text-sm font-serif italic text-white/90 leading-relaxed relative z-10">
-                "{review.content}"
-              </p>
-          </div>
+          {review.content && review.content.trim() && (
+            <div className="bg-black/20 backdrop-blur-3xl border border-white/5 p-4 rounded-2xl relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-r from-[#00e054]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <p className="text-sm font-serif italic text-white/90 leading-relaxed relative z-10">
+                  "{review.content}"
+                </p>
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-2">
             {review.dishes?.map((dish, i) => (

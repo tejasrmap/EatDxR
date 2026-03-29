@@ -13,7 +13,17 @@ type FeedMode = 'posts' | 'reels';
 export const Journal: React.FC = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState<FeedMode>('posts');
+  const [mode, setMode] = useState<FeedMode>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return (params.get('mode') as FeedMode) || 'posts';
+  });
+
+  const updateMode = (newMode: FeedMode) => {
+    setMode(newMode);
+    const url = new URL(window.location.href);
+    url.searchParams.set('mode', newMode);
+    window.history.replaceState({}, '', url.toString());
+  };
 
   useEffect(() => {
     const q = query(
@@ -52,25 +62,25 @@ export const Journal: React.FC = () => {
     <div className={`min-h-screen bg-black ${mode === 'posts' ? 'pt-24 pb-32 px-4 md:px-6' : 'pt-0 pb-0 overflow-hidden'}`}>
       
       {/* Feed Toggle Header - Adjusted for Posts vs Reels */}
-      <div className={`flex items-center justify-between mb-8 z-[110] transition-all ${mode === 'reels' ? 'fixed top-6 left-6 right-6' : 'relative'}`}>
-        <div className="flex flex-col">
-            <h1 className="text-4xl font-black uppercase tracking-tighter text-white">The <span className="text-[#00e054] italic serif lowercase">feed</span></h1>
+      <div className={`flex items-center justify-between mb-8 z-[110] transition-all ${mode === 'reels' ? 'fixed top-6 left-6 right-6 opacity-0 hover:opacity-100 pointer-events-none' : 'relative'}`}>
+        <div className={`flex flex-col transition-opacity ${mode === 'reels' ? 'opacity-0' : 'opacity-100'}`}>
+            <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-white">The <span className="text-[#00e054] italic serif lowercase">feed</span></h1>
             <p className="text-[10px] uppercase font-black tracking-widest text-white/30 truncate max-w-[150px]">Regional Live Diary • {reviews.length} logs</p>
         </div>
 
-        <div className="flex items-center bg-white/5 border border-white/10 rounded-full p-1 backdrop-blur-3xl shadow-2xl">
+        <div className="flex items-center bg-white/5 border border-white/10 rounded-full p-1 backdrop-blur-3xl shadow-2xl pointer-events-auto">
             <button 
-              onClick={() => setMode('posts')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'posts' ? 'bg-[#00e054] text-black shadow-lg shadow-[#00e054]/20' : 'text-white/40 hover:text-white'}`}
+              onClick={() => updateMode('posts')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'posts' ? 'bg-[#00e054] text-black shadow-lg shadow-[#00e054]/20 scale-105' : 'text-white/40 hover:text-white'}`}
             >
-              <LayoutGrid size={14} />
+              <LayoutGrid size={12} />
               Posts
             </button>
             <button 
-              onClick={() => setMode('reels')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'reels' ? 'bg-[#00e054] text-black shadow-lg shadow-[#00e054]/20' : 'text-white/40 hover:text-white'}`}
+              onClick={() => updateMode('reels')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'reels' ? 'bg-[#00e054] text-black shadow-lg shadow-[#00e054]/20 scale-105' : 'text-white/40 hover:text-white'}`}
             >
-              <PlayCircle size={14} />
+              <PlayCircle size={12} />
               Reels
             </button>
         </div>
