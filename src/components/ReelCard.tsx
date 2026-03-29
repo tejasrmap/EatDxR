@@ -30,9 +30,8 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-900 via-zinc-900 to-rose-950">
+          <div className="w-full h-full mesh-gradient">
              <div className="text-white/5 font-black text-9xl absolute -rotate-12 select-none">MOMENT</div>
-             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,224,84,0.1),transparent_70%)] animate-pulse" />
              <p className="relative z-10 text-[10px] uppercase tracking-[0.4em] text-white/20 font-black">Visual missing, flavor remains.</p>
           </div>
         )}
@@ -41,19 +40,19 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
       </div>
 
       {/* Top Header - User Info */}
-      <div className="absolute top-20 left-6 right-6 flex items-center justify-between z-20">
-        <Link to={`/profile/${review.userId}`} className="flex items-center gap-3 bg-black/20 backdrop-blur-3xl px-3 py-2 rounded-full border border-white/10 group">
+      <div className="absolute top-24 left-6 right-6 flex items-center justify-between z-20">
+        <Link to={`/profile/${review.userId}`} className="flex items-center gap-3 bg-black/40 backdrop-blur-3xl px-3 py-2 rounded-full border border-white/10 group">
            <img 
              src={review.userPhoto} 
              className="w-8 h-8 rounded-full border border-white/20"
              alt=""
            />
            <div className="flex flex-col">
-             <span className="text-[10px] font-black uppercase tracking-widest text-[#00e054] group-hover:text-white transition-colors">{review.userName}</span>
-             <span className="text-[8px] text-white/40 font-bold uppercase">{formatDistanceToNow(parseFirebaseDate(review.createdAt), { addSuffix: true })}</span>
+             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#00e054] group-hover:text-white transition-all">{review.userName}</span>
+             <span className="text-[8px] text-white/40 font-bold uppercase tracking-widest">{formatDistanceToNow(parseFirebaseDate(review.createdAt), { addSuffix: true })}</span>
            </div>
         </Link>
-        <div className="bg-black/40 backdrop-blur-3xl px-4 py-2 rounded-full border border-white/10 flex items-center gap-1 shadow-xl">
+        <div className="bg-black/60 backdrop-blur-3xl px-4 py-2 rounded-full border border-white/10 flex items-center gap-1 shadow-2xl">
            <Star size={10} className="fill-[#00e054] text-[#00e054]" />
            <span className="text-[10px] font-black text-white">{review.rating.toFixed(1)}</span>
         </div>

@@ -22,7 +22,7 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      className="bg-[#14181c] border border-white/5 rounded-3xl overflow-hidden shadow-2xl mb-8 group"
+      className="bg-[#14181c] border border-white/5 rounded-3xl overflow-hidden shadow-2xl mb-12 group"
     >
       {/* User Header */}
       <div className="p-4 flex items-center justify-between">
@@ -33,8 +33,8 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
             className="w-8 h-8 rounded-full border border-white/10"
           />
           <div className="flex flex-col">
-            <span className="text-xs font-black uppercase tracking-widest text-white/90">{review.userName}</span>
-            <span className="text-[10px] text-white/30 font-medium">
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-white/90">{review.userName}</span>
+            <span className="text-[10px] text-white/30 font-bold uppercase tracking-widest">
                 {formatDistanceToNow(parseFirebaseDate(review.createdAt), { addSuffix: true })}
             </span>
           </div>
@@ -63,8 +63,8 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
         
         {/* Restaurant Badge Layer */}
         <div className="absolute top-4 left-4 flex flex-col gap-2">
-            <Link to={`/restaurant/${review.restaurantId}`} className="bg-black/40 backdrop-blur-3xl border border-white/10 px-4 py-2 rounded-full inline-flex items-center gap-2 group/rest">
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#00e054] group-hover/rest:text-white transition-colors">{review.restaurantName}</span>
+            <Link to={`/restaurant/${review.restaurantId}`} className="bg-black/60 backdrop-blur-3xl border border-white/10 px-4 py-2 rounded-full inline-flex items-center gap-2 group/rest transform group-hover:translate-x-1 transition-transform">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#00e054] group-hover/rest:text-white transition-colors">{review.restaurantName}</span>
             </Link>
         </div>
 

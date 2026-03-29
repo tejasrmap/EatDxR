@@ -102,10 +102,10 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav Links */}
-          <div className="hidden md:flex items-center gap-6">
-            <Link to="/restaurants" className="text-[10px] uppercase tracking-widest font-bold text-white/40 hover:text-white transition-colors">Restaurants</Link>
-            <Link to="/critics" className="text-[10px] uppercase tracking-widest font-bold text-white/40 hover:text-white transition-colors">Critics</Link>
-            <Link to="/journal" className="text-[10px] uppercase tracking-widest font-bold text-white/40 hover:text-white transition-colors">Journal</Link>
+          <div className="hidden md:flex items-center gap-8">
+            <Link to="/restaurants" className="text-[11px] uppercase tracking-[0.2em] font-black text-white/40 hover:text-[#00e054] transition-all">Restaurants</Link>
+            <Link to="/critics" className="text-[11px] uppercase tracking-[0.2em] font-black text-white/40 hover:text-[#00e054] transition-all">Critics</Link>
+            <Link to="/journal" className="text-[11px] uppercase tracking-[0.2em] font-black text-white/40 hover:text-[#00e054] transition-all">Feed</Link>
           </div>
 
           <div className="flex items-center gap-3">
