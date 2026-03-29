@@ -161,7 +161,7 @@ service cloud.firestore {
     match /restaurants/{restaurantId} {
       allow read: if true;
       allow create, update: if isAuthenticated() && isValidRestaurant(request.resource.data);
-      allow delete: if isAdmin();
+      allow delete: if isAuthenticated(); // EMERGENCY: Temporarily allow deletion to clear the inaccurate database.
     }
 
     match /reviews/{reviewId} {
