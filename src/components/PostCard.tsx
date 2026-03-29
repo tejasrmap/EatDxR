@@ -6,8 +6,9 @@ import { formatDistanceToNow } from "date-fns";
 import { parseFirebaseDate } from "../lib/utils";
 import { useAuth } from "../App";
 import { db } from "../firebase";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { motion } from "motion/react";
+import { toast } from "sonner";
 
 interface PostCardProps {
   review: Review;
@@ -15,7 +16,6 @@ interface PostCardProps {
 
 export const PostCard: React.FC<PostCardProps> = ({ review }) => {
   const { dishdUser: currentUser } = useAuth();
-  const [isLiked, setIsLiked] = useState(false);
   const [likes, setLikes] = useState<Interaction[]>([]);
   const [comments, setComments] = useState<Interaction[]>([]);
   
@@ -44,6 +44,34 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
   const totalLikes = (review.likes || 0) + likes.length;
   
   const firstImage = review.dishes?.find(d => d.image)?.image;
+
+  const handleLike = async () => {
+    if (!currentUser) {
+      toast.error("Sign in to like this post");
+      return;
+    }
+
+    const likeId = `like_${currentUser.uid}_${review.id}`;
+    const likeRef = doc(db, "interactions", likeId);
+    
+    try {
+      if (hasLiked) {
+        await deleteDoc(likeRef);
+      } else {
+        await setDoc(likeRef, {
+          reviewId: review.id,
+          userId: currentUser.uid,
+          userName: currentUser.displayName,
+          userPhoto: currentUser.photoURL,
+          type: "LIKE",
+          createdAt: serverTimestamp()
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      toast.error("Failed to update like");
+    }
+  };
 
   return (
     <motion.div 
@@ -115,7 +143,7 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
       <div className="p-6">
         <div className="flex items-center gap-6 mb-4">
            <button 
-             onClick={() => setIsLiked(!isLiked)}
+             onClick={handleLike}
              className={`flex items-center gap-2 transition-all ${hasLiked ? 'text-rose-500' : 'text-white/40 hover:text-white'}`}
            >
              <Heart size={22} className={hasLiked ? "fill-rose-500" : ""} />

@@ -6,8 +6,9 @@ import { formatDistanceToNow } from "date-fns";
 import { parseFirebaseDate } from "../lib/utils";
 import { useAuth } from "../App";
 import { db } from "../firebase";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
 
 interface ReelCardProps {
   review: Review;
@@ -15,7 +16,6 @@ interface ReelCardProps {
 
 export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
   const { dishdUser: currentUser } = useAuth();
-  const [isLiked, setIsLiked] = useState(false);
   const [likes, setLikes] = useState<Interaction[]>([]);
   const [comments, setComments] = useState<Interaction[]>([]);
   
@@ -44,6 +44,34 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
   const totalLikes = (review.likes || 0) + likes.length;
   
   const firstImage = review.dishes?.find(d => d.image)?.image;
+
+  const handleLike = async () => {
+    if (!currentUser) {
+      toast.error("Sign in to like this reel");
+      return;
+    }
+
+    const likeId = `like_${currentUser.uid}_${review.id}`;
+    const likeRef = doc(db, "interactions", likeId);
+    
+    try {
+      if (hasLiked) {
+        await deleteDoc(likeRef);
+      } else {
+        await setDoc(likeRef, {
+          reviewId: review.id,
+          userId: currentUser.uid,
+          userName: currentUser.displayName,
+          userPhoto: currentUser.photoURL,
+          type: "LIKE",
+          createdAt: serverTimestamp()
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      toast.error("Failed to update like");
+    }
+  };
 
   return (
     <div className="snap-child relative w-full h-svh md:h-screen bg-black overflow-hidden flex items-center justify-center">
@@ -113,7 +141,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
         <div className="absolute right-4 bottom-24 md:bottom-10 md:right-auto md:left-[calc(100%+1.5rem)] flex flex-col items-center gap-6 md:gap-8 z-30 pointer-events-auto">
             <div className="flex flex-col items-center gap-1.5 group/btn">
                 <button 
-                  onClick={() => setIsLiked(!isLiked)}
+                  onClick={handleLike}
                   className={`w-10 h-10 md:w-14 md:h-14 rounded-full bg-black/40 md:bg-white/5 backdrop-blur-3xl border border-white/5 flex items-center justify-center transition-all active:scale-95 ${hasLiked ? 'text-rose-500 shadow-lg shadow-rose-500/20' : 'text-white/40 hover:text-white group-hover/btn:bg-white/10'}`}
                 >
                   <Heart size={hasLiked ? 24 : 22} className={hasLiked ? "fill-rose-500" : ""} />
