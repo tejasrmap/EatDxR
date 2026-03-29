@@ -18,7 +18,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
   const firstImage = review.dishes?.find(d => d.image)?.image;
 
   return (
-    <div className="snap-child relative w-full h-[calc(100vh-80px)] bg-black overflow-hidden flex flex-col md:flex-row">
+    <div className="snap-child relative w-full h-svh md:h-full bg-black overflow-hidden flex flex-col md:flex-row">
       
       {/* Media Section: Hero on Desktop, Full-bleed on Mobile */}
       <div className="relative w-full h-full md:w-[65%] shrink-0 overflow-hidden bg-zinc-900 shadow-2xl">
