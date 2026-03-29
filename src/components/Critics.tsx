@@ -210,7 +210,7 @@ export function Critics() {
                             <span className="text-[10px] font-bold uppercase tracking-widest">Followers</span>
                           </div>
                           <span className="text-xl font-bold text-white/80">
-                            {critic.stats?.followers || 0}
+                            {critic.stats?.followers ?? 0}
                           </span>
                         </div>
                       </div>

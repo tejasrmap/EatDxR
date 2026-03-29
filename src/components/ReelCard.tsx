@@ -90,14 +90,20 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
                 >
                   <Heart size={isLiked ? 24 : 22} className={isLiked ? "fill-rose-500" : ""} />
                 </button>
-                <span className="text-[9px] md:text-[11px] font-black uppercase text-white/40 tracking-widest">Like</span>
+                <div className="flex flex-col items-center">
+                    <span className="text-[10px] md:text-sm font-black text-white">{review.likes ?? 0}</span>
+                    <span className="text-[8px] md:text-[9px] font-black uppercase text-white/40 tracking-[0.2em] -mt-1">Likes</span>
+                </div>
             </div>
             
             <div className="flex flex-col items-center gap-1.5 group/btn">
                 <Link to={`/restaurant/${review.id}`} className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-white/5 backdrop-blur-3xl border border-white/5 flex items-center justify-center text-white/40 hover:text-[#00e054] group-hover/btn:bg-white/10 transition-all active:scale-95">
                    <MessageSquare size={22} />
                 </Link>
-                <span className="text-[9px] md:text-[11px] font-black uppercase text-white/40 tracking-widest">Chat</span>
+                <div className="flex flex-col items-center">
+                    <span className="text-[10px] md:text-sm font-black text-white">0</span>
+                    <span className="text-[8px] md:text-[9px] font-black uppercase text-white/40 tracking-[0.2em] -mt-1">Chat</span>
+                </div>
             </div>
 
             <div className="flex flex-col items-center gap-1.5 group/btn">

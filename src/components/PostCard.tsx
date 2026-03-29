@@ -95,7 +95,8 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
            </button>
            <button className="flex items-center gap-2 text-white/40 hover:text-white transition-all">
              <MessageSquare size={22} />
-             <span className="text-xs font-black">Discuss</span>
+             <span className="text-xs font-black">0</span>
+             <span className="text-[10px] font-black uppercase tracking-widest ml-1 hidden md:inline">Discuss</span>
            </button>
         </div>
 

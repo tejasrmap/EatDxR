@@ -24,9 +24,22 @@ export function Navbar() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+    
     const handleOpenSearch = () => setIsSearchOpen(true);
+    
+    window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("OPEN_GLOBAL_SEARCH", handleOpenSearch);
-    return () => window.removeEventListener("OPEN_GLOBAL_SEARCH", handleOpenSearch);
+    
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("OPEN_GLOBAL_SEARCH", handleOpenSearch);
+    };
   }, []);
 
   useEffect(() => {
