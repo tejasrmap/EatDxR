@@ -7,7 +7,7 @@ export const VIJAYAWADA_RESTAURANTS = [
     rating: 4.8,
     reviewCount: 1540,
     mustTry: ["Babai Idli with Ghee & Karampodi", "Neyyi Dosa", "Upma"],
-    image: "https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=800&q=80",
+    image: "https://pandareviewz.com/wp-content/uploads/2023/06/20210109_202624_HDR-01-scaled.jpeg",
     lat: 16.5161,
     lng: 80.6139
   },
@@ -19,7 +19,7 @@ export const VIJAYAWADA_RESTAURANTS = [
     rating: 4.6,
     reviewCount: 980,
     mustTry: ["Chicken Fry Piece Biryani", "Mutton Dum Biryani", "Durbar Special Fish"],
-    image: "https://images.unsplash.com/photo-1563379091339-03b21bc4a4f8?auto=format&fit=crop&w=800&q=80",
+    image: "https://media-assets.swiggy.com/swiggy/image/upload/f_auto,q_auto,fl_lossy/ef2cb7ec71357f8609203236620b007d",
     lat: 16.5058,
     lng: 80.6481
   },
@@ -31,7 +31,7 @@ export const VIJAYAWADA_RESTAURANTS = [
     rating: 4.7,
     reviewCount: 1200,
     mustTry: ["Full Andhra Thali on Banana Leaf", "Podi & Neyyi", "Majjiga Pulusu"],
-    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80",
+    image: "https://media-cdn.tripadvisor.com/media/photo-s/11/a4/08/9b/sri-ramayya-mess.jpg",
     lat: 16.5144,
     lng: 80.6214
   },
@@ -43,7 +43,7 @@ export const VIJAYAWADA_RESTAURANTS = [
     rating: 4.5,
     reviewCount: 850,
     mustTry: ["Minerva Thali", "Butter Chicken", "Golden Fried Prawns"],
-    image: "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=800&q=80",
+    image: "https://media-assets.swiggy.com/swiggy/image/upload/fl_lossy,f_auto,q_auto,w_300,h_300,c_fit/FOOD_CATALOG/IMAGES/CMS/2025/1/29/7b2321c7-3a6e-433f-8e28-24cc433008cc_2b3ea533-862d-4c4e-a2c3-dd58d7e2af55.JPG",
     lat: 16.5072,
     lng: 80.6415
   },
@@ -55,7 +55,7 @@ export const VIJAYAWADA_RESTAURANTS = [
     rating: 4.6,
     reviewCount: 2100,
     mustTry: ["Putharekulu", "Kaju Barfi", "Sweet Magic Special Biryani"],
-    image: "https://images.unsplash.com/photo-1589113182023-7087413c23e1?auto=format&fit=crop&w=800&q=80",
+    image: "https://sweetmagic.in/site/wp-content/uploads/2024/10/cashew-mixed-sweet1200.jpg",
     lat: 16.5122,
     lng: 80.6285
   },
@@ -67,7 +67,7 @@ export const VIJAYAWADA_RESTAURANTS = [
     rating: 4.4,
     reviewCount: 650,
     mustTry: ["Railway Mutton Curry", "Chicken 65", "Allam Kodi"],
-    image: "https://images.unsplash.com/photo-1544006659-f0b21f04cb1d?auto=format&fit=crop&w=800&q=80",
+    image: "https://platform65.in/wp-content/uploads/2023/12/6-2-1536x1152.jpg",
     lat: 16.5002,
     lng: 80.6521
   },
@@ -79,7 +79,7 @@ export const VIJAYAWADA_RESTAURANTS = [
     rating: 4.5,
     reviewCount: 780,
     mustTry: ["Barkaas Special Mandi", "Mutton Juicy Mandi", "Kunafeh"],
-    image: "https://images.unsplash.com/photo-1541530514660-31369d77478d?auto=format&fit=crop&w=800&q=80",
+    image: "https://media-cdn.tripadvisor.com/media/photo-s/11/04/00/c2/barkaas-restaurant.jpg",
     lat: 16.4985,
     lng: 80.6535
   },
@@ -250,7 +250,7 @@ export const GUDIVADA_RESTAURANTS = [
     rating: 4.7,
     reviewCount: 1840,
     mustTry: ["Alankar Special Biryani", "Chicken Fry Piece Biryani", "Lollipop Chicken"],
-    image: "https://images.unsplash.com/photo-1563379091339-03b21bc4a4f8?auto=format&fit=crop&w=800&q=80",
+    image: "https://content3.jdmagicbox.com/comp/gudivada/t2/9999p8674.8674.190620144032.a1x2/catalogue/alankar-family-restaurant-gudivada-ho-gudivada-restaurants-0y7x4v5x5z.jpg",
     lat: 16.4402,
     lng: 80.9935
   },
@@ -262,7 +262,7 @@ export const GUDIVADA_RESTAURANTS = [
     rating: 4.5,
     reviewCount: 620,
     mustTry: ["Tray Breakfast", "Bhatthi Mutton Biryani", "Tandoori Chicken"],
-    image: "https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=800&q=80",
+    image: "https://images.jdmagicbox.com/comp/gudivada/g2/9999p8674.8674.220310233218.y1g2/catalogue/hotel-7-family-restaurant-new-municipal-office-road-gudivada-restaurants-o6l7sumnsd-250.jpg",
     lat: 16.4380,
     lng: 80.9920
   },
