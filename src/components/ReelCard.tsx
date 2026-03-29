@@ -35,8 +35,8 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
              <div className="text-white/5 font-black text-9xl absolute -rotate-12 select-none">MOMENT</div>
           </div>
         )}
-        {/* Mobile-only Gradient for legibility */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/20 md:hidden" />
+        {/* Mobile-only Gradient for legibility - Very Subtle Bottom-only */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent md:hidden pointer-events-none" />
 
         {/* Desktop-only Action Overlay (Minimal) */}
         <div className="hidden md:flex absolute bottom-6 left-6 gap-4 z-20">
@@ -52,8 +52,8 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
         </div>
       </div>
 
-      {/* Details Section: Sidebar on Desktop, Floating on Mobile */}
-      <div className="absolute bottom-36 left-6 right-20 z-20 md:relative md:inset-0 md:flex-1 md:bg-black md:p-12 md:pb-32 md:flex md:flex-col md:justify-center md:border-l md:border-white/5 overflow-y-auto scrollbar-hide">
+      {/* Details Section: Sidebar on Desktop, Bottom-Floating on Mobile (Tucked Low) */}
+      <div className="absolute bottom-20 left-6 right-20 z-20 md:relative md:inset-0 md:flex-1 md:bg-black md:p-12 md:pb-32 md:flex md:flex-col md:justify-center md:border-l md:border-white/5 overflow-y-auto scrollbar-hide">
         
         {/* User Info - Top Left on Mobile, Header on Desktop Sidebar */}
         <div className="hidden md:flex items-center gap-4 mb-12">
@@ -74,13 +74,13 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
             </div>
         </div>
 
-        {/* Mobile Header (Floating) */}
-        <div className="md:hidden fixed top-28 left-6 right-6 flex items-center justify-between z-30">
-            <Link to={`/profile/${review.userId}`} className="flex items-center gap-3 bg-black/60 backdrop-blur-3xl px-3 py-2 rounded-full border border-white/10">
-               <img src={review.userPhoto} className="w-8 h-8 rounded-full border border-white/20" alt="" />
-               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#00e054]">{review.userName}</span>
+        {/* Mobile Header (Floating - Tucked at the Top) */}
+        <div className="md:hidden fixed top-20 left-6 right-6 flex items-center justify-between z-30 pointer-events-none">
+            <Link to={`/profile/${review.userId}`} className="flex items-center gap-2 bg-black/40 backdrop-blur-3xl px-2 py-1.5 rounded-full border border-white/5 pointer-events-auto">
+               <img src={review.userPhoto} className="w-6 h-6 rounded-full border border-white/10" alt="" />
+               <span className="text-[9px] font-black uppercase tracking-widest text-white/80">{review.userName}</span>
             </Link>
-            <div className="bg-black/60 backdrop-blur-3xl px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-1">
+            <div className="bg-black/40 backdrop-blur-3xl px-3 py-1.5 rounded-full border border-white/5 flex items-center gap-1">
                <Star size={10} className="fill-[#00e054] text-[#00e054]" />
                <span className="text-[10px] font-black text-white">{review.rating.toFixed(1)}</span>
             </div>
@@ -90,10 +90,10 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
         <div className="space-y-6">
             <div className="space-y-2">
                 <div className="flex items-center gap-2 text-[#00e054] text-[10px] md:text-xs font-black uppercase tracking-[0.2em]">
-                    <MapPin size={14} />
+                    <MapPin size={12} />
                     <span>{review.city || "Nearby Spot"}</span>
                 </div>
-                <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-tight text-white">{review.restaurantName}</h2>
+                <h2 className="text-2xl md:text-5xl font-black uppercase tracking-tighter leading-tight text-white">{review.restaurantName}</h2>
             </div>
             
             {review.content && review.content.trim() && (
@@ -113,16 +113,16 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
             </div>
         </div>
 
-        {/* Mobile Side Actions */}
-        <div className="md:hidden fixed right-4 bottom-40 flex flex-col gap-6 z-30">
+        {/* Mobile Side Actions - Tucked Low Right (Peripheral) */}
+        <div className="md:hidden fixed right-4 bottom-20 flex flex-col gap-4 z-30">
             <button 
               onClick={() => setIsLiked(!isLiked)}
-              className={`w-12 h-12 rounded-full bg-black/60 backdrop-blur-3xl border border-white/10 flex items-center justify-center ${isLiked ? 'text-rose-500' : 'text-white'}`}
+              className={`w-10 h-10 rounded-full bg-black/40 backdrop-blur-3xl border border-white/5 flex items-center justify-center ${isLiked ? 'text-rose-500' : 'text-white/40'}`}
             >
-              <Heart size={24} className={isLiked ? "fill-rose-500" : ""} />
+              <Heart size={18} className={isLiked ? "fill-rose-500" : ""} />
             </button>
-            <Link to={`/restaurant/${review.restaurantId}`} className="w-12 h-12 rounded-full bg-[#00e054] flex items-center justify-center text-black shadow-lg shadow-[#00e054]/20">
-               <Navigation size={22} />
+            <Link to={`/restaurant/${review.restaurantId}`} className="w-10 h-10 rounded-full bg-[#00e054]/40 backdrop-blur-3xl border border-white/5 flex items-center justify-center text-white shadow-lg shadow-[#00e054]/5">
+               <Navigation size={18} />
             </Link>
         </div>
       </div>
