@@ -269,7 +269,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -291,7 +291,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
               </button>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6 overflow-y-auto">
+            <form onSubmit={handleSubmit(onSubmit)} className="p-6 pb-32 md:pb-6 space-y-6 overflow-y-auto">
               <div className="space-y-2 relative">
                 <label className="small-caps">Restaurant</label>
                 <div className="relative">
