@@ -45,7 +45,7 @@ export const AdminSeed: React.FC = () => {
   };
 
   const handleMegaSeedAP = async () => {
-    if (!user || user.email !== 'tejag.vijay@gmail.com') {
+    if (!user || user.email !== 'gtinnovix@gmail.com') {
       toast.error('Identity Verification Failed.');
       return;
     }
@@ -302,102 +302,102 @@ export const AdminSeed: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl mt-8">
-            {/* AP Mega-Transplant: The Definitive Seed */}
-            <div className="bg-zinc-900/50 p-8 rounded-[2.5rem] border border-white/5 backdrop-blur-xl hover:border-red-500/50 transition-all group text-left relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                <Rocket size={120} />
-              </div>
-              <div className="flex items-center gap-2 mb-4">
-                <Zap className="text-red-500" size={16} />
-                <span className="text-[10px] uppercase tracking-widest font-black text-white/40">Operation: Mega-Seed</span>
-              </div>
-              <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">AP Mega-Transplant</h2>
-              <p className="text-white/40 text-xs font-serif italic mb-8 leading-relaxed">
-                Reconstruct the entire database for Vijayawada & Gudivada. Clears all old data and injects 50+ legendary icons with real addresses and GPS.
-              </p>
-              <button
-                onClick={handleMegaSeedAP}
-                disabled={isSeeding}
-                className="w-full bg-red-600 text-white font-black uppercase tracking-widest py-4 rounded-2xl hover:bg-red-500 transition-all flex items-center justify-center gap-3 shadow-xl shadow-red-600/20 active:scale-[0.98]"
-              >
-                {isSeeding ? <Loader2 className="animate-spin" size={18} /> : <Trash2 size={18} />}
-                Purge & Seed AP Icons
-              </button>
+          {/* AP Mega-Transplant: The Definitive Seed */}
+          <div className="bg-zinc-900/50 p-8 rounded-[2.5rem] border border-white/5 backdrop-blur-xl hover:border-red-500/50 transition-all group text-left relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+              <Rocket size={120} />
             </div>
-
-            {/* OSM Pinpoint Seeding: The Discovery Engine */}
-            <div className="bg-zinc-900/50 p-8 rounded-[2.5rem] border border-white/5 backdrop-blur-xl hover:border-[#00e054]/50 transition-all group text-left">
-              <div className="flex items-center gap-2 mb-4">
-                <Search className="text-[#00e054]" size={16} />
-                <span className="text-[10px] uppercase tracking-widest font-black text-white/40">Operation: Discovery</span>
-              </div>
-              <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Pinpoint Discovery</h2>
-              <p className="text-white/40 text-xs font-serif italic mb-8 leading-relaxed">
-                Scan any global region using OpenStreetMap. Latent discovery of fast food, cafes, and local eateries within a custom radius.
-              </p>
-
-              <div className="space-y-4">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Discovery Town..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearchLocation()}
-                    className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/10 focus:ring-1 ring-[#00e054] outline-none"
-                  />
-                  <button
-                    onClick={handleSearchLocation}
-                    className="bg-zinc-800 p-3 rounded-xl"
-                  >
-                    {isFindingLocation ? <Loader2 className="animate-spin" /> : <ChevronRight />}
-                  </button>
-                </div>
-
-                {selectedLocation && (
-                  <button
-                    onClick={handleSeed}
-                    disabled={isSeeding}
-                    className="w-full bg-[#00e054] text-black font-black uppercase tracking-widest py-4 rounded-2xl hover:bg-[#00f064] transition-all flex items-center justify-center gap-3 shadow-xl shadow-[#00e054]/20"
-                  >
-                    <Zap size={18} />
-                    Inject {selectedLocation.name}
-                  </button>
-                )}
-              </div>
+            <div className="flex items-center gap-2 mb-4">
+              <Zap className="text-red-500" size={16} />
+              <span className="text-[10px] uppercase tracking-widest font-black text-white/40">Operation: Mega-Seed</span>
             </div>
+            <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">AP Mega-Transplant</h2>
+            <p className="text-white/40 text-xs font-serif italic mb-8 leading-relaxed">
+              Reconstruct the entire database for Vijayawada & Gudivada. Clears all old data and injects 50+ legendary icons with real addresses and GPS.
+            </p>
+            <button
+              onClick={handleMegaSeedAP}
+              disabled={isSeeding}
+              className="w-full bg-red-600 text-white font-black uppercase tracking-widest py-4 rounded-2xl hover:bg-red-500 transition-all flex items-center justify-center gap-3 shadow-xl shadow-red-600/20 active:scale-[0.98]"
+            >
+              {isSeeding ? <Loader2 className="animate-spin" size={18} /> : <Trash2 size={18} />}
+              Purge & Seed AP Icons
+            </button>
           </div>
 
-          {isSeeding && (
-            <div className="mt-12 w-full max-w-lg mx-auto bg-zinc-900 p-10 rounded-3xl border border-[#00e054]/20 shadow-2xl">
-              <div className="relative">
-                <Loader2 className="w-20 h-20 animate-spin text-[#00e054] mx-auto opacity-20" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <p className="text-xl font-black text-white">{Math.round((progress.current / Math.max(1, progress.total)) * 100)}%</p>
-                </div>
-              </div>
-              <div className="text-center space-y-4">
-                <div className="flex items-center justify-center gap-2 text-[#00e054] animate-pulse">
-                  <Timer size={14} />
-                  <p className="text-[10px] font-black uppercase tracking-widest">Pinpoint Reverse Geocoding Active</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-white/80 font-bold uppercase tracking-[0.1em] text-sm leading-tight">
-                    Sweeping {selectedLocation?.name} Area...
-                  </p>
-                  <p className="text-white/30 text-[10px] uppercase font-bold">Processed {progress.current} of {progress.total} spots</p>
-                </div>
-              </div>
-              <div className="w-full bg-black/40 rounded-full h-3 overflow-hidden border border-white/10 shadow-inner">
-                <div
-                  className="bg-gradient-to-r from-[#00e054] to-cyan-400 h-full transition-all duration-300"
-                  style={{ width: `${(progress.current / Math.max(1, progress.total)) * 100}%` }}
-                />
-              </div>
-              <p className="text-center text-[9px] text-white/20 italic">Ensuring pinpoint town names (1.1s delay per spot)</p>
+          {/* OSM Pinpoint Seeding: The Discovery Engine */}
+          <div className="bg-zinc-900/50 p-8 rounded-[2.5rem] border border-white/5 backdrop-blur-xl hover:border-[#00e054]/50 transition-all group text-left">
+            <div className="flex items-center gap-2 mb-4">
+              <Search className="text-[#00e054]" size={16} />
+              <span className="text-[10px] uppercase tracking-widest font-black text-white/40">Operation: Discovery</span>
             </div>
-          )}
+            <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Pinpoint Discovery</h2>
+            <p className="text-white/40 text-xs font-serif italic mb-8 leading-relaxed">
+              Scan any global region using OpenStreetMap. Latent discovery of fast food, cafes, and local eateries within a custom radius.
+            </p>
+
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Discovery Town..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearchLocation()}
+                  className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/10 focus:ring-1 ring-[#00e054] outline-none"
+                />
+                <button
+                  onClick={handleSearchLocation}
+                  className="bg-zinc-800 p-3 rounded-xl"
+                >
+                  {isFindingLocation ? <Loader2 className="animate-spin" /> : <ChevronRight />}
+                </button>
+              </div>
+
+              {selectedLocation && (
+                <button
+                  onClick={handleSeed}
+                  disabled={isSeeding}
+                  className="w-full bg-[#00e054] text-black font-black uppercase tracking-widest py-4 rounded-2xl hover:bg-[#00f064] transition-all flex items-center justify-center gap-3 shadow-xl shadow-[#00e054]/20"
+                >
+                  <Zap size={18} />
+                  Inject {selectedLocation.name}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
+
+        {isSeeding && (
+          <div className="mt-12 w-full max-w-lg mx-auto bg-zinc-900 p-10 rounded-3xl border border-[#00e054]/20 shadow-2xl">
+            <div className="relative">
+              <Loader2 className="w-20 h-20 animate-spin text-[#00e054] mx-auto opacity-20" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <p className="text-xl font-black text-white">{Math.round((progress.current / Math.max(1, progress.total)) * 100)}%</p>
+              </div>
+            </div>
+            <div className="text-center space-y-4">
+              <div className="flex items-center justify-center gap-2 text-[#00e054] animate-pulse">
+                <Timer size={14} />
+                <p className="text-[10px] font-black uppercase tracking-widest">Pinpoint Reverse Geocoding Active</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-white/80 font-bold uppercase tracking-[0.1em] text-sm leading-tight">
+                  Sweeping {selectedLocation?.name} Area...
+                </p>
+                <p className="text-white/30 text-[10px] uppercase font-bold">Processed {progress.current} of {progress.total} spots</p>
+              </div>
+            </div>
+            <div className="w-full bg-black/40 rounded-full h-3 overflow-hidden border border-white/10 shadow-inner">
+              <div
+                className="bg-gradient-to-r from-[#00e054] to-cyan-400 h-full transition-all duration-300"
+                style={{ width: `${(progress.current / Math.max(1, progress.total)) * 100}%` }}
+              />
+            </div>
+            <p className="text-center text-[9px] text-white/20 italic">Ensuring pinpoint town names (1.1s delay per spot)</p>
+          </div>
+        )}
       </div>
-      );
+    </div>
+  );
 };
