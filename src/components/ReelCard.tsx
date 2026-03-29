@@ -39,8 +39,8 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
         {/* Unified Bottom Gradient for Text Legibility */}
         <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none z-10" />
 
-        {/* 2. Top-Periphery Header (Author Info) */}
-        <div className="absolute top-20 md:top-6 left-6 right-6 flex items-center justify-between z-30 pointer-events-none">
+        {/* 2. Top-Periphery Header (Author Info - Mobile Only) */}
+        <div className="absolute top-20 left-6 right-6 flex items-center justify-between z-30 pointer-events-none md:hidden">
             <Link to={`/profile/${review.userId}`} className="flex items-center gap-2 bg-black/40 backdrop-blur-3xl px-2 py-1.5 rounded-full border border-white/5 pointer-events-auto">
                <img src={review.userPhoto} className="w-6 h-6 rounded-full border border-white/10" alt="" />
                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-white/80">{review.userName}</span>
@@ -77,7 +77,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
         </div>
 
         {/* 4. Side Interaction Column (Floating - Desktop Left, Mobile Right) */}
-        <div className="absolute right-4 bottom-24 md:bottom-0 md:-left-20 flex flex-col items-center gap-6 md:gap-8 z-30 pointer-events-auto">
+        <div className="absolute right-4 bottom-24 md:bottom-0 md:right-[calc(100%+2.5rem)] flex flex-col items-center gap-6 md:gap-8 z-30 pointer-events-auto">
             <div className="flex flex-col items-center gap-1.5 group/btn">
                 <button 
                   onClick={() => setIsLiked(!isLiked)}
@@ -104,7 +104,19 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
         </div>
 
         {/* 5. Desktop-Only Data Column (Floating Left Side) */}
-        <div className="hidden md:flex absolute right-[calc(100%+6rem)] bottom-0 flex-col items-end text-right gap-6 w-80 z-30 pointer-events-none">
+        <div className="hidden md:flex absolute right-[calc(100%+6rem)] bottom-0 flex-col items-end text-right gap-6 w-96 z-30 pointer-events-none">
+             {/* Desktop Author Info Addition */}
+             <div className="flex items-center gap-4 mb-4 pointer-events-auto">
+                <div className="flex flex-col items-end">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#00e054]">{review.userName}</span>
+                  <div className="flex items-center gap-1 opacity-60">
+                     <Star size={10} className="fill-white text-white" />
+                     <span className="text-[10px] font-black text-white">{review.rating.toFixed(1)}</span>
+                  </div>
+                </div>
+                <img src={review.userPhoto} className="w-10 h-10 rounded-full border border-white/10" alt="" />
+             </div>
+
              <div className="space-y-3 pointer-events-auto">
                 <div className="flex items-center justify-end gap-2 text-[#00e054] text-[10px] font-black uppercase tracking-[0.2em] opacity-60">
                     <span>{review.city || "Nearby Spot"}</span>
