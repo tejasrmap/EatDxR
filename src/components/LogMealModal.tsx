@@ -212,8 +212,11 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setUploadProgress(Math.round(progress));
         }, 
-        (error) => {
+        (error: any) => {
            console.error("Upload failed", error);
+           toast.error(`Upload Failed: ${error.code || error.message}`);
+           setIsUploading(false);
+           setUploadProgress(0);
            reject(error);
         }, 
         async () => {
