@@ -390,7 +390,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full h-full md:h-auto md:max-h-[90vh] md:max-w-2xl bg-[#0a0a0a] border-y md:border border-white/10 md:rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col"
+            className="relative w-full h-full md:h-auto md:max-h-[90vh] md:max-w-lg bg-[#0a0a0a] border-y md:border border-white/10 md:rounded-[2rem] overflow-hidden shadow-2xl flex flex-col"
           >
             {/* Elite Progress Micro-Bar */}
             {isUploading && (
@@ -404,31 +404,31 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
             )}
 
             {/* Cinematic Header */}
-            <div className="px-6 py-5 border-b border-white/5 bg-black/40 backdrop-blur-2xl flex items-center justify-between shrink-0 sticky top-0 z-[200]">
+            <div className="px-6 py-4 border-b border-white/5 bg-black/40 backdrop-blur-2xl flex items-center justify-between shrink-0 sticky top-0 z-[200]">
               <div className="flex flex-col">
-                <span className="text-[10px] uppercase font-black tracking-[0.3em] text-orange-500">Culinary Narrative</span>
-                <h2 className="text-lg font-bold text-white serif italic">
-                  {existingReview ? "Modernizing Legacy" : "Capture the Moment"}
+                <span className="text-[9px] uppercase font-black tracking-[0.4em] text-orange-500">Culinary Narrative</span>
+                <h2 className="text-base font-bold text-white serif italic">
+                  {existingReview ? "Modernize Legacy" : "Capture the Moment"}
                 </h2>
               </div>
               <button 
                 onClick={onClose} 
-                className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10 group"
+                className="w-9 h-9 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10 group"
               >
-                <X size={18} className="text-white/40 group-hover:text-white transition-colors" />
+                <X size={16} className="text-white/40 group-hover:text-white transition-colors" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-8 space-y-12">
+            <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-6 space-y-8">
               {/* Immersive Reel Section */}
-              <section className="space-y-6">
+              <section className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-[11px] uppercase font-black tracking-widest text-white/40">Cinematic Reel</h3>
+                  <h3 className="text-[10px] uppercase font-black tracking-widest text-white/30">Cinematic Reel</h3>
                   {videoPreview && (
                     <button 
                       type="button" 
                       onClick={() => { setVideoFile(null); setVideoPreview(null); }}
-                      className="text-[10px] uppercase font-black text-rose-500 hover:text-rose-400"
+                      className="text-[9px] uppercase font-black text-rose-500 hover:text-rose-400"
                     >
                       Discard
                     </button>
@@ -436,16 +436,16 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                 </div>
                 <div 
                   onClick={() => videoInputRef.current?.click()}
-                  className="aspect-video bg-white/5 border border-white/10 rounded-3xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all overflow-hidden group relative"
+                  className="aspect-video bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all overflow-hidden group relative"
                 >
                   {videoPreview ? (
                     <video src={videoPreview} className="w-full h-full object-cover" muted loop autoPlay />
                   ) : (
                     <div className="flex flex-col items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Upload size={24} className="text-orange-500" />
+                      <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Upload size={20} className="text-orange-500" />
                       </div>
-                      <p className="text-[10px] uppercase font-black tracking-widest text-white/20 group-hover:text-white/60">Upload Narrative Video</p>
+                      <p className="text-[9px] uppercase font-black tracking-widest text-white/20 group-hover:text-white/60">Upload Narrative Video</p>
                     </div>
                   )}
                 </div>
@@ -453,18 +453,18 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
               </section>
 
               {/* Identity & Context */}
-              <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-3 relative group">
-                  <label className="text-[10px] uppercase font-black tracking-widest text-white/40 group-focus-within:text-orange-500 transition-colors">Restaurant</label>
+              <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2.5 relative group">
+                  <label className="text-[9px] uppercase font-black tracking-widest text-white/30 group-focus-within:text-orange-500 transition-colors">Restaurant</label>
                   <div className="relative">
                     <input 
                       value={searchQuery}
                       onChange={handleSearchChange}
                       placeholder="Search Culinary Stage..."
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-4 focus:outline-none focus:ring-1 ring-orange-500/30 transition-all text-sm font-medium"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3.5 focus:outline-none focus:ring-1 ring-orange-500/30 transition-all text-xs font-medium"
                       disabled={isSubmitting}
                     />
-                    <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
+                    <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
                   </div>
                   
                   <AnimatePresence>
@@ -473,11 +473,11 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className="absolute z-50 left-0 right-0 mt-3 bg-[#121212]/95 backdrop-blur-3xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden max-h-64 overflow-y-auto"
+                        className="absolute z-50 left-0 right-0 mt-2 bg-[#121212]/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden max-h-64 overflow-y-auto"
                       >
                         {isSearching ? (
-                          <div className="p-8 text-center text-xs text-white/40 italic flex items-center justify-center gap-3">
-                            <Loader2 size={16} className="animate-spin text-orange-500" />
+                          <div className="p-6 text-center text-[10px] text-white/40 italic flex items-center justify-center gap-2">
+                            <Loader2 size={14} className="animate-spin text-orange-500" />
                             Identifying Places...
                           </div>
                         ) : (
@@ -486,16 +486,16 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                               key={result.id}
                               type="button"
                               onClick={() => handleSelectRestaurant(result)}
-                              className="w-full text-left p-4 hover:bg-white/5 flex items-center gap-4 transition-all group"
+                              className="w-full text-left p-3.5 hover:bg-white/5 flex items-center gap-3.5 transition-all group border-b border-white/5 last:border-0"
                             >
                               <img 
                                 src={result.image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=100&q=80`} 
-                                className="w-12 h-12 rounded-xl object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all"
+                                className="w-10 h-10 rounded-lg object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all"
                                 referrerPolicy="no-referrer"
                               />
                               <div>
-                                <p className="font-bold text-sm text-white">{result.name}</p>
-                                <p className="text-[10px] text-white/40 uppercase tracking-widest">{result.location}</p>
+                                <p className="font-bold text-xs text-white leading-none mb-1">{result.name}</p>
+                                <p className="text-[9px] text-white/40 uppercase tracking-widest">{result.location}</p>
                               </div>
                             </button>
                           ))
@@ -505,68 +505,68 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                   </AnimatePresence>
                 </div>
 
-                <div className="space-y-3 group">
-                  <label className="text-[10px] uppercase font-black tracking-widest text-white/40 group-focus-within:text-rose-500 transition-colors">Area / Suburb</label>
+                <div className="space-y-2.5 group">
+                  <label className="text-[9px] uppercase font-black tracking-widest text-white/30 group-focus-within:text-rose-500 transition-colors">Area / Suburb</label>
                   <div className="relative">
                     <input 
                       value={manualLocation}
                       onChange={(e) => setManualLocation(e.target.value)}
-                      placeholder="e.g. Lower Parel, Mumbai"
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-4 focus:outline-none focus:ring-1 ring-rose-500/30 transition-all text-sm font-medium"
+                      placeholder="e.g. Mumbai"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3.5 focus:outline-none focus:ring-1 ring-rose-500/30 transition-all text-xs font-medium"
                     />
-                    <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
+                    <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
                   </div>
                 </div>
               </section>
 
               {/* The Narrative: Dishes */}
-              <section className="space-y-6">
+              <section className="space-y-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-[11px] uppercase font-black tracking-widest text-white/40">The Culinary Highlights</h3>
+                  <h3 className="text-[10px] uppercase font-black tracking-widest text-white/30">The Culinary Highlights</h3>
                   <button
                     type="button"
                     onClick={() => append({ name: "", rating: 5 })}
-                    className="flex items-center gap-2 text-[10px] uppercase font-black tracking-widest text-green-500 hover:text-green-400 p-2 bg-green-500/10 rounded-full transition-all"
+                    className="flex items-center gap-1.5 text-[9px] uppercase font-black tracking-widest text-green-500 hover:text-green-400 p-1.5 px-3 bg-green-500/5 rounded-full transition-all border border-green-500/10"
                   >
-                    <Plus size={14} />
+                    <Plus size={12} />
                     Add Highlight
                   </button>
                 </div>
                 
-                <div className="space-y-4">
+                <div className="space-y-3.5">
                   {fields.map((field, index) => (
                     <motion.div 
                       key={field.id}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="relative bg-white/5 p-4 rounded-3xl border border-white/5 group"
+                      className="relative bg-white/[0.03] p-3.5 rounded-2xl border border-white/5 group"
                     >
-                      <div className="flex items-start gap-5">
+                      <div className="flex items-start gap-4">
                         <div 
                           onClick={() => { setActiveDishId(field.id); fileInputRef.current?.click(); }}
-                          className="w-20 h-20 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center cursor-pointer hover:bg-white/10 transition-all overflow-hidden shrink-0 relative group/pic"
+                          className="w-16 h-16 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center cursor-pointer hover:bg-white/10 transition-all overflow-hidden shrink-0 relative group/pic"
                         >
                           {watchDishes[index]?.image ? (
                             <img src={watchDishes[index].image} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                           ) : (
-                            <ImageIcon size={24} className="text-white/10 group-hover/pic:scale-110 transition-transform" />
+                            <ImageIcon size={20} className="text-white/10 group-hover/pic:scale-110 transition-transform" />
                           )}
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/pic:opacity-100 flex items-center justify-center transition-opacity">
-                            <Plus size={20} className="text-white" />
+                            <Plus size={16} className="text-white" />
                           </div>
                         </div>
                         
-                        <div className="flex-1 space-y-4">
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1 space-y-4">
+                        <div className="flex-1 space-y-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 space-y-3">
                               <input 
                                 {...register(`dishes.${index}.name` as const)}
                                 placeholder="Highlight Title..."
-                                className="w-full bg-transparent border-b border-white/5 pb-2 text-sm font-bold placeholder:text-white/10 focus:outline-none focus:border-orange-500/50 transition-all"
+                                className="w-full bg-transparent border-b border-white/5 pb-1.5 text-xs font-bold placeholder:text-white/10 focus:outline-none focus:border-orange-500/50 transition-all"
                               />
-                              <div className="flex items-center gap-3">
-                                <span className="text-[9px] uppercase font-black text-white/20">Highlight Rating</span>
-                                <div className="flex gap-1.5">
+                              <div className="flex items-center gap-2.5">
+                                <span className="text-[8px] uppercase font-black text-white/20">Highlight Rating</span>
+                                <div className="flex gap-1">
                                   {[1,2,3,4,5].map(star => (
                                     <button
                                       key={star}
@@ -575,9 +575,9 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                                       onClick={() => setValue(`dishes.${index}.rating`, star)}
                                     >
                                       <Star 
-                                        size={14} 
+                                        size={12} 
                                         fill={star <= (watchDishes[index]?.rating || 0) ? "currentColor" : "none"} 
-                                        className={star <= (watchDishes[index]?.rating || 0) ? "text-orange-500" : "text-white/5"}
+                                        className={star <= (watchDishes[index]?.rating || 0) ? "text-orange-500" : "text-white/[0.05]"}
                                       />
                                     </button>
                                   ))}
@@ -589,9 +589,9 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                               <button
                                 type="button"
                                 onClick={() => { remove(index); setDishFiles(prev => { const n = new Map(prev); n.delete(field.id); return n; }); }}
-                                className="p-2 text-white/10 hover:text-rose-500 transition-colors"
+                                className="p-1.5 text-white/10 hover:text-rose-500 transition-colors"
                               >
-                                <Trash2 size={18} />
+                                <Trash2 size={16} />
                               </button>
                             )}
                           </div>
@@ -604,10 +604,10 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
 
               {/* The Verdict */}
               <section className="space-y-6">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex flex-col gap-6">
                   <div className="space-y-3">
-                    <label className="text-[10px] uppercase font-black tracking-widest text-white/40">Overall Score</label>
-                    <div className="flex gap-3">
+                    <label className="text-[10px] uppercase font-black tracking-widest text-white/30 text-center block">Overall Score</label>
+                    <div className="flex justify-center gap-4">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
                           key={star}
@@ -616,7 +616,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                           className="hover:scale-125 transition-transform"
                         >
                           <Star 
-                            size={32} 
+                            size={28} 
                             fill={star <= rating ? "currentColor" : "none"} 
                             className={star <= rating ? "text-orange-500" : "text-white/10"}
                           />
@@ -624,13 +624,13 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                       ))}
                     </div>
                   </div>
-                  <div className="flex-1 space-y-3">
-                    <label className="text-[10px] uppercase font-black tracking-widest text-white/40">The Narrative</label>
+                  <div className="space-y-2.5">
+                    <label className="text-[9px] uppercase font-black tracking-widest text-white/30">The Narrative</label>
                     <textarea 
                       {...register("review")}
                       placeholder="Share the story behind the flavors..."
                       rows={3}
-                      className="w-full bg-white/5 border border-white/10 rounded-3xl px-6 py-4 focus:outline-none focus:ring-1 ring-white/20 transition-all resize-none text-sm font-medium"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-1 ring-white/20 transition-all resize-none text-xs font-medium placeholder:text-white/10"
                     />
                   </div>
                 </div>
@@ -642,24 +642,24 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
             </form>
 
             {/* Elite Submission Stage */}
-            <div className="p-6 md:p-8 bg-black/40 border-t border-white/5 backdrop-blur-2xl">
+            <div className="p-5 md:p-6 bg-black/40 border-t border-white/5 backdrop-blur-2xl px-8">
                 <button 
                   type="submit"
                   disabled={isSubmitting || isUploading || !searchQuery.trim()}
                   onClick={handleSubmit(onSubmit)}
-                  className="w-full h-16 bg-gradient-to-r from-orange-500 to-rose-500 hover:scale-[1.02] active:scale-95 text-white font-black uppercase tracking-[0.4em] rounded-[2rem] flex items-center justify-center gap-3 transition-all shadow-[0_20px_50px_rgba(244,63,94,0.3)] disabled:opacity-50 disabled:grayscale relative overflow-hidden group"
+                  className="w-full h-14 bg-gradient-to-r from-orange-500 to-rose-500 hover:scale-[1.01] active:scale-95 text-white font-black uppercase text-[10px] tracking-[0.4em] rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-[0_15px_40px_rgba(244,63,94,0.2)] disabled:opacity-50 disabled:grayscale relative overflow-hidden group"
                 >
                   <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                   {isUploading ? (
-                    <div className="flex items-center gap-3">
-                      <Loader2 size={24} className="animate-spin" />
+                    <div className="flex items-center gap-2">
+                      <Loader2 size={18} className="animate-spin" />
                       <span>{uploadProgress}% Launching...</span>
                     </div>
                   ) : isSubmitting ? (
-                    <Loader2 size={24} className="animate-spin" />
+                    <Loader2 size={18} className="animate-spin" />
                   ) : (
                     <>
-                      <Zap size={20} fill="currentColor" />
+                      <Zap size={16} fill="currentColor" />
                       <span>{existingReview ? "Modernize" : "Launch Narrative"}</span>
                     </>
                   )}
