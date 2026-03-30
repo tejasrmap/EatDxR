@@ -226,8 +226,8 @@ export const Profile: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-12">
-      {/* Instagram-Elite Profile Header */}
-      <div className="flex flex-col md:flex-row items-center md:items-start gap-12 mb-12">
+      {/* Letterboxd-Elite Profile Header */}
+      <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-12 mb-6 md:mb-12">
         <div className="relative group shrink-0">
           <img
             src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`}
@@ -236,14 +236,6 @@ export const Profile: React.FC = () => {
             referrerPolicy="no-referrer"
             onClick={() => currentUser?.uid === user.uid && profileFileInputRef.current?.click()}
           />
-          {currentUser?.uid === user.uid && (
-            <div
-              onClick={() => profileFileInputRef.current?.click()}
-              className="absolute bottom-1 right-1 bg-blue-500 p-2 rounded-full border-4 border-black text-white hover:bg-blue-600 transition-colors cursor-pointer"
-            >
-              <Plus size={20} />
-            </div>
-          )}
           <input
             type="file"
             ref={profileFileInputRef}
@@ -456,38 +448,72 @@ export const Profile: React.FC = () => {
 
           {/* Sidebar Section (Desktop Elite) */}
           <div className="hidden lg:block space-y-12 pl-6 pt-12 border-l border-white/5">
-            {user.bio && (
-               <div>
-                  <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40 mb-4">Philosophy</h3>
-                  <p className="text-lg text-white/80 leading-relaxed font-serif italic">
-                     "{user.bio}"
-                  </p>
-               </div>
-            )}
-
+            {/* BIO Section */}
             <div>
-              <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40 mb-4">Culinary Stats</h3>
-              <div className="space-y-6">
-                <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
-                  <span className="text-xs text-white/60 font-bold">Average Rating</span>
-                  <div className="flex items-center gap-1.5 text-orange-500">
-                    <Star size={14} fill="currentColor" />
-                    <span className="text-lg font-black italic">
-                      {(reviews.reduce((acc, r) => acc + r.rating, 0) / (reviews.length || 1)).toFixed(1)}
+              <div className="border-b border-white/5 pb-4 mb-6">
+                 <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40">BIO</h3>
+              </div>
+              {user.bio ? (
+                 <p className="text-xl text-white/80 leading-relaxed font-serif italic">
+                    "{user.bio}"
+                 </p>
+              ) : (
+                 <p className="text-sm italic text-white/20 font-serif">No bio captured yet.</p>
+              )}
+            </div>
+
+            {/* CUISINES Section */}
+            <div>
+              <div className="border-b border-white/5 pb-4 mb-6">
+                 <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40">FAVORITE CUISINES</h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {(user.favoriteCuisines && user.favoriteCuisines.length > 0) ? (
+                   user.favoriteCuisines.map((cuisine, idx) => (
+                    <span key={idx} className="px-4 py-1.5 bg-zinc-900 border border-white/10 rounded-full text-[10px] uppercase tracking-widest font-black text-white/60">
+                        {cuisine}
                     </span>
-                  </div>
-                </div>
+                   ))
+                ) : (
+                   <span className="text-[10px] uppercase tracking-widest font-black text-white/20">None added</span>
+                )}
               </div>
             </div>
 
+            {/* STATS Section */}
             <div>
-              <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40 mb-4">Favorite Cuisines</h3>
-              <div className="flex flex-wrap gap-2">
-                {user.favoriteCuisines?.map((cuisine, idx) => (
-                  <span key={idx} className="px-4 py-2 bg-zinc-800 border border-white/5 rounded-xl text-[10px] uppercase tracking-[0.1em] font-black text-white/40">
-                    {cuisine}
-                  </span>
-                ))}
+              <div className="border-b border-white/5 pb-4 mb-6">
+                 <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40">STATS</h3>
+              </div>
+              <div className="space-y-4">
+                 <div className="flex justify-between items-center">
+                    <span className="text-sm text-white/40 font-medium">Average Rating</span>
+                    <span className="text-base font-black text-white italic">
+                        {reviews.length > 0 
+                           ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
+                           : "0.0"}
+                    </span>
+                 </div>
+                 <div className="flex justify-between items-center">
+                    <span className="text-sm text-white/40 font-medium">Most Visited City</span>
+                    <span className="text-base font-black text-white italic">
+                        {(() => {
+                           if (reviews.length === 0) return "N/A";
+                           const cities = reviews.map(r => {
+                             if (r.city) return r.city.trim();
+                             const parts = r.restaurantLocation?.split(',') || [];
+                             return parts[parts.length - 1]?.trim() || null;
+                           }).filter(Boolean);
+                           
+                           if (cities.length === 0) return "N/A";
+                           const counts: Record<string, number> = {};
+                           cities.forEach(c => {
+                             if (c) counts[c] = (counts[c] || 0) + 1;
+                           });
+                           return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+                        })()}
+                    </span>
+                 </div>
               </div>
             </div>
           </div>
