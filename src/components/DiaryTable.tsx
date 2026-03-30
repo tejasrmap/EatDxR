@@ -84,6 +84,7 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
               return (
                 <tr 
                   key={review.id} 
+                  id={`review-${review.id}`}
                   className={`border-b border-white/5 hover:bg-white/5 transition-colors group ${i % 2 === 0 ? 'bg-black/10' : ''}`}
                 >
                   <td className="py-4 px-6 font-bold text-white/60 tracking-wider text-xs">{month}</td>

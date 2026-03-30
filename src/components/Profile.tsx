@@ -246,39 +246,30 @@ export const Profile: React.FC = () => {
             )}
           </div>
 
-          {user.username && (
-            <p className="text-orange-500 font-bold mb-4 tracking-wide text-center md:text-left">@{user.username}</p>
-          )}
-          <div className="flex flex-wrap justify-center md:justify-start gap-x-8 gap-y-4">
-            <div className="text-center md:text-left border-r border-white/10 pr-8 last:border-0">
-              <p className="text-2xl font-bold text-white">{reviews.length}</p>
-              <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Meals</p>
-            </div>
-            <div className="text-center md:text-left border-r border-white/10 pr-8 last:border-0">
-              <p className="text-2xl font-bold text-white">
-                {reviews.filter(r => new Date(r.createdAt).getFullYear() === new Date().getFullYear()).length}
-              </p>
-              <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold">This Year</p>
-            </div>
-            <div className="text-center md:text-left border-r border-white/10 pr-8 last:border-0">
-              <p className="text-2xl font-bold text-white">0</p>
-              <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Lists</p>
-            </div>
-            <div 
-              className="text-center md:text-left border-r border-white/10 pr-8 last:border-0 cursor-pointer group"
-              onClick={() => setFollowModalType("following")}
-            >
-              <p className="text-2xl font-bold text-white group-hover:text-orange-500 transition-colors">
-                {user.stats?.followingList?.length || user.stats?.following || 0}
-              </p>
-              <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold group-hover:text-orange-500/50 transition-colors">Following</p>
-            </div>
-            <div 
-              className="text-center md:text-left cursor-pointer group"
-              onClick={() => setFollowModalType("followers")}
-            >
-              <p className="text-2xl font-bold text-white group-hover:text-orange-500 transition-colors">{followerCount}</p>
-              <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold group-hover:text-orange-500/50 transition-colors">Followers</p>
+          </div>
+
+          {/* Insta-Elite Bio & Stats (Shifted Above Content) */}
+          <div className="mt-8 pt-6 border-t border-white/5 space-y-4 text-center md:text-left">
+            {user.bio ? (
+               <p className="text-sm md:text-base text-white/80 leading-relaxed font-serif italic max-w-2xl mx-auto md:mx-0">
+                  "{user.bio}"
+               </p>
+            ) : (
+               <p className="text-sm text-white/20 italic">No bio written yet.</p>
+            )}
+
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-2">
+                <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
+                   <Star size={12} className="text-orange-500 fill-orange-500" />
+                   <span className="text-[10px] uppercase font-black tracking-widest text-white/60">
+                      Average: {(reviews.reduce((acc, r) => acc + r.rating, 0) / (reviews.length || 1)).toFixed(1)}
+                   </span>
+                </div>
+                {user.favoriteCuisines?.map((cuisine, idx) => (
+                  <span key={idx} className="px-3 py-1.5 bg-zinc-800 border border-white/5 rounded-full text-[10px] uppercase tracking-widest font-black text-white/40">
+                    {cuisine}
+                  </span>
+                ))}
             </div>
           </div>
         </div>
@@ -307,9 +298,7 @@ export const Profile: React.FC = () => {
       </div>
 
       {activeTab === "profile" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        {/* Instagram-Elite 3-Column Grid */}
-        <div className="lg:col-span-2">
+        <div className="w-full">
           <div className="flex items-center justify-between mb-8 pb-2 border-b border-white/5">
             <div className="flex items-center gap-2">
                <Grid size={14} className="text-orange-500" />
@@ -323,14 +312,20 @@ export const Profile: React.FC = () => {
               const allImages = review.dishes?.filter(d => d.image).map(d => d.image) || [];
               const firstImage = allImages[0];
               return (
-                <Link 
+                <div 
                   key={review.id} 
-                  to={`/profile/${user.username || user.uid}`}
-                  onClick={(e) => {
-                    // Smoothly scroll to the review in the diary or trigger a detailed view
-                    toast.info(`Opening review at ${review.restaurantName}`);
+                  onClick={() => {
+                    setActiveTab("diary");
+                    setTimeout(() => {
+                        const el = document.getElementById(`review-${review.id}`);
+                        if (el) {
+                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            el.classList.add('ring-2', 'ring-orange-500', 'ring-offset-4', 'ring-offset-black');
+                            setTimeout(() => el.classList.remove('ring-2', 'ring-orange-500', 'ring-offset-4', 'ring-offset-black'), 2000);
+                        }
+                    }, 50);
                   }}
-                  className="aspect-square bg-zinc-800 rounded-sm md:rounded-xl overflow-hidden border border-white/5 group relative shadow-2xl hover:border-orange-500/50 transition-all"
+                  className="aspect-square bg-zinc-800 rounded-sm md:rounded-xl overflow-hidden border border-white/5 group relative shadow-2xl hover:border-orange-500/50 transition-all cursor-pointer"
                 >
                   {firstImage ? (
                     <img 
@@ -371,7 +366,7 @@ export const Profile: React.FC = () => {
                         </div>
                     </div>
                   </div>
-                </Link>
+                </div>
               );
             })}
           </div>
@@ -381,48 +376,6 @@ export const Profile: React.FC = () => {
                   <p className="text-sm italic text-white/20 serif">No memories captured yet.</p>
               </div>
           )}
-        </div>
-
-        {/* Right Column: Bio & Stats */}
-        <div className="space-y-12">
-          <div>
-            <h2 className="text-[10px] uppercase tracking-widest font-bold text-white/40 mb-4 pb-2 border-b border-white/10">Bio</h2>
-            <p className="text-sm text-white/60 leading-relaxed font-serif italic">
-              {user.bio ? `"${user.bio}"` : "This user hasn't written a bio yet."}
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-[10px] uppercase tracking-widest font-bold text-white/40 mb-4 pb-2 border-b border-white/10">Favorite Cuisines</h2>
-            {user.favoriteCuisines && user.favoriteCuisines.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {user.favoriteCuisines.map((cuisine, idx) => (
-                  <span key={idx} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] uppercase tracking-widest font-bold text-white/60">
-                    {cuisine}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-white/40 italic">No favorite cuisines tagged.</p>
-            )}
-          </div>
-
-          <div>
-            <h2 className="text-[10px] uppercase tracking-widest font-bold text-white/40 mb-4 pb-2 border-b border-white/10">Stats</h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-white/40">Average Rating</span>
-                <span className="text-xs font-bold text-white">
-                  {(reviews.reduce((acc, r) => acc + r.rating, 0) / (reviews.length || 1)).toFixed(1)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-white/40">Most Visited City</span>
-                <span className="text-xs font-bold text-white">Mumbai</span>
-              </div>
-            </div>
-          </div>
-        </div>
         </div>
       )}
 
