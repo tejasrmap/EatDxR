@@ -243,13 +243,27 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
              {/* Desktop Author Info Addition */}
              <div className="flex items-center gap-3 mb-2 pointer-events-auto">
                 <div className="flex flex-col items-end">
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#00e054]">{review.userName}</span>
+                  <div className="flex items-center gap-2">
+                    <button 
+                        onClick={(e) => {
+                            e.preventDefault();
+                            handleToggleFollow();
+                        }}
+                        disabled={isUpdatingFollow || currentUser?.uid === review.userId}
+                        className={`text-[9px] font-black uppercase tracking-[0.2em] transition-colors ${isFollowing ? 'text-white/20' : 'text-[#00e054] hover:text-white active:scale-95'}`}
+                    >
+                        {isFollowing ? 'Following' : 'Follow'}
+                    </button>
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40">{review.userName}</span>
+                  </div>
                   <div className="flex items-center gap-1 opacity-40">
                      <Star size={8} className="fill-white text-white" />
                      <span className="text-[9px] font-black text-white">{review.rating.toFixed(1)}</span>
                   </div>
                 </div>
-                <img src={review.userPhoto} className="w-8 h-8 rounded-full border border-white/10" alt="" />
+                <Link to={`/profile/${review.userId}`}>
+                    <img src={review.userPhoto} className="w-8 h-8 rounded-full border border-white/10 hover:border-[#00e054] transition-colors" alt="" />
+                </Link>
              </div>
 
              <div className="space-y-1.5 pointer-events-auto">
