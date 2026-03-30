@@ -259,11 +259,11 @@ export const Profile: React.FC = () => {
             )}
           </div>
 
-          <div className="flex flex-col md:flex-row md:items-baseline gap-4 mb-8">
-            <div className="flex flex-wrap items-baseline gap-3 justify-center md:justify-start">
-                <h1 className="text-2xl lg:text-4xl font-black text-white tracking-tighter font-serif leading-none">{user.displayName}</h1>
+          <div className="flex flex-col md:flex-row md:items-baseline gap-4 mb-6 md:mb-8">
+            <div className="flex flex-wrap items-baseline gap-2 justify-center md:justify-start">
+                <h1 className="text-xl md:text-2xl lg:text-4xl font-black text-white tracking-tighter font-serif leading-none">{user.displayName}</h1>
                 {user.pronouns && (
-                    <span className="text-[10px] font-bold text-white/40 italic uppercase tracking-[0.2em]">{user.pronouns}</span>
+                    <span className="text-[9px] font-bold text-white/40 italic uppercase tracking-[0.2em]">{user.pronouns}</span>
                 )}
             </div>
             {currentUser?.uid !== user.uid ? (
@@ -298,7 +298,7 @@ export const Profile: React.FC = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-4 md:flex justify-center md:justify-start gap-4 md:gap-12 mb-2 border-b border-white/5 pb-4">
+          <div className="flex items-center justify-between md:justify-start gap-2 md:gap-12 mb-2 border-b border-white/5 pb-4">
             <div className="text-center md:text-left">
               <span className="text-xl md:text-2xl font-black text-white pr-1 italic font-serif">{reviews.length}</span>
               <span className="block md:inline text-[8px] md:text-[10px] text-white/40 uppercase tracking-widest font-black">posts</span>
@@ -349,22 +349,22 @@ export const Profile: React.FC = () => {
                 </div>
              )}
 
-              {/* Mobile-Only Action Buttons */}
+               {/* Mobile-Only Action Buttons */}
               {currentUser?.uid === user.uid && (
                 <div className="md:hidden flex items-center justify-center gap-2 w-full pt-4">
                   <button 
                     onClick={() => setIsEditModalOpen(true)}
-                    className="flex-1 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] uppercase tracking-[0.2em] font-black rounded-md transition-colors border border-white/5"
+                    className="flex-1 px-4 py-1.5 bg-transparent hover:bg-white/5 text-white/60 text-[9px] uppercase tracking-[0.2em] font-black rounded-md transition-colors border border-white/10"
                   >
                     Edit profile
                   </button>
                   <button 
                     onClick={shareProfile}
-                    className="flex-1 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] uppercase tracking-[0.2em] font-black rounded-md transition-colors border border-white/5"
+                    className="flex-1 px-4 py-1.5 bg-transparent hover:bg-white/5 text-white/60 text-[9px] uppercase tracking-[0.2em] font-black rounded-md transition-colors border border-white/10"
                   >
                     Share profile
                   </button>
-                  <button className="p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md transition-colors border border-white/5">
+                  <button className="p-2 bg-transparent hover:bg-white/5 text-white/40 rounded-md transition-colors border border-white/10">
                     <Settings strokeWidth={1} size={14} />
                   </button>
                 </div>
@@ -406,7 +406,7 @@ export const Profile: React.FC = () => {
               <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{reviews.length} Logs</span>
             </div>
 
-            <div className="grid grid-cols-3 gap-1 md:gap-4 lg:gap-6 mb-12">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-1 md:gap-4 lg:gap-6 mb-12">
               {reviews.map(review => {
                 const allImages = review.dishes?.filter(d => d.image).map(d => d.image) || [];
                 const firstImage = allImages[0];
