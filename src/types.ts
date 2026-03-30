@@ -40,6 +40,7 @@ export interface Restaurant {
 export interface ReviewDish {
   name: string;
   image?: string;
+  rating?: number; // Per-dish rating
 }
 
 export interface Review {
@@ -54,6 +55,7 @@ export interface Review {
   dishes: ReviewDish[];
   rating: number; // 1-10 or 1-5, let's go with 1-5 half-stars like Letterboxd
   content: string;
+  videoUrl?: string; // Manual video upload support
   createdAt: any; // Firestore Timestamp
   likes: number;
 }

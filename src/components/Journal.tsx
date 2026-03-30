@@ -120,14 +120,14 @@ export const Journal: React.FC = () => {
                 </p>
               </div>
 
-              {reviews.length > 0 ? (
-                reviews.map(review => (
+              {reviews.filter(r => !r.videoUrl).length > 0 ? (
+                reviews.filter(r => !r.videoUrl).map(review => (
                   <PostCard key={review.id} review={review} />
                 ))
               ) : (
                 <div className="py-32 text-center bg-white/5 border border-dashed border-white/10 rounded-[3rem]">
                    <Info className="w-12 h-12 text-white/10 mx-auto mb-4" />
-                   <p className="text-white/40 italic serif text-lg px-12">The feed is silent. Be the first to break the stillness.</p>
+                   <p className="text-white/40 italic serif text-lg px-12">No photo logs gathered yet. Be the first to break the stillness.</p>
                 </div>
               )}
             </motion.div>
@@ -141,8 +141,8 @@ export const Journal: React.FC = () => {
               className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden"
             >
                  <div className="h-svh md:h-[90vh] w-full max-w-6xl relative shadow-2xl snap-y-container scrollbar-hide md:rounded-3xl md:overflow-hidden">
-                    {reviews.length > 0 ? (
-                        reviews.map(review => (
+                     {reviews.filter(r => !!r.videoUrl).length > 0 ? (
+                        reviews.filter(r => !!r.videoUrl).map(review => (
                             <ReelCard key={review.id} review={review} />
                         ))
                     ) : (

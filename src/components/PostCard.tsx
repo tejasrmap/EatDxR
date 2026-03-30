@@ -239,9 +239,21 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
             {review.dishes && review.dishes.length > 0 && (
                 <div className="flex flex-wrap gap-2 pt-2">
                     {review.dishes.map((dish, i) => (
-                        <span key={i} className="text-[10px] md:text-xs uppercase font-black tracking-widest text-[#00e054]/60 bg-[#00e054]/5 px-3 py-1 rounded-full border border-[#00e054]/10">
-                            {dish.name}
-                        </span>
+                        <div key={i} className="flex items-center gap-1.5 bg-[#00e054]/5 px-3 py-1 rounded-full border border-[#00e054]/10">
+                            <span className="text-[10px] md:text-xs uppercase font-black tracking-widest text-[#00e054]/60">
+                                {dish.name}
+                            </span>
+                            <div className="flex items-center gap-0.5 ml-1 border-l border-white/10 pl-1.5">
+                                {[...Array(5)].map((_, si) => (
+                                    <Star 
+                                        key={si} 
+                                        size={8} 
+                                        fill={si < (dish.rating || 0) ? "#00e054" : "none"}
+                                        className={si < (dish.rating || 0) ? "text-[#00e054]" : "text-white/10"}
+                                    />
+                                ))}
+                            </div>
+                        </div>
                     ))}
                 </div>
             )}

@@ -5,8 +5,9 @@ import { X, Star, Upload, Image as ImageIcon, Search, MapPin, Loader2, Plus, Tra
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../App";
-import { db, handleFirestoreError, OperationType } from "../firebase";
+import { db, handleFirestoreError, OperationType, storage } from "../firebase";
 import { collection, doc, setDoc, updateDoc, serverTimestamp, getDoc, increment } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { toast } from "sonner";
 import { searchRestaurants } from "../services/mapsService";
 import { RestaurantSearchResult, Review } from "../types";
@@ -15,10 +16,12 @@ const logSchema = z.object({
   restaurant: z.string().min(1, "Restaurant is required"),
   dishes: z.array(z.object({
     name: z.string().min(1, "Dish name is required"),
-    image: z.string().optional()
+    image: z.string().optional(),
+    rating: z.number().min(1).max(5)
   })).min(1, "At least one dish is required"),
   rating: z.number().min(1).max(5),
   review: z.string().optional(),
+  videoUrl: z.string().optional()
 });
 
 type LogFormValues = z.infer<typeof logSchema>;
@@ -42,6 +45,10 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
   const [currentCity, setCurrentCity] = useState<string | null>(null);
   const [manualLocation, setManualLocation] = useState("");
   const [activeDishIndex, setActiveDishIndex] = useState<number | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -51,7 +58,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
     resolver: zodResolver(logSchema),
     defaultValues: {
       rating: 0,
-      dishes: [{ name: "", image: "" }]
+      dishes: [{ name: "", image: "", rating: 5 }]
     }
   });
 
@@ -77,7 +84,9 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
         restaurant: existingReview.restaurantName,
         rating: existingReview.rating,
         review: existingReview.content || "",
-        dishes: existingReview.dishes.length > 0 ? existingReview.dishes : [{ name: "", image: "" }]
+        dishes: existingReview.dishes.length > 0 
+          ? existingReview.dishes.map(d => ({ ...d, rating: d.rating || 5 })) 
+          : [{ name: "", image: "", rating: 5 }]
       });
     } else if (isOpen && initialRestaurant) {
       setRating(0);
@@ -86,12 +95,12 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
       setValue("restaurant", initialRestaurant.name);
       reset({
         rating: 0,
-        dishes: [{ name: "", image: "" }],
+        dishes: [{ name: "", image: "", rating: 5 }],
         restaurant: initialRestaurant.name,
         review: ""
       });
     } else if (isOpen && !existingReview) {
-      reset({ rating: 0, dishes: [{ name: "", image: "" }], restaurant: "", review: "" });
+      reset({ rating: 0, dishes: [{ name: "", image: "", rating: 5 }], restaurant: "", review: "" });
       setRating(0);
       setSearchQuery("");
       setSelectedRestaurant(null);
@@ -164,10 +173,32 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
     reader.onloadend = () => {
       const base64String = reader.result as string;
       setValue(`dishes.${activeDishIndex}.image`, base64String);
+      // We also store the actual file in a hidden state for the real upload later
+      (window as any)[`dish_file_${activeDishIndex}`] = file;
       setActiveDishIndex(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("Video too large. Please select a video under 20MB.");
+      return;
+    }
+
+    setVideoFile(file);
+    const url = URL.createObjectURL(file);
+    setVideoPreview(url);
+  };
+
+  const uploadFile = async (file: File, path: string): Promise<string> => {
+    const fileRef = ref(storage, path);
+    await uploadBytes(fileRef, file);
+    return getDownloadURL(fileRef);
   };
 
   const onSubmit = async (data: LogFormValues) => {
@@ -177,8 +208,26 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
     }
 
     setIsSubmitting(true);
+    setIsUploading(true);
     try {
-      // 1. If we have a selected restaurant, ensure it exists in the 'restaurants' collection
+      // 1. Upload Media First (Professional Storage logic)
+      let finalVideoUrl = "";
+      if (videoFile) {
+        finalVideoUrl = await uploadFile(videoFile, `videos/${user.uid}_${Date.now()}.mp4`);
+      }
+
+      const uploadedDishes = await Promise.all(
+        data.dishes.map(async (dish, idx) => {
+          const file = (window as any)[`dish_file_${idx}`];
+          if (file) {
+            const url = await uploadFile(file, `dishes/${user.uid}_${Date.now()}_${idx}`);
+            return { ...dish, image: url };
+          }
+          return dish;
+        })
+      );
+
+      // 2. If we have a selected restaurant, ensure it exists in the 'restaurants' collection
       let restaurantId = selectedRestaurant?.id || `manual_${Date.now()}`;
       
       if (selectedRestaurant) {
@@ -209,9 +258,10 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
         await updateDoc(reviewRef, {
           restaurantName: data.restaurant,
           restaurantId: restaurantId,
-          dishes: data.dishes,
+          dishes: uploadedDishes,
           rating: data.rating,
-          content: data.review || ""
+          content: data.review || "",
+          videoUrl: finalVideoUrl || existingReview.videoUrl || ""
         });
         toast.success("Meal updated successfully!");
       } else {
@@ -230,9 +280,10 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
           restaurantId: restaurantId,
           restaurantLocation: manualLocation,
           city: city,
-          dishes: data.dishes,
+          dishes: uploadedDishes,
           rating: data.rating,
           content: data.review || "",
+          videoUrl: finalVideoUrl,
           createdAt: serverTimestamp(),
           likes: 0
         };
@@ -253,11 +304,16 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
       setSearchQuery("");
       setManualLocation("");
       setSelectedRestaurant(null);
+      setVideoFile(null);
+      setVideoPreview(null);
+      setIsUploading(false);
       onClose();
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, "reviews");
+      console.error("Submit Error:", error);
+      toast.error("Process failed. Check connection.");
     } finally {
       setIsSubmitting(false);
+      setIsUploading(false);
     }
   };
 
@@ -292,6 +348,30 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="p-6 pb-32 md:pb-6 space-y-6 overflow-y-auto">
+              {/* Cinematic Video Upload for Reels */}
+              <div className="space-y-4">
+                  <label className="small-caps text-orange-500">Cinematic Reel (Optional)</label>
+                  <div 
+                    onClick={() => videoInputRef.current?.click()}
+                    className="aspect-video bg-white/5 border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all overflow-hidden group relative"
+                  >
+                    {videoPreview ? (
+                        <>
+                            <video src={videoPreview} className="w-full h-full object-cover" muted loop autoPlay />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Plus size={32} className="text-white" />
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex flex-col items-center gap-2 opacity-40 group-hover:opacity-100 transition-all">
+                            <Upload size={32} />
+                            <p className="text-[10px] uppercase font-black tracking-widest">Capture Video Reel</p>
+                        </div>
+                    )}
+                  </div>
+                  <input type="file" ref={videoInputRef} onChange={handleVideoChange} accept="video/*" className="hidden" />
+              </div>
+
               <div className="space-y-2 relative">
                 <label className="small-caps">Restaurant</label>
                 <div className="relative">
@@ -370,7 +450,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                   <label className="small-caps">Dishes</label>
                   <button
                     type="button"
-                    onClick={() => append({ name: "" })}
+                    onClick={() => append({ name: "", rating: 5 })}
                     className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-orange-500 hover:text-orange-400 transition-colors"
                   >
                     <Plus size={12} />
@@ -403,6 +483,22 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                               className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 ring-white/20 transition-all"
                               disabled={isSubmitting}
                             />
+                            <div className="flex gap-1 shrink-0 bg-black/20 p-2 rounded-lg">
+                                {[1,2,3,4,5].map(star => (
+                                    <button
+                                        key={star}
+                                        type="button"
+                                        className="hover:scale-110 transition-transform"
+                                        onClick={() => setValue(`dishes.${index}.rating`, star)}
+                                    >
+                                        <Star 
+                                            size={12} 
+                                            fill={star <= (watchDishes[index]?.rating || 0) ? "currentColor" : "none"} 
+                                            className={star <= (watchDishes[index]?.rating || 0) ? "text-orange-500" : "text-white/20"}
+                                        />
+                                    </button>
+                                ))}
+                            </div>
                             {fields.length > 1 && (
                               <button
                                 type="button"
@@ -435,8 +531,9 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                           const currentDishes = control._formValues.dishes;
                           if (currentDishes[lastIndex].name === "") {
                             setValue(`dishes.${lastIndex}.name`, item);
+                            setValue(`dishes.${lastIndex}.rating`, 5);
                           } else {
-                            append({ name: item });
+                            append({ name: item, rating: 5 });
                           }
                         }}
                         className="text-[10px] bg-white/5 hover:bg-white/10 border border-white/10 rounded-full px-3 py-1 text-white/60 hover:text-white transition-all"
@@ -498,12 +595,15 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                 disabled={isSubmitting || !searchQuery.trim()}
                 className="w-full bg-[#00e054] hover:bg-[#00c044] text-black font-bold uppercase tracking-widest py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? (
-                  <Loader2 size={16} className="animate-spin" />
+                {isSubmitting || isUploading ? (
+                  <div className="flex flex-col items-center gap-2">
+                      <Loader2 size={16} className="animate-spin" />
+                      <span className="text-[8px] tracking-[0.3em] font-black uppercase text-black/60">Processing High-HD Media...</span>
+                  </div>
                 ) : (
                   <Plus size={16} />
                 )}
-                {existingReview ? "Update Meal" : "Log Meal"}
+                {isSubmitting || isUploading ? "" : (existingReview ? "Update Meal" : "Log Meal")}
               </button>
             </div>
             </form>

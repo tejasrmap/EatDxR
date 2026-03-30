@@ -193,10 +193,20 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
                 </div>
              </div>
 
-             <div className="flex flex-wrap gap-1.5 pt-1">
-                {review.dishes?.slice(0, 2).map((dish, i) => (
-                    <div key={i} className="px-2 py-0.5 bg-black/40 backdrop-blur-md rounded-md border border-white/5">
-                        <span className="text-[8px] font-black uppercase tracking-wider text-white/50">{dish.name}</span>
+             <div className="flex flex-wrap gap-2">
+                {review.dishes?.map((dish, i) => (
+                    <div key={i} className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/5">
+                        <span className="text-[10px] font-black uppercase text-[#00e054] tracking-widest">{dish.name}</span>
+                        <div className="flex items-center gap-0.5 ml-1 border-l border-white/20 pl-1.5">
+                            {[...Array(5)].map((_, si) => (
+                                <Star 
+                                    key={si} 
+                                    size={8} 
+                                    fill={si < (dish.rating || 0) ? "#00e054" : "none"}
+                                    className={si < (dish.rating || 0) ? "text-[#00e054]" : "text-white/20"}
+                                />
+                            ))}
+                        </div>
                     </div>
                 ))}
              </div>
