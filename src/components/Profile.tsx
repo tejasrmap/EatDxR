@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "motion/react";
 import { collection, query, where, onSnapshot, orderBy, doc, getDoc, getDocs, updateDoc, arrayUnion, arrayRemove, setDoc, deleteDoc, serverTimestamp, increment } from "firebase/firestore";
 import { db } from "../firebase";
 import { Review, User, Restaurant } from "../types";
@@ -356,200 +357,223 @@ export const Profile: React.FC = () => {
         </button>
       </div>
 
-      {activeTab === "profile" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 w-full">
-          <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-2 pb-2 border-b border-white/5">
-              <div className="flex items-center gap-2">
-                <Grid size={12} className="text-orange-500" />
-                <h2 className="text-[9px] uppercase tracking-[0.4em] font-black text-white/20">The Film Strip</h2>
+      <AnimatePresence mode="wait">
+        {activeTab === "profile" && (
+          <motion.div
+            key="profile"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 45 }}
+            className="grid grid-cols-1 lg:grid-cols-3 gap-12 w-full"
+          >
+            <div className="lg:col-span-2">
+              <div className="flex items-center justify-between mb-2 pb-2 border-b border-white/5">
+                <div className="flex items-center gap-2">
+                  <Grid size={12} className="text-orange-500" />
+                  <h2 className="text-[9px] uppercase tracking-[0.4em] font-black text-white/20">The Film Strip</h2>
+                </div>
+                <span className="text-[9px] font-black text-white/10 uppercase tracking-widest">{reviews.length} Logs</span>
               </div>
-              <span className="text-[9px] font-black text-white/10 uppercase tracking-widest">{reviews.length} Logs</span>
-            </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-1 md:gap-4 lg:gap-6 mb-12">
-              {reviews.map(review => {
-                const allImages = review.dishes?.filter(d => d.image).map(d => d.image) || [];
-                const firstImage = allImages[0];
-                return (
-                  <div
-                    key={review.id}
-                    onClick={() => {
-                      setActiveTab("diary");
-                      setTimeout(() => {
-                        const el = document.getElementById(`review-${review.id}`);
-                        if (el) {
-                          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                          el.classList.add('ring-2', 'ring-orange-500', 'ring-offset-4', 'ring-offset-black');
-                          setTimeout(() => el.classList.remove('ring-2', 'ring-orange-500', 'ring-offset-4', 'ring-offset-black'), 2000);
-                        }
-                      }, 50);
-                    }}
-                    className="aspect-square bg-zinc-800 rounded-sm md:rounded-xl overflow-hidden border border-white/5 group relative shadow-2xl hover:border-orange-500/50 transition-all cursor-pointer"
-                  >
-                    {firstImage ? (
-                      <img
-                        src={firstImage}
-                        alt={review.restaurantName}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[8px] md:text-[10px] text-white/20 uppercase tracking-widest text-center px-2 italic">
-                        {review.restaurantName}
-                      </div>
-                    )}
-
-                    {allImages.length > 1 && (
-                      <div className="absolute top-2 right-2 p-1 bg-black/40 backdrop-blur-md rounded-md z-10">
-                        <Plus size={10} className="text-white" />
-                      </div>
-                    )}
-
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center p-2 transition-all duration-300 transform group-hover:scale-100 scale-110">
-                      <div className="flex items-center gap-0.5 text-orange-500 mb-1">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} size={10} fill={i < review.rating ? "currentColor" : "none"} className={i < review.rating ? "fill-orange-500" : "text-white/20"} />
-                        ))}
-                      </div>
-                      <p className="text-[8px] md:text-[10px] font-black text-white uppercase tracking-widest truncate w-full text-center px-2">{review.restaurantName}</p>
-                      <div className="mt-2 flex items-center gap-3 text-white/60">
-                        <div className="flex items-center gap-1">
-                          <Heart size={10} fill="currentColor" className="text-rose-500" />
-                          <span className="text-[10px] font-bold">{review.likes || 0}</span>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-1 md:gap-4 lg:gap-6 mb-12">
+                {reviews.map(review => {
+                  const allImages = review.dishes?.filter(d => d.image).map(d => d.image) || [];
+                  const firstImage = allImages[0];
+                  return (
+                    <div
+                      key={review.id}
+                      onClick={() => {
+                        setActiveTab("diary");
+                        setTimeout(() => {
+                          const el = document.getElementById(`review-${review.id}`);
+                          if (el) {
+                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            el.classList.add('ring-2', 'ring-orange-500', 'ring-offset-4', 'ring-offset-black');
+                            setTimeout(() => el.classList.remove('ring-2', 'ring-orange-500', 'ring-offset-4', 'ring-offset-black'), 2000);
+                          }
+                        }, 50);
+                      }}
+                      className="aspect-square bg-zinc-800 rounded-sm md:rounded-xl overflow-hidden border border-white/5 group relative shadow-2xl hover:border-orange-500/50 transition-all cursor-pointer"
+                    >
+                      {firstImage ? (
+                        <img
+                          src={firstImage}
+                          alt={review.restaurantName}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[8px] md:text-[10px] text-white/20 uppercase tracking-widest text-center px-2 italic">
+                          {review.restaurantName}
                         </div>
-                        <div className="flex items-center gap-1">
-                          <MessageSquare size={10} fill="currentColor" />
-                          <span className="text-[10px] font-bold">0</span>
+                      )}
+
+                      {allImages.length > 1 && (
+                        <div className="absolute top-2 right-2 p-1 bg-black/40 backdrop-blur-md rounded-md z-10">
+                          <Plus size={10} className="text-white" />
+                        </div>
+                      )}
+
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center p-2 transition-all duration-300 transform group-hover:scale-100 scale-110">
+                        <div className="flex items-center gap-0.5 text-orange-500 mb-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} size={10} fill={i < review.rating ? "currentColor" : "none"} className={i < review.rating ? "fill-orange-500" : "text-white/20"} />
+                          ))}
+                        </div>
+                        <p className="text-[8px] md:text-[10px] font-black text-white uppercase tracking-widest truncate w-full text-center px-2">{review.restaurantName}</p>
+                        <div className="mt-2 flex items-center gap-3 text-white/60">
+                          <div className="flex items-center gap-1">
+                            <Heart size={10} fill="currentColor" className="text-rose-500" />
+                            <span className="text-[10px] font-bold">{review.likes || 0}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <MessageSquare size={10} fill="currentColor" />
+                            <span className="text-[10px] font-bold">0</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {reviews.length === 0 && (
-              <div className="py-20 text-center border border-dashed border-white/10 rounded-3xl">
-                <p className="text-sm italic text-white/20 serif">No memories captured yet.</p>
+                  );
+                })}
               </div>
-            )}
-          </div>
 
-          {/* Sidebar Section (Desktop Elite) */}
-          <div className="hidden lg:block space-y-12 pl-6 pt-2 border-l border-white/5">
-            {/* BIO Section */}
-            <div>
-              <div className="border-b border-white/5 pb-4 mb-6">
-                 <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40">BIO</h3>
-              </div>
-              {user.bio ? (
-                 <p className="text-base text-white/80 leading-relaxed font-serif italic">
-                    "{user.bio}"
-                 </p>
-              ) : (
-                 <p className="text-sm italic text-white/20 font-serif">No bio captured yet.</p>
+              {reviews.length === 0 && (
+                <div className="py-20 text-center border border-dashed border-white/10 rounded-3xl">
+                  <p className="text-sm italic text-white/20 serif">No memories captured yet.</p>
+                </div>
               )}
             </div>
 
-            {/* CUISINES Section */}
-            <div>
-              <div className="border-b border-white/5 pb-4 mb-6">
-                 <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40">FAVORITE CUISINES</h3>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {(user.favoriteCuisines && user.favoriteCuisines.length > 0) ? (
-                   user.favoriteCuisines.map((cuisine, idx) => (
-                    <span key={idx} className="px-4 py-1.5 bg-zinc-900 border border-white/10 rounded-full text-[10px] uppercase tracking-widest font-black text-white/60">
-                        {cuisine}
-                    </span>
-                   ))
+            {/* Sidebar Section (Desktop Elite) */}
+            <div className="hidden lg:block space-y-12 pl-6 pt-2 border-l border-white/5">
+              {/* BIO Section */}
+              <div>
+                <div className="border-b border-white/5 pb-4 mb-6">
+                   <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40">BIO</h3>
+                </div>
+                {user.bio ? (
+                   <p className="text-base text-white/80 leading-relaxed font-serif italic">
+                      "{user.bio}"
+                   </p>
                 ) : (
-                   <span className="text-[10px] uppercase tracking-widest font-black text-white/20">None added</span>
+                   <p className="text-sm italic text-white/20 font-serif">No bio captured yet.</p>
                 )}
               </div>
-            </div>
 
-            {/* STATS Section */}
-            <div>
-              <div className="border-b border-white/5 pb-4 mb-6">
-                 <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40">STATS</h3>
+              {/* CUISINES Section */}
+              <div>
+                <div className="border-b border-white/5 pb-4 mb-6">
+                   <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40">FAVORITE CUISINES</h3>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(user.favoriteCuisines && user.favoriteCuisines.length > 0) ? (
+                     user.favoriteCuisines.map((cuisine, idx) => (
+                      <span key={idx} className="px-4 py-1.5 bg-zinc-900 border border-white/10 rounded-full text-[10px] uppercase tracking-widest font-black text-white/60">
+                          {cuisine}
+                      </span>
+                     ))
+                  ) : (
+                     <span className="text-[10px] uppercase tracking-widest font-black text-white/20">None added</span>
+                  )}
+                </div>
               </div>
-              <div className="space-y-4">
-                 <div className="flex justify-between items-center">
-                    <span className="text-sm text-white/40 font-medium">Average Rating</span>
-                    <span className="text-base font-black text-white italic">
-                        {reviews.length > 0 
-                           ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
-                           : "0.0"}
-                    </span>
-                 </div>
-                 <div className="flex justify-between items-center">
-                    <span className="text-sm text-white/40 font-medium">Most Visited City</span>
-                    <span className="text-base font-black text-white italic">
-                        {(() => {
-                           if (reviews.length === 0) return "N/A";
-                           const cities = reviews.map(r => {
-                             if (r.city) return r.city.trim();
-                             const parts = r.restaurantLocation?.split(',') || [];
-                             return parts[parts.length - 1]?.trim() || null;
-                           }).filter(Boolean);
-                           
-                           if (cities.length === 0) return "N/A";
-                           const counts: Record<string, number> = {};
-                           cities.forEach(c => {
-                             if (c) counts[c] = (counts[c] || 0) + 1;
-                           });
-                           return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
-                        })()}
-                    </span>
-                 </div>
+
+              {/* STATS Section */}
+              <div>
+                <div className="border-b border-white/5 pb-4 mb-6">
+                   <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40">STATS</h3>
+                </div>
+                <div className="space-y-4">
+                   <div className="flex justify-between items-center">
+                      <span className="text-sm text-white/40 font-medium">Average Rating</span>
+                      <span className="text-base font-black text-white italic">
+                          {reviews.length > 0 
+                             ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
+                             : "0.0"}
+                      </span>
+                   </div>
+                   <div className="flex justify-between items-center">
+                      <span className="text-sm text-white/40 font-medium">Most Visited City</span>
+                      <span className="text-base font-black text-white italic">
+                          {(() => {
+                             if (reviews.length === 0) return "N/A";
+                             const cities = reviews.map(r => {
+                               if (r.city) return r.city.trim();
+                               const parts = r.restaurantLocation?.split(',') || [];
+                               return parts[parts.length - 1]?.trim() || null;
+                             }).filter(Boolean);
+                             
+                             if (cities.length === 0) return "N/A";
+                             const counts: Record<string, number> = {};
+                             cities.forEach(c => {
+                               if (c) counts[c] = (counts[c] || 0) + 1;
+                             });
+                             return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+                          })()}
+                      </span>
+                   </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
 
-      {activeTab === "diary" && (
-        <div className="w-full">
-          <DiaryTable reviews={reviews} showUser={false} />
-        </div>
-      )}
+        {activeTab === "diary" && (
+          <motion.div
+            key="diary"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 45 }}
+            className="w-full"
+          >
+            <DiaryTable reviews={reviews} showUser={false} />
+          </motion.div>
+        )}
 
-      {activeTab === "eatlist" && (
-        <div className="w-full">
-          {loadingEatlist ? (
-            <div className="py-20 flex flex-col items-center justify-center">
-              <Loader2 className="w-8 h-8 animate-spin text-white/20 mb-4" />
-              <p className="text-xs uppercase tracking-widest font-bold text-white/20">Loading Eatlist...</p>
-            </div>
-          ) : eatlistRestaurants.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {eatlistRestaurants.map(rest => (
-                <Link
-                  key={rest.id}
-                  to={`/restaurant/${rest.id}`}
-                  className="group bg-zinc-900 border border-white/5 rounded-2xl overflow-hidden hover:border-white/20 transition-all p-4 flex gap-4"
-                >
-                  <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-white/10">
-                    <img src={rest.image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                  </div>
-                  <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <h3 className="font-bold text-white group-hover:text-orange-500 transition-colors truncate">{rest.name}</h3>
-                    <p className="text-[10px] uppercase tracking-widest text-white/40 mt-1">{rest.cuisine}</p>
-                    <p className="text-[10px] text-white/20 mt-1 truncate">{rest.location}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="w-full text-center py-20 border border-dashed border-white/10 rounded-2xl">
-              <p className="text-white/40 italic serif">Your Eatlist (Watchlist) is currently empty.</p>
-              <Link to="/restaurants" className="inline-block mt-4 text-[10px] uppercase tracking-widest font-bold text-orange-500 hover:text-orange-400">Explore Restaurants</Link>
-            </div>
-          )}
-        </div>
-      )}
+        {activeTab === "eatlist" && (
+          <motion.div
+            key="eatlist"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 45 }}
+            className="w-full"
+          >
+            {loadingEatlist ? (
+              <div className="py-20 flex flex-col items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-white/20 mb-4" />
+                <p className="text-xs uppercase tracking-widest font-bold text-white/20">Loading Eatlist...</p>
+              </div>
+            ) : eatlistRestaurants.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {eatlistRestaurants.map(rest => (
+                  <Link
+                    key={rest.id}
+                    to={`/restaurant/${rest.id}`}
+                    className="group bg-zinc-900 border border-white/5 rounded-2xl overflow-hidden hover:border-white/20 transition-all p-4 flex gap-4"
+                  >
+                    <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-white/10">
+                      <img src={rest.image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      <h3 className="font-bold text-white group-hover:text-orange-500 transition-colors truncate">{rest.name}</h3>
+                      <p className="text-[10px] uppercase tracking-widest text-white/40 mt-1">{rest.cuisine}</p>
+                      <p className="text-[10px] text-white/20 mt-1 truncate">{rest.location}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="w-full text-center py-20 border border-dashed border-white/10 rounded-2xl">
+                <p className="text-white/40 italic serif">Your Eatlist (Watchlist) is currently empty.</p>
+                <Link to="/restaurants" className="inline-block mt-4 text-[10px] uppercase tracking-widest font-bold text-orange-500 hover:text-orange-400">Explore Restaurants</Link>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <FollowListModal
         isOpen={followModalType !== null}

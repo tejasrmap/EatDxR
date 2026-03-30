@@ -73,34 +73,43 @@ export function MobileBottomNav() {
                       className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[340]"
                     />
                     <motion.div
-                      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                      className="absolute bottom-20 left-1/2 -translate-x-1/2 w-64 bg-[#1a1c1d]/95 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl py-3 z-[350] overflow-hidden"
+                      initial={{ opacity: 0, y: 100 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 100 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 40, mass: 0.8 }}
+                      className="fixed bottom-4 left-4 right-4 bg-[#1a1c1d]/95 backdrop-blur-xl border border-white/10 rounded-[2.5rem] shadow-[0_-20px_50px_rgba(0,0,0,0.5)] py-4 z-[350] overflow-hidden will-change-transform"
                     >
-                      <div className="px-5 py-2 border-b border-white/5 mb-1">
-                        <span className="text-[9px] uppercase font-black tracking-widest text-white/20 text-center block">Integrate Narrative</span>
+                      <div className="px-8 py-3 border-b border-white/5 mb-2">
+                        <span className="text-[10px] uppercase font-black tracking-[0.2em] text-white/30 text-center block">Integrate Narrative</span>
                       </div>
                       
-                      <button
-                        onClick={() => { setIsReelModalOpen(true); setShowActionMenu(false); }}
-                        className="w-full flex items-center gap-4 px-5 py-4 hover:bg-white/5 transition-all text-[11px] font-black uppercase tracking-widest text-white group"
-                      >
-                        <div className="w-9 h-9 rounded-xl bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20 transition-colors">
-                          <Film size={18} className="text-orange-500" />
-                        </div>
-                        Reel Narrative
-                      </button>
-                      
-                      <button
-                        onClick={() => { setIsLogModalOpen(true); setShowActionMenu(false); }}
-                        className="w-full flex items-center gap-4 px-5 py-4 hover:bg-white/5 transition-all text-[11px] font-black uppercase tracking-widest text-white group"
-                      >
-                        <div className="w-9 h-9 rounded-xl bg-[#00e054]/10 flex items-center justify-center group-hover:bg-[#00e054]/20 transition-colors">
-                          <Plus size={20} className="text-[#00e054]" />
-                        </div>
-                        Culinary Log
-                      </button>
+                      <div className="px-2 space-y-1">
+                        <button
+                          onClick={() => { setIsReelModalOpen(true); setShowActionMenu(false); }}
+                          className="w-full flex items-center gap-6 px-6 py-5 hover:bg-white/5 transition-all text-sm font-black uppercase tracking-widest text-white group rounded-2xl"
+                        >
+                          <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20 transition-colors shadow-lg shadow-orange-500/5">
+                            <Film size={22} className="text-orange-500" />
+                          </div>
+                          <div className="flex flex-col items-start gap-1">
+                            <span className="group-hover:text-orange-500 transition-colors">Reel Narrative</span>
+                            <span className="text-[8px] text-white/20">Cinematic 70s Clip</span>
+                          </div>
+                        </button>
+                        
+                        <button
+                          onClick={() => { setIsLogModalOpen(true); setShowActionMenu(false); }}
+                          className="w-full flex items-center gap-6 px-6 py-5 hover:bg-white/5 transition-all text-sm font-black uppercase tracking-widest text-white group rounded-2xl"
+                        >
+                          <div className="w-12 h-12 rounded-2xl bg-[#00e054]/10 flex items-center justify-center group-hover:bg-[#00e054]/20 transition-colors shadow-lg shadow-[#00e054]/5">
+                            <Plus size={24} className="text-[#00e054]" />
+                          </div>
+                          <div className="flex flex-col items-start gap-1">
+                            <span className="group-hover:text-[#00e054] transition-colors">Culinary Log</span>
+                            <span className="text-[8px] text-white/20">Dish-by-Dish Diary</span>
+                          </div>
+                        </button>
+                      </div>
                     </motion.div>
                   </>
                 )}

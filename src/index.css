@@ -108,11 +108,35 @@ body {
   }
 }
 
-/* Base resets for a native app feel */
+/* Performance & GPU Acceleration Utilities */
+.will-change-transform {
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+.elite-motion-safe {
+  position: relative;
+  overflow: hidden;
+  will-change: transform, opacity;
+}
+
+/* Global Motion Smoothing */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 html, body {
   overflow-x: hidden;
   overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
 }
 
 ::selection {

@@ -134,7 +134,7 @@ export function Navbar() {
                           initial={{ opacity: 0, y: 10, scale: 0.98 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                          transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                          transition={{ type: 'spring', stiffness: 500, damping: 45 }}
                           className="md:absolute md:top-full md:bottom-auto md:left-auto md:right-0 md:mt-3 md:w-56 bg-[#1a1c1d]/95 backdrop-blur-xl border border-white/10 md:rounded-2xl shadow-2xl py-3 z-[350] overflow-hidden will-change-transform"
                         >
                           <div className="px-5 py-3 border-b border-white/5 mb-2 md:hidden">
@@ -192,8 +192,11 @@ export function Navbar() {
                   <AnimatePresence>
                     {showNotifMenu && (
                       <motion.div 
-                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                        className="absolute right-[-60px] md:right-0 mt-3 w-[300px] bg-[#1a1c1d]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl z-[400] max-h-96 flex flex-col overflow-hidden"
+                        initial={{ opacity: 0, y: 10 }} 
+                        animate={{ opacity: 1, y: 0 }} 
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 45 }}
+                        className="absolute right-[-60px] md:right-0 mt-3 w-[300px] bg-[#1a1c1d]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl z-[400] max-h-96 flex flex-col overflow-hidden will-change-transform"
                       >
                         <div className="p-4 border-b border-white/10">
                           <span className="text-[10px] uppercase font-black tracking-widest text-[#00e054]">Activity</span>
@@ -232,7 +235,7 @@ export function Navbar() {
                       initial={{ opacity: 0, y: 20, scale: 0.95, filter: 'blur(10px)' }}
                       animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
                       exit={{ opacity: 0, y: 20, scale: 0.95, filter: 'blur(10px)' }}
-                      transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 45 }}
                       className="absolute right-0 mt-3 w-52 bg-[#1a1c1d]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl py-2 z-[400] will-change-transform"
                     >
                         <Link to={`/profile/${dishdUser?.username || user.uid}`} className="flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white" onClick={() => setShowUserMenu(false)}>

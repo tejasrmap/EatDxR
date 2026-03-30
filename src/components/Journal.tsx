@@ -107,7 +107,7 @@ export const Journal: React.FC = () => {
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -50 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ type: 'spring', stiffness: 500, damping: 45 }}
               className="space-y-8"
             >
               {/* Dynamic Page Header */}
@@ -137,7 +137,7 @@ export const Journal: React.FC = () => {
               initial={{ opacity: 0, y: 100 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -100 }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ type: 'spring', stiffness: 500, damping: 45 }}
               className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden"
             >
                  <div className="h-svh md:h-[90vh] w-full max-w-6xl relative shadow-2xl snap-y-container scrollbar-hide md:rounded-3xl md:overflow-hidden">
