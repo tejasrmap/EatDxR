@@ -75,8 +75,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
       const currentUser = auth.currentUser;
       if (currentUser) {
         await updateProfile(currentUser, {
-          displayName: displayName.trim(),
-          photoURL: photoURL.trim() || undefined
+          displayName: displayName.trim()
         });
       }
 
