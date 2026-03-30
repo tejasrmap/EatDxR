@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { collection, query, where, onSnapshot, orderBy, doc, getDoc, getDocs, updateDoc, arrayUnion, arrayRemove, setDoc, deleteDoc, serverTimestamp, increment } from "firebase/firestore";
 import { db } from "../firebase";
 import { Review, User, Restaurant } from "../types";
-import { ReviewCard } from "./ReviewCard";
 import { useAuth } from "../App";
 import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -25,6 +24,8 @@ export const Profile: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [eatlistRestaurants, setEatlistRestaurants] = useState<Restaurant[]>([]);
   const [loadingEatlist, setLoadingEatlist] = useState(false);
+  const profileFileInputRef = useRef<HTMLInputElement>(null);
+  const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false);
 
   const isFollowing = dishdUser?.stats?.followingList?.includes(user?.uid || "");
 
@@ -41,14 +42,12 @@ export const Profile: React.FC = () => {
       const notifId = `${currentUser.uid}_${user.uid}_FOLLOW`;
       
       if (isFollowing) {
-        // Unfollow
         await updateDoc(currentUserRef, { "stats.followingList": arrayRemove(user.uid) });
         await updateDoc(currentUserRef, { "stats.following": increment(-1) });
         await updateDoc(targetUserRef, { "stats.followers": increment(-1) });
         await deleteDoc(doc(db, "notifications", notifId)).catch(() => {});
         toast.success(`Unfollowed ${user.displayName}`);
       } else {
-        // Follow
         await updateDoc(currentUserRef, { "stats.followingList": arrayUnion(user.uid) });
         await updateDoc(currentUserRef, { "stats.following": increment(1) });
         await updateDoc(targetUserRef, { "stats.followers": increment(1) });
@@ -72,14 +71,37 @@ export const Profile: React.FC = () => {
     }
   };
 
-  const handleAction = (action: string) => {
-    toast.info(`${action} feature coming soon!`);
+  const handleProfilePicChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setIsUpdatingPhoto(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64String = reader.result as string;
+        await updateDoc(doc(db, "users", user.uid), { photoURL: base64String });
+        setUser({ ...user, photoURL: base64String });
+        toast.success("Profile photo updated!");
+        setIsUpdatingPhoto(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Error updating photo:", error);
+      toast.error("Failed to update photo.");
+      setIsUpdatingPhoto(false);
+    }
+  };
+
+  const shareProfile = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url);
+    toast.success("Profile link copied!");
   };
 
   useEffect(() => {
     if (!identifier) return;
 
-    // Aggressively flush all old user state when the URL changes so we don't leak User A's data into User B's screen while fetching
     setLoading(true);
     setUser(null);
     setReviews([]);
@@ -91,20 +113,16 @@ export const Profile: React.FC = () => {
     const resolveProfile = async () => {
       try {
         let resolvedUser: User | null = null;
-
-        // 1. Try treating identifier as a username natively
         const usernameQuery = query(collection(db, "users"), where("username", "==", identifier.toLowerCase()));
         const snap = await getDocs(usernameQuery);
         
         if (!snap.empty) {
           resolvedUser = snap.docs[0].data() as User;
         } else {
-          // 2. Fallback to raw Firebase ID lookup
           const docSnap = await getDoc(doc(db, "users", identifier));
           if (docSnap.exists()) {
             resolvedUser = docSnap.data() as User;
-            // 3. The "Snap-Route"
-            if (resolvedUser.username) {
+            if (resolvedUser?.username) {
               navigate(`/profile/${resolvedUser.username}`, { replace: true });
               return;
             }
@@ -113,8 +131,6 @@ export const Profile: React.FC = () => {
 
         if (resolvedUser) {
           setUser(resolvedUser);
-
-          // Now that we have the TRUE uid, attach the streams
           const q = query(
             collection(db, "reviews"),
             where("userId", "==", resolvedUser.uid),
@@ -139,9 +155,6 @@ export const Profile: React.FC = () => {
           unsubscribeFollowers = onSnapshot(followersQuery, async (snapshot) => {
             const count = snapshot.size;
             setFollowerCount(count);
-
-            // Silent Sync: Correct the 'stats.followers' count if it's out of sync
-            // This fixes legacy data issues (where count was 0) automatically when you visit the profile
             if (resolvedUser && resolvedUser.stats?.followers !== count) {
                 await updateDoc(doc(db, "users", resolvedUser.uid), {
                     "stats.followers": count
@@ -149,7 +162,7 @@ export const Profile: React.FC = () => {
             }
           });
         } else {
-          setLoading(false); // User not found
+          setLoading(false);
         }
       } catch (error) {
         console.error("Error fetching user:", error);
@@ -205,37 +218,46 @@ export const Profile: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-12">
-      {/* Profile Header */}
-      <div className="flex flex-col md:flex-row items-center md:items-end gap-8 mb-12">
-        <div className="relative group">
+      {/* Instagram-Elite Profile Header */}
+      <div className="flex flex-col md:flex-row items-center md:items-start gap-12 mb-12">
+        <div className="relative group shrink-0">
           <img 
             src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`} 
             alt={user.displayName}
-            className="w-32 h-32 rounded-full border-4 border-zinc-900 shadow-2xl object-cover"
+            className="w-40 h-40 rounded-full border-4 border-zinc-900 shadow-2xl object-cover cursor-pointer hover:opacity-80 transition-opacity"
             referrerPolicy="no-referrer"
+            onClick={() => currentUser?.uid === user.uid && profileFileInputRef.current?.click()}
           />
           {currentUser?.uid === user.uid && (
             <div 
-              onClick={() => setIsEditModalOpen(true)}
-              className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer flex-col gap-1"
+              onClick={() => profileFileInputRef.current?.click()}
+              className="absolute bottom-1 right-1 bg-blue-500 p-2 rounded-full border-4 border-black text-white hover:bg-blue-600 transition-colors cursor-pointer"
             >
-              <Edit2 size={16} className="text-white" />
-              <span className="text-[10px] uppercase tracking-widest font-bold text-white">Edit</span>
+              <Plus size={20} />
             </div>
+          )}
+          <input 
+             type="file" 
+             ref={profileFileInputRef} 
+             className="hidden" 
+             accept="image/*" 
+             onChange={handleProfilePicChange} 
+          />
+          {isUpdatingPhoto && (
+             <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full">
+                <Loader2 className="animate-spin text-white" />
+             </div>
           )}
         </div>
         
-        <div className="flex-1 text-center md:text-left">
-          <div className="flex flex-col md:flex-row md:items-end gap-3 mb-2">
-            <h1 className="text-4xl font-bold text-white tracking-tight">{user.displayName}</h1>
-            {user.pronouns && (
-              <span className="text-sm font-medium text-white/40 italic mb-1.5">{user.pronouns}</span>
-            )}
-            {currentUser?.uid !== user.uid && (
+        <div className="flex-1 w-full text-center md:text-left pt-2">
+          <div className="flex flex-col md:flex-row md:items-center gap-6 mb-8">
+            <h1 className="text-3xl font-bold text-white tracking-tight">{user.displayName}</h1>
+            {currentUser?.uid !== user.uid ? (
               <button 
                 onClick={toggleFollow}
                 disabled={isUpdatingFollow}
-                className={`px-6 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest transition-colors md:ml-4 ${
+                className={`px-8 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors ${
                   isFollowing 
                     ? "bg-white/10 text-white hover:bg-white/20" 
                     : "bg-white text-black hover:bg-white/90"
@@ -243,32 +265,63 @@ export const Profile: React.FC = () => {
               >
                 {isFollowing ? "Following" : "Follow"}
               </button>
+            ) : (
+                <div className="flex items-center justify-center md:justify-start gap-3 w-full md:w-auto">
+                    <button 
+                         onClick={() => setIsEditModalOpen(true)}
+                         className="flex-1 md:flex-none px-8 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold rounded-lg transition-colors"
+                    >
+                        Edit profile
+                    </button>
+                    <button 
+                         onClick={shareProfile}
+                         className="flex-1 md:flex-none px-8 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold rounded-lg transition-colors"
+                    >
+                        Share profile
+                    </button>
+                    <button className="p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors">
+                        <Settings size={16} />
+                    </button>
+                </div>
             )}
           </div>
 
-          {/* Insta-Elite Bio & Stats (Shifted Above Content) */}
-          <div className="mt-8 pt-6 border-t border-white/5 space-y-4 text-center md:text-left">
-            {user.bio ? (
-               <p className="text-sm md:text-base text-white/80 leading-relaxed font-serif italic max-w-2xl mx-auto md:mx-0">
-                  "{user.bio}"
-               </p>
-            ) : (
-               <p className="text-sm text-white/20 italic">No bio written yet.</p>
-            )}
-
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-2">
-                <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
-                   <Star size={12} className="text-orange-500 fill-orange-500" />
-                   <span className="text-[10px] uppercase font-black tracking-widest text-white/60">
-                      Average: {(reviews.reduce((acc, r) => acc + r.rating, 0) / (reviews.length || 1)).toFixed(1)}
-                   </span>
-                </div>
-                {user.favoriteCuisines?.map((cuisine, idx) => (
-                  <span key={idx} className="px-3 py-1.5 bg-zinc-800 border border-white/5 rounded-full text-[10px] uppercase tracking-widest font-black text-white/40">
-                    {cuisine}
-                  </span>
-                ))}
+          <div className="flex justify-center md:justify-start gap-12 mb-8">
+            <div className="text-center md:text-left">
+              <span className="text-xl font-bold text-white pr-2">{reviews.length}</span>
+              <span className="text-sm text-white/60 lowercase font-medium">posts</span>
             </div>
+            <div 
+                className="text-center md:text-left cursor-pointer group"
+                onClick={() => setFollowModalType("followers")}
+            >
+              <span className="text-xl font-bold text-white pr-2 group-hover:text-orange-500 transition-colors">{followerCount}</span>
+              <span className="text-sm text-white/60 group-hover:text-orange-500/60 transition-colors lowercase font-medium">followers</span>
+            </div>
+            <div 
+                className="text-center md:text-left cursor-pointer group"
+                onClick={() => setFollowModalType("following")}
+            >
+              <span className="text-xl font-bold text-white pr-2 group-hover:text-orange-500 transition-colors">
+                 {user.stats?.followingList?.length || user.stats?.following || 0}
+              </span>
+              <span className="text-sm text-white/60 group-hover:text-orange-500/60 transition-colors lowercase font-medium">following</span>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+             <p className="text-sm md:text-base font-bold text-white">{user.displayName}</p>
+             {user.username && (
+                <p className="text-sm text-white/40 font-medium">@{user.username}</p>
+             )}
+             {user.pronouns && (
+               <p className="text-sm text-white/40 italic">{user.pronouns}</p>
+             )}
+             {user.bio && (
+                <p className="text-sm md:text-base text-white/80 leading-relaxed font-serif pt-2">
+                   {user.bio}
+                </p>
+             )}
           </div>
         </div>
       </div>
@@ -296,84 +349,113 @@ export const Profile: React.FC = () => {
       </div>
 
       {activeTab === "profile" && (
-        <div className="w-full">
-          <div className="flex items-center justify-between mb-8 pb-2 border-b border-white/5">
-            <div className="flex items-center gap-2">
-               <Grid size={14} className="text-orange-500" />
-               <h2 className="text-[10px] uppercase tracking-[0.2em] font-black text-white">Memories</h2>
-            </div>
-            <span className="text-[10px] font-bold text-white/20">{reviews.length} Posts</span>
-          </div>
-          
-          <div className="grid grid-cols-3 gap-1 md:gap-4 lg:gap-6 mb-12">
-            {reviews.map(review => {
-              const allImages = review.dishes?.filter(d => d.image).map(d => d.image) || [];
-              const firstImage = allImages[0];
-              return (
-                <div 
-                  key={review.id} 
-                  onClick={() => {
-                    setActiveTab("diary");
-                    setTimeout(() => {
-                        const el = document.getElementById(`review-${review.id}`);
-                        if (el) {
-                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            el.classList.add('ring-2', 'ring-orange-500', 'ring-offset-4', 'ring-offset-black');
-                            setTimeout(() => el.classList.remove('ring-2', 'ring-orange-500', 'ring-offset-4', 'ring-offset-black'), 2000);
-                        }
-                    }, 50);
-                  }}
-                  className="aspect-square bg-zinc-800 rounded-sm md:rounded-xl overflow-hidden border border-white/5 group relative shadow-2xl hover:border-orange-500/50 transition-all cursor-pointer"
-                >
-                  {firstImage ? (
-                    <img 
-                      src={firstImage} 
-                      alt={review.restaurantName} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[8px] md:text-[10px] text-white/20 uppercase tracking-widest text-center px-2 italic">
-                      {review.restaurantName}
-                    </div>
-                  )}
-
-                  {/* Multi-photo indicator (top right) */}
-                  {allImages.length > 1 && (
-                    <div className="absolute top-2 right-2 p-1 bg-black/40 backdrop-blur-md rounded-md z-10">
-                       <Plus size={10} className="text-white" />
-                    </div>
-                  )}
-
-                  {/* Frosted Insta-Overlay */}
-                  <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center p-2 transition-all duration-300 transform group-hover:scale-100 scale-110">
-                    <div className="flex items-center gap-0.5 text-orange-500 mb-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} size={10} fill={i < review.rating ? "currentColor" : "none"} className={i < review.rating ? "fill-orange-500" : "text-white/20"} />
-                      ))}
-                    </div>
-                    <p className="text-[8px] md:text-[10px] font-black text-white uppercase tracking-widest truncate w-full text-center px-2">{review.restaurantName}</p>
-                    <div className="mt-2 flex items-center gap-3 text-white/60">
-                        <div className="flex items-center gap-1">
-                            <Heart size={10} fill="currentColor" className="text-rose-500" />
-                            <span className="text-[10px] font-bold">{review.likes || 0}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <MessageSquare size={10} fill="currentColor" />
-                            <span className="text-[10px] font-bold">0</span>
-                        </div>
-                    </div>
-                  </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 w-full">
+          <div className="lg:col-span-2">
+            <div className="flex items-center justify-between mb-8 pb-2 border-b border-white/5">
+                <div className="flex items-center gap-2">
+                <Grid size={14} className="text-orange-500" />
+                <h2 className="text-[10px] uppercase tracking-[0.2em] font-black text-white">Memories</h2>
                 </div>
-              );
-            })}
+                <span className="text-[10px] font-bold text-white/20">{reviews.length} Posts</span>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-1 md:gap-4 lg:gap-6 mb-12">
+                {reviews.map(review => {
+                const allImages = review.dishes?.filter(d => d.image).map(d => d.image) || [];
+                const firstImage = allImages[0];
+                return (
+                    <div 
+                    key={review.id} 
+                    onClick={() => {
+                        setActiveTab("diary");
+                        setTimeout(() => {
+                            const el = document.getElementById(`review-${review.id}`);
+                            if (el) {
+                                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                el.classList.add('ring-2', 'ring-orange-500', 'ring-offset-4', 'ring-offset-black');
+                                setTimeout(() => el.classList.remove('ring-2', 'ring-orange-500', 'ring-offset-4', 'ring-offset-black'), 2000);
+                            }
+                        }, 50);
+                    }}
+                    className="aspect-square bg-zinc-800 rounded-sm md:rounded-xl overflow-hidden border border-white/5 group relative shadow-2xl hover:border-orange-500/50 transition-all cursor-pointer"
+                    >
+                    {firstImage ? (
+                        <img 
+                        src={firstImage} 
+                        alt={review.restaurantName} 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        referrerPolicy="no-referrer"
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[8px] md:text-[10px] text-white/20 uppercase tracking-widest text-center px-2 italic">
+                        {review.restaurantName}
+                        </div>
+                    )}
+
+                    {allImages.length > 1 && (
+                        <div className="absolute top-2 right-2 p-1 bg-black/40 backdrop-blur-md rounded-md z-10">
+                        <Plus size={10} className="text-white" />
+                        </div>
+                    )}
+
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center p-2 transition-all duration-300 transform group-hover:scale-100 scale-110">
+                        <div className="flex items-center gap-0.5 text-orange-500 mb-1">
+                        {[...Array(5)].map((_, i) => (
+                            <Star key={i} size={10} fill={i < review.rating ? "currentColor" : "none"} className={i < review.rating ? "fill-orange-500" : "text-white/20"} />
+                        ))}
+                        </div>
+                        <p className="text-[8px] md:text-[10px] font-black text-white uppercase tracking-widest truncate w-full text-center px-2">{review.restaurantName}</p>
+                        <div className="mt-2 flex items-center gap-3 text-white/60">
+                            <div className="flex items-center gap-1">
+                                <Heart size={10} fill="currentColor" className="text-rose-500" />
+                                <span className="text-[10px] font-bold">{review.likes || 0}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <MessageSquare size={10} fill="currentColor" />
+                                <span className="text-[10px] font-bold">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                );
+                })}
+            </div>
+            
+            {reviews.length === 0 && (
+                <div className="py-20 text-center border border-dashed border-white/10 rounded-3xl">
+                    <p className="text-sm italic text-white/20 serif">No memories captured yet.</p>
+                </div>
+            )}
           </div>
-          
-          {reviews.length === 0 && (
-              <div className="py-20 text-center border border-dashed border-white/10 rounded-3xl">
-                  <p className="text-sm italic text-white/20 serif">No memories captured yet.</p>
-              </div>
-          )}
+
+          {/* Sidebar Section (Restored for Desktop) */}
+          <div className="hidden lg:block space-y-12 pl-6 pt-12 border-l border-white/5">
+             <div>
+                <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40 mb-4">Culinary Stats</h3>
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
+                        <span className="text-xs text-white/60 font-bold">Average Rating</span>
+                        <div className="flex items-center gap-1.5 text-orange-500">
+                           <Star size={14} fill="currentColor" />
+                           <span className="text-lg font-black italic">
+                              {(reviews.reduce((acc, r) => acc + r.rating, 0) / (reviews.length || 1)).toFixed(1)}
+                           </span>
+                        </div>
+                    </div>
+                </div>
+             </div>
+
+             <div>
+                <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40 mb-4">Favorite Cuisines</h3>
+                <div className="flex flex-wrap gap-2">
+                   {user.favoriteCuisines?.map((cuisine, idx) => (
+                      <span key={idx} className="px-4 py-2 bg-zinc-800 border border-white/5 rounded-xl text-[10px] uppercase tracking-[0.1em] font-black text-white/40">
+                         {cuisine}
+                      </span>
+                   ))}
+                </div>
+             </div>
+          </div>
         </div>
       )}
 
