@@ -225,9 +225,9 @@ export const Profile: React.FC = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-12">
+    <div className="max-w-5xl mx-auto px-6 py-8">
       {/* Letterboxd-Elite Profile Header */}
-      <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-12 mb-6 md:mb-12">
+      <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-12 mb-2 md:mb-4">
         <div className="relative group shrink-0">
           <img
             src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`}
@@ -250,7 +250,7 @@ export const Profile: React.FC = () => {
           )}
         </div>
 
-        <div className="flex-1 w-full text-center md:text-left pt-2">
+        <div className="flex-1 w-full text-center md:text-left">
           <div className="mb-2">
             {user.username && (
               <span className="inline-block bg-white/5 border border-white/10 px-2 py-0.5 rounded text-[10px] font-black tracking-widest lowercase text-white/40 mb-2">
@@ -298,7 +298,7 @@ export const Profile: React.FC = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-4 md:flex justify-center md:justify-start gap-4 md:gap-12 mb-6 border-b border-white/5 pb-6">
+          <div className="grid grid-cols-4 md:flex justify-center md:justify-start gap-4 md:gap-12 mb-2 border-b border-white/5 pb-4">
             <div className="text-center md:text-left">
               <span className="text-xl md:text-2xl font-black text-white pr-1 italic font-serif">{reviews.length}</span>
               <span className="block md:inline text-[8px] md:text-[10px] text-white/40 uppercase tracking-widest font-black">posts</span>
@@ -353,7 +353,7 @@ export const Profile: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-8 border-b border-white/10 mb-8 overflow-x-auto whitespace-nowrap hide-scrollbar">
+      <div className="flex items-center gap-8 border-b border-white/10 mb-4 overflow-x-auto whitespace-nowrap hide-scrollbar">
         <button
           onClick={() => setActiveTab("profile")}
           className={`pb-4 text-[10px] uppercase tracking-widest font-bold transition-colors ${activeTab === "profile" ? "text-white border-b-2 border-orange-500" : "text-white/40 hover:text-white"}`}
@@ -377,7 +377,7 @@ export const Profile: React.FC = () => {
       {activeTab === "profile" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 w-full">
           <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-8 pb-2 border-b border-white/5">
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/5">
               <div className="flex items-center gap-2">
                 <Grid size={14} className="text-orange-500" />
                 <h2 className="text-[10px] uppercase tracking-[0.4em] font-black text-white/40">The Film Strip</h2>
@@ -455,7 +455,7 @@ export const Profile: React.FC = () => {
           </div>
 
           {/* Sidebar Section (Desktop Elite) */}
-          <div className="hidden lg:block space-y-12 pl-6 pt-6 border-l border-white/5">
+          <div className="hidden lg:block space-y-12 pl-6 pt-2 border-l border-white/5">
             {/* BIO Section */}
             <div>
               <div className="border-b border-white/5 pb-4 mb-6">
