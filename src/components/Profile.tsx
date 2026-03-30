@@ -351,7 +351,7 @@ export const Profile: React.FC = () => {
 
                {/* Mobile-Only Action Buttons */}
               {currentUser?.uid === user.uid && (
-                <div className="md:hidden flex items-center justify-center gap-2 w-full pt-4">
+                <div className="md:hidden flex items-center justify-center gap-2 w-full pt-4 pb-2">
                   <button 
                     onClick={() => setIsEditModalOpen(true)}
                     className="flex-1 px-4 py-1.5 bg-transparent hover:bg-white/5 text-white/60 text-[9px] uppercase tracking-[0.2em] font-black rounded-md transition-colors border border-white/10"
