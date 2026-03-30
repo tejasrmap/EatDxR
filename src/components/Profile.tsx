@@ -266,7 +266,7 @@ export const Profile: React.FC = () => {
                     <span className="text-[9px] font-bold text-white/40 italic uppercase tracking-[0.2em]">{user.pronouns}</span>
                 )}
             </div>
-            {currentUser?.uid !== user.uid ? (
+            {currentUser?.uid !== user.uid && (
               <button
                 onClick={toggleFollow}
                 disabled={isUpdatingFollow}
@@ -277,24 +277,6 @@ export const Profile: React.FC = () => {
               >
                 {isFollowing ? "Following" : "Follow"}
               </button>
-            ) : (
-              <div className="hidden md:flex items-center justify-center md:justify-start gap-2 w-full md:w-auto">
-                <button
-                  onClick={() => setIsEditModalOpen(true)}
-                  className="flex-1 md:flex-none px-4 md:px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] uppercase tracking-[0.2em] font-black rounded-md transition-colors border border-white/5"
-                >
-                  Edit profile
-                </button>
-                <button
-                  onClick={shareProfile}
-                  className="flex-1 md:flex-none px-4 md:px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] uppercase tracking-[0.2em] font-black rounded-md transition-colors border border-white/5"
-                >
-                  Share profile
-                </button>
-                <button className="p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md transition-colors border border-white/5">
-                  <Settings size={14} />
-                </button>
-              </div>
             )}
           </div>
 
@@ -349,27 +331,6 @@ export const Profile: React.FC = () => {
                 </div>
              )}
 
-               {/* Mobile-Only Action Buttons */}
-              {currentUser?.uid === user.uid && (
-                <div className="md:hidden flex items-center justify-center gap-2 w-full pt-4 pb-4">
-                  <button 
-                    onClick={() => setIsEditModalOpen(true)}
-                    className="flex-1 w-0 h-10 flex items-center justify-center gap-2 px-2 bg-zinc-900 hover:bg-zinc-800 text-white/80 text-[10px] uppercase tracking-[0.2em] font-black rounded-md transition-all border border-white/10 truncate active:scale-95"
-                  >
-                    <Edit3 size={14} className="opacity-40" />
-                    Edit profile
-                  </button>
-                  <button 
-                    onClick={shareProfile}
-                    className="flex-1 w-0 h-10 flex items-center justify-center gap-2 px-2 bg-zinc-900 hover:bg-zinc-800 text-white/80 text-[10px] uppercase tracking-[0.2em] font-black rounded-md transition-all border border-white/10 truncate active:scale-95"
-                  >
-                    <Share2 size={14} className="opacity-40" />
-                    Share profile
-                  </button>
-                  <button className="w-10 h-10 flex items-center justify-center bg-zinc-900 hover:bg-zinc-800 text-white/40 rounded-md transition-all border border-white/10 shrink-0 active:scale-95">
-                    <Settings strokeWidth={1} size={16} />
-                  </button>
-                </div>
               )}
           </div>
         </div>
