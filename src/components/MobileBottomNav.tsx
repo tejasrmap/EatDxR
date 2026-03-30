@@ -63,13 +63,13 @@ export function MobileBottomNav() {
               <span className="text-[8px] font-black uppercase tracking-widest">Feed</span>
             </Link>
 
-            <Link 
+             <Link 
               to={user ? `/profile/${dishdUser?.username || user.uid}` : "/"} 
               className={`flex flex-col items-center gap-1 transition-all active:scale-95 ${location.pathname.startsWith('/profile') ? 'text-[#00e054]' : 'text-white/40 hover:text-white'}`}
             >
               {user ? (
                  <div className={`w-5 h-5 rounded-full overflow-hidden border ${location.pathname.startsWith('/profile') ? 'border-[#00e054]' : 'border-white/20'}`}>
-                    <img src={user.photoURL || ""} alt="" className="w-full h-full object-cover" />
+                    <img src={dishdUser?.photoURL || user.photoURL || ""} alt="" className="w-full h-full object-cover" />
                  </div>
               ) : (
                  <User size={18} />

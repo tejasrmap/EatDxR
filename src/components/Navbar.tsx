@@ -209,7 +209,7 @@ export function Navbar() {
                      className="w-8 h-8 md:w-9 md:h-9 rounded-full overflow-hidden border border-white/10 hover:border-[#00e054] transition-all"
                    >
                      <img
-                       src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}&background=random`}
+                       src={dishdUser?.photoURL || `https://ui-avatars.com/api/?name=${dishdUser?.displayName || user.displayName || 'User'}&background=random`}
                        alt="Profile"
                        className="w-full h-full object-cover"
                        referrerPolicy="no-referrer"

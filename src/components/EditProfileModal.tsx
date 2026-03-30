@@ -127,41 +127,47 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
       const cleanPayload = Object.fromEntries(Object.entries(payload).filter(([_, v]) => v !== undefined));
       await updateDoc(userRef, cleanPayload);
 
-      // --- Universal Sync Engine ---
+      // --- Universal Sync Engine (Infinite-Batch Capacity) ---
       if (finalPhotoURL !== user.photoURL || displayName !== user.displayName) {
-        const batch = writeBatch(db);
+        const updateTasks: { ref: any, data: any }[] = [];
         
-        // 1. Sync Reviews
+        // 1. Prepare Reviews Sync
         const reviewsQuery = query(collection(db, "reviews"), where("userId", "==", user.uid));
         const reviewsSnap = await getDocs(reviewsQuery);
         reviewsSnap.forEach((doc) => {
-          batch.update(doc.ref, { 
-            userPhoto: finalPhotoURL,
-            userName: displayName.trim()
+          updateTasks.push({ 
+            ref: doc.ref, 
+            data: { userPhoto: finalPhotoURL, userName: displayName.trim() } 
           });
         });
 
-        // 2. Sync Interactions
+        // 2. Prepare Interactions Sync
         const interactionsQuery = query(collection(db, "interactions"), where("userId", "==", user.uid));
         const interactionsSnap = await getDocs(interactionsQuery);
         interactionsSnap.forEach((doc) => {
-          batch.update(doc.ref, { 
-            userPhoto: finalPhotoURL,
-            userName: displayName.trim()
+          updateTasks.push({ 
+            ref: doc.ref, 
+            data: { userPhoto: finalPhotoURL, userName: displayName.trim() } 
           });
         });
 
-        // 3. Sync Notifications
+        // 3. Prepare Notifications Sync
         const notificationsQuery = query(collection(db, "notifications"), where("actorId", "==", user.uid));
         const notificationsSnap = await getDocs(notificationsQuery);
         notificationsSnap.forEach((doc) => {
-          batch.update(doc.ref, { 
-            actorPhoto: finalPhotoURL,
-            actorName: displayName.trim()
+          updateTasks.push({ 
+            ref: doc.ref, 
+            data: { actorPhoto: finalPhotoURL, actorName: displayName.trim() } 
           });
         });
 
-        await batch.commit();
+        // Execute in 500-doc chunks (Firestore limit)
+        for (let i = 0; i < updateTasks.length; i += 500) {
+          const batch = writeBatch(db);
+          const chunk = updateTasks.slice(i, i + 500);
+          chunk.forEach(task => batch.update(task.ref, task.data));
+          await batch.commit();
+        }
       }
       
       toast.success(isOnboarding ? "Welcome to EatDxR! Profile set up." : "Profile updated successfully!");

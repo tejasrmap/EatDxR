@@ -54,7 +54,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const { user } = useAuth();
+  const { user, dishdUser } = useAuth();
   
   const { register, handleSubmit, formState: { errors }, setValue, reset, control, watch } = useForm<LogFormValues>({
     resolver: zodResolver(logSchema),
@@ -300,8 +300,8 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
         const reviewData = {
           id: reviewRef.id,
           userId: user.uid,
-          userName: user.displayName || "Anonymous Critic",
-          userPhoto: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}&background=random`,
+          userName: dishdUser?.displayName || user.displayName || "Anonymous Critic",
+          userPhoto: dishdUser?.photoURL || user.photoURL || `https://ui-avatars.com/api/?name=${dishdUser?.displayName || user.displayName || 'User'}&background=random`,
           restaurantName: data.restaurant,
           restaurantId: restaurantId,
           restaurantLocation: manualLocation,
