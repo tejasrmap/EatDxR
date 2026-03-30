@@ -24,7 +24,7 @@ export function MobileBottomNav() {
 
   return (
     <>
-      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-[50] px-6 pb-8 pt-2 pointer-events-none transition-transform duration-500 ${isHidden ? 'translate-y-[150%]' : 'translate-y-0'}`}>
+      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-[50] px-6 pb-8 pt-2 pointer-events-none transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${isHidden ? 'translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`}>
         <div className="max-w-md mx-auto bg-[#1a1c1d]/75 backdrop-blur-[50px] border border-white/10 rounded-[2.5rem] shadow-2xl pointer-events-auto relative group">
           {/* Central Glow Effect for the + button */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-[#00e054]/20 blur-2xl rounded-full pointer-events-none" />
