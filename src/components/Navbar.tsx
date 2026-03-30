@@ -109,9 +109,9 @@ export function Navbar() {
                 <Search size={18} />
               </button>
 
-              {user && (
-                <div className="relative">
-                  <button
+            {user && (
+              <div className="hidden md:block relative ml-2">
+                <button
                     onClick={() => setShowActionMenu(!showActionMenu)}
                     className="p-2 text-[#00e054]/60 hover:text-[#00e054] transition-all active:scale-90 hover:bg-[#00e054]/5 rounded-xl border border-transparent hover:border-[#00e054]/10 group"
                     title="Create"
@@ -131,10 +131,11 @@ export function Navbar() {
                         
                         {/* Action Tray */}
                         <motion.div
-                          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                          initial={{ opacity: 0, y: 10, scale: 0.98 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                          className="fixed bottom-6 left-6 right-6 md:absolute md:top-full md:bottom-auto md:left-auto md:right-0 md:mt-3 md:w-56 bg-[#1a1c1d]/95 backdrop-blur-2xl border border-white/10 rounded-[2rem] md:rounded-2xl shadow-2xl py-3 z-[350] overflow-hidden"
+                          exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                          transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                          className="md:absolute md:top-full md:bottom-auto md:left-auto md:right-0 md:mt-3 md:w-56 bg-[#1a1c1d]/95 backdrop-blur-xl border border-white/10 md:rounded-2xl shadow-2xl py-3 z-[350] overflow-hidden will-change-transform"
                         >
                           <div className="px-5 py-3 border-b border-white/5 mb-2 md:hidden">
                              <span className="text-[10px] uppercase font-black tracking-widest text-white/20 text-center block">Creator Choice</span>
@@ -227,10 +228,13 @@ export function Navbar() {
 
                   <AnimatePresence>
                     {showUserMenu && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                        className="absolute right-0 mt-3 w-52 bg-[#1a1c1d]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl py-2 z-[400]"
-                      >
+                      <motion.div
+                      initial={{ opacity: 0, y: 20, scale: 0.95, filter: 'blur(10px)' }}
+                      animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+                      exit={{ opacity: 0, y: 20, scale: 0.95, filter: 'blur(10px)' }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+                      className="absolute right-0 mt-3 w-52 bg-[#1a1c1d]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl py-2 z-[400] will-change-transform"
+                    >
                         <Link to={`/profile/${dishdUser?.username || user.uid}`} className="flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white" onClick={() => setShowUserMenu(false)}>
                           <User size={14} className="text-[#00e054]" /> Profile
                         </Link>
