@@ -74,21 +74,29 @@ export const Profile: React.FC = () => {
   const handleProfilePicChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-
+ 
     setIsUpdatingPhoto(true);
     try {
       const reader = new FileReader();
       reader.onloadend = async () => {
-        const base64String = reader.result as string;
-        await updateDoc(doc(db, "users", user.uid), { photoURL: base64String });
-        setUser({ ...user, photoURL: base64String });
-        toast.success("Profile photo updated!");
-        setIsUpdatingPhoto(false);
+        try {
+          const base64String = reader.result as string;
+          // Optimistically update local state for instant feedback
+          setUser(prev => prev ? ({ ...prev, photoURL: base64String }) : null);
+          
+          await updateDoc(doc(db, "users", user.uid), { photoURL: base64String });
+          toast.success("Profile photo updated!");
+        } catch (err) {
+          console.error("Firestore update error:", err);
+          toast.error("Failed to save to database.");
+        } finally {
+          setIsUpdatingPhoto(false);
+        }
       };
       reader.readAsDataURL(file);
     } catch (error) {
-      console.error("Error updating photo:", error);
-      toast.error("Failed to update photo.");
+      console.error("Error reading file:", error);
+      toast.error("Failed to read image file.");
       setIsUpdatingPhoto(false);
     }
   };
@@ -244,82 +252,86 @@ export const Profile: React.FC = () => {
              onChange={handleProfilePicChange} 
           />
           {isUpdatingPhoto && (
-             <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full">
+             <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full z-20">
                 <Loader2 className="animate-spin text-white" />
              </div>
           )}
         </div>
+
+        {/* Letterboxd-Style Identity Block */}
+        <div className="mt-4 space-y-1 text-center md:text-left">
+           {user.username && (
+              <p className="text-base font-bold text-white tracking-widest uppercase">@{user.username}</p>
+           )}
+           {user.pronouns && (
+             <p className="text-xs font-medium text-white/40 italic uppercase tracking-widest">{user.pronouns}</p>
+           )}
+        </div>
+      </div>
         
         <div className="flex-1 w-full text-center md:text-left pt-2">
           <div className="flex flex-col md:flex-row md:items-center gap-6 mb-8">
-            <h1 className="text-3xl font-bold text-white tracking-tight">{user.displayName}</h1>
+            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter font-serif">{user.displayName}</h1>
             {currentUser?.uid !== user.uid ? (
               <button 
                 onClick={toggleFollow}
                 disabled={isUpdatingFollow}
-                className={`px-8 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors ${
+                className={`px-8 py-2 rounded-md text-xs font-black uppercase tracking-widest transition-colors ${
                   isFollowing 
-                    ? "bg-white/10 text-white hover:bg-white/20" 
-                    : "bg-white text-black hover:bg-white/90"
+                    ? "bg-zinc-800 text-white/60 hover:text-white" 
+                    : "bg-white text-black hover:bg-zinc-100"
                 }`}
               >
                 {isFollowing ? "Following" : "Follow"}
               </button>
             ) : (
-                <div className="flex items-center justify-center md:justify-start gap-3 w-full md:w-auto">
+                <div className="flex items-center justify-center md:justify-start gap-2 w-full md:w-auto">
                     <button 
                          onClick={() => setIsEditModalOpen(true)}
-                         className="flex-1 md:flex-none px-8 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold rounded-lg transition-colors"
+                         className="flex-1 md:flex-none px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] uppercase tracking-[0.2em] font-black rounded-md transition-colors border border-white/5"
                     >
                         Edit profile
                     </button>
                     <button 
                          onClick={shareProfile}
-                         className="flex-1 md:flex-none px-8 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold rounded-lg transition-colors"
+                         className="flex-1 md:flex-none px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] uppercase tracking-[0.2em] font-black rounded-md transition-colors border border-white/5"
                     >
                         Share profile
                     </button>
-                    <button className="p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors">
-                        <Settings size={16} />
+                    <button className="p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md transition-colors border border-white/5">
+                        <Settings size={14} />
                     </button>
                 </div>
             )}
           </div>
-
-          <div className="flex justify-center md:justify-start gap-12 mb-8">
+ 
+          <div className="flex justify-center md:justify-start gap-12 mb-8 border-b border-white/5 pb-8">
             <div className="text-center md:text-left">
-              <span className="text-xl font-bold text-white pr-2">{reviews.length}</span>
-              <span className="text-sm text-white/60 lowercase font-medium">posts</span>
+              <span className="text-2xl font-black text-white pr-1 italic font-serif">{reviews.length}</span>
+              <span className="text-[10px] text-white/40 uppercase tracking-widest font-black">posts</span>
             </div>
             <div 
                 className="text-center md:text-left cursor-pointer group"
                 onClick={() => setFollowModalType("followers")}
             >
-              <span className="text-xl font-bold text-white pr-2 group-hover:text-orange-500 transition-colors">{followerCount}</span>
-              <span className="text-sm text-white/60 group-hover:text-orange-500/60 transition-colors lowercase font-medium">followers</span>
+              <span className="text-2xl font-black text-white pr-1 group-hover:text-orange-500 transition-colors italic font-serif">{followerCount}</span>
+              <span className="text-[10px] text-white/40 group-hover:text-orange-500/60 transition-colors uppercase tracking-widest font-black">followers</span>
             </div>
             <div 
                 className="text-center md:text-left cursor-pointer group"
                 onClick={() => setFollowModalType("following")}
             >
-              <span className="text-xl font-bold text-white pr-2 group-hover:text-orange-500 transition-colors">
+              <span className="text-2xl font-black text-white pr-1 group-hover:text-orange-500 transition-colors italic font-serif">
                  {user.stats?.followingList?.length || user.stats?.following || 0}
               </span>
-              <span className="text-sm text-white/60 group-hover:text-orange-500/60 transition-colors lowercase font-medium">following</span>
+              <span className="text-[10px] text-white/40 group-hover:text-orange-500/60 transition-colors uppercase tracking-widest font-black">following</span>
             </div>
           </div>
-
-          <div className="space-y-1">
-             <p className="text-sm md:text-base font-bold text-white">{user.displayName}</p>
-             {user.username && (
-                <p className="text-sm text-white/40 font-medium">@{user.username}</p>
-             )}
-             {user.pronouns && (
-               <p className="text-sm text-white/40 italic">{user.pronouns}</p>
-             )}
+ 
+          <div className="space-y-4">
              {user.bio && (
-                <p className="text-sm md:text-base text-white/80 leading-relaxed font-serif pt-2">
-                   {user.bio}
+                <p className="text-base md:text-lg text-white/80 leading-relaxed font-serif italic max-w-2xl">
+                   "{user.bio}"
                 </p>
              )}
           </div>
@@ -354,9 +366,9 @@ export const Profile: React.FC = () => {
             <div className="flex items-center justify-between mb-8 pb-2 border-b border-white/5">
                 <div className="flex items-center gap-2">
                 <Grid size={14} className="text-orange-500" />
-                <h2 className="text-[10px] uppercase tracking-[0.2em] font-black text-white">Memories</h2>
+                <h2 className="text-[10px] uppercase tracking-[0.4em] font-black text-white/40">The Film Strip</h2>
                 </div>
-                <span className="text-[10px] font-bold text-white/20">{reviews.length} Posts</span>
+                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{reviews.length} Logs</span>
             </div>
             
             <div className="grid grid-cols-3 gap-1 md:gap-4 lg:gap-6 mb-12">
