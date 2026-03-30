@@ -246,8 +246,6 @@ export const Profile: React.FC = () => {
             )}
           </div>
 
-          </div>
-
           {/* Insta-Elite Bio & Stats (Shifted Above Content) */}
           <div className="mt-8 pt-6 border-t border-white/5 space-y-4 text-center md:text-left">
             {user.bio ? (
