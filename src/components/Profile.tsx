@@ -320,7 +320,7 @@ export const Profile: React.FC = () => {
               <span className="block md:inline text-[7px] md:text-[10px] text-white/20 group-hover:text-orange-500/60 transition-colors uppercase tracking-[0.2em] font-bold">following</span>
             </div>
             <div className="text-center md:text-left">
-              <span className="text-xl md:text-2xl font-black text-white pr-1 italic font-serif">
+              <span className="text-2xl font-black text-white pr-1 italic font-serif">
                  {reviews.length > 0 
                   ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
                   : "0.0"}
@@ -354,17 +354,17 @@ export const Profile: React.FC = () => {
                 <div className="md:hidden flex items-center justify-center gap-2 w-full pt-4 pb-2">
                   <button 
                     onClick={() => setIsEditModalOpen(true)}
-                    className="flex-1 px-4 py-1.5 bg-transparent hover:bg-white/5 text-white/60 text-[9px] uppercase tracking-[0.2em] font-black rounded-md transition-colors border border-white/10"
+                    className="flex-1 w-0 px-2 py-1.5 bg-transparent hover:bg-white/5 text-white/60 text-[9px] text-center uppercase tracking-[0.2em] font-black rounded-md transition-colors border border-white/10 truncate"
                   >
                     Edit profile
                   </button>
                   <button 
                     onClick={shareProfile}
-                    className="flex-1 px-4 py-1.5 bg-transparent hover:bg-white/5 text-white/60 text-[9px] uppercase tracking-[0.2em] font-black rounded-md transition-colors border border-white/10"
+                    className="flex-1 w-0 px-2 py-1.5 bg-transparent hover:bg-white/5 text-white/60 text-[9px] text-center uppercase tracking-[0.2em] font-black rounded-md transition-colors border border-white/10 truncate"
                   >
                     Share profile
                   </button>
-                  <button className="p-2 bg-transparent hover:bg-white/5 text-white/40 rounded-md transition-colors border border-white/10">
+                  <button className="p-2 bg-transparent hover:bg-white/5 text-white/40 rounded-md transition-colors border border-white/10 shrink-0">
                     <Settings strokeWidth={1} size={14} />
                   </button>
                 </div>
