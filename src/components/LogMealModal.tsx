@@ -240,7 +240,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
     }
 
     setIsUploading(true);
-    setUploadProgress(0);
+    setUploadProgress(1); // Visual feedback
     try {
       const filesToUpload: { file: File, path: string, fieldIndex: number }[] = [];
       
@@ -266,7 +266,11 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
         }
       };
 
-      const uploadedDishes = [...data.dishes];
+      const uploadedDishes = data.dishes.map(d => ({ 
+        ...d, 
+        image: d.image?.startsWith('data:') ? "" : d.image // 'Source-Clean' Reset
+      }));
+
       let finalVideoUrl = "";
 
       for (const task of filesToUpload) {
@@ -285,24 +289,27 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
       let restaurantId = selectedRestaurant?.id || `manual_${Date.now()}`;
       
       if (selectedRestaurant) {
-        const restRef = doc(db, "restaurants", selectedRestaurant.id);
-        const restDoc = await getDoc(restRef);
-        if (!restDoc.exists()) {
-          await setDoc(restRef, {
-            id: selectedRestaurant.id,
-            name: selectedRestaurant.name,
-            cuisine: selectedRestaurant.cuisine || "Various",
-            location: manualLocation || selectedRestaurant.location || "India",
-            rating: selectedRestaurant.rating || 0,
-            reviewCount: selectedRestaurant.reviewCount || 1,
-            image: selectedRestaurant.image || "",
-            menuItems: selectedRestaurant.menuItems || []
-          });
+        try {
+          const restRef = doc(db, "restaurants", selectedRestaurant.id);
+          const restDoc = await getDoc(restRef);
+          if (!restDoc.exists()) {
+            await setDoc(restRef, {
+              id: selectedRestaurant.id,
+              name: selectedRestaurant.name,
+              cuisine: selectedRestaurant.cuisine || "Various",
+              location: manualLocation || selectedRestaurant.location || "India",
+              rating: selectedRestaurant.rating || 0,
+              reviewCount: 1,
+              image: selectedRestaurant.image || "",
+              menuItems: selectedRestaurant.menuItems || []
+            });
+          }
+        } catch (restaurantError) {
+          console.warn("Could not save restaurant data (likely due to permissions). Proceeding with review log.");
         }
       }
 
       if (existingReview) {
-        // Update Document Mode
         const reviewRef = doc(db, "reviews", existingReview.id);
         await updateDoc(reviewRef, {
           restaurantName: data.restaurant,
@@ -312,12 +319,9 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
           content: data.review || "",
           videoUrl: finalVideoUrl || existingReview.videoUrl || ""
         });
-        toast.success("Meal updated successfully!");
+        toast.success("Narrative updated!");
       } else {
-        // Create Document Mode
         const reviewRef = doc(collection(db, "reviews"));
-        
-        // Extract city from selected restaurant or try to parse from manual location
         const city = selectedRestaurant?.city || manualLocation.split(',').pop()?.trim() || "Nearby";
 
         const reviewData = {
@@ -339,13 +343,9 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
 
         await setDoc(reviewRef, reviewData);
         
-        // Increment the user's reviewsWritten stat for the leaderboard natively
         const userRef = doc(db, "users", user.uid);
-        await updateDoc(userRef, {
-          "stats.reviewsWritten": increment(1)
-        });
-
-        toast.success("Meal logged successfully!");
+        await updateDoc(userRef, { "stats.reviewsWritten": increment(1) });
+        toast.success("Narrative Live!");
       }
 
       reset();
@@ -361,7 +361,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
       onClose();
     } catch (error) {
       console.error("Submit Error:", error);
-      toast.error("Process failed. Check connection.");
+      toast.error("Narrative failed to launch. Try again.");
     } finally {
       setIsSubmitting(false);
       setIsUploading(false);
@@ -376,312 +376,295 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-0 md:p-6">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/90 backdrop-blur-3xl"
           />
           
           <motion.div
-            initial={{ opacity: 0, y: "100%" }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: "100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="relative w-full md:max-w-lg bg-zinc-900 border border-white/10 rounded-t-[3rem] md:rounded-2xl overflow-hidden shadow-2xl h-[92vh] md:h-auto md:max-h-[85vh] flex flex-col mt-auto md:mt-0"
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="relative w-full h-full md:h-auto md:max-h-[90vh] md:max-w-2xl bg-[#0a0a0a] border-y md:border border-white/10 md:rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col"
           >
-            {/* Grab Handle for Mobile */}
-            <div className="w-12 h-1 h-1.5 bg-white/10 rounded-full mx-auto mt-4 md:hidden shrink-0" />
+            {/* Elite Progress Micro-Bar */}
+            {isUploading && (
+              <div className="absolute top-0 left-0 right-0 h-1 z-[210] overflow-hidden">
+                <motion.div 
+                  className="h-full bg-gradient-to-r from-orange-500 to-rose-500"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            )}
 
-            <div className="p-6 md:p-8 border-b border-white/10 flex items-center justify-between shrink-0">
-              <h2 className="text-xl font-semibold serif italic">{existingReview ? "Edit Meal" : "Log a Meal"}</h2>
-              <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                <X size={20} />
+            {/* Cinematic Header */}
+            <div className="px-6 py-5 border-b border-white/5 bg-black/40 backdrop-blur-2xl flex items-center justify-between shrink-0 sticky top-0 z-[200]">
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase font-black tracking-[0.3em] text-orange-500">Culinary Narrative</span>
+                <h2 className="text-lg font-bold text-white serif italic">
+                  {existingReview ? "Modernizing Legacy" : "Capture the Moment"}
+                </h2>
+              </div>
+              <button 
+                onClick={onClose} 
+                className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10 group"
+              >
+                <X size={18} className="text-white/40 group-hover:text-white transition-colors" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="p-6 pb-32 md:pb-6 space-y-6 overflow-y-auto">
-              {/* Cinematic Video Upload for Reels */}
-              <div className="space-y-4">
-                  <label className="small-caps text-orange-500">Cinematic Reel (Optional)</label>
-                  <div 
-                    onClick={() => videoInputRef.current?.click()}
-                    className="aspect-video bg-white/5 border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all overflow-hidden group relative"
-                  >
-                    {videoPreview ? (
-                        <>
-                            <video src={videoPreview} className="w-full h-full object-cover" muted loop autoPlay />
-                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Plus size={32} className="text-white" />
-                            </div>
-                        </>
-                    ) : (
-                        <div className="flex flex-col items-center gap-2 opacity-40 group-hover:opacity-100 transition-all">
-                            <Upload size={32} />
-                            <p className="text-[10px] uppercase font-black tracking-widest">Capture Video Reel</p>
-                        </div>
-                    )}
-                  </div>
-                  <input type="file" ref={videoInputRef} onChange={handleVideoChange} accept="video/*" className="hidden" />
-              </div>
-
-              <div className="space-y-2 relative">
-                <label className="small-caps">Restaurant</label>
-                <div className="relative">
-                  <input 
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    placeholder={currentCity ? `Search for a food place in ${currentCity}...` : "Search for a food place in India..."}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 ring-white/20 transition-all"
-                    disabled={isSubmitting}
-                  />
-                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-                  {isSearching && <Loader2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 animate-spin" />}
-                </div>
-                
-                <AnimatePresence>
-                  {showResults && (searchResults.length > 0 || isSearching) && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute z-50 left-0 right-0 mt-1 bg-zinc-800 border border-white/10 rounded-lg shadow-xl overflow-hidden"
+            <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-8 space-y-12">
+              {/* Immersive Reel Section */}
+              <section className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[11px] uppercase font-black tracking-widest text-white/40">Cinematic Reel</h3>
+                  {videoPreview && (
+                    <button 
+                      type="button" 
+                      onClick={() => { setVideoFile(null); setVideoPreview(null); }}
+                      className="text-[10px] uppercase font-black text-rose-500 hover:text-rose-400"
                     >
-                      {isSearching ? (
-                        <div className="p-4 text-center text-sm text-white/40 italic">Searching Google Maps...</div>
-                      ) : (
-                        searchResults.map((result) => (
-                          <button
-                            key={result.id}
-                            type="button"
-                            onClick={() => handleSelectRestaurant(result)}
-                            className="w-full text-left p-3 hover:bg-white/5 flex items-start gap-3 transition-colors border-b border-white/5 last:border-0"
-                          >
-                            <div className="w-10 h-10 rounded-lg overflow-hidden bg-white/5 shrink-0 border border-white/10">
+                      Discard
+                    </button>
+                  )}
+                </div>
+                <div 
+                  onClick={() => videoInputRef.current?.click()}
+                  className="aspect-video bg-white/5 border border-white/10 rounded-3xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all overflow-hidden group relative"
+                >
+                  {videoPreview ? (
+                    <video src={videoPreview} className="w-full h-full object-cover" muted loop autoPlay />
+                  ) : (
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Upload size={24} className="text-orange-500" />
+                      </div>
+                      <p className="text-[10px] uppercase font-black tracking-widest text-white/20 group-hover:text-white/60">Upload Narrative Video</p>
+                    </div>
+                  )}
+                </div>
+                <input type="file" ref={videoInputRef} onChange={handleVideoChange} accept="video/*" className="hidden" />
+              </section>
+
+              {/* Identity & Context */}
+              <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3 relative group">
+                  <label className="text-[10px] uppercase font-black tracking-widest text-white/40 group-focus-within:text-orange-500 transition-colors">Restaurant</label>
+                  <div className="relative">
+                    <input 
+                      value={searchQuery}
+                      onChange={handleSearchChange}
+                      placeholder="Search Culinary Stage..."
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-4 focus:outline-none focus:ring-1 ring-orange-500/30 transition-all text-sm font-medium"
+                      disabled={isSubmitting}
+                    />
+                    <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
+                  </div>
+                  
+                  <AnimatePresence>
+                    {showResults && (searchResults.length > 0 || isSearching) && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute z-50 left-0 right-0 mt-3 bg-[#121212]/95 backdrop-blur-3xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden max-h-64 overflow-y-auto"
+                      >
+                        {isSearching ? (
+                          <div className="p-8 text-center text-xs text-white/40 italic flex items-center justify-center gap-3">
+                            <Loader2 size={16} className="animate-spin text-orange-500" />
+                            Identifying Places...
+                          </div>
+                        ) : (
+                          searchResults.map((result) => (
+                            <button
+                              key={result.id}
+                              type="button"
+                              onClick={() => handleSelectRestaurant(result)}
+                              className="w-full text-left p-4 hover:bg-white/5 flex items-center gap-4 transition-all group"
+                            >
                               <img 
                                 src={result.image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=100&q=80`} 
-                                alt={result.name}
-                                className="w-full h-full object-cover"
+                                className="w-12 h-12 rounded-xl object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all"
                                 referrerPolicy="no-referrer"
                               />
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">{result.name}</p>
-                              <p className="text-xs text-white/40">{result.location} • {result.cuisine}</p>
-                              {result.menuItems && result.menuItems.length > 0 && (
-                                <p className="text-[10px] text-white/20 italic mt-0.5">
-                                  Popular: {result.menuItems.join(", ")}
-                                </p>
-                              )}
-                            </div>
-                          </button>
-                        ))
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                {errors.restaurant && <p className="text-xs text-red-500">{errors.restaurant.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <label className="small-caps">Location / Area</label>
-                <div className="relative">
-                  <input 
-                    value={manualLocation}
-                    onChange={(e) => setManualLocation(e.target.value)}
-                    placeholder="e.g. Indiranagar, Bangalore"
-                    className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 ring-white/20 transition-all"
-                    disabled={isSubmitting}
-                  />
-                  <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+                              <div>
+                                <p className="font-bold text-sm text-white">{result.name}</p>
+                                <p className="text-[10px] text-white/40 uppercase tracking-widest">{result.location}</p>
+                              </div>
+                            </button>
+                          ))
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-                <p className="text-[10px] text-white/20">Auto-filled from search, but you can refine it.</p>
-              </div>
 
-              <div className="space-y-4">
+                <div className="space-y-3 group">
+                  <label className="text-[10px] uppercase font-black tracking-widest text-white/40 group-focus-within:text-rose-500 transition-colors">Area / Suburb</label>
+                  <div className="relative">
+                    <input 
+                      value={manualLocation}
+                      onChange={(e) => setManualLocation(e.target.value)}
+                      placeholder="e.g. Lower Parel, Mumbai"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-4 focus:outline-none focus:ring-1 ring-rose-500/30 transition-all text-sm font-medium"
+                    />
+                    <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
+                  </div>
+                </div>
+              </section>
+
+              {/* The Narrative: Dishes */}
+              <section className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <label className="small-caps">Dishes</label>
+                  <h3 className="text-[11px] uppercase font-black tracking-widest text-white/40">The Culinary Highlights</h3>
                   <button
                     type="button"
                     onClick={() => append({ name: "", rating: 5 })}
-                    className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-orange-500 hover:text-orange-400 transition-colors"
+                    className="flex items-center gap-2 text-[10px] uppercase font-black tracking-widest text-green-500 hover:text-green-400 p-2 bg-green-500/10 rounded-full transition-all"
                   >
-                    <Plus size={12} />
-                    Add Dish
+                    <Plus size={14} />
+                    Add Highlight
                   </button>
                 </div>
                 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {fields.map((field, index) => (
-                    <div key={field.id} className="space-y-2 bg-white/5 p-4 rounded-xl border border-white/5">
-                      <div className="flex gap-3">
+                    <motion.div 
+                      key={field.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="relative bg-white/5 p-4 rounded-3xl border border-white/5 group"
+                    >
+                      <div className="flex items-start gap-5">
                         <div 
-                          onClick={() => {
-                            setActiveDishId(field.id);
-                            fileInputRef.current?.click();
-                          }}
-                          className="w-16 h-16 bg-white/5 border border-dashed border-white/10 rounded-lg flex items-center justify-center cursor-pointer hover:bg-white/10 transition-all shrink-0 overflow-hidden group"
+                          onClick={() => { setActiveDishId(field.id); fileInputRef.current?.click(); }}
+                          className="w-20 h-20 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center cursor-pointer hover:bg-white/10 transition-all overflow-hidden shrink-0 relative group/pic"
                         >
                           {watchDishes[index]?.image ? (
                             <img src={watchDishes[index].image} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                           ) : (
-                            <ImageIcon size={20} className="text-white/20 group-hover:text-white/40 transition-colors" />
+                            <ImageIcon size={24} className="text-white/10 group-hover/pic:scale-110 transition-transform" />
                           )}
-                        </div>
-                          <div className="flex-1 space-y-4">
-                            <div className="flex items-start gap-2">
-                                <div className="flex-1 space-y-3">
-                                    <input 
-                                    {...register(`dishes.${index}.name` as const)}
-                                    placeholder="What did you have?"
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 ring-orange-500/50 transition-all"
-                                    disabled={isSubmitting}
-                                    />
-                                    <div className="flex flex-col gap-2">
-                                        <label className="text-[10px] uppercase font-black tracking-widest text-white/30">Rate this item</label>
-                                        <div className="flex gap-1.5">
-                                            {[1,2,3,4,5].map(star => (
-                                                <button
-                                                    key={star}
-                                                    type="button"
-                                                    className="hover:scale-110 active:scale-90 transition-transform"
-                                                    onClick={() => setValue(`dishes.${index}.rating`, star)}
-                                                >
-                                                    <Star 
-                                                        size={16} 
-                                                        fill={star <= (watchDishes[index]?.rating || 0) ? "currentColor" : "none"} 
-                                                        className={star <= (watchDishes[index]?.rating || 0) ? "text-orange-500" : "text-white/10"}
-                                                    />
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {fields.length > 1 && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        remove(index);
-                                        setDishFiles(prev => {
-                                            const next = new Map(prev);
-                                            next.delete(field.id);
-                                            return next;
-                                        });
-                                    }}
-                                    className="p-2 text-white/20 hover:text-red-500 transition-colors"
-                                >
-                                    <Trash2 size={20} />
-                                </button>
-                                )}
-                            </div>
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/pic:opacity-100 flex items-center justify-center transition-opacity">
+                            <Plus size={20} className="text-white" />
                           </div>
-                          {errors.dishes?.[index]?.name && (
-                            <p className="text-xs text-red-500">{errors.dishes[index]?.name?.message}</p>
-                          )}
+                        </div>
+                        
+                        <div className="flex-1 space-y-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 space-y-4">
+                              <input 
+                                {...register(`dishes.${index}.name` as const)}
+                                placeholder="Highlight Title..."
+                                className="w-full bg-transparent border-b border-white/5 pb-2 text-sm font-bold placeholder:text-white/10 focus:outline-none focus:border-orange-500/50 transition-all"
+                              />
+                              <div className="flex items-center gap-3">
+                                <span className="text-[9px] uppercase font-black text-white/20">Highlight Rating</span>
+                                <div className="flex gap-1.5">
+                                  {[1,2,3,4,5].map(star => (
+                                    <button
+                                      key={star}
+                                      type="button"
+                                      className="transition-transform active:scale-90"
+                                      onClick={() => setValue(`dishes.${index}.rating`, star)}
+                                    >
+                                      <Star 
+                                        size={14} 
+                                        fill={star <= (watchDishes[index]?.rating || 0) ? "currentColor" : "none"} 
+                                        className={star <= (watchDishes[index]?.rating || 0) ? "text-orange-500" : "text-white/5"}
+                                      />
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {fields.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => { remove(index); setDishFiles(prev => { const n = new Map(prev); n.delete(field.id); return n; }); }}
+                                className="p-2 text-white/10 hover:text-rose-500 transition-colors"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
+                    </motion.div>
                   ))}
                 </div>
+              </section>
 
-                {selectedRestaurant?.menuItems && selectedRestaurant.menuItems.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    <p className="w-full text-[10px] text-white/20 uppercase tracking-tighter">Suggestions:</p>
-                    {selectedRestaurant.menuItems.map((item, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => {
-                          // If the last dish is empty, fill it. Otherwise append.
-                          const lastIndex = fields.length - 1;
-                          const currentDishes = control._formValues.dishes;
-                          if (currentDishes[lastIndex].name === "") {
-                            setValue(`dishes.${lastIndex}.name`, item);
-                            setValue(`dishes.${lastIndex}.rating`, 5);
-                          } else {
-                            append({ name: item, rating: 5 });
-                          }
-                        }}
-                        className="text-[10px] bg-white/5 hover:bg-white/10 border border-white/10 rounded-full px-3 py-1 text-white/60 hover:text-white transition-all"
-                      >
-                        + {item}
-                      </button>
-                    ))}
+              {/* The Verdict */}
+              <section className="space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="space-y-3">
+                    <label className="text-[10px] uppercase font-black tracking-widest text-white/40">Overall Score</label>
+                    <div className="flex gap-3">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => handleSetRating(star)}
+                          className="hover:scale-125 transition-transform"
+                        >
+                          <Star 
+                            size={32} 
+                            fill={star <= rating ? "currentColor" : "none"} 
+                            className={star <= rating ? "text-orange-500" : "text-white/10"}
+                          />
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                )}
-                {errors.dishes?.root && <p className="text-xs text-red-500">{errors.dishes.root.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <label className="small-caps">Rating</label>
-                <div className="flex gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => handleSetRating(star)}
-                      className="p-1 hover:scale-110 transition-transform"
-                      disabled={isSubmitting}
-                    >
-                      <Star 
-                        size={24} 
-                        fill={star <= rating ? "currentColor" : "none"} 
-                        className={star <= rating ? "text-orange-500" : "text-white/20"}
-                      />
-                    </button>
-                  ))}
+                  <div className="flex-1 space-y-3">
+                    <label className="text-[10px] uppercase font-black tracking-widest text-white/40">The Narrative</label>
+                    <textarea 
+                      {...register("review")}
+                      placeholder="Share the story behind the flavors..."
+                      rows={3}
+                      className="w-full bg-white/5 border border-white/10 rounded-3xl px-6 py-4 focus:outline-none focus:ring-1 ring-white/20 transition-all resize-none text-sm font-medium"
+                    />
+                  </div>
                 </div>
-                {errors.rating && <p className="text-xs text-red-500">Rating is required</p>}
-              </div>
-
-              <div className="space-y-2">
-                <label className="small-caps">Your Review</label>
-                <textarea 
-                  {...register("review")}
-                  placeholder="Tell us about the flavors, textures, and experience..."
-                  rows={4}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 ring-white/20 transition-all resize-none"
-                  disabled={isSubmitting}
-                />
-                {errors.review && <p className="text-xs text-red-500">{errors.review.message}</p>}
-              </div>
+              </section>
 
               <div className="hidden">
-                 <input 
-                   type="file" 
-                   ref={fileInputRef} 
-                   onChange={handleFileChange} 
-                   accept="image/*" 
-                 />
+                 <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" />
               </div>
+            </form>
 
-              <div className="p-6 md:p-8 bg-black/40 border-t border-white/10 shrink-0">
+            {/* Elite Submission Stage */}
+            <div className="p-6 md:p-8 bg-black/40 border-t border-white/5 backdrop-blur-2xl">
                 <button 
                   type="submit"
                   disabled={isSubmitting || isUploading || !searchQuery.trim()}
-                  className="w-full bg-[#00e054] hover:bg-[#00c044] text-black font-black uppercase tracking-[0.3em] py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-[#00e054]/10 disabled:opacity-50 disabled:grayscale active:scale-95"
+                  onClick={handleSubmit(onSubmit)}
+                  className="w-full h-16 bg-gradient-to-r from-orange-500 to-rose-500 hover:scale-[1.02] active:scale-95 text-white font-black uppercase tracking-[0.4em] rounded-[2rem] flex items-center justify-center gap-3 transition-all shadow-[0_20px_50px_rgba(244,63,94,0.3)] disabled:opacity-50 disabled:grayscale relative overflow-hidden group"
                 >
+                  <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                   {isUploading ? (
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="w-32 h-1 bg-black/20 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-black transition-all duration-300" 
-                          style={{ width: `${uploadProgress}%` }}
-                        />
-                      </div>
-                      <span className="text-[9px] font-black">{uploadProgress}% UPLOADED</span>
+                    <div className="flex items-center gap-3">
+                      <Loader2 size={24} className="animate-spin" />
+                      <span>{uploadProgress}% Launching...</span>
                     </div>
                   ) : isSubmitting ? (
-                    <Loader2 size={18} className="animate-spin" />
+                    <Loader2 size={24} className="animate-spin" />
                   ) : (
-                    <Zap size={18} fill="currentColor" />
+                    <>
+                      <Zap size={20} fill="currentColor" />
+                      <span>{existingReview ? "Modernize" : "Launch Narrative"}</span>
+                    </>
                   )}
-                  {isSubmitting || isUploading ? "" : (existingReview ? "Update Narrative" : "Post Review")}
                 </button>
-              </div>
-            </form>
+            </div>
           </motion.div>
         </div>
       )}
