@@ -33,6 +33,11 @@ export const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, rev
       orderBy("createdAt", "asc")
     );
 
+    // Social Synchronization Events: Notify Navigation to hide when discussing
+    if (isOpen) {
+        window.dispatchEvent(new CustomEvent('MODAL_OPEN_STATE_CHANGE', { detail: { isOpen: true, type: 'COMMENT' } }));
+    }
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetchedComments = snapshot.docs.map(doc => ({
         ...doc.data(),
@@ -52,7 +57,10 @@ export const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, rev
       setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+        unsubscribe();
+        window.dispatchEvent(new CustomEvent('MODAL_OPEN_STATE_CHANGE', { detail: { isOpen: false, type: 'COMMENT' } }));
+    };
   }, [isOpen, review.id]);
 
   const handlePostComment = async (e: React.FormEvent) => {
@@ -191,8 +199,8 @@ export const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, rev
             )}
           </div>
 
-          {/* Input Area */}
-          <div className="p-4 md:p-6 bg-black/40 border-t border-white/5 pb-8 md:pb-6">
+          {/* Input Area: Increased Padding for Mobile to clear the Navigation Pill */}
+          <div className="p-4 md:p-6 bg-black/40 border-t border-white/5 pb-32 md:pb-6">
             <form onSubmit={handlePostComment} className="relative group">
               <input
                 type="text"
