@@ -1,26 +1,28 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, Plus, User, LogOut, UtensilsCrossed, Bell, Menu, X, Settings } from "lucide-react";
+import { Search, Bell, User, LogOut, Settings, Plus, UtensilsCrossed, Film, BookOpen, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { LogMealModal } from "./LogMealModal";
+import { ReelUploadModal } from "./ReelUploadModal";
 import { SearchOverlay } from "./SearchOverlay";
 import { useAuth } from "../App";
-import { collection, query, where, onSnapshot, doc, updateDoc, orderBy } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { AppNotification } from "../types";
 import { formatDistanceToNow } from "date-fns";
-import { toast } from "sonner";
 import { SettingsOverlay } from "./SettingsOverlay";
 import { EditProfileModal } from "./EditProfileModal";
+import { motion, AnimatePresence } from "motion/react";
 
 export function Navbar() {
-  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const { user, dishdUser, login, logout } = useAuth();
-  const isAdmin = user?.email === 'tejag.vijay@gmail.com';
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+  const [isReelModalOpen, setIsReelModalOpen] = useState(false);
+  const [showActionMenu, setShowActionMenu] = useState(false);
   
   // Notification States
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -119,7 +121,6 @@ export function Navbar() {
             </span>
           </Link>
 
-          {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-8">
             <Link to="/restaurants" className="text-[11px] uppercase tracking-[0.2em] font-black text-white/40 hover:text-[#00e054] transition-all">Restaurants</Link>
             <Link to="/critics" className="text-[11px] uppercase tracking-[0.2em] font-black text-white/40 hover:text-[#00e054] transition-all">Critics</Link>
@@ -127,7 +128,6 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center gap-3">
-             {/* Desktop Search */}
              <button 
                className="hidden md:flex p-2 text-white/40 hover:text-white transition-colors items-center gap-2 group" 
                onClick={() => setIsSearchOpen(true)}
@@ -137,13 +137,45 @@ export function Navbar() {
 
              {user ? (
                <>
-                 <button
-                   onClick={() => setIsLogModalOpen(true)}
-                   className="hidden md:flex bg-[#00e054] hover:bg-[#00c044] text-black text-[10px] uppercase tracking-widest font-black px-4 py-2 rounded-sm transition-colors items-center gap-2"
-                 >
-                   <Plus size={14} />
-                   <span>Log</span>
-                 </button>
+                 <div className="relative">
+                    <button
+                      onClick={() => setShowActionMenu(!showActionMenu)}
+                      className="hidden md:flex bg-[#00e054] hover:bg-[#00c044] text-black text-[10px] uppercase tracking-widest font-black px-4 py-2 rounded-sm transition-all items-center gap-2 active:scale-95 shadow-lg shadow-[#00e054]/10"
+                    >
+                      <Plus size={14} className={showActionMenu ? "rotate-45 transition-transform" : "transition-transform"} />
+                      <span>Create</span>
+                    </button>
+
+                    <AnimatePresence>
+                      {showActionMenu && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          className="absolute right-0 mt-3 w-48 bg-[#1a1c1d]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl py-2 z-[350] overflow-hidden"
+                        >
+                          <button
+                            onClick={() => { setIsReelModalOpen(true); setShowActionMenu(false); }}
+                            className="w-full flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-all text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white group"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20 transition-colors">
+                              <Film size={14} className="text-orange-500" />
+                            </div>
+                            Reel Narrative
+                          </button>
+                          <button
+                            onClick={() => { setIsLogModalOpen(true); setShowActionMenu(false); }}
+                            className="w-full flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-all text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white group"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-[#00e054]/10 flex items-center justify-center group-hover:bg-[#00e054]/20 transition-colors">
+                              <BookOpen size={14} className="text-[#00e054]" />
+                            </div>
+                            Culinary Log
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                  
                  <div className="relative">
                    <button 
@@ -262,6 +294,11 @@ export function Navbar() {
       <LogMealModal
         isOpen={isLogModalOpen}
         onClose={() => setIsLogModalOpen(false)}
+      />
+
+      <ReelUploadModal
+        isOpen={isReelModalOpen}
+        onClose={() => setIsReelModalOpen(false)}
       />
 
       <SearchOverlay 

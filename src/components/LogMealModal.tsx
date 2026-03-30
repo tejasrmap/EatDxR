@@ -20,8 +20,7 @@ const logSchema = z.object({
     rating: z.number().min(1).max(5)
   })).min(1, "At least one dish is required"),
   rating: z.number().min(1).max(5),
-  review: z.string().optional(),
-  videoUrl: z.string().optional()
+  review: z.string().optional()
 });
 
 type LogFormValues = z.infer<typeof logSchema>;
@@ -46,12 +45,9 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
   const [manualLocation, setManualLocation] = useState("");
   const [activeDishId, setActiveDishId] = useState<string | null>(null);
   const [dishFiles, setDishFiles] = useState<Map<string, File>>(new Map());
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  const videoInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { user, dishdUser } = useAuth();
@@ -195,20 +191,6 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
     reader.readAsDataURL(file);
   };
 
-  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 20 * 1024 * 1024) {
-      toast.error("Video too large. Please select a video under 20MB.");
-      return;
-    }
-
-    setVideoFile(file);
-    const url = URL.createObjectURL(file);
-    setVideoPreview(url);
-  };
-
   const uploadFileWithProgress = (file: File, path: string, onProgress?: (bytes: number) => void): Promise<string> => {
     return new Promise((resolve, reject) => {
       const fileRef = ref(storage, path);
@@ -244,10 +226,6 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
     try {
       const filesToUpload: { file: File, path: string, fieldIndex: number }[] = [];
       
-      if (videoFile) {
-        filesToUpload.push({ file: videoFile, path: `videos/${user.uid}_${Date.now()}.mp4`, fieldIndex: -1 });
-      }
-
       fields.forEach((field, i) => {
         const dishFile = dishFiles.get(field.id);
         if (dishFile) {
@@ -271,19 +249,13 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
         image: d.image?.startsWith('data:') ? "" : d.image // 'Source-Clean' Reset
       }));
 
-      let finalVideoUrl = "";
-
       for (const task of filesToUpload) {
         const downloadUrl = await uploadFileWithProgress(task.file, task.path, (bytes) => {
           transferredMap.set(task.path, bytes);
           updateOmniProgress();
         });
 
-        if (task.fieldIndex === -1) {
-          finalVideoUrl = downloadUrl;
-        } else {
-          uploadedDishes[task.fieldIndex].image = downloadUrl;
-        }
+        uploadedDishes[task.fieldIndex].image = downloadUrl;
       }
 
       let restaurantId = selectedRestaurant?.id || `manual_${Date.now()}`;
@@ -317,7 +289,14 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
           dishes: uploadedDishes,
           rating: data.rating,
           content: data.review || "",
-          videoUrl: finalVideoUrl || existingReview.videoUrl || ""
+          restaurantLocation: manualLocation || selectedRestaurant?.location || "India",
+          userId: user.uid,
+          authorName: user.displayName,
+          authorPhoto: user.photoURL,
+          userName: dishdUser?.username || "Critic",
+          createdAt: serverTimestamp(),
+          likesCount: existingReview?.likesCount || 0,
+          commentsCount: existingReview?.commentsCount || 0
         });
         toast.success("Narrative updated!");
       } else {
@@ -336,7 +315,6 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
           dishes: uploadedDishes,
           rating: data.rating,
           content: data.review || "",
-          videoUrl: finalVideoUrl,
           createdAt: serverTimestamp(),
           likes: 0
         };
@@ -353,9 +331,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
       setSearchQuery("");
       setManualLocation("");
       setSelectedRestaurant(null);
-      setVideoFile(null);
       setDishFiles(new Map());
-      setVideoPreview(null);
       setIsUploading(false);
       setUploadProgress(0);
       onClose();
@@ -420,38 +396,6 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-6 space-y-8">
-              {/* Immersive Reel Section */}
-              <section className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-[10px] uppercase font-black tracking-widest text-white/30">Cinematic Reel</h3>
-                  {videoPreview && (
-                    <button 
-                      type="button" 
-                      onClick={() => { setVideoFile(null); setVideoPreview(null); }}
-                      className="text-[9px] uppercase font-black text-rose-500 hover:text-rose-400"
-                    >
-                      Discard
-                    </button>
-                  )}
-                </div>
-                <div 
-                  onClick={() => videoInputRef.current?.click()}
-                  className="aspect-video bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all overflow-hidden group relative"
-                >
-                  {videoPreview ? (
-                    <video src={videoPreview} className="w-full h-full object-cover" muted loop autoPlay />
-                  ) : (
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Upload size={20} className="text-orange-500" />
-                      </div>
-                      <p className="text-[9px] uppercase font-black tracking-widest text-white/20 group-hover:text-white/60">Upload Narrative Video</p>
-                    </div>
-                  )}
-                </div>
-                <input type="file" ref={videoInputRef} onChange={handleVideoChange} accept="video/*" className="hidden" />
-              </section>
-
               {/* Identity & Context */}
               <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2.5 relative group">
