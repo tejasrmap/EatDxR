@@ -376,13 +376,13 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-0 md:p-6">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-12">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/90 backdrop-blur-3xl"
+            className="absolute inset-0 bg-black/95 backdrop-blur-3xl"
           />
           
           <motion.div
@@ -390,11 +390,11 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full h-full md:h-auto md:max-h-[90vh] md:max-w-lg bg-[#0a0a0a] border-y md:border border-white/10 md:rounded-[2rem] overflow-hidden shadow-2xl flex flex-col"
+            className="relative w-full h-auto max-h-[92vh] md:max-w-lg bg-[#0a0a0a] border border-white/10 rounded-[2rem] overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.8),0_0_50px_rgba(249,115,22,0.05)] flex flex-col"
           >
             {/* Elite Progress Micro-Bar */}
             {isUploading && (
-              <div className="absolute top-0 left-0 right-0 h-1 z-[210] overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 z-[210] overflow-hidden rounded-t-[2rem]">
                 <motion.div 
                   className="h-full bg-gradient-to-r from-orange-500 to-rose-500"
                   initial={{ width: 0 }}
@@ -403,8 +403,8 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
               </div>
             )}
 
-            {/* Cinematic Header */}
-            <div className="px-6 py-4 border-b border-white/5 bg-black/40 backdrop-blur-2xl flex items-center justify-between shrink-0 sticky top-0 z-[200]">
+            {/* Cinematic Header - Sticky & Integrated */}
+            <div className="px-6 py-5 border-b border-white/5 bg-black/60 backdrop-blur-3xl flex items-center justify-between shrink-0 sticky top-0 z-[200] rounded-t-[2rem]">
               <div className="flex flex-col">
                 <span className="text-[9px] uppercase font-black tracking-[0.4em] text-orange-500">Culinary Narrative</span>
                 <h2 className="text-base font-bold text-white serif italic">
@@ -413,9 +413,9 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
               </div>
               <button 
                 onClick={onClose} 
-                className="w-9 h-9 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10 group"
+                className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10 group active:scale-90"
               >
-                <X size={16} className="text-white/40 group-hover:text-white transition-colors" />
+                <X size={18} className="text-white/40 group-hover:text-white transition-colors" />
               </button>
             </div>
 
