@@ -242,16 +242,12 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
         finalVideoUrl = await uploadFileWithProgress(videoFile, `videos/${user.uid}_${Date.now()}.mp4`);
       }
 
-      const uploadedDishes = await Promise.all(
-        data.dishes.map(async (dish, idx) => {
-          const file = dishFiles.get(idx);
-          if (file) {
-            const url = await uploadFileWithProgress(file, `dishes/${user.uid}_${Date.now()}_${idx}`);
-            return { ...dish, image: url };
-          }
-          return dish;
-        })
-      );
+      const uploadedDishes = data.dishes.map((dish, idx) => {
+        // Since we are now using the 'Zero-Barrier' Base64 Fast-Save, 
+        // the image is already in the dish.image field from the FileReader in handleFileChange.
+        // We skip the Cloud Storage upload entirely for images to avoid payment/CORS locks.
+        return dish;
+      });
 
       // 2. If we have a selected restaurant, ensure it exists in the 'restaurants' collection
       let restaurantId = selectedRestaurant?.id || `manual_${Date.now()}`;
@@ -623,6 +619,15 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                   disabled={isSubmitting}
                 />
                 {errors.review && <p className="text-xs text-red-500">{errors.review.message}</p>}
+              </div>
+
+              <div className="hidden">
+                 <input 
+                   type="file" 
+                   ref={fileInputRef} 
+                   onChange={handleFileChange} 
+                   accept="image/*" 
+                 />
               </div>
 
               <div className="p-6 md:p-8 bg-black/40 border-t border-white/10 shrink-0">

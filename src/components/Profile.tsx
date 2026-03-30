@@ -5,7 +5,7 @@ import { db } from "../firebase";
 import { Review, User, Restaurant } from "../types";
 import { ReviewCard } from "./ReviewCard";
 import { useAuth } from "../App";
-import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings } from "lucide-react";
+import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { DiaryTable } from "./DiaryTable";
 import { FollowListModal } from "./FollowListModal";
@@ -308,27 +308,29 @@ export const Profile: React.FC = () => {
 
       {activeTab === "profile" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        {/* Left Column: Recent Activity Grid */}
+        {/* Instagram-Elite 3-Column Grid */}
         <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-[10px] uppercase tracking-widest font-bold text-white/40">Recent Activity</h2>
-            <button 
-              onClick={() => handleAction("View All Activity")}
-              className="text-[10px] uppercase tracking-widest font-bold text-white/20 hover:text-white transition-colors"
-            >
-              All
-            </button>
+          <div className="flex items-center justify-between mb-8 pb-2 border-b border-white/5">
+            <div className="flex items-center gap-2">
+               <Grid size={14} className="text-orange-500" />
+               <h2 className="text-[10px] uppercase tracking-[0.2em] font-black text-white">Memories</h2>
+            </div>
+            <span className="text-[10px] font-bold text-white/20">{reviews.length} Posts</span>
           </div>
           
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-12">
-            {reviews.slice(0, 8).map(review => {
-              const dishesWithImages = review.dishes?.filter(d => d.image) || [];
-              const firstImage = dishesWithImages[0]?.image;
+          <div className="grid grid-cols-3 gap-1 md:gap-4 lg:gap-6 mb-12">
+            {reviews.map(review => {
+              const allImages = review.dishes?.filter(d => d.image).map(d => d.image) || [];
+              const firstImage = allImages[0];
               return (
                 <Link 
                   key={review.id} 
-                  to={`/restaurant/${review.restaurantId}`}
-                  className="aspect-[2/3] bg-zinc-800 rounded-sm overflow-hidden border border-white/10 group relative shadow-lg"
+                  to={`/profile/${user.username || user.uid}`}
+                  onClick={(e) => {
+                    // Smoothly scroll to the review in the diary or trigger a detailed view
+                    toast.info(`Opening review at ${review.restaurantName}`);
+                  }}
+                  className="aspect-square bg-zinc-800 rounded-sm md:rounded-xl overflow-hidden border border-white/5 group relative shadow-2xl hover:border-orange-500/50 transition-all"
                 >
                   {firstImage ? (
                     <img 
@@ -338,33 +340,47 @@ export const Profile: React.FC = () => {
                       referrerPolicy="no-referrer"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[10px] text-white/20 uppercase tracking-widest text-center px-2">
+                    <div className="w-full h-full flex items-center justify-center text-[8px] md:text-[10px] text-white/20 uppercase tracking-widest text-center px-2 italic">
                       {review.restaurantName}
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center p-4 transition-opacity text-center">
-                    <div className="flex items-center gap-0.5 text-orange-500 mb-2">
+
+                  {/* Multi-photo indicator (top right) */}
+                  {allImages.length > 1 && (
+                    <div className="absolute top-2 right-2 p-1 bg-black/40 backdrop-blur-md rounded-md z-10">
+                       <Plus size={10} className="text-white" />
+                    </div>
+                  )}
+
+                  {/* Frosted Insta-Overlay */}
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center p-2 transition-all duration-300 transform group-hover:scale-100 scale-110">
+                    <div className="flex items-center gap-0.5 text-orange-500 mb-1">
                       {[...Array(5)].map((_, i) => (
                         <Star key={i} size={10} fill={i < review.rating ? "currentColor" : "none"} className={i < review.rating ? "fill-orange-500" : "text-white/20"} />
                       ))}
                     </div>
-                    <p className="text-[10px] font-bold text-white uppercase tracking-tighter line-clamp-2">{review.dishes?.[0]?.name}</p>
+                    <p className="text-[8px] md:text-[10px] font-black text-white uppercase tracking-widest truncate w-full text-center px-2">{review.restaurantName}</p>
+                    <div className="mt-2 flex items-center gap-3 text-white/60">
+                        <div className="flex items-center gap-1">
+                            <Heart size={10} fill="currentColor" className="text-rose-500" />
+                            <span className="text-[10px] font-bold">{review.likes || 0}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            <MessageSquare size={10} fill="currentColor" />
+                            <span className="text-[10px] font-bold">0</span>
+                        </div>
+                    </div>
                   </div>
                 </Link>
               );
             })}
           </div>
-
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-[10px] uppercase tracking-widest font-bold text-white/40">Recent Reviews</h2>
-            <button className="text-[10px] uppercase tracking-widest font-bold text-white/20 hover:text-white transition-colors">All</button>
-          </div>
           
-          <div className="space-y-2">
-            {reviews.slice(0, 3).map(review => (
-              <ReviewCard key={review.id} review={review} />
-            ))}
-          </div>
+          {reviews.length === 0 && (
+              <div className="py-20 text-center border border-dashed border-white/10 rounded-3xl">
+                  <p className="text-sm italic text-white/20 serif">No memories captured yet.</p>
+              </div>
+          )}
         </div>
 
         {/* Right Column: Bio & Stats */}
