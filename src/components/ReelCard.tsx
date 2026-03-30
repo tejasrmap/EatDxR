@@ -9,6 +9,7 @@ import { db } from "../firebase";
 import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
+import { CommentModal } from "./CommentModal";
 
 interface ReelCardProps {
   review: Review;
@@ -18,6 +19,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
   const { dishdUser: currentUser } = useAuth();
   const [likes, setLikes] = useState<Interaction[]>([]);
   const [comments, setComments] = useState<Interaction[]>([]);
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   
   useEffect(() => {
     const q = query(
@@ -154,9 +156,12 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
             </div>
             
             <div className="flex flex-col items-center gap-1.5 group/btn">
-                <Link to={`/restaurant/${review.id}`} className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-white/5 backdrop-blur-3xl border border-white/5 flex items-center justify-center text-white/40 hover:text-[#00e054] group-hover/btn:bg-white/10 transition-all active:scale-95">
+                <button 
+                  onClick={() => setIsCommentModalOpen(true)}
+                  className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-white/5 backdrop-blur-3xl border border-white/5 flex items-center justify-center text-white/40 hover:text-[#00e054] group-hover/btn:bg-white/10 transition-all active:scale-95"
+                >
                    <MessageSquare size={22} className={comments.length > 0 ? "text-white/80" : ""} />
-                </Link>
+                </button>
                 <div className="flex flex-col items-center">
                     <span className="text-[10px] md:text-sm font-black text-white">{comments.length}</span>
                     <span className="text-[8px] md:text-[9px] font-black uppercase text-white/40 tracking-[0.2em] -mt-1">Chat</span>
@@ -208,6 +213,12 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
              </div>
         </div>
       </div>
+
+      <CommentModal 
+        isOpen={isCommentModalOpen}
+        onClose={() => setIsCommentModalOpen(false)}
+        review={review}
+      />
     </div>
   );
 };

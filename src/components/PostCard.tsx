@@ -9,6 +9,7 @@ import { db } from "../firebase";
 import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { motion } from "motion/react";
 import { toast } from "sonner";
+import { CommentModal } from "./CommentModal";
 
 interface PostCardProps {
   review: Review;
@@ -18,6 +19,7 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
   const { dishdUser: currentUser } = useAuth();
   const [likes, setLikes] = useState<Interaction[]>([]);
   const [comments, setComments] = useState<Interaction[]>([]);
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   
   useEffect(() => {
     const q = query(
@@ -150,7 +152,10 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
              <Heart size={22} className={hasLiked ? "fill-rose-500" : ""} />
              <span className="text-xs font-black">{totalLikes}</span>
            </button>
-           <button className="flex items-center gap-2 text-white/40 hover:text-white transition-all">
+           <button 
+             onClick={() => setIsCommentModalOpen(true)}
+             className="flex items-center gap-2 text-white/40 hover:text-white transition-all"
+           >
              <MessageSquare size={22} className={comments.length > 0 ? "text-white/80" : ""} />
              <span className="text-xs font-black">{comments.length}</span>
              <span className="text-[10px] font-black uppercase tracking-widest ml-1 hidden md:inline">Discuss</span>
@@ -181,6 +186,12 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
             <span className="text-[9px] uppercase font-bold tracking-widest">{review.city || review.restaurantLocation || "Nearby Spot"}</span>
         </div>
       </div>
+
+      <CommentModal 
+        isOpen={isCommentModalOpen}
+        onClose={() => setIsCommentModalOpen(false)}
+        review={review}
+      />
     </motion.div>
   );
 };
