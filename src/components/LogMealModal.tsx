@@ -44,14 +44,14 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [currentCity, setCurrentCity] = useState<string | null>(null);
   const [manualLocation, setManualLocation] = useState("");
-  const [activeDishIndex, setActiveDishIndex] = useState<number | null>(null);
+  const [activeDishId, setActiveDishId] = useState<string | null>(null);
+  const [dishFiles, setDishFiles] = useState<Map<string, File>>(new Map());
   const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [dishFiles, setDishFiles] = useState<Map<number, File>>(new Map());
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
   const videoInputRef = useRef<HTMLInputElement>(null);
-  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { user, dishdUser } = useAuth();
@@ -74,14 +74,15 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
   // Pre-fill fields if we are in Edit Mode
   useEffect(() => {
     if (isOpen && existingReview) {
-      setRating(existingReview.rating);
-      setSearchQuery(existingReview.restaurantName);
+      setRating(existingReview.rating || 0);
+      setSearchQuery(existingReview.restaurantName || "");
       setSelectedRestaurant({
         id: existingReview.restaurantId,
         name: existingReview.restaurantName,
         cuisine: "Unknown",
         location: existingReview.restaurantLocation || "Unknown"
       });
+      setManualLocation(existingReview.restaurantLocation || "");
       reset({
         restaurant: existingReview.restaurantName,
         rating: existingReview.rating,
@@ -91,23 +92,26 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
           : [{ name: "", image: "", rating: 5 }]
       });
     } else if (isOpen && initialRestaurant) {
-      setRating(0);
+      setRating(initialRestaurant.rating || 0);
       setSearchQuery(initialRestaurant.name);
+      setManualLocation(initialRestaurant.location || "");
       setSelectedRestaurant(initialRestaurant);
       setValue("restaurant", initialRestaurant.name);
+      setValue("rating", initialRestaurant.rating || 0);
       reset({
-        rating: 0,
-        dishes: [{ name: "", image: "", rating: 5 }],
         restaurant: initialRestaurant.name,
+        rating: initialRestaurant.rating || 5,
+        dishes: [{ name: "", image: "", rating: 5 }],
         review: ""
       });
     } else if (isOpen && !existingReview) {
       reset({ rating: 0, dishes: [{ name: "", image: "", rating: 5 }], restaurant: "", review: "" });
       setRating(0);
       setSearchQuery("");
+      setManualLocation("");
       setSelectedRestaurant(null);
     }
-  }, [isOpen, existingReview, initialRestaurant, reset]);
+  }, [isOpen, existingReview, initialRestaurant, reset, setValue]);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -145,7 +149,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
         const results = await searchRestaurants(query.trim(), userLocation?.lat, userLocation?.lng);
         setSearchResults(results);
         setIsSearching(false);
-      }, 1000);
+      }, 500);
     } else {
       setSearchResults([]);
       setShowResults(false);
@@ -163,26 +167,29 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || activeDishIndex === null) return;
+    if (!file || activeDishId === null) return;
 
-    if (file.size > 800 * 1024) {
-      toast.error("Image too large. Please select an image under 800KB.");
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image too large. Please select an image under 2MB.");
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
+    const currentIndex = fields.findIndex(f => f.id === activeDishId);
+    if (currentIndex === -1) return;
+
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64String = reader.result as string;
-      setValue(`dishes.${activeDishIndex}.image`, base64String);
+      setValue(`dishes.${currentIndex}.image`, base64String);
       
       setDishFiles(prev => {
         const next = new Map(prev);
-        next.set(activeDishIndex, file);
+        next.set(activeDishId, file);
         return next;
       });
 
-      setActiveDishIndex(null);
+      setActiveDishId(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     };
     reader.readAsDataURL(file);
@@ -202,15 +209,14 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
     setVideoPreview(url);
   };
 
-  const uploadFileWithProgress = (file: File, path: string): Promise<string> => {
+  const uploadFileWithProgress = (file: File, path: string, onProgress?: (bytes: number) => void): Promise<string> => {
     return new Promise((resolve, reject) => {
       const fileRef = ref(storage, path);
       const uploadTask = uploadBytesResumable(fileRef, file);
 
       uploadTask.on('state_changed', 
         (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(Math.round(progress));
+          if (onProgress) onProgress(snapshot.bytesTransferred);
         }, 
         (error: any) => {
            console.error("Upload failed", error);
@@ -236,45 +242,62 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
     setIsUploading(true);
     setUploadProgress(0);
     try {
-      // 1. Upload Media First (Professional Resumable Storage logic)
-      let finalVideoUrl = "";
+      const filesToUpload: { file: File, path: string, fieldIndex: number }[] = [];
+      
       if (videoFile) {
-        finalVideoUrl = await uploadFileWithProgress(videoFile, `videos/${user.uid}_${Date.now()}.mp4`);
+        filesToUpload.push({ file: videoFile, path: `videos/${user.uid}_${Date.now()}.mp4`, fieldIndex: -1 });
       }
 
-      // Sequential Dish Upload Engine to avoid technical race conditions
-      const uploadedDishes = [...data.dishes];
-      for (let i = 0; i < uploadedDishes.length; i++) {
-        const dishFile = dishFiles.get(i);
+      fields.forEach((field, i) => {
+        const dishFile = dishFiles.get(field.id);
         if (dishFile) {
-            const fileName = `dishes/${user.uid}_${Date.now()}_${i}.${dishFile.name.split('.').pop()}`;
-            const downloadUrl = await uploadFileWithProgress(dishFile, fileName);
-            uploadedDishes[i].image = downloadUrl;
+          const ext = dishFile.name.split('.').pop();
+          filesToUpload.push({ file: dishFile, path: `dishes/${user.uid}_${Date.now()}_${i}.${ext}`, fieldIndex: i });
+        }
+      });
+
+      const totalBytes = filesToUpload.reduce((sum, f) => sum + f.file.size, 0);
+      const transferredMap = new Map<string, number>();
+
+      const updateOmniProgress = () => {
+        const sumTransferred = Array.from(transferredMap.values()).reduce((sum, v) => sum + v, 0);
+        if (totalBytes > 0) {
+          setUploadProgress(Math.round((sumTransferred / totalBytes) * 100));
+        }
+      };
+
+      const uploadedDishes = [...data.dishes];
+      let finalVideoUrl = "";
+
+      for (const task of filesToUpload) {
+        const downloadUrl = await uploadFileWithProgress(task.file, task.path, (bytes) => {
+          transferredMap.set(task.path, bytes);
+          updateOmniProgress();
+        });
+
+        if (task.fieldIndex === -1) {
+          finalVideoUrl = downloadUrl;
+        } else {
+          uploadedDishes[task.fieldIndex].image = downloadUrl;
         }
       }
 
-      // 2. If we have a selected restaurant, ensure it exists in the 'restaurants' collection
       let restaurantId = selectedRestaurant?.id || `manual_${Date.now()}`;
       
       if (selectedRestaurant) {
-        try {
-          const restRef = doc(db, "restaurants", selectedRestaurant.id);
-          const restDoc = await getDoc(restRef);
-          
-          if (!restDoc.exists()) {
-            await setDoc(restRef, {
-              id: selectedRestaurant.id,
-              name: selectedRestaurant.name,
-              cuisine: selectedRestaurant.cuisine || "Various",
-              location: manualLocation || selectedRestaurant.location || "India",
-              rating: selectedRestaurant.rating || 0,
-              reviewCount: selectedRestaurant.reviewCount || 0,
-              image: selectedRestaurant.image || "",
-              menuItems: selectedRestaurant.menuItems || []
-            });
-          }
-        } catch (restaurantError) {
-          console.warn("Could not save restaurant data (likely due to permissions). Proceeding with review log.");
+        const restRef = doc(db, "restaurants", selectedRestaurant.id);
+        const restDoc = await getDoc(restRef);
+        if (!restDoc.exists()) {
+          await setDoc(restRef, {
+            id: selectedRestaurant.id,
+            name: selectedRestaurant.name,
+            cuisine: selectedRestaurant.cuisine || "Various",
+            location: manualLocation || selectedRestaurant.location || "India",
+            rating: selectedRestaurant.rating || 0,
+            reviewCount: selectedRestaurant.reviewCount || 1,
+            image: selectedRestaurant.image || "",
+            menuItems: selectedRestaurant.menuItems || []
+          });
         }
       }
 
@@ -496,7 +519,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                       <div className="flex gap-3">
                         <div 
                           onClick={() => {
-                            setActiveDishIndex(index);
+                            setActiveDishId(field.id);
                             fileInputRef.current?.click();
                           }}
                           className="w-16 h-16 bg-white/5 border border-dashed border-white/10 rounded-lg flex items-center justify-center cursor-pointer hover:bg-white/10 transition-all shrink-0 overflow-hidden group"
@@ -544,7 +567,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                                         remove(index);
                                         setDishFiles(prev => {
                                             const next = new Map(prev);
-                                            next.delete(index);
+                                            next.delete(field.id);
                                             return next;
                                         });
                                     }}
