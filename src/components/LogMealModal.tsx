@@ -242,12 +242,16 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
         finalVideoUrl = await uploadFileWithProgress(videoFile, `videos/${user.uid}_${Date.now()}.mp4`);
       }
 
-      const uploadedDishes = data.dishes.map((dish, idx) => {
-        // Since we are now using the 'Zero-Barrier' Base64 Fast-Save, 
-        // the image is already in the dish.image field from the FileReader in handleFileChange.
-        // We skip the Cloud Storage upload entirely for images to avoid payment/CORS locks.
-        return dish;
-      });
+      // Sequential Dish Upload Engine to avoid technical race conditions
+      const uploadedDishes = [...data.dishes];
+      for (let i = 0; i < uploadedDishes.length; i++) {
+        const dishFile = dishFiles.get(i);
+        if (dishFile) {
+            const fileName = `dishes/${user.uid}_${Date.now()}_${i}.${dishFile.name.split('.').pop()}`;
+            const downloadUrl = await uploadFileWithProgress(dishFile, fileName);
+            uploadedDishes[i].image = downloadUrl;
+        }
+      }
 
       // 2. If we have a selected restaurant, ensure it exists in the 'restaurants' collection
       let restaurantId = selectedRestaurant?.id || `manual_${Date.now()}`;

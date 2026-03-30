@@ -3,7 +3,8 @@ import { User } from "../types";
 import { X, Loader2, Save, Camera, ChevronRight } from "lucide-react";
 import { doc, updateDoc, collection, query, where, getDocs, writeBatch } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
-import { db, auth } from "../firebase";
+import { db, auth, storage } from "../firebase";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { toast } from "sonner";
 
 interface EditProfileModalProps {
@@ -22,28 +23,52 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
   const [cuisines, setCuisines] = useState(user.favoriteCuisines?.join(", ") || "");
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
+
+  const uploadFileWithProgress = (file: File, path: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const fileRef = ref(storage, path);
+      const uploadTask = uploadBytesResumable(fileRef, file);
+
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(Math.round(progress));
+        }, 
+        (error: any) => {
+           console.error("Upload failed", error);
+           toast.error(`Upload Failed: ${error.code || error.message}`);
+           setIsUploading(false);
+           setUploadProgress(0);
+           reject(error);
+        }, 
+        async () => {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          resolve(downloadURL);
+        }
+      );
+    });
+  };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsUploading(true);
-    try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64String = reader.result as string;
-        setPhotoURL(base64String);
-        setIsUploading(false);
-      };
-      reader.readAsDataURL(file);
-    } catch (error) {
-      console.error("Error reading file:", error);
-      toast.error("Failed to read image file.");
-      setIsUploading(false);
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Photo too large. Please select an image under 2MB.");
+      return;
     }
+
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoURL(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSave = async (e?: React.FormEvent) => {
@@ -53,6 +78,16 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     
     setIsSaving(true);
     try {
+      let finalPhotoURL = photoURL;
+      
+      // Professional Storage Upload for the Profile Photo
+      if (photoFile) {
+        setIsUploading(true);
+        const fileName = `profiles/${user.uid}_${Date.now()}.jpg`;
+        finalPhotoURL = await uploadFileWithProgress(photoFile, fileName);
+        setIsUploading(false);
+      }
+
       const favoriteCuisines = cuisines
         .split(",")
         .map(c => c.trim())
@@ -82,7 +117,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
       const userRef = doc(db, "users", user.uid);
       const payload: Partial<User> = {
         displayName: displayName.trim(),
-        photoURL: photoURL.trim(),
+        photoURL: finalPhotoURL.trim(),
         username: username.trim().toLowerCase() || undefined,
         pronouns: pronouns.trim() || undefined,
         bio: bio.trim() || undefined,
@@ -93,37 +128,35 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
       await updateDoc(userRef, cleanPayload);
 
       // --- Universal Sync Engine ---
-      // If photo or name changed, propagate to reviews, comments, and notifications
-      if (photoURL !== user.photoURL || displayName !== user.displayName) {
+      if (finalPhotoURL !== user.photoURL || displayName !== user.displayName) {
         const batch = writeBatch(db);
-        const feedback = [];
-
+        
         // 1. Sync Reviews
         const reviewsQuery = query(collection(db, "reviews"), where("userId", "==", user.uid));
         const reviewsSnap = await getDocs(reviewsQuery);
         reviewsSnap.forEach((doc) => {
           batch.update(doc.ref, { 
-            userPhoto: photoURL,
+            userPhoto: finalPhotoURL,
             userName: displayName.trim()
           });
         });
 
-        // 2. Sync Interactions (Comments/Likes)
+        // 2. Sync Interactions
         const interactionsQuery = query(collection(db, "interactions"), where("userId", "==", user.uid));
         const interactionsSnap = await getDocs(interactionsQuery);
         interactionsSnap.forEach((doc) => {
           batch.update(doc.ref, { 
-            userPhoto: photoURL,
+            userPhoto: finalPhotoURL,
             userName: displayName.trim()
           });
         });
 
-        // 3. Sync Notifications (where user is the actor)
+        // 3. Sync Notifications
         const notificationsQuery = query(collection(db, "notifications"), where("actorId", "==", user.uid));
         const notificationsSnap = await getDocs(notificationsQuery);
         notificationsSnap.forEach((doc) => {
           batch.update(doc.ref, { 
-            actorPhoto: photoURL,
+            actorPhoto: finalPhotoURL,
             actorName: displayName.trim()
           });
         });
@@ -138,6 +171,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
       toast.error("Failed to update profile.");
     } finally {
       setIsSaving(false);
+      setIsUploading(false);
     }
   };
 
