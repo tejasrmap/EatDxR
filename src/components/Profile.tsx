@@ -267,11 +267,11 @@ export const Profile: React.FC = () => {
           </div>
 
           <div className="flex flex-col md:flex-row md:items-baseline gap-4 mb-8">
-            <div className="flex flex-col md:flex-row md:items-baseline gap-3">
-              <h1 className="text-3xl lg:text-4xl font-black text-white tracking-tighter font-serif">{user.displayName}</h1>
-              {user.pronouns && (
-                <span className="text-xs font-medium text-white/20 italic uppercase tracking-widest">{user.pronouns}</span>
-              )}
+            <div className="flex flex-wrap items-baseline gap-3 justify-center md:justify-start">
+                <h1 className="text-2xl lg:text-4xl font-black text-white tracking-tighter font-serif leading-none">{user.displayName}</h1>
+                {user.pronouns && (
+                    <span className="text-[10px] font-bold text-white/40 italic uppercase tracking-[0.2em]">{user.pronouns}</span>
+                )}
             </div>
             {currentUser?.uid !== user.uid ? (
               <button
@@ -329,18 +329,18 @@ export const Profile: React.FC = () => {
           </div>
 
           <div className="space-y-6">
-            {/* Favorite Cuisines - Visible for Mobile Only */}
-            {user.favoriteCuisines && user.favoriteCuisines.length > 0 && (
-              <div className="lg:hidden">
-                <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                  {user.favoriteCuisines.map((cuisine, idx) => (
-                    <span key={idx} className="px-3 py-1 bg-zinc-800 border border-white/5 rounded-md text-[8px] uppercase tracking-widest font-black text-white/40">
-                      {cuisine}
-                    </span>
-                  ))}
+             {/* Letterboxd-Style Cuisines (Mobile) */}
+             {user.favoriteCuisines && user.favoriteCuisines.length > 0 && (
+                <div className="lg:hidden py-4 border-b border-white/5">
+                    <div className="flex flex-wrap gap-2 justify-center">
+                        {user.favoriteCuisines.map((cuisine, idx) => (
+                            <span key={idx} className="px-3 py-1 bg-zinc-800 border border-white/5 rounded-md text-[8px] uppercase tracking-widest font-black text-white/60">
+                                {cuisine}
+                            </span>
+                        ))}
+                    </div>
                 </div>
-              </div>
-            )}
+             )}
 
             {user.bio && (
               <p className="text-base md:text-lg text-white/80 leading-relaxed font-serif italic max-w-2xl">
