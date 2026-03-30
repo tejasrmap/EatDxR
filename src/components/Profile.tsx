@@ -259,10 +259,11 @@ export const Profile: React.FC = () => {
         </div>
 
         <div className="flex-1 w-full text-center md:text-left pt-2">
-          {/* Letterboxd-Style Identity Block */}
-          <div className="mb-6">
+          <div className="mb-2">
             {user.username && (
-              <p className="text-sm font-bold text-white/40 tracking-[0.2em] lowercase">@{user.username}</p>
+              <span className="inline-block bg-white/5 border border-white/10 px-2 py-0.5 rounded text-[10px] font-black tracking-widest lowercase text-white/40 mb-2">
+                @{user.username}
+              </span>
             )}
           </div>
 
@@ -328,11 +329,17 @@ export const Profile: React.FC = () => {
             </div>
           </div>
 
-          <div className="space-y-6">
-             {/* Letterboxd-Style Cuisines (Mobile) */}
+          <div className="space-y-4">
+             {user.bio && (
+                <p className="lg:hidden text-lg text-white/80 leading-relaxed font-serif italic max-w-2xl text-center md:text-left mx-auto md:mx-0">
+                   "{user.bio}"
+                </p>
+             )}
+
+             {/* Letterboxd-Style Cuisines (Mobile Only) */}
              {user.favoriteCuisines && user.favoriteCuisines.length > 0 && (
-                <div className="lg:hidden py-4 border-b border-white/5">
-                    <div className="flex flex-wrap gap-2 justify-center">
+                <div className="lg:hidden">
+                    <div className="flex flex-wrap gap-2 justify-center md:justify-start">
                         {user.favoriteCuisines.map((cuisine, idx) => (
                             <span key={idx} className="px-3 py-1 bg-zinc-800 border border-white/5 rounded-md text-[8px] uppercase tracking-widest font-black text-white/60">
                                 {cuisine}
@@ -341,12 +348,6 @@ export const Profile: React.FC = () => {
                     </div>
                 </div>
              )}
-
-            {user.bio && (
-              <p className="text-base md:text-lg text-white/80 leading-relaxed font-serif italic max-w-2xl">
-                "{user.bio}"
-              </p>
-            )}
           </div>
         </div>
       </div>
@@ -453,8 +454,17 @@ export const Profile: React.FC = () => {
             )}
           </div>
 
-          {/* Sidebar Section (Restored for Desktop) */}
+          {/* Sidebar Section (Desktop Elite) */}
           <div className="hidden lg:block space-y-12 pl-6 pt-12 border-l border-white/5">
+            {user.bio && (
+               <div>
+                  <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40 mb-4">Philosophy</h3>
+                  <p className="text-lg text-white/80 leading-relaxed font-serif italic">
+                     "{user.bio}"
+                  </p>
+               </div>
+            )}
+
             <div>
               <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40 mb-4">Culinary Stats</h3>
               <div className="space-y-6">
