@@ -250,7 +250,7 @@ export const Profile: React.FC = () => {
           )}
         </div>
 
-        <div className="flex-1 w-full text-center md:text-left">
+        <div className="flex-1 w-full flex flex-col items-center md:items-start text-center md:text-left">
           <div className="mb-2">
             {user.username && (
               <span className="inline-block bg-white/5 border border-white/10 px-2 py-0.5 rounded text-[10px] font-black tracking-widest lowercase text-white/40 mb-2">
@@ -301,14 +301,14 @@ export const Profile: React.FC = () => {
           <div className="flex items-center justify-between md:justify-start gap-2 md:gap-12 mb-2 border-b border-white/5 pb-4">
             <div className="text-center md:text-left">
               <span className="text-xl md:text-2xl font-black text-white pr-1 italic font-serif">{reviews.length}</span>
-              <span className="block md:inline text-[8px] md:text-[10px] text-white/40 uppercase tracking-widest font-black">posts</span>
+              <span className="block md:inline text-[7px] md:text-[10px] text-white/20 uppercase tracking-[0.2em] font-bold">posts</span>
             </div>
             <div
               className="text-center md:text-left cursor-pointer group"
               onClick={() => setFollowModalType("followers")}
             >
               <span className="text-xl md:text-2xl font-black text-white pr-1 group-hover:text-orange-500 transition-colors italic font-serif">{followerCount}</span>
-              <span className="block md:inline text-[8px] md:text-[10px] text-white/40 group-hover:text-orange-500/60 transition-colors uppercase tracking-widest font-black">followers</span>
+              <span className="block md:inline text-[7px] md:text-[10px] text-white/20 group-hover:text-orange-500/60 transition-colors uppercase tracking-[0.2em] font-bold">followers</span>
             </div>
             <div
               className="text-center md:text-left cursor-pointer group"
@@ -317,7 +317,7 @@ export const Profile: React.FC = () => {
               <span className="text-xl md:text-2xl font-black text-white pr-1 group-hover:text-orange-500 transition-colors italic font-serif">
                 {user.stats?.followingList?.length || user.stats?.following || 0}
               </span>
-              <span className="block md:inline text-[8px] md:text-[10px] text-white/40 group-hover:text-orange-500/60 transition-colors uppercase tracking-widest font-black">following</span>
+              <span className="block md:inline text-[7px] md:text-[10px] text-white/20 group-hover:text-orange-500/60 transition-colors uppercase tracking-[0.2em] font-bold">following</span>
             </div>
             <div className="text-center md:text-left">
               <span className="text-xl md:text-2xl font-black text-white pr-1 italic font-serif">
@@ -325,7 +325,7 @@ export const Profile: React.FC = () => {
                   ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
                   : "0.0"}
               </span>
-              <span className="block md:inline text-[8px] md:text-[10px] text-white/40 uppercase tracking-widest font-black">rating</span>
+              <span className="block md:inline text-[7px] md:text-[10px] text-white/20 uppercase tracking-[0.2em] font-bold">rating</span>
             </div>
           </div>
 
@@ -398,12 +398,12 @@ export const Profile: React.FC = () => {
       {activeTab === "profile" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 w-full">
           <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/5">
+            <div className="flex items-center justify-between mb-2 pb-2 border-b border-white/5">
               <div className="flex items-center gap-2">
-                <Grid size={14} className="text-orange-500" />
-                <h2 className="text-[10px] uppercase tracking-[0.4em] font-black text-white/40">The Film Strip</h2>
+                <Grid size={12} className="text-orange-500" />
+                <h2 className="text-[9px] uppercase tracking-[0.4em] font-black text-white/20">The Film Strip</h2>
               </div>
-              <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{reviews.length} Logs</span>
+              <span className="text-[9px] font-black text-white/10 uppercase tracking-widest">{reviews.length} Logs</span>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-1 md:gap-4 lg:gap-6 mb-12">
