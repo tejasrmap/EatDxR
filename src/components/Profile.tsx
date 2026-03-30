@@ -311,7 +311,7 @@ export const Profile: React.FC = () => {
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 pb-6 md:pb-0">
              {user.bio && (
                 <p className="lg:hidden text-lg text-white/80 leading-relaxed font-serif italic max-w-2xl text-center md:text-left mx-auto md:mx-0">
                    "{user.bio}"
