@@ -75,6 +75,23 @@ export const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, rev
         content: newComment.trim(),
         createdAt: serverTimestamp()
       });
+
+      // Notification logic: Notify the review owner if someone else comments
+      if (currentUser.uid !== review.userId) {
+        const notifId = `notif_comment_${currentUser.uid}_${Date.now()}`;
+        await setDoc(doc(db, "notifications", notifId), {
+          id: notifId,
+          recipientId: review.userId,
+          actorId: currentUser.uid,
+          actorName: currentUser.displayName || "Critic",
+          actorPhoto: currentUser.photoURL || "",
+          type: "COMMENT",
+          targetId: review.id,
+          read: false,
+          createdAt: serverTimestamp()
+        });
+      }
+
       setNewComment("");
     } catch (error) {
       console.error("Post error:", error);

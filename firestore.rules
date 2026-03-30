@@ -155,8 +155,8 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, list: if true; // Let the world see our critics & profiles
       allow create: if request.auth != null && request.auth.uid == userId; // Let new users settle in
-      allow update: if isOwner(userId) && isValidUser(request.resource.data) && 
-                      request.resource.data.uid == resource.data.uid;
+      allow update: if (isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.uid == resource.data.uid) ||
+                      (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats']));
     }
 
     match /restaurants/{restaurantId} {
