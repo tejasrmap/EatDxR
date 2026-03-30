@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { collection, query, where, onSnapshot, orderBy, doc, getDoc, getDocs, updateDoc, arrayUnion, arrayRemove, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, doc, getDoc, getDocs, updateDoc, arrayUnion, arrayRemove, setDoc, deleteDoc, serverTimestamp, increment } from "firebase/firestore";
 import { db } from "../firebase";
 import { Review, User, Restaurant } from "../types";
 import { ReviewCard } from "./ReviewCard";
@@ -37,14 +37,21 @@ export const Profile: React.FC = () => {
     setIsUpdatingFollow(true);
     try {
       const currentUserRef = doc(db, "users", currentUser.uid);
+      const targetUserRef = doc(db, "users", user.uid);
       const notifId = `${currentUser.uid}_${user.uid}_FOLLOW`;
       
       if (isFollowing) {
+        // Unfollow
         await updateDoc(currentUserRef, { "stats.followingList": arrayRemove(user.uid) });
+        await updateDoc(currentUserRef, { "stats.following": increment(-1) });
+        await updateDoc(targetUserRef, { "stats.followers": increment(-1) });
         await deleteDoc(doc(db, "notifications", notifId)).catch(() => {});
         toast.success(`Unfollowed ${user.displayName}`);
       } else {
+        // Follow
         await updateDoc(currentUserRef, { "stats.followingList": arrayUnion(user.uid) });
+        await updateDoc(currentUserRef, { "stats.following": increment(1) });
+        await updateDoc(targetUserRef, { "stats.followers": increment(1) });
         await setDoc(doc(db, "notifications", notifId), {
           id: notifId,
           recipientId: user.uid,
@@ -129,8 +136,17 @@ export const Profile: React.FC = () => {
             where("stats.followingList", "array-contains", resolvedUser.uid)
           );
           
-          unsubscribeFollowers = onSnapshot(followersQuery, (snapshot) => {
-            setFollowerCount(snapshot.size);
+          unsubscribeFollowers = onSnapshot(followersQuery, async (snapshot) => {
+            const count = snapshot.size;
+            setFollowerCount(count);
+
+            // Silent Sync: Correct the 'stats.followers' count if it's out of sync
+            // This fixes legacy data issues (where count was 0) automatically when you visit the profile
+            if (resolvedUser && resolvedUser.stats?.followers !== count) {
+                await updateDoc(doc(db, "users", resolvedUser.uid), {
+                    "stats.followers": count
+                }).catch(e => console.warn("Silent sync failed:", e));
+            }
           });
         } else {
           setLoading(false); // User not found
