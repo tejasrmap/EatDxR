@@ -227,7 +227,7 @@ export const Profile: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
       {/* Letterboxd-Elite Profile Header */}
-      <div className="flex flex-col md:flex-row items-start gap-4 md:gap-12 mb-2 md:mb-4">
+      <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-12 mb-2 md:mb-4">
         <div className="relative group shrink-0">
           <img
             src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`}
@@ -250,7 +250,7 @@ export const Profile: React.FC = () => {
           )}
         </div>
 
-        <div className="flex-1 w-full md:text-left">
+        <div className="flex-1 w-full text-center md:text-left">
           <div className="mb-2">
             {user.username && (
               <span className="inline-block bg-white/5 border border-white/10 px-2 py-0.5 rounded text-[10px] font-black tracking-widest lowercase text-white/40 mb-2">
@@ -260,7 +260,7 @@ export const Profile: React.FC = () => {
           </div>
 
           <div className="flex flex-col md:flex-row md:items-baseline gap-4 mb-6 md:mb-8">
-            <div className="flex flex-wrap items-baseline gap-2 justify-start">
+            <div className="flex flex-wrap items-baseline gap-2 justify-center md:justify-start">
                 <h1 className="text-xl md:text-2xl lg:text-4xl font-black text-white tracking-tighter font-serif leading-none">{user.displayName}</h1>
                 {user.pronouns && (
                     <span className="text-[9px] font-bold text-white/40 italic uppercase tracking-[0.2em]">{user.pronouns}</span>
