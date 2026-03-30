@@ -21,6 +21,7 @@ export function Navbar() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [isReelModalOpen, setIsReelModalOpen] = useState(false);
+  const [showActionMenu, setShowActionMenu] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const navigate = useNavigate();
@@ -99,30 +100,76 @@ export function Navbar() {
           {/* Action Row: Unified & Accessible on Mobile */}
           <div className="flex items-center gap-1.5 md:gap-4">
             {/* Direct Creation Hub (Mobile-Ready) */}
-            <div className="flex items-center gap-1 md:gap-2">
+              <div className="flex items-center gap-1 md:gap-3">
               <button 
                 onClick={() => setIsSearchOpen(true)}
                 className="p-2 text-white/40 hover:text-white transition-colors" 
+                title="Search"
               >
                 <Search size={18} />
               </button>
 
               {user && (
-                <>
+                <div className="relative">
                   <button
-                    onClick={() => setIsReelModalOpen(true)}
-                    className="p-2 text-orange-500/60 hover:text-orange-500 transition-all active:scale-90 hover:bg-orange-500/5 rounded-xl group"
+                    onClick={() => setShowActionMenu(!showActionMenu)}
+                    className="p-2 text-[#00e054]/60 hover:text-[#00e054] transition-all active:scale-90 hover:bg-[#00e054]/5 rounded-xl border border-transparent hover:border-[#00e054]/10 group"
+                    title="Create"
                   >
-                    <Film size={20} className="group-hover:scale-110 transition-transform" />
+                    <Plus size={24} className={showActionMenu ? "rotate-45 transition-transform" : "transition-transform"} />
                   </button>
 
-                  <button
-                    onClick={() => setIsLogModalOpen(true)}
-                    className="p-2 text-[#00e054]/60 hover:text-[#00e054] transition-all active:scale-90 hover:bg-[#00e054]/5 rounded-xl group"
-                  >
-                    <Plus size={22} className="group-hover:scale-110 transition-transform" />
-                  </button>
-                </>
+                  <AnimatePresence>
+                    {showActionMenu && (
+                      <>
+                        {/* Mobile Overlay Backdrop */}
+                        <motion.div 
+                          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                          onClick={() => setShowActionMenu(false)}
+                          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[340] md:hidden"
+                        />
+                        
+                        {/* Action Tray */}
+                        <motion.div
+                          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                          className="fixed bottom-6 left-6 right-6 md:absolute md:top-full md:bottom-auto md:left-auto md:right-0 md:mt-3 md:w-56 bg-[#1a1c1d]/95 backdrop-blur-2xl border border-white/10 rounded-[2rem] md:rounded-2xl shadow-2xl py-3 z-[350] overflow-hidden"
+                        >
+                          <div className="px-5 py-3 border-b border-white/5 mb-2 md:hidden">
+                             <span className="text-[10px] uppercase font-black tracking-widest text-white/20 text-center block">Creator Choice</span>
+                          </div>
+                          
+                          <button
+                            onClick={() => { setIsReelModalOpen(true); setShowActionMenu(false); }}
+                            className="w-full flex items-center gap-4 px-6 py-4 md:py-3 hover:bg-white/5 transition-all text-xs font-bold uppercase tracking-widest text-white group"
+                          >
+                            <div className="w-10 h-10 md:w-8 md:h-8 rounded-xl bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20 transition-colors">
+                              <Film size={18} className="text-orange-500" />
+                            </div>
+                            <div className="flex flex-col items-start gap-0.5">
+                               <span>Reel Narrative</span>
+                               <span className="text-[8px] text-white/20 md:hidden">Cinematic 70s Clip</span>
+                            </div>
+                          </button>
+                          
+                          <button
+                            onClick={() => { setIsLogModalOpen(true); setShowActionMenu(false); }}
+                            className="w-full flex items-center gap-4 px-6 py-4 md:py-3 hover:bg-white/5 transition-all text-xs font-bold uppercase tracking-widest text-white group"
+                          >
+                            <div className="w-10 h-10 md:w-8 md:h-8 rounded-xl bg-[#00e054]/10 flex items-center justify-center group-hover:bg-[#00e054]/20 transition-colors">
+                              <Plus size={20} className="text-[#00e054]" />
+                            </div>
+                            <div className="flex flex-col items-start gap-0.5">
+                               <span>Culinary Log</span>
+                               <span className="text-[8px] text-white/20 md:hidden">Dish-by-Dish Diary</span>
+                            </div>
+                          </button>
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
               )}
             </div>
 
