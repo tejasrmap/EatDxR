@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, Plus, User, LogOut, UtensilsCrossed, Bell, Menu, X } from "lucide-react";
+import { Search, Plus, User, LogOut, UtensilsCrossed, Bell, Menu, X, Settings } from "lucide-react";
 import { useState, useEffect } from "react";
 import { LogMealModal } from "./LogMealModal";
 import { SearchOverlay } from "./SearchOverlay";
@@ -9,6 +9,8 @@ import { db } from "../firebase";
 import { AppNotification } from "../types";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { SettingsOverlay } from "./SettingsOverlay";
+import { EditProfileModal } from "./EditProfileModal";
 
 export function Navbar() {
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
@@ -17,6 +19,8 @@ export function Navbar() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
   // Notification States
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -223,6 +227,16 @@ export function Navbar() {
                          Profile
                        </Link>
                        <button
+                         onClick={() => {
+                           setIsSettingsOpen(true);
+                           setShowUserMenu(false);
+                         }}
+                         className="w-full flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white"
+                       >
+                         <Settings size={14} className="text-orange-500" />
+                         Settings
+                       </button>
+                       <button
                          onClick={() => { logout(); setShowUserMenu(false); }}
                          className="w-full flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors text-xs font-bold uppercase tracking-widest text-rose-500"
                        >
@@ -254,6 +268,20 @@ export function Navbar() {
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
       />
+
+      <SettingsOverlay
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        onEditProfile={() => setIsEditModalOpen(true)}
+      />
+
+      {dishdUser && (
+        <EditProfileModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          user={dishdUser}
+        />
+      )}
     </>
   );
 }
