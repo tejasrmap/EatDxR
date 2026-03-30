@@ -298,26 +298,34 @@ export const Profile: React.FC = () => {
             )}
           </div>
 
-          <div className="flex justify-center md:justify-start gap-12 mb-8 border-b border-white/5 pb-8">
+          <div className="grid grid-cols-4 md:flex justify-center md:justify-start gap-4 md:gap-12 mb-6 border-b border-white/5 pb-6">
             <div className="text-center md:text-left">
-              <span className="text-2xl font-black text-white pr-1 italic font-serif">{reviews.length}</span>
-              <span className="text-[10px] text-white/40 uppercase tracking-widest font-black">posts</span>
+              <span className="text-xl md:text-2xl font-black text-white pr-1 italic font-serif">{reviews.length}</span>
+              <span className="block md:inline text-[8px] md:text-[10px] text-white/40 uppercase tracking-widest font-black">posts</span>
             </div>
             <div
               className="text-center md:text-left cursor-pointer group"
               onClick={() => setFollowModalType("followers")}
             >
-              <span className="text-2xl font-black text-white pr-1 group-hover:text-orange-500 transition-colors italic font-serif">{followerCount}</span>
-              <span className="text-[10px] text-white/40 group-hover:text-orange-500/60 transition-colors uppercase tracking-widest font-black">followers</span>
+              <span className="text-xl md:text-2xl font-black text-white pr-1 group-hover:text-orange-500 transition-colors italic font-serif">{followerCount}</span>
+              <span className="block md:inline text-[8px] md:text-[10px] text-white/40 group-hover:text-orange-500/60 transition-colors uppercase tracking-widest font-black">followers</span>
             </div>
             <div
               className="text-center md:text-left cursor-pointer group"
               onClick={() => setFollowModalType("following")}
             >
-              <span className="text-2xl font-black text-white pr-1 group-hover:text-orange-500 transition-colors italic font-serif">
+              <span className="text-xl md:text-2xl font-black text-white pr-1 group-hover:text-orange-500 transition-colors italic font-serif">
                 {user.stats?.followingList?.length || user.stats?.following || 0}
               </span>
-              <span className="text-[10px] text-white/40 group-hover:text-orange-500/60 transition-colors uppercase tracking-widest font-black">following</span>
+              <span className="block md:inline text-[8px] md:text-[10px] text-white/40 group-hover:text-orange-500/60 transition-colors uppercase tracking-widest font-black">following</span>
+            </div>
+            <div className="text-center md:text-left">
+              <span className="text-xl md:text-2xl font-black text-white pr-1 italic font-serif">
+                 {reviews.length > 0 
+                  ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
+                  : "0.0"}
+              </span>
+              <span className="block md:inline text-[8px] md:text-[10px] text-white/40 uppercase tracking-widest font-black">rating</span>
             </div>
           </div>
 
@@ -447,14 +455,14 @@ export const Profile: React.FC = () => {
           </div>
 
           {/* Sidebar Section (Desktop Elite) */}
-          <div className="hidden lg:block space-y-12 pl-6 pt-12 border-l border-white/5">
+          <div className="hidden lg:block space-y-12 pl-6 pt-6 border-l border-white/5">
             {/* BIO Section */}
             <div>
               <div className="border-b border-white/5 pb-4 mb-6">
                  <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40">BIO</h3>
               </div>
               {user.bio ? (
-                 <p className="text-xl text-white/80 leading-relaxed font-serif italic">
+                 <p className="text-base text-white/80 leading-relaxed font-serif italic">
                     "{user.bio}"
                  </p>
               ) : (
