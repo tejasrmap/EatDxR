@@ -87,7 +87,7 @@ service cloud.firestore {
              hasOnlyAllowedFields(['uid', 'displayName', 'photoURL', 'username', 'pronouns', 'bio', 'favoriteCuisines', 'stats', 'eatlist', 'role', 'likes']) &&
              data.uid is string && data.uid.size() > 0 && data.uid.size() < 128 &&
              data.displayName is string && data.displayName.size() > 0 && data.displayName.size() < 200 &&
-             data.photoURL is string && data.photoURL.size() > 0 && data.photoURL.size() < 2000 &&
+             data.photoURL is string && data.photoURL.size() > 0 && data.photoURL.size() < 1048576 &&
              (!('username' in data) || (data.username is string && data.username.size() < 30)) &&
              (!('pronouns' in data) || (data.pronouns is string && data.pronouns.size() < 20)) &&
              (!('bio' in data) || (data.bio is string && data.bio.size() < 1000)) &&
@@ -100,7 +100,7 @@ service cloud.firestore {
              data.id is string && data.id.size() > 0 &&
              data.userId == request.auth.uid &&
              data.userName is string && data.userName.size() > 0 && data.userName.size() < 200 &&
-             data.userPhoto is string && data.userPhoto.size() > 0 && data.userPhoto.size() < 2000 &&
+             data.userPhoto is string && data.userPhoto.size() > 0 && data.userPhoto.size() < 1048576 &&
              data.restaurantId is string && data.restaurantId.size() > 0 &&
              data.restaurantName is string && data.restaurantName.size() > 0 && data.restaurantName.size() < 300 &&
              data.dishes is list && data.dishes.size() > 0 && data.dishes.size() < 20 &&
@@ -119,7 +119,7 @@ service cloud.firestore {
              data.location is string && data.location.size() > 0 && data.location.size() < 1000 &&
              (!('rating' in data) || (data.rating is number && data.rating >= 0 && data.rating <= 5)) &&
              (!('reviewCount' in data) || (data.reviewCount is int && data.reviewCount >= 0)) &&
-             (!('image' in data) || (data.image is string && data.image.size() < 2000));
+             (!('image' in data) || (data.image is string && data.image.size() < 1048576));
     }
 
     function isValidInteraction(data) {
@@ -128,7 +128,7 @@ service cloud.firestore {
              data.reviewId is string && data.reviewId.size() > 0 &&
              data.userId == request.auth.uid &&
              data.userName is string &&
-             data.userPhoto is string &&
+             data.userPhoto is string && data.userPhoto.size() < 1048576 &&
              data.type in ['LIKE', 'COMMENT'] &&
              (!('content' in data) || (data.content is string && data.content.size() > 0 && data.content.size() < 2000)) &&
              data.createdAt is timestamp;
@@ -141,7 +141,7 @@ service cloud.firestore {
              data.recipientId is string && data.recipientId.size() > 0 &&
              data.actorId == request.auth.uid &&
              data.actorName is string && data.actorName.size() > 0 &&
-             data.actorPhoto is string &&
+             data.actorPhoto is string && data.actorPhoto.size() < 1048576 &&
              data.type in ['LIKE', 'COMMENT', 'FOLLOW'] &&
              (!('targetId' in data) || (data.targetId is string)) &&
              data.read is bool &&

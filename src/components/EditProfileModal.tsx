@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { User } from "../types";
 import { X, Loader2, Save, Camera, ChevronRight } from "lucide-react";
-import { doc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, updateDoc, collection, query, where, getDocs, writeBatch } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
 import { db, auth } from "../firebase";
 import { toast } from "sonner";
@@ -92,6 +92,45 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
 
       const cleanPayload = Object.fromEntries(Object.entries(payload).filter(([_, v]) => v !== undefined));
       await updateDoc(userRef, cleanPayload);
+
+      // --- Universal Sync Engine ---
+      // If photo or name changed, propagate to reviews, comments, and notifications
+      if (photoURL !== user.photoURL || displayName !== user.displayName) {
+        const batch = writeBatch(db);
+        const feedback = [];
+
+        // 1. Sync Reviews
+        const reviewsQuery = query(collection(db, "reviews"), where("userId", "==", user.uid));
+        const reviewsSnap = await getDocs(reviewsQuery);
+        reviewsSnap.forEach((doc) => {
+          batch.update(doc.ref, { 
+            userPhoto: photoURL,
+            userName: displayName.trim()
+          });
+        });
+
+        // 2. Sync Interactions (Comments/Likes)
+        const interactionsQuery = query(collection(db, "interactions"), where("userId", "==", user.uid));
+        const interactionsSnap = await getDocs(interactionsQuery);
+        interactionsSnap.forEach((doc) => {
+          batch.update(doc.ref, { 
+            userPhoto: photoURL,
+            userName: displayName.trim()
+          });
+        });
+
+        // 3. Sync Notifications (where user is the actor)
+        const notificationsQuery = query(collection(db, "notifications"), where("actorId", "==", user.uid));
+        const notificationsSnap = await getDocs(notificationsQuery);
+        notificationsSnap.forEach((doc) => {
+          batch.update(doc.ref, { 
+            actorPhoto: photoURL,
+            actorName: displayName.trim()
+          });
+        });
+
+        await batch.commit();
+      }
       
       toast.success(isOnboarding ? "Welcome to EatDxR! Profile set up." : "Profile updated successfully!");
       onClose();
