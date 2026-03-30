@@ -376,7 +376,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[1000] flex items-start md:items-center justify-center p-4 pt-24 md:pt-12 overflow-y-auto">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-0 md:p-12 overflow-hidden">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -390,11 +390,11 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full h-auto md:max-w-lg bg-[#0a0a0a] border border-white/10 rounded-[2rem] shadow-[0_30px_100px_rgba(0,0,0,0.8),0_0_50px_rgba(249,115,22,0.05)] flex flex-col my-auto"
+            className="relative w-full h-full md:h-auto md:max-h-[90vh] md:max-w-lg bg-[#0a0a0a] border-none md:border border-white/10 rounded-none md:rounded-[2rem] shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Elite Progress Micro-Bar */}
             {isUploading && (
-              <div className="absolute top-0 left-0 right-0 h-1 z-[1010] overflow-hidden rounded-t-[2rem]">
+              <div className="absolute top-0 left-0 right-0 h-1 z-[1010] overflow-hidden">
                 <motion.div 
                   className="h-full bg-gradient-to-r from-orange-500 to-rose-500"
                   initial={{ width: 0 }}
@@ -404,7 +404,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
             )}
 
             {/* Cinematic Header - Sticky & Integrated */}
-            <div className="px-6 py-5 border-b border-white/5 bg-black/60 backdrop-blur-3xl flex items-center justify-between shrink-0 sticky top-0 z-[1000] rounded-t-[2rem]">
+            <div className="px-6 py-5 border-b border-white/5 bg-black/60 backdrop-blur-3xl flex items-center justify-between shrink-0 sticky top-0 z-[1000]">
               <div className="flex flex-col">
                 <span className="text-[9px] uppercase font-black tracking-[0.4em] text-orange-500">Culinary Narrative</span>
                 <h2 className="text-base font-bold text-white serif italic">
