@@ -6,7 +6,7 @@ import { formatDistanceToNow } from "date-fns";
 import { parseFirebaseDate } from "../lib/utils";
 import { useAuth } from "../App";
 import { db } from "../firebase";
-import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp, updateDoc, arrayUnion, arrayRemove, increment } from "firebase/firestore";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { CommentModal } from "./CommentModal";
@@ -20,6 +20,19 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
   const [likes, setLikes] = useState<Interaction[]>([]);
   const [comments, setComments] = useState<Interaction[]>([]);
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
+  
+  useEffect(() => {
+    if (!currentUser) return;
+    const unsubscribe = onSnapshot(doc(db, "users", currentUser.uid), (snapshot) => {
+        const userData = snapshot.data();
+        if (userData?.stats?.followingList) {
+            setIsFollowing(userData.stats.followingList.includes(review.userId));
+        }
+    });
+    return unsubscribe;
+  }, [currentUser, review.userId]);
   
   useEffect(() => {
     const q = query(
@@ -76,6 +89,46 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
     }
   };
 
+  const handleToggleFollow = async () => {
+    if (!currentUser) return toast.error("Sign in to follow critics");
+    if (currentUser.uid === review.userId) return;
+    
+    setIsUpdatingFollow(true);
+    try {
+      const currentUserRef = doc(db, "users", currentUser.uid);
+      const targetUserRef = doc(db, "users", review.userId);
+      const notifId = `${currentUser.uid}_${review.userId}_FOLLOW`;
+      
+      if (isFollowing) {
+        await updateDoc(currentUserRef, { "stats.followingList": arrayRemove(review.userId) });
+        await updateDoc(currentUserRef, { "stats.following": increment(-1) });
+        await updateDoc(targetUserRef, { "stats.followers": increment(-1) });
+        await deleteDoc(doc(db, "notifications", notifId)).catch(() => {});
+        toast.success(`Unfollowed ${review.userName}`);
+      } else {
+        await updateDoc(currentUserRef, { "stats.followingList": arrayUnion(review.userId) });
+        await updateDoc(currentUserRef, { "stats.following": increment(1) });
+        await updateDoc(targetUserRef, { "stats.followers": increment(1) });
+        await setDoc(doc(db, "notifications", notifId), {
+          id: notifId,
+          recipientId: review.userId,
+          actorId: currentUser.uid,
+          actorName: currentUser.displayName,
+          actorPhoto: currentUser.photoURL,
+          type: "FOLLOW",
+          read: false,
+          createdAt: serverTimestamp()
+        });
+        toast.success(`Following ${review.userName}`);
+      }
+    } catch (error) {
+      console.error("Error following:", error);
+      toast.error("Process failed");
+    } finally {
+      setIsUpdatingFollow(false);
+    }
+  };
+
   return (
     <div className="snap-child relative w-full h-svh md:h-screen bg-black overflow-hidden flex items-center justify-center">
       
@@ -109,7 +162,16 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
                         <span className="text-[11px] font-black text-white/80 tracking-tight">{review.userName}</span>
                     </Link>
                     <div className="w-1 h-1 bg-white/20 rounded-full" />
-                    <span className="text-[10px] font-black uppercase text-[#00e054] tracking-widest">Follow</span>
+                    <button 
+                        onClick={(e) => {
+                            e.preventDefault();
+                            handleToggleFollow();
+                        }}
+                        disabled={isUpdatingFollow || currentUser?.uid === review.userId}
+                        className={`text-[10px] font-black uppercase tracking-widest transition-colors ${isFollowing ? 'text-white/40' : 'text-[#00e054] active:scale-95'}`}
+                    >
+                        {isFollowing ? 'Following' : 'Follow'}
+                    </button>
                 </div>
 
                 <div className="space-y-1">

@@ -6,7 +6,7 @@ import { formatDistanceToNow } from "date-fns";
 import { parseFirebaseDate } from "../lib/utils";
 import { useAuth } from "../App";
 import { db } from "../firebase";
-import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp, updateDoc, arrayUnion, arrayRemove, increment } from "firebase/firestore";
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import { CommentModal } from "./CommentModal";
@@ -20,6 +20,19 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
   const [likes, setLikes] = useState<Interaction[]>([]);
   const [comments, setComments] = useState<Interaction[]>([]);
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
+  
+  useEffect(() => {
+    if (!currentUser) return;
+    const unsubscribe = onSnapshot(doc(db, "users", currentUser.uid), (snapshot) => {
+        const userData = snapshot.data();
+        if (userData?.stats?.followingList) {
+            setIsFollowing(userData.stats.followingList.includes(review.userId));
+        }
+    });
+    return unsubscribe;
+  }, [currentUser, review.userId]);
   
   useEffect(() => {
     const q = query(
@@ -76,6 +89,46 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
     }
   };
 
+  const handleToggleFollow = async () => {
+    if (!currentUser) return toast.error("Sign in to follow critics");
+    if (currentUser.uid === review.userId) return;
+    
+    setIsUpdatingFollow(true);
+    try {
+      const currentUserRef = doc(db, "users", currentUser.uid);
+      const targetUserRef = doc(db, "users", review.userId);
+      const notifId = `${currentUser.uid}_${review.userId}_FOLLOW`;
+      
+      if (isFollowing) {
+        await updateDoc(currentUserRef, { "stats.followingList": arrayRemove(review.userId) });
+        await updateDoc(currentUserRef, { "stats.following": increment(-1) });
+        await updateDoc(targetUserRef, { "stats.followers": increment(-1) });
+        await deleteDoc(doc(db, "notifications", notifId)).catch(() => {});
+        toast.success(`Unfollowed ${review.userName}`);
+      } else {
+        await updateDoc(currentUserRef, { "stats.followingList": arrayUnion(review.userId) });
+        await updateDoc(currentUserRef, { "stats.following": increment(1) });
+        await updateDoc(targetUserRef, { "stats.followers": increment(1) });
+        await setDoc(doc(db, "notifications", notifId), {
+          id: notifId,
+          recipientId: review.userId,
+          actorId: currentUser.uid,
+          actorName: currentUser.displayName,
+          actorPhoto: currentUser.photoURL,
+          type: "FOLLOW",
+          read: false,
+          createdAt: serverTimestamp()
+        });
+        toast.success(`Following ${review.userName}`);
+      }
+    } catch (error) {
+      console.error("Error following:", error);
+      toast.error("Process failed");
+    } finally {
+      setIsUpdatingFollow(false);
+    }
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -92,7 +145,20 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
             className="w-8 h-8 rounded-full border border-white/10"
           />
           <div className="flex flex-col">
-            <span className="text-xs md:text-sm font-black uppercase tracking-[0.2em] text-white/90">{review.userName}</span>
+            <div className="flex items-center gap-2">
+                <span className="text-xs md:text-sm font-black uppercase tracking-[0.2em] text-white/90">{review.userName}</span>
+                <div className="w-0.5 h-0.5 bg-white/20 rounded-full" />
+                <button 
+                  onClick={(e) => {
+                      e.preventDefault();
+                      handleToggleFollow();
+                  }}
+                  disabled={isUpdatingFollow || currentUser?.uid === review.userId}
+                  className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-colors ${isFollowing ? 'text-white/20' : 'text-[#00e054] hover:text-white active:scale-95'}`}
+                >
+                  {isFollowing ? 'Following' : 'Follow'}
+                </button>
+            </div>
             <span className="text-[9px] md:text-[10px] text-white/40 font-bold uppercase tracking-widest">
                 {formatDistanceToNow(parseFirebaseDate(review.createdAt), { addSuffix: true })}
             </span>
