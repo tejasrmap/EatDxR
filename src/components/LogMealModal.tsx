@@ -1,13 +1,13 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { X, Star, Upload, Image as ImageIcon, Search, MapPin, Loader2, Plus, Trash2 } from "lucide-react";
+import { X, Star, Upload, Image as ImageIcon, Search, MapPin, Loader2, Plus, Trash2, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../App";
 import { db, handleFirestoreError, OperationType, storage } from "../firebase";
 import { collection, doc, setDoc, updateDoc, serverTimestamp, getDoc, increment } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { toast } from "sonner";
 import { searchRestaurants } from "../services/mapsService";
 import { RestaurantSearchResult, Review } from "../types";
@@ -46,8 +46,10 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
   const [manualLocation, setManualLocation] = useState("");
   const [activeDishIndex, setActiveDishIndex] = useState<number | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [dishFiles, setDishFiles] = useState<Map<number, File>>(new Map());
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const videoInputRef = useRef<HTMLInputElement>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -173,8 +175,13 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
     reader.onloadend = () => {
       const base64String = reader.result as string;
       setValue(`dishes.${activeDishIndex}.image`, base64String);
-      // We also store the actual file in a hidden state for the real upload later
-      (window as any)[`dish_file_${activeDishIndex}`] = file;
+      
+      setDishFiles(prev => {
+        const next = new Map(prev);
+        next.set(activeDishIndex, file);
+        return next;
+      });
+
       setActiveDishIndex(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     };
@@ -195,10 +202,26 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
     setVideoPreview(url);
   };
 
-  const uploadFile = async (file: File, path: string): Promise<string> => {
-    const fileRef = ref(storage, path);
-    await uploadBytes(fileRef, file);
-    return getDownloadURL(fileRef);
+  const uploadFileWithProgress = (file: File, path: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const fileRef = ref(storage, path);
+      const uploadTask = uploadBytesResumable(fileRef, file);
+
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(Math.round(progress));
+        }, 
+        (error) => {
+           console.error("Upload failed", error);
+           reject(error);
+        }, 
+        async () => {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          resolve(downloadURL);
+        }
+      );
+    });
   };
 
   const onSubmit = async (data: LogFormValues) => {
@@ -207,20 +230,20 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
       return;
     }
 
-    setIsSubmitting(true);
     setIsUploading(true);
+    setUploadProgress(0);
     try {
-      // 1. Upload Media First (Professional Storage logic)
+      // 1. Upload Media First (Professional Resumable Storage logic)
       let finalVideoUrl = "";
       if (videoFile) {
-        finalVideoUrl = await uploadFile(videoFile, `videos/${user.uid}_${Date.now()}.mp4`);
+        finalVideoUrl = await uploadFileWithProgress(videoFile, `videos/${user.uid}_${Date.now()}.mp4`);
       }
 
       const uploadedDishes = await Promise.all(
         data.dishes.map(async (dish, idx) => {
-          const file = (window as any)[`dish_file_${idx}`];
+          const file = dishFiles.get(idx);
           if (file) {
-            const url = await uploadFile(file, `dishes/${user.uid}_${Date.now()}_${idx}`);
+            const url = await uploadFileWithProgress(file, `dishes/${user.uid}_${Date.now()}_${idx}`);
             return { ...dish, image: url };
           }
           return dish;
@@ -305,8 +328,10 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
       setManualLocation("");
       setSelectedRestaurant(null);
       setVideoFile(null);
+      setDishFiles(new Map());
       setVideoPreview(null);
       setIsUploading(false);
+      setUploadProgress(0);
       onClose();
     } catch (error) {
       console.error("Submit Error:", error);
@@ -335,12 +360,16 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
           />
           
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-lg bg-zinc-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col"
+            initial={{ opacity: 0, y: "100%" }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            className="relative w-full md:max-w-lg bg-zinc-900 border border-white/10 rounded-t-[3rem] md:rounded-2xl overflow-hidden shadow-2xl h-[92vh] md:h-auto md:max-h-[85vh] flex flex-col mt-auto md:mt-0"
           >
-            <div className="p-6 border-b border-white/10 flex items-center justify-between shrink-0">
+            {/* Grab Handle for Mobile */}
+            <div className="w-12 h-1 h-1.5 bg-white/10 rounded-full mx-auto mt-4 md:hidden shrink-0" />
+
+            <div className="p-6 md:p-8 border-b border-white/10 flex items-center justify-between shrink-0">
               <h2 className="text-xl font-semibold serif italic">{existingReview ? "Edit Meal" : "Log a Meal"}</h2>
               <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
                 <X size={20} />
@@ -475,46 +504,59 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                             <ImageIcon size={20} className="text-white/20 group-hover:text-white/40 transition-colors" />
                           )}
                         </div>
-                        <div className="flex-1 space-y-2">
-                          <div className="flex gap-2">
-                            <input 
-                              {...register(`dishes.${index}.name` as const)}
-                              placeholder="What did you have?"
-                              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 ring-white/20 transition-all"
-                              disabled={isSubmitting}
-                            />
-                            <div className="flex gap-1 shrink-0 bg-black/20 p-2 rounded-lg">
-                                {[1,2,3,4,5].map(star => (
-                                    <button
-                                        key={star}
-                                        type="button"
-                                        className="hover:scale-110 transition-transform"
-                                        onClick={() => setValue(`dishes.${index}.rating`, star)}
-                                    >
-                                        <Star 
-                                            size={12} 
-                                            fill={star <= (watchDishes[index]?.rating || 0) ? "currentColor" : "none"} 
-                                            className={star <= (watchDishes[index]?.rating || 0) ? "text-orange-500" : "text-white/20"}
-                                        />
-                                    </button>
-                                ))}
+                          <div className="flex-1 space-y-4">
+                            <div className="flex items-start gap-2">
+                                <div className="flex-1 space-y-3">
+                                    <input 
+                                    {...register(`dishes.${index}.name` as const)}
+                                    placeholder="What did you have?"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 ring-orange-500/50 transition-all"
+                                    disabled={isSubmitting}
+                                    />
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-[10px] uppercase font-black tracking-widest text-white/30">Rate this item</label>
+                                        <div className="flex gap-1.5">
+                                            {[1,2,3,4,5].map(star => (
+                                                <button
+                                                    key={star}
+                                                    type="button"
+                                                    className="hover:scale-110 active:scale-90 transition-transform"
+                                                    onClick={() => setValue(`dishes.${index}.rating`, star)}
+                                                >
+                                                    <Star 
+                                                        size={16} 
+                                                        fill={star <= (watchDishes[index]?.rating || 0) ? "currentColor" : "none"} 
+                                                        className={star <= (watchDishes[index]?.rating || 0) ? "text-orange-500" : "text-white/10"}
+                                                    />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {fields.length > 1 && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        remove(index);
+                                        setDishFiles(prev => {
+                                            const next = new Map(prev);
+                                            next.delete(index);
+                                            return next;
+                                        });
+                                    }}
+                                    className="p-2 text-white/20 hover:text-red-500 transition-colors"
+                                >
+                                    <Trash2 size={20} />
+                                </button>
+                                )}
                             </div>
-                            {fields.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => remove(index)}
-                                className="p-2 text-white/20 hover:text-red-500 transition-colors"
-                              >
-                                <Trash2 size={18} />
-                              </button>
-                            )}
                           </div>
                           {errors.dishes?.[index]?.name && (
                             <p className="text-xs text-red-500">{errors.dishes[index]?.name?.message}</p>
                           )}
                         </div>
                       </div>
-                    </div>
                   ))}
                 </div>
 
@@ -580,32 +622,30 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                 {errors.review && <p className="text-xs text-red-500">{errors.review.message}</p>}
               </div>
 
-              <div className="hidden">
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileChange} 
-                  accept="image/*" 
-                />
+              <div className="p-6 md:p-8 bg-black/40 border-t border-white/10 shrink-0">
+                <button 
+                  type="submit"
+                  disabled={isSubmitting || isUploading || !searchQuery.trim()}
+                  className="w-full bg-[#00e054] hover:bg-[#00c044] text-black font-black uppercase tracking-[0.3em] py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-[#00e054]/10 disabled:opacity-50 disabled:grayscale active:scale-95"
+                >
+                  {isUploading ? (
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-32 h-1 bg-black/20 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-black transition-all duration-300" 
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                      <span className="text-[9px] font-black">{uploadProgress}% UPLOADED</span>
+                    </div>
+                  ) : isSubmitting ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <Zap size={18} fill="currentColor" />
+                  )}
+                  {isSubmitting || isUploading ? "" : (existingReview ? "Update Narrative" : "Post Review")}
+                </button>
               </div>
-
-              <div className="p-6 bg-black/20 border-t border-white/10 shrink-0">
-              <button 
-                onClick={handleSubmit(onSubmit)}
-                disabled={isSubmitting || !searchQuery.trim()}
-                className="w-full bg-[#00e054] hover:bg-[#00c044] text-black font-bold uppercase tracking-widest py-3 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting || isUploading ? (
-                  <div className="flex flex-col items-center gap-2">
-                      <Loader2 size={16} className="animate-spin" />
-                      <span className="text-[8px] tracking-[0.3em] font-black uppercase text-black/60">Processing High-HD Media...</span>
-                  </div>
-                ) : (
-                  <Plus size={16} />
-                )}
-                {isSubmitting || isUploading ? "" : (existingReview ? "Update Meal" : "Log Meal")}
-              </button>
-            </div>
             </form>
           </motion.div>
         </div>

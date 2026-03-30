@@ -1,0 +1,23 @@
+rules_version = '2';
+
+// Crafting the Social Media Permission Blueprint
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Core Media Access: Read-only for the global feed
+    match /{allPaths=**} {
+      allow read: if true;
+    }
+
+    // Secure Upload Gates: Only authenticated critics can contribute
+    // 1. Cinematic Video Reels (mp4, mov, etc)
+    match /videos/{videoId} {
+      allow write: if request.auth != null;
+    }
+
+    // 2. High-HD Culinary Photography (jpg, png, etc)
+    match /dishes/{dishId} {
+      allow write: if request.auth != null;
+    }
+  }
+}
