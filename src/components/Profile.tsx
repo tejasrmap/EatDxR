@@ -330,8 +330,6 @@ export const Profile: React.FC = () => {
                     </div>
                 </div>
              )}
-
-              )}
           </div>
         </div>
       </div>
