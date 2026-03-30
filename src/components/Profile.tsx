@@ -258,18 +258,17 @@ export const Profile: React.FC = () => {
           )}
         </div>
 
-        {/* Letterboxd-Style Identity Block */}
-        <div className="mt-4 space-y-1 text-center md:text-left">
-           {user.username && (
-              <p className="text-base font-bold text-white tracking-widest uppercase">@{user.username}</p>
-           )}
-           {user.pronouns && (
-             <p className="text-xs font-medium text-white/40 italic uppercase tracking-widest">{user.pronouns}</p>
-           )}
-        </div>
-      </div>
-        
         <div className="flex-1 w-full text-center md:text-left pt-2">
+           {/* Letterboxd-Style Identity Block */}
+           <div className="mb-4 space-y-1">
+              {user.username && (
+                 <p className="text-base font-bold text-white tracking-widest uppercase">@{user.username}</p>
+              )}
+              {user.pronouns && (
+                <p className="text-xs font-medium text-white/40 italic uppercase tracking-widest">{user.pronouns}</p>
+              )}
+           </div>
+
           <div className="flex flex-col md:flex-row md:items-center gap-6 mb-8">
             <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter font-serif">{user.displayName}</h1>
             {currentUser?.uid !== user.uid ? (
