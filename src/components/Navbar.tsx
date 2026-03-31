@@ -96,6 +96,22 @@ export function Navbar() {
             </div>
             <span className="text-white hidden sm:inline">Eat<span className="text-rose-500">D</span></span>
           </Link>
+          
+          {/* Desktop Central Navigation */}
+          <div className="hidden md:flex items-center gap-8 lg:gap-12 absolute left-1/2 -translate-x-1/2">
+            <Link to="/restaurants" className="text-[10px] uppercase font-black tracking-[0.2em] text-white/30 hover:text-[#00e054] transition-all relative group">
+              Restaurants
+              <span className="absolute -bottom-1 left-0 w-0 h-px bg-[#00e054] group-hover:w-full transition-all duration-300" />
+            </Link>
+            <Link to="/critics" className="text-[10px] uppercase font-black tracking-[0.2em] text-white/30 hover:text-[#00e054] transition-all relative group">
+              Critics
+              <span className="absolute -bottom-1 left-0 w-0 h-px bg-[#00e054] group-hover:w-full transition-all duration-300" />
+            </Link>
+            <Link to="/journal" className="text-[10px] uppercase font-black tracking-[0.2em] text-white/30 hover:text-[#00e054] transition-all relative group">
+              Journal
+              <span className="absolute -bottom-1 left-0 w-0 h-px bg-[#00e054] group-hover:w-full transition-all duration-300" />
+            </Link>
+          </div>
 
           {/* Action Row: Unified & Accessible on Mobile */}
           <div className="flex items-center gap-1 md:gap-4">
