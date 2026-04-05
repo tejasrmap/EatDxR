@@ -17,18 +17,19 @@ export const ReviewPoster: React.FC<ReviewPosterProps> = ({ review, id = "review
   return (
     <div 
       id={id}
-      className="fixed left-0 top-[200vh] w-[1080px] h-[1920px] bg-[#0a0a0a] text-white flex flex-col font-sans overflow-hidden pointer-events-none"
+      className="fixed inset-0 pointer-events-none opacity-0 overflow-hidden z-[-1]"
     >
+      <div className="w-[1080px] h-[1920px] bg-[#0a0a0a] text-white flex flex-col font-sans overflow-hidden">
       {/* Cinematic Backdrop */}
       {mainImage && (
         <div className="absolute inset-0 z-0">
           <img 
             src={mainImage} 
-            className="w-full h-full object-cover opacity-60 mix-blend-luminosity grayscale-[0.5]" 
-            crossOrigin="anonymous"
+            className="w-full h-full object-cover opacity-40 grayscale" 
+            crossOrigin={mainImage.startsWith('http') ? "anonymous" : undefined}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/80 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a]/40 to-transparent" />
+          <div className="absolute inset-0 bg-black/60" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent" />
         </div>
       )}
 
@@ -60,15 +61,18 @@ export const ReviewPoster: React.FC<ReviewPosterProps> = ({ review, id = "review
           </div>
         </div>
 
-        {/* Featured Dish Stage */}
         <div className="flex-1 flex flex-col justify-center">
           {mainImage ? (
-            <div className="relative w-full aspect-[4/5] rounded-[4rem] overflow-hidden border-[8px] border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.8)]">
-               <img src={mainImage} className="w-full h-full object-cover" crossOrigin="anonymous" />
+            <div className="relative w-full aspect-[4/5] rounded-[2rem] overflow-hidden border-[4px] border-white/10 shadow-2xl">
+               <img 
+                src={mainImage} 
+                className="w-full h-full object-cover" 
+                crossOrigin={mainImage.startsWith('http') ? "anonymous" : undefined} 
+               />
                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-               <div className="absolute bottom-16 left-16 right-16">
-                  <span className="text-[20px] uppercase font-black tracking-[0.6em] text-white/40 block mb-4">Highlight</span>
-                  <h2 className="text-6xl font-black text-white italic font-serif">{review.dishes?.[0]?.name}</h2>
+               <div className="absolute bottom-8 left-8 right-8">
+                  <span className="text-[14px] uppercase font-bold tracking-[0.4em] text-white/40 block mb-2">Highlight</span>
+                  <h2 className="text-4xl font-bold text-white italic font-serif">{review.dishes?.[0]?.name}</h2>
                </div>
             </div>
           ) : (
@@ -94,12 +98,12 @@ export const ReviewPoster: React.FC<ReviewPosterProps> = ({ review, id = "review
         <div className="flex items-center gap-6">
           <img 
             src={review.userPhoto} 
-            className="w-24 h-24 rounded-full border-4 border-white/10" 
-            crossOrigin="anonymous"
+            className="w-20 h-20 rounded-full border-2 border-white/10" 
+            crossOrigin={review.userPhoto?.startsWith('http') ? "anonymous" : undefined}
           />
           <div className="flex flex-col">
-            <span className="text-4xl font-black text-white italic font-serif">{review.userName}</span>
-            <span className="text-xl uppercase font-black tracking-widest text-white/20">Culinary Critic</span>
+            <span className="text-3xl font-bold text-white italic font-serif">{review.userName}</span>
+            <span className="text-sm uppercase font-bold tracking-widest text-white/20">Culinary Critic</span>
           </div>
         </div>
         <div className="flex flex-col items-end">
@@ -108,8 +112,9 @@ export const ReviewPoster: React.FC<ReviewPosterProps> = ({ review, id = "review
         </div>
       </div>
 
-      {/* Texture Layer */}
-      <div className="absolute inset-0 z-20 pointer-events-none opacity-[0.15] bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
+      {/* Texture Layer - Simplified for capture */}
+      <div className="absolute inset-0 z-20 pointer-events-none opacity-5 bg-white/5" />
+      </div>
     </div>
   );
 };

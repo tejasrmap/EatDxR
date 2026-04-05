@@ -39,17 +39,34 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
       const canvas = await html2canvas(element, {
         useCORS: true,
         background: "#0a0a0a",
-        logging: true, // Enable console logging for debugging
-        allowTaint: false, // Don't allow non-CORS images to "taint" the canvas
-        // @ts-ignore - 'scale' is valid but might not be in the types
+        logging: true,
+        allowTaint: true, // Allow taints but handle the side effects
+        // @ts-ignore
         scale: 2 
       });
 
-      const dataUrl = canvas.toDataURL("image/png", 1.0);
-      return dataUrl;
+      // If allowTaint was true, toDataURL might still throw if a cross-origin image was actually loaded
+      // without proper CORS headers. We catch that here.
+      try {
+        const dataUrl = canvas.toDataURL("image/png", 1.0);
+        return dataUrl;
+      } catch (dataError) {
+        console.warn("Tainted canvas detected, attempting safe-mode capture (no images)...");
+        // Fallback: capture again without images if needed
+        const safeCanvas = await html2canvas(element, {
+          useCORS: false,
+          background: "#0a0a0a",
+          logging: false,
+          // @ts-ignore
+          ignoreElements: (el) => el.tagName === 'IMG',
+          // @ts-ignore
+          scale: 1
+        });
+        return safeCanvas.toDataURL("image/png");
+      }
     } catch (error) {
       console.error("Poster generation error:", error);
-      toast.error("Failed to generate the cinematic poster.");
+      toast.error("Failed to generate. Image security (CORS) might be blocking capture.");
       return null;
     } finally {
       setIsGenerating(false);
