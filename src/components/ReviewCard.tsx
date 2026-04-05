@@ -9,6 +9,7 @@ import { useAuth } from "../App";
 import { db } from "../firebase";
 import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp, getDocs, updateDoc, increment } from "firebase/firestore";
 import { LogMealModal } from "./LogMealModal";
+import { DiaryEntryModal } from "./DiaryEntryModal";
 
 interface ReviewCardProps {
   review: Review;
@@ -25,6 +26,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
 
   const [showOptions, setShowOptions] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isDetailedViewOpen, setIsDetailedViewOpen] = useState(false);
   const optionsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -231,8 +233,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
         </Link>
         
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between mb-1">
+        <div className="flex-1 min-w-0" onClick={() => setIsDetailedViewOpen(true)}>
+          <div className="flex items-start justify-between mb-1 cursor-pointer">
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-baseline gap-x-2">
                 {review.dishes?.map((dish, i) => (
@@ -424,6 +426,12 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
         isOpen={isEditing} 
         onClose={() => setIsEditing(false)} 
         existingReview={review} 
+      />
+
+      <DiaryEntryModal 
+        isOpen={isDetailedViewOpen} 
+        onClose={() => setIsDetailedViewOpen(false)} 
+        review={review}
       />
     </div>
   );

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { DiaryTable } from "./DiaryTable";
 import { FollowListModal } from "./FollowListModal";
 import { EditProfileModal } from "./EditProfileModal";
+import { DiaryEntryModal } from "./DiaryEntryModal";
 
 export const Profile: React.FC = () => {
   const { userId: identifier } = useParams<{ userId: string }>();
@@ -27,6 +28,7 @@ export const Profile: React.FC = () => {
   const [loadingEatlist, setLoadingEatlist] = useState(false);
   const profileFileInputRef = useRef<HTMLInputElement>(null);
   const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false);
+  const [selectedReview, setSelectedReview] = useState<Review | null>(null);
 
   const isFollowing = dishdUser?.stats?.followingList?.includes(user?.uid || "");
 
@@ -383,17 +385,7 @@ export const Profile: React.FC = () => {
                   return (
                     <div
                       key={review.id}
-                      onClick={() => {
-                        setActiveTab("diary");
-                        setTimeout(() => {
-                          const el = document.getElementById(`review-${review.id}`);
-                          if (el) {
-                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            el.classList.add('ring-2', 'ring-orange-500', 'ring-offset-4', 'ring-offset-black');
-                            setTimeout(() => el.classList.remove('ring-2', 'ring-orange-500', 'ring-offset-4', 'ring-offset-black'), 2000);
-                          }
-                        }, 50);
-                      }}
+                      onClick={() => setSelectedReview(review)}
                       className="aspect-square bg-zinc-800 rounded-sm md:rounded-xl overflow-hidden border border-white/5 group relative shadow-2xl hover:border-orange-500/50 transition-all cursor-pointer"
                     >
                       {firstImage ? (
@@ -587,6 +579,12 @@ export const Profile: React.FC = () => {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         user={user}
+      />
+
+      <DiaryEntryModal 
+        isOpen={selectedReview !== null}
+        onClose={() => setSelectedReview(null)}
+        review={selectedReview}
       />
     </div>
   );

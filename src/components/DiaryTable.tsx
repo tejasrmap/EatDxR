@@ -9,6 +9,7 @@ import { LogMealModal } from "./LogMealModal";
 import { db } from "../firebase";
 import { deleteDoc, doc, updateDoc, increment, collection, query, where, getDocs } from "firebase/firestore";
 import { toast } from "sonner";
+import { DiaryEntryModal } from "./DiaryEntryModal";
 
 interface DiaryTableProps {
   reviews: Review[];
@@ -18,6 +19,7 @@ interface DiaryTableProps {
 export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true }) => {
   const { dishdUser: currentUser, login } = useAuth();
   const [editingReview, setEditingReview] = useState<Review | null>(null);
+  const [selectedReview, setSelectedReview] = useState<Review | null>(null);
   const [optionsVisibleId, setOptionsVisibleId] = useState<string | null>(null);
   const optionsRef = useRef<HTMLDivElement>(null);
 
@@ -85,7 +87,8 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                 <tr 
                   key={review.id} 
                   id={`review-${review.id}`}
-                  className={`border-b border-white/5 hover:bg-white/5 transition-colors group ${i % 2 === 0 ? 'bg-black/10' : ''}`}
+                  onClick={() => setSelectedReview(review)}
+                  className={`border-b border-white/5 hover:bg-white/5 transition-colors group cursor-pointer ${i % 2 === 0 ? 'bg-black/10' : ''}`}
                 >
                   <td className="py-4 px-6 font-bold text-white/60 tracking-wider text-xs">{month}</td>
                   <td className="py-4 px-6 font-bold text-white text-lg serif italic">{day}</td>
@@ -98,6 +101,7 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                   <td className="py-4 px-6">
                     <Link 
                       to={`/restaurant/${review.restaurantId}`}
+                      onClick={(e) => e.stopPropagation()}
                       className="font-bold text-white hover:text-orange-400 focus:outline-none focus:text-orange-400 transition-colors tracking-tight line-clamp-1"
                     >
                       {review.restaurantName}
@@ -120,6 +124,7 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                     <td className="py-4 px-6">
                       <Link 
                         to={`/profile/${review.userId}`} 
+                        onClick={(e) => e.stopPropagation()}
                         className="flex items-center gap-2 group/user"
                       >
                         <img 
@@ -146,7 +151,8 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                   </td>
                   <td className="py-4 px-6 text-center">
                     <button 
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         if (!currentUser) login();
                       }}
                       className="text-white/20 hover:text-orange-500 transition-colors group/btn inline-flex"
@@ -199,6 +205,12 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
         isOpen={editingReview !== null}
         onClose={() => setEditingReview(null)}
         existingReview={editingReview || undefined}
+      />
+
+      <DiaryEntryModal 
+        isOpen={selectedReview !== null}
+        onClose={() => setSelectedReview(null)}
+        review={selectedReview}
       />
     </div>
   );
