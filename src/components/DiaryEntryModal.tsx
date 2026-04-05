@@ -9,6 +9,7 @@ import { useAuth } from "../App";
 import { db } from "../firebase";
 import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp, updateDoc, increment, getDocs } from "firebase/firestore";
 import { toast } from "sonner";
+import { ShareMenu } from "./ShareMenu";
 
 interface DiaryEntryModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
   const [isLikeLoading, setIsLikeLoading] = useState(false);
   const [isCommentLoading, setIsCommentLoading] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!review) return;
@@ -156,9 +158,7 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
   };
 
   const shareReview = () => {
-    const url = `${window.location.origin}/restaurant/${review.restaurantId}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Review link copied!");
+    setIsShareMenuOpen(true);
   };
 
   return (
@@ -389,6 +389,12 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                </div>
             </div>
           </motion.div>
+
+          <ShareMenu 
+            isOpen={isShareMenuOpen} 
+            onClose={() => setIsShareMenuOpen(false)} 
+            review={review} 
+          />
         </div>
       )}
     </AnimatePresence>

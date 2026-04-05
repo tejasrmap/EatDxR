@@ -1,4 +1,4 @@
-import { Star, Heart, MessageSquare, MapPin, Send, Loader2, MoreVertical, Edit2, Trash2 } from "lucide-react";
+import { Star, Heart, MessageSquare, MapPin, Send, Loader2, MoreVertical, Edit2, Trash2, Share2 } from "lucide-react";
 import { Review, Interaction } from "../types";
 import { formatDistanceToNow } from "date-fns";
 import { parseFirebaseDate } from "../lib/utils";
@@ -10,6 +10,7 @@ import { db } from "../firebase";
 import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp, getDocs, updateDoc, increment } from "firebase/firestore";
 import { LogMealModal } from "./LogMealModal";
 import { DiaryEntryModal } from "./DiaryEntryModal";
+import { ShareMenu } from "./ShareMenu";
 
 interface ReviewCardProps {
   review: Review;
@@ -27,6 +28,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
   const [showOptions, setShowOptions] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDetailedViewOpen, setIsDetailedViewOpen] = useState(false);
+  const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
   const optionsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -356,6 +358,16 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
                 {comments.length > 0 ? comments.length : 'Review'}
               </span>
             </button>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsShareMenuOpen(true);
+              }}
+              className="flex items-center gap-1.5 text-white/30 hover:text-white transition-colors"
+            >
+              <Share2 size={14} />
+              <span className="text-[10px] uppercase tracking-widest font-bold">Share</span>
+            </button>
           </div>
 
           {/* Comments Section Overlay */}
@@ -433,6 +445,14 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
         onClose={() => setIsDetailedViewOpen(false)} 
         review={review}
       />
+
+      {isShareMenuOpen && (
+        <ShareMenu 
+          isOpen={isShareMenuOpen} 
+          onClose={() => setIsShareMenuOpen(false)} 
+          review={review} 
+        />
+      )}
     </div>
   );
 }
