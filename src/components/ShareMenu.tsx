@@ -12,6 +12,34 @@ interface ShareMenuProps {
   review: Review;
 }
 
+const toBase64 = (url: string): Promise<string | null> => {
+  return new Promise((resolve) => {
+    // If it's already a data URL, return it
+    if (url.startsWith('data:')) return resolve(url);
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        try {
+          resolve(canvas.toDataURL('image/png'));
+        } catch (e) {
+          resolve(null);
+        }
+      } else {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+};
+
 export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const posterId = `share-poster-${review.id}`;
@@ -22,25 +50,35 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
 
     setIsGenerating(true);
     try {
-      // Find all images in the poster to ensure they are loaded
-      const images = element.getElementsByTagName('img');
-      const loadPromises = Array.from(images).map(img => {
-        if (img.complete) return Promise.resolve();
-        return new Promise((resolve) => {
-          img.onload = resolve;
-          img.onerror = resolve; // Continue on error
-        });
+      // Find all images in the poster
+      const images = Array.from(element.getElementsByTagName('img'));
+      
+      // Pre-process each image to convert to same-origin base64
+      // This bypasses html2canvas CORS issues entirely
+      const proxyPromises = images.map(async (img) => {
+        const originalSrc = img.src;
+        if (!originalSrc || originalSrc.startsWith('data:')) return;
+        
+        const b64 = await toBase64(originalSrc);
+        if (b64) {
+          img.src = b64;
+          // Wait for the new src to load
+          return new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          });
+        }
       });
-      await Promise.all(loadPromises);
+      await Promise.all(proxyPromises);
 
       // Short delay to ensure browser paint
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 300));
 
       const canvas = await html2canvas(element, {
         useCORS: true,
         background: "#0a0a0a",
         logging: true,
-        allowTaint: true, // Allow taints but handle the side effects
+        allowTaint: false, // Now we can safely set this to false because images are same-origin
         // @ts-ignore
         scale: 2 
       });

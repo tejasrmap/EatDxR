@@ -26,7 +26,6 @@ export const ReviewPoster: React.FC<ReviewPosterProps> = ({ review, id = "review
           <img 
             src={mainImage} 
             className="w-full h-full object-cover opacity-40 grayscale" 
-            crossOrigin={mainImage.startsWith('http') ? "anonymous" : undefined}
           />
           <div className="absolute inset-0 bg-black/60" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent" />
@@ -67,7 +66,6 @@ export const ReviewPoster: React.FC<ReviewPosterProps> = ({ review, id = "review
                <img 
                 src={mainImage} 
                 className="w-full h-full object-cover" 
-                crossOrigin={mainImage.startsWith('http') ? "anonymous" : undefined} 
                />
                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                <div className="absolute bottom-8 left-8 right-8">
@@ -99,7 +97,6 @@ export const ReviewPoster: React.FC<ReviewPosterProps> = ({ review, id = "review
           <img 
             src={review.userPhoto} 
             className="w-20 h-20 rounded-full border-2 border-white/10" 
-            crossOrigin={review.userPhoto?.startsWith('http') ? "anonymous" : undefined}
           />
           <div className="flex flex-col">
             <span className="text-3xl font-bold text-white italic font-serif">{review.userName}</span>
