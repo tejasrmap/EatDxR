@@ -17,8 +17,7 @@ export const ReviewPoster: React.FC<ReviewPosterProps> = ({ review, id = "review
   return (
     <div 
       id={id}
-      className="fixed -left-[2000px] top-0 w-[1080px] h-[1920px] bg-[#0a0a0a] text-white flex flex-col font-sans overflow-hidden"
-      style={{ pointerEvents: 'none' }}
+      className="fixed left-0 top-[200vh] w-[1080px] h-[1920px] bg-[#0a0a0a] text-white flex flex-col font-sans overflow-hidden pointer-events-none"
     >
       {/* Cinematic Backdrop */}
       {mainImage && (

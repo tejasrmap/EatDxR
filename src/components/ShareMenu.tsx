@@ -22,13 +22,27 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
 
     setIsGenerating(true);
     try {
-      // Use html2canvas to capture the hidden poster
-      // We need to wait for images to load if they aren't already
+      // Find all images in the poster to ensure they are loaded
+      const images = element.getElementsByTagName('img');
+      const loadPromises = Array.from(images).map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve; // Continue on error
+        });
+      });
+      await Promise.all(loadPromises);
+
+      // Short delay to ensure browser paint
+      await new Promise(r => setTimeout(r, 500));
+
       const canvas = await html2canvas(element, {
         useCORS: true,
         background: "#0a0a0a",
-        logging: false,
-        allowTaint: true
+        logging: true, // Enable console logging for debugging
+        allowTaint: false, // Don't allow non-CORS images to "taint" the canvas
+        // @ts-ignore - 'scale' is valid but might not be in the types
+        scale: 2 
       });
 
       const dataUrl = canvas.toDataURL("image/png", 1.0);
