@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../App";
 import { db, storage } from "../firebase";
-import { collection, doc, setDoc, serverTimestamp, increment } from "firebase/firestore";
+import { collection, doc, setDoc, updateDoc, serverTimestamp, increment } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { toast } from "sonner";
 import { searchRestaurants } from "../services/mapsService";
@@ -103,10 +103,23 @@ export function ReelUploadModal({ isOpen, onClose }: ReelUploadModalProps) {
       const videoRef = ref(storage, videoPath);
       const uploadTask = uploadBytesResumable(videoRef, videoFile);
 
+      // --- Resilience Engine: 15-second Timeout ---
+      const timeout = setTimeout(() => {
+        uploadTask.cancel();
+        toast.error("Video Upload timed out after 15s. Check CORS.");
+        setIsUploading(false);
+      }, 15000);
+
       uploadTask.on('state_changed', 
-        (snapshot) => setUploadProgress(Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100)),
-        (err) => { toast.error("Narrative failed to launch."); setIsUploading(false); },
+        (snapshot) => setUploadProgress(Math.round((snapshot.bytesTransferred / (snapshot.totalBytes || 1)) * 100)),
+        (err) => { 
+          clearTimeout(timeout);
+          console.error("Reel upload failed:", err);
+          toast.error("Narrative failed to launch."); 
+          setIsUploading(false); 
+        },
         async () => {
+          clearTimeout(timeout);
           const videoUrl = await getDownloadURL(uploadTask.snapshot.ref);
           const reviewRef = doc(collection(db, "reviews"));
           
@@ -114,8 +127,9 @@ export function ReelUploadModal({ isOpen, onClose }: ReelUploadModalProps) {
             id: reviewRef.id,
             userId: user.uid,
             userName: dishdUser?.displayName || user.displayName || "Critic",
-            userPhoto: dishdUser?.photoURL || user.photoURL,
+            userPhoto: dishdUser?.photoURL || user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`,
             restaurantName: data.restaurant,
+            restaurantId: selectedRestaurant?.id || `manual_rest_${Date.now()}`,
             restaurantLocation: manualLocation,
             content: data.diary,
             rating: data.rating,
@@ -126,8 +140,9 @@ export function ReelUploadModal({ isOpen, onClose }: ReelUploadModalProps) {
             likes: 0
           });
 
+          // Correct the stats path
           const userRef = doc(db, "users", user.uid);
-          await setDoc(userRef, { stats: { reelsCount: increment(1) } }, { merge: true });
+          await updateDoc(userRef, { "stats.mealsLogged": increment(1) });
           
           toast.success("Reel Narrative Live!");
           onClose();
@@ -135,6 +150,7 @@ export function ReelUploadModal({ isOpen, onClose }: ReelUploadModalProps) {
           setStage("CLIP");
           setVideoFile(null);
           setVideoPreview(null);
+          setIsUploading(false);
         }
       );
     } catch (error) {
@@ -252,6 +268,7 @@ export function ReelUploadModal({ isOpen, onClose }: ReelUploadModalProps) {
                                 placeholder="Where did this happen?"
                                 className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-xs font-medium focus:outline-none focus:ring-1 ring-orange-500/40"
                              />
+                             {errors.restaurant && <p className="text-[9px] text-rose-500 font-black uppercase text-right mt-1">{errors.restaurant.message}</p>}
                              <AnimatePresence>
                                {showResults && (searchResults.length > 0 || isSearching) && (
                                  <motion.div className="absolute z-[100] left-0 right-0 mt-2 bg-[#121212]/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden max-h-48 overflow-y-auto">
@@ -317,6 +334,7 @@ export function ReelUploadModal({ isOpen, onClose }: ReelUploadModalProps) {
                              </button>
                            ))}
                         </div>
+                        {errors.dishes && <p className="text-[9px] text-rose-500 font-black uppercase text-right mt-1">{errors.dishes.message}</p>}
                     </section>
                   </div>
 

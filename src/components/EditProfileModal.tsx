@@ -34,12 +34,19 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
       const fileRef = ref(storage, path);
       const uploadTask = uploadBytesResumable(fileRef, file);
 
+      // --- Resilience Engine: 15-second Timeout ---
+      const timeout = setTimeout(() => {
+        uploadTask.cancel();
+        reject(new Error("Upload timed out after 15s. Please check your CORS configuration."));
+      }, 15000);
+
       uploadTask.on('state_changed', 
         (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          const progress = (snapshot.bytesTransferred / (snapshot.totalBytes || 1)) * 100;
           setUploadProgress(Math.round(progress));
         }, 
         (error: any) => {
+           clearTimeout(timeout);
            console.error("Upload failed", error);
            toast.error(`Upload Failed: ${error.code || error.message}`);
            setIsUploading(false);
@@ -47,6 +54,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
            reject(error);
         }, 
         async () => {
+          clearTimeout(timeout);
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
           resolve(downloadURL);
         }

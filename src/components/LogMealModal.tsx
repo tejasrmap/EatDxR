@@ -33,7 +33,7 @@ interface LogMealModalProps {
 }
 
 export function LogMealModal({ isOpen, onClose, existingReview, initialRestaurant }: LogMealModalProps) {
-  const [rating, setRating] = useState(0);
+  const [rating, setRating] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<RestaurantSearchResult[]>([]);
@@ -55,7 +55,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
   const { register, handleSubmit, formState: { errors }, setValue, reset, control, watch } = useForm<LogFormValues>({
     resolver: zodResolver(logSchema),
     defaultValues: {
-      rating: 0,
+      rating: 5,
       dishes: [{ name: "", image: "", rating: 5 }]
     }
   });
@@ -196,11 +196,18 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
       const fileRef = ref(storage, path);
       const uploadTask = uploadBytesResumable(fileRef, file);
 
+      // --- Resilience Engine: 15-second HMR/Network Timeout ---
+      const timeout = setTimeout(() => {
+        uploadTask.cancel();
+        reject(new Error("Upload timed out after 15s. Please check your CORS configuration."));
+      }, 15000);
+
       uploadTask.on('state_changed', 
         (snapshot) => {
           if (onProgress) onProgress(snapshot.bytesTransferred);
         }, 
         (error: any) => {
+           clearTimeout(timeout);
            console.error("Upload failed", error);
            toast.error(`Upload Failed: ${error.code || error.message}`);
            setIsUploading(false);
@@ -208,6 +215,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
            reject(error);
         }, 
         async () => {
+          clearTimeout(timeout);
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
           resolve(downloadURL);
         }
@@ -246,16 +254,20 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
 
       const uploadedDishes = data.dishes.map(d => ({ 
         ...d, 
-        image: d.image?.startsWith('data:') ? "" : d.image // 'Source-Clean' Reset
+        image: (d.image && d.image.startsWith('data:')) ? "" : (d.image || "") // 'Source-Clean' Reset
       }));
 
-      for (const task of filesToUpload) {
-        const downloadUrl = await uploadFileWithProgress(task.file, task.path, (bytes) => {
-          transferredMap.set(task.path, bytes);
-          updateOmniProgress();
+      // --- Universal Parallel Upload Engine ---
+      if (filesToUpload.length > 0) {
+        const uploadPromises = filesToUpload.map(async (task) => {
+          const downloadUrl = await uploadFileWithProgress(task.file, task.path, (bytes) => {
+            transferredMap.set(task.path, bytes);
+            updateOmniProgress();
+          });
+          uploadedDishes[task.fieldIndex].image = downloadUrl;
         });
 
-        uploadedDishes[task.fieldIndex].image = downloadUrl;
+        await Promise.all(uploadPromises);
       }
 
       let restaurantId = selectedRestaurant?.id || `manual_${Date.now()}`;
@@ -283,6 +295,8 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
 
       if (existingReview) {
         const reviewRef = doc(db, "reviews", existingReview.id);
+        
+        // Critical: Align with firestore.rules (Remove illegal/immutable fields)
         await updateDoc(reviewRef, {
           restaurantName: data.restaurant,
           restaurantId: restaurantId,
@@ -291,12 +305,9 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
           content: data.review || "",
           restaurantLocation: manualLocation || selectedRestaurant?.location || "India",
           userId: user.uid,
-          authorName: user.displayName,
-          authorPhoto: user.photoURL,
-          userName: dishdUser?.username || "Critic",
-          createdAt: serverTimestamp(),
-          likesCount: existingReview?.likesCount || 0,
-          commentsCount: existingReview?.commentsCount || 0
+          userName: dishdUser?.displayName || user.displayName || "Critic",
+          userPhoto: dishdUser?.photoURL || user.photoURL || "",
+          likes: existingReview?.likes || 0
         });
         toast.success("Narrative updated!");
       } else {
@@ -410,6 +421,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                     />
                     <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
                   </div>
+                  {errors.restaurant && <p className="text-[9px] text-rose-500 font-black uppercase text-right mt-1">{errors.restaurant.message}</p>}
                   
                   <AnimatePresence>
                     {showResults && (searchResults.length > 0 || isSearching) && (
@@ -476,6 +488,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                     Add Highlight
                   </button>
                 </div>
+                {errors.dishes && <p className="text-[9px] text-rose-500 font-black uppercase text-right mt-1">{errors.dishes.message}</p>}
                 
                 <div className="space-y-3.5">
                   {fields.map((field, index) => (
@@ -567,6 +580,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                         </button>
                       ))}
                     </div>
+                    {errors.rating && <p className="text-[9px] text-rose-500 font-black uppercase text-center mt-2">{errors.rating.message}</p>}
                   </div>
                   <div className="space-y-2.5">
                     <label className="text-[9px] uppercase font-black tracking-widest text-white/30">The Narrative</label>

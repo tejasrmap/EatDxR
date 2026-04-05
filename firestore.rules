@@ -96,7 +96,7 @@ service cloud.firestore {
 
     function isValidReview(data) {
       return data.keys().hasAll(['id', 'userId', 'userName', 'userPhoto', 'restaurantId', 'restaurantName', 'dishes', 'rating', 'content', 'createdAt', 'likes']) &&
-             hasOnlyAllowedFields(['id', 'userId', 'userName', 'userPhoto', 'restaurantId', 'restaurantName', 'dishes', 'rating', 'content', 'createdAt', 'likes', 'city', 'restaurantLocation']) &&
+             hasOnlyAllowedFields(['id', 'userId', 'userName', 'userPhoto', 'restaurantId', 'restaurantName', 'dishes', 'rating', 'content', 'createdAt', 'likes', 'city', 'restaurantLocation', 'videoUrl', 'type']) &&
              data.id is string && data.id.size() > 0 &&
              data.userId == request.auth.uid &&
              data.userName is string && data.userName.size() > 0 && data.userName.size() < 200 &&
