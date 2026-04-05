@@ -275,6 +275,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
                   <div className="relative" ref={optionsRef}>
                     <button 
                       onClick={(e) => {
+                        e.stopPropagation();
                         e.preventDefault();
                         setShowOptions(!showOptions);
                       }}
@@ -286,6 +287,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
                       <div className="absolute right-0 top-full mt-1 w-32 bg-[#2c3440] border border-white/10 rounded-sm shadow-2xl py-1 z-50">
                         <button 
                           onClick={(e) => {
+                            e.stopPropagation();
                             e.preventDefault();
                             setShowOptions(false);
                             setIsEditing(true);
@@ -296,6 +298,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
                         </button>
                         <button 
                           onClick={(e) => {
+                            e.stopPropagation();
                             e.preventDefault();
                             setShowOptions(false);
                             handleDelete();
@@ -316,7 +319,13 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
           </div>
 
           <div className="flex items-center gap-2 mb-3">
-            <Link to={`/profile/${review.userId}`} className="flex items-center gap-1.5 group/user">
+            <Link 
+              to={`/profile/${review.userId}`} 
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+              className="flex items-center gap-1.5 group/user"
+            >
               <img 
                 src={review.userPhoto} 
                 alt={review.userName} 
@@ -342,7 +351,10 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
 
           <div className="flex items-center gap-4">
             <button 
-              onClick={handleLike}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleLike();
+              }}
               disabled={isLikeLoading}
               className={`flex items-center gap-1.5 text-white/30 hover:text-orange-500 transition-colors group/btn ${hasLiked ? 'text-orange-500' : ''} ${isLikeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
@@ -350,7 +362,10 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
               <span className="text-[10px] uppercase tracking-widest font-bold">{totalLikes}</span>
             </button>
             <button 
-              onClick={() => setShowComments(!showComments)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowComments(!showComments);
+              }}
               className={`flex items-center gap-1.5 transition-colors ${showComments ? 'text-white' : 'text-white/30 hover:text-white'}`}
             >
               <MessageSquare size={14} />
@@ -422,6 +437,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
                   />
                   <button 
                     type="submit"
+                    onClick={(e) => e.stopPropagation()}
                     disabled={!newComment.trim() || isCommentLoading}
                     className="p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-400 transition-colors disabled:opacity-50 disabled:hover:bg-orange-50"
                   >
