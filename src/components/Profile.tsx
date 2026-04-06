@@ -11,6 +11,7 @@ import { DiaryTable } from "./DiaryTable";
 import { FollowListModal } from "./FollowListModal";
 import { EditProfileModal } from "./EditProfileModal";
 import { DiaryEntryModal } from "./DiaryEntryModal";
+import { StarRating } from "./StarRating";
 
 export const Profile: React.FC = () => {
   const { userId: identifier } = useParams<{ userId: string }>();
@@ -410,11 +411,7 @@ export const Profile: React.FC = () => {
                       )}
 
                       <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center p-2 transition-all duration-300 transform group-hover:scale-100 scale-110">
-                        <div className="flex items-center gap-0.5 text-orange-500 mb-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} size={10} fill={i < review.rating ? "currentColor" : "none"} className={i < review.rating ? "fill-orange-500" : "text-white/20"} />
-                          ))}
-                        </div>
+                        <StarRating rating={review.rating} size={14} className="flex items-center gap-0.5 text-orange-500 mb-1" />
                         <p className="text-[8px] md:text-[10px] font-black text-white uppercase tracking-widest truncate w-full text-center px-2">{review.restaurantName}</p>
                         <div className="mt-2 flex items-center gap-3 text-white/60">
                           <div className="flex items-center gap-1">

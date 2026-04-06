@@ -11,6 +11,7 @@ import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTim
 import { LogMealModal } from "./LogMealModal";
 import { DiaryEntryModal } from "./DiaryEntryModal";
 import { ShareMenu } from "./ShareMenu";
+import { StarRating } from "./StarRating";
 
 interface ReviewCardProps {
   review: Review;
@@ -262,16 +263,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
             
             <div className="flex flex-col items-end gap-1">
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-0.5 text-orange-500">
-                  {[...Array(5)].map((_, i) => (
-                    <Star 
-                      key={i} 
-                      size={14} 
-                      fill={i < review.rating ? "currentColor" : "none"} 
-                      className={i < review.rating ? "fill-orange-500" : "text-white/10"}
-                    />
-                  ))}
-                </div>
+                <StarRating rating={review.rating} size={18} />
                 {currentUser?.uid === review.userId && (
                   <div className="relative" ref={optionsRef}>
                     <button 

@@ -7,6 +7,7 @@ import React, { useEffect, useState, createContext, useContext, ReactNode, Error
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { Layout } from "./components/Layout";
+import { StarRating } from "./components/StarRating";
 import { Hero } from "./components/Hero";
 import { ReviewCard } from "./components/ReviewCard";
 import { AdminSeed } from "./components/AdminSeed";
@@ -282,11 +283,7 @@ function Home() {
                         loading="lazy"
                       />
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center p-4 transition-opacity text-center">
-                        <div className="flex items-center gap-0.5 text-orange-500 mb-2">
-                          {[...Array(5)].map((_, j) => (
-                            <Star key={j} size={10} fill={j < review.rating ? "currentColor" : "none"} className={j < review.rating ? "fill-orange-500" : "text-white/20"} />
-                          ))}
-                        </div>
+                        <StarRating rating={review.rating} size={14} className="flex items-center gap-0.5 text-orange-500 mb-2" />
                         <p className="text-[10px] font-bold text-white uppercase tracking-tighter line-clamp-2">{review.restaurantName}</p>
                       </div>
                     </Link>

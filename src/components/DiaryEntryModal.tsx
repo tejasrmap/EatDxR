@@ -10,6 +10,7 @@ import { db } from "../firebase";
 import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp, updateDoc, increment, getDocs } from "firebase/firestore";
 import { toast } from "sonner";
 import { ShareMenu } from "./ShareMenu";
+import { StarRating } from "./StarRating";
 
 interface DiaryEntryModalProps {
   isOpen: boolean;
@@ -272,11 +273,7 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                      <div className="flex items-center gap-8 py-4 border-y border-white/5">
                         <div className="space-y-1">
                            <span className="text-[8px] uppercase font-black tracking-[0.3em] text-white/20 block">The Verdict</span>
-                           <div className="flex gap-1 text-orange-500">
-                              {[...Array(5)].map((_, i) => (
-                                 <Star key={i} size={18} fill={i < review.rating ? "currentColor" : "none"} className={i < review.rating ? "fill-orange-500" : "text-white/10"} />
-                              ))}
-                           </div>
+                            <StarRating rating={review.rating} size={24} />
                         </div>
                         <div className="space-y-1 border-l border-white/5 pl-8">
                            <span className="text-[8px] uppercase font-black tracking-[0.3em] text-white/20 block">Curation Type</span>
@@ -313,11 +310,7 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                                        <span className="text-[9px] uppercase tracking-widest text-white/30 font-black">Featured Highlight</span>
                                     </div>
                                  </div>
-                                 <div className="flex gap-0.5 text-orange-500/40 group-hover:text-orange-500 transition-colors">
-                                    {[...Array(dish.rating || 5)].map((_, j) => (
-                                       <Star key={j} size={10} fill="currentColor" />
-                                    ))}
-                                 </div>
+                                  <StarRating rating={dish.rating || 5} size={14} className="flex gap-0.5 text-orange-500/40 group-hover:text-orange-500 transition-colors" activeColor="text-current" />
                               </div>
                            ))}
                         </div>
