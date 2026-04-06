@@ -32,14 +32,12 @@ export const StarRating: React.FC<StarRatingProps> = ({
             />
           );
         } 
-        // Half star. We wrap it in a relative container to overlay on the empty outline
+        // Half star
         else if (diff >= 0.5) {
           return (
             <div key={i} className="relative inline-flex" style={{ width: size, height: size }}>
               <Star size={size} className={inactiveColor} />
-              <div className={`absolute inset-0 overflow-hidden ${activeColor} fill-current`} style={{ width: '50%' }}>
-                  <Star size={size} fill="currentColor" />
-              </div>
+              <StarHalf size={size} fill="currentColor" className={`absolute inset-0 ${activeColor} fill-current`} />
             </div>
           );
         } 
