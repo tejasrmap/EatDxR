@@ -12,6 +12,7 @@ import { FollowListModal } from "./FollowListModal";
 import { EditProfileModal } from "./EditProfileModal";
 import { DiaryEntryModal } from "./DiaryEntryModal";
 import { StarRating } from "./StarRating";
+import { RatingGraph } from "./RatingGraph";
 
 export const Profile: React.FC = () => {
   const { userId: identifier } = useParams<{ userId: string }>();
@@ -335,6 +336,11 @@ export const Profile: React.FC = () => {
                     </div>
                 </div>
              )}
+             
+             {/* Rating Graph (Mobile Only) */}
+             <div className="lg:hidden w-full max-w-[240px] mx-auto mt-6">
+                <RatingGraph reviews={reviews} />
+             </div>
           </div>
         </div>
       </div>
@@ -505,6 +511,14 @@ export const Profile: React.FC = () => {
                       </span>
                    </div>
                 </div>
+              </div>
+
+              {/* RATINGS GRAPH Section */}
+              <div>
+                <div className="border-b border-white/5 pb-4 mb-6">
+                   <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40">RATINGS</h3>
+                </div>
+                <RatingGraph reviews={reviews} />
               </div>
             </div>
           </motion.div>
