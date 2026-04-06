@@ -12,11 +12,10 @@ interface ShareMenuProps {
   review: Review;
 }
 
-const toBase64 = (url: string): Promise<string | null> => {
-  return new Promise((resolve) => {
-    // If it's already a data URL, return it
-    if (url.startsWith('data:')) return resolve(url);
+const toBase64 = async (url: string): Promise<string | null> => {
+  if (url.startsWith('data:')) return url;
 
+  const tryLoad = (srcUrl: string): Promise<string | null> => new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
@@ -36,8 +35,18 @@ const toBase64 = (url: string): Promise<string | null> => {
       }
     };
     img.onerror = () => resolve(null);
-    img.src = url;
+    img.src = srcUrl;
   });
+
+  let b64 = await tryLoad(url);
+  
+  // If native fetch fails (likely due to CORS like Google avatars/unsplash),
+  // leverage a public edge image cache that injects proper origin headers
+  if (!b64) {
+     b64 = await tryLoad(`https://wsrv.nl/?url=${encodeURIComponent(url)}`);
+  }
+
+  return b64;
 };
 
 export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review }) => {
@@ -67,6 +76,11 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
             img.onload = resolve;
             img.onerror = resolve;
           });
+        } else {
+          // CORS completely blocked the image and proxy failed. 
+          // Swap image out for a transparent 1x1 pixel so html2canvas doesn't fatally crash.
+          img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+          return Promise.resolve();
         }
       });
       await Promise.all(proxyPromises);
