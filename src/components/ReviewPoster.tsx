@@ -17,7 +17,8 @@ export const ReviewPoster: React.FC<ReviewPosterProps> = ({ review, id = "review
   return (
     <div 
       id={id}
-      className="fixed top-[200vh] left-[200vw] pointer-events-none z-[-1]"
+      // Note: We use absolute 0 so it aligns with standard coordinate planes but keep it visually invisible with opacity-0 locally  
+      className="absolute top-0 left-0 pointer-events-none z-[-9999] opacity-0"
     >
       <div className="w-[1080px] h-[1920px] bg-[#0a0a0a] text-white flex flex-col font-sans overflow-hidden">
       {/* Cinematic Backdrop */}

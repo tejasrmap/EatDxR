@@ -83,7 +83,10 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
       try {
         dataUrl = await htmlToImage.toPng(element, {
           pixelRatio: 2,
-          backgroundColor: "#0a0a0a"
+          backgroundColor: "#0a0a0a",
+          style: {
+            opacity: '1' // CRITICAL: restoring visibility logically without touching user's DOM
+          }
         });
       } catch (renderError) {
          console.warn("Primary html-to-image render crash. Attempting safe-mode...", renderError);
@@ -91,7 +94,10 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
             pixelRatio: 1,
             backgroundColor: "#0a0a0a",
             skipFonts: true,
-            filter: (node) => node.tagName !== 'IMG'
+            filter: (node) => node.tagName !== 'IMG',
+            style: {
+               opacity: '1'
+            }
          });
       }
 
