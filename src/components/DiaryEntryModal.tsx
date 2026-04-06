@@ -230,10 +230,12 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                 </div>
               )}
               
-              {/* Close Button Mobile Hook */}
-              <button onClick={onClose} className="md:hidden absolute top-6 right-6 w-10 h-10 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white/60 z-[100]">
-                <X size={20} />
-              </button>
+              {/* Mobile Native Back Header */}
+              <div className="md:hidden absolute top-0 left-0 w-full p-4 md:p-6 z-[100] bg-gradient-to-b from-black/60 to-transparent pointer-events-none flex justify-between">
+                 <button onClick={onClose} className="w-10 h-10 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white/80 pointer-events-auto active:scale-90 transition-transform">
+                   <ChevronLeft size={24} className="mr-0.5" />
+                 </button>
+              </div>
             </div>
 
             {/* Narrative Stage (Right on Desktop, Bottom on Mobile) */}
@@ -377,6 +379,17 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                                  {isCommentLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                               </button>
                            </form>
+                        </div>
+                        
+                        {/* Conclusion CTA */}
+                        <div className="pt-12 pb-8">
+                           <button 
+                             onClick={onClose}
+                             className="w-full flex items-center justify-center gap-2 p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-colors text-white/60 hover:text-white group"
+                           >
+                              <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                              <span className="text-[10px] uppercase font-black tracking-widest">Go Back</span>
+                           </button>
                         </div>
                      </div>
                   </footer>
