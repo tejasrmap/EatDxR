@@ -25,9 +25,10 @@ export function Layout({ children }: LayoutProps) {
               <div className="relative flex items-center justify-center w-6 h-6 bg-gradient-to-br from-orange-500 to-rose-500 rounded-md opacity-80 group-hover:opacity-100 group-hover:-rotate-12 transition-all duration-300">
                 <UtensilsCrossed className="text-white w-3 h-3" />
               </div>
-              <span className="text-white/80 group-hover:text-white transition-colors uppercase tracking-[0.2em] font-black">
-                Eat<span className="serif italic text-[1.4em] text-rose-500 ml-0.5 leading-none">R</span>
-              </span>
+              <div className="serif flex items-baseline tracking-tighter group-hover:tracking-tight transition-all duration-500">
+                <span className="text-white/80 group-hover:text-white font-light text-xl">Eat</span>
+                <span className="text-rose-500 font-black italic text-2xl -ml-0.5">R</span>
+              </div>
             </div>
 
             <div className="flex flex-wrap justify-center md:justify-end gap-x-8 gap-y-4 text-xs font-medium text-white/40 uppercase tracking-widest">

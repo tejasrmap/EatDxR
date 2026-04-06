@@ -94,7 +94,10 @@ export function Navbar() {
             <div className="relative flex items-center justify-center w-7 h-7 md:w-8 md:h-8 bg-gradient-to-br from-orange-500 to-rose-500 rounded-lg group-hover:-rotate-12 transition-transform duration-300 shadow-lg shadow-rose-500/20">
               <UtensilsCrossed className="text-white w-3 h-3 md:w-4 md:h-4" />
             </div>
-            <span className="text-white hidden sm:inline uppercase tracking-[0.2em] font-black">Eat<span className="serif italic text-[1.4em] text-rose-500 ml-0.5 leading-none">R</span></span>
+            <div className="serif hidden sm:flex items-baseline tracking-tighter group-hover:tracking-tight transition-all duration-500">
+              <span className="text-white font-light text-2xl">Eat</span>
+              <span className="text-rose-500 font-black italic text-3xl -ml-0.5">R</span>
+            </div>
           </Link>
           
           {/* Desktop Central Navigation */}

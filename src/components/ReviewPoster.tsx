@@ -106,7 +106,10 @@ export const ReviewPoster: React.FC<ReviewPosterProps> = ({ review, id = "review
         </div>
         <div className="flex flex-col items-end">
           <span className="text-2xl font-black uppercase tracking-[0.4em] text-white/20 mb-2">Captured on EatRxR</span>
-          <span className="text-5xl font-black text-orange-500/80 tracking-tighter uppercase font-black">Eat<span className="serif italic text-[1.4em] text-orange-500 ml-1 leading-none">R</span></span>
+          <div className="serif flex items-baseline tracking-tighter">
+            <span className="text-white/40 font-light text-3xl">Eat</span>
+            <span className="text-orange-500 font-black italic text-5xl -ml-1">R</span>
+          </div>
         </div>
       </div>
 
