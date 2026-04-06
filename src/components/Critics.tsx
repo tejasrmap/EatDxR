@@ -160,6 +160,7 @@ export function Critics() {
                           alt={critic.displayName}
                           className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 ${isTopThree ? rankBorderClass : 'border-white/10'} shadow-xl`}
                           referrerPolicy="no-referrer"
+                          loading="lazy"
                         />
                         {isTopThree && (
                           <div className="absolute -bottom-2 -right-2 bg-black rounded-full p-1 border border-white/10">

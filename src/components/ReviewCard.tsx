@@ -226,6 +226,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
               alt={review.dishes?.[0]?.name || "Meal"} 
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
               referrerPolicy="no-referrer"
+              loading="lazy"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-[10px] text-white/20 uppercase tracking-widest text-center px-2">
@@ -331,6 +332,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
                 alt={review.userName} 
                 className="w-4 h-4 rounded-full border border-white/10"
                 referrerPolicy="no-referrer"
+                loading="lazy"
               />
               <span className="text-xs text-white/40 group-hover/user:text-white transition-colors">{review.userName}</span>
             </Link>
@@ -400,6 +402,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
                           alt={comment.userName}
                           className="w-6 h-6 rounded-full border border-white/10 shrink-0 mt-0.5"
                           referrerPolicy="no-referrer"
+                          loading="lazy"
                         />
                       </Link>
                       <div className="flex-1 min-w-0">

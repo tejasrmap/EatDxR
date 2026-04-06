@@ -40,7 +40,7 @@ export function Restaurants() {
     // 2. Fetch Restaurants
     const fetchRestaurants = async () => {
       try {
-        const q = query(collection(db, "restaurants"), limit(500));
+        const q = query(collection(db, "restaurants"), limit(100));
         const snap = await getDocs(q);
         const data = snap.docs.map(doc => ({
           ...doc.data(),

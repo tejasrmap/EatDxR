@@ -279,6 +279,7 @@ function Home() {
                         ][i]}?auto=format&fit=crop&w=400&q=80`} 
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         referrerPolicy="no-referrer"
+                        loading="lazy"
                       />
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center p-4 transition-opacity text-center">
                         <div className="flex items-center gap-0.5 text-orange-500 mb-2">
@@ -355,6 +356,7 @@ function Home() {
                       src={city.img} 
                       className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
                       referrerPolicy="no-referrer"
+                      loading="lazy"
                     />
                     <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                       <span className="text-[10px] uppercase tracking-widest font-bold text-white">{city.name}</span>
@@ -403,6 +405,7 @@ function Home() {
                       src={critic.avatar} 
                       className="w-8 h-8 rounded-full grayscale group-hover:grayscale-0 transition-all border border-white/10"
                       referrerPolicy="no-referrer"
+                      loading="lazy"
                     />
                     <div>
                       <p className="text-xs font-medium group-hover:text-white transition-colors">{critic.name}</p>

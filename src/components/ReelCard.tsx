@@ -158,7 +158,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
                 {/* Author + Follow Row */}
                 <div className="flex items-center gap-2">
                     <Link to={`/profile/${review.userId}`} className="flex items-center gap-2 group">
-                        <img src={review.userPhoto} className="w-8 h-8 rounded-full border border-white/20" alt="" />
+                        <img loading="lazy" src={review.userPhoto} className="w-8 h-8 rounded-full border border-white/20" alt="" />
                         <span className="text-[11px] font-black text-white/80 tracking-tight">{review.userName}</span>
                     </Link>
                     <div className="w-1 h-1 bg-white/20 rounded-full" />
@@ -272,7 +272,7 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
                   </div>
                 </div>
                 <Link to={`/profile/${review.userId}`}>
-                    <img src={review.userPhoto} className="w-8 h-8 rounded-full border border-white/10 hover:border-[#00e054] transition-colors" alt="" />
+                    <img loading="lazy" src={review.userPhoto} className="w-8 h-8 rounded-full border border-white/10 hover:border-[#00e054] transition-colors" alt="" />
                 </Link>
              </div>
 

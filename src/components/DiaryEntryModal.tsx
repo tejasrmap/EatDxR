@@ -194,6 +194,7 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                         src={images[currentImageIndex]} 
                         className="w-full h-full object-cover"
                         referrerPolicy="no-referrer"
+                        loading="lazy"
                     />
                   </AnimatePresence>
                   
@@ -246,7 +247,7 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                   <header className="space-y-6">
                      <div className="flex flex-wrap items-center gap-3">
                         <Link to={`/profile/${review.userId}`} onClick={onClose} className="flex items-center gap-2 group/user p-1 px-2.5 bg-white/[0.03] border border-white/5 rounded-full hover:bg-white/[0.08] transition-all">
-                           <img src={review.userPhoto} className="w-5 h-5 rounded-full border border-white/10 grayscale group-hover/user:grayscale-0 transition-all" referrerPolicy="no-referrer" />
+                           <img loading="lazy" src={review.userPhoto} className="w-5 h-5 rounded-full border border-white/10 grayscale group-hover/user:grayscale-0 transition-all" referrerPolicy="no-referrer" />
                            <span className="text-[10px] font-black text-white/40 group-hover/user:text-white uppercase tracking-widest">{review.userName}</span>
                         </Link>
                         <span className="text-white/10 text-[8px] uppercase font-black">•</span>

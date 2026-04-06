@@ -237,6 +237,7 @@ export const Profile: React.FC = () => {
             alt={user.displayName}
             className="w-40 h-40 rounded-full border-4 border-zinc-900 shadow-2xl object-cover cursor-pointer hover:opacity-80 transition-opacity"
             referrerPolicy="no-referrer"
+            loading="lazy"
             onClick={() => currentUser?.uid === user.uid && profileFileInputRef.current?.click()}
           />
           <input
@@ -394,6 +395,7 @@ export const Profile: React.FC = () => {
                           alt={review.restaurantName}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                           referrerPolicy="no-referrer"
+                          loading="lazy"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-[8px] md:text-[10px] text-white/20 uppercase tracking-widest text-center px-2 italic">
@@ -547,7 +549,7 @@ export const Profile: React.FC = () => {
                     className="group bg-zinc-900 border border-white/5 rounded-2xl overflow-hidden hover:border-white/20 transition-all p-4 flex gap-4"
                   >
                     <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-white/10">
-                      <img src={rest.image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                      <img loading="lazy" src={rest.image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                       <h3 className="font-bold text-white group-hover:text-orange-500 transition-colors truncate">{rest.name}</h3>

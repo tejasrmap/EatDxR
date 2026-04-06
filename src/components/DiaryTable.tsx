@@ -111,7 +111,7 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                     <div className="flex items-center gap-2">
                       {review.dishes?.[0]?.image && (
                         <div className="w-8 h-8 rounded shrink-0 overflow-hidden border border-white/10">
-                          <img src={review.dishes[0].image} className="w-full h-full object-cover" />
+                          <img loading="lazy" src={review.dishes[0].image} className="w-full h-full object-cover" />
                         </div>
                       )}
                       <span className="text-white/60 italic font-serif line-clamp-1 text-xs">
@@ -130,6 +130,7 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                         <img 
                           src={review.userPhoto}
                           className="w-6 h-6 rounded-full border border-white/10 grayscale group-hover/user:grayscale-0 transition-all"
+                          loading="lazy"
                         />
                         <span className="text-xs font-bold text-white/40 group-hover/user:text-white transition-colors truncate max-w-[120px]">
                           {review.userName}
