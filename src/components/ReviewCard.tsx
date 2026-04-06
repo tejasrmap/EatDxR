@@ -2,7 +2,7 @@ import { Star, Heart, MessageSquare, MapPin, Send, Loader2, MoreVertical, Edit2,
 import { Review, Interaction } from "../types";
 import { formatDistanceToNow } from "date-fns";
 import { parseFirebaseDate } from "../lib/utils";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, memo } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "../App";
@@ -12,12 +12,13 @@ import { LogMealModal } from "./LogMealModal";
 import { DiaryEntryModal } from "./DiaryEntryModal";
 import { ShareMenu } from "./ShareMenu";
 import { StarRating } from "./StarRating";
+import { optimizeImage } from "../lib/imageOptimization";
 
 interface ReviewCardProps {
   review: Review;
 }
 
-export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
+export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
   const { dishdUser: currentUser, login } = useAuth();
   const [likes, setLikes] = useState<Interaction[]>([]);
   const [comments, setComments] = useState<Interaction[]>([]);
@@ -25,12 +26,23 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
   const [newComment, setNewComment] = useState("");
   const [isLikeLoading, setIsLikeLoading] = useState(false);
   const [isCommentLoading, setIsCommentLoading] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const [showOptions, setShowOptions] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDetailedViewOpen, setIsDetailedViewOpen] = useState(false);
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
   const optionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { threshold: 0.1, rootMargin: '200px' }
+    );
+    if (cardRef.current) observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -47,19 +59,16 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
     if (!window.confirm("Are you sure you want to delete this diary entry? This action cannot be undone.")) return;
     
     try {
-      // 1. Delete all nested interaction documents (comments & likes)
       const interactionsQuery = query(collection(db, "interactions"), where("reviewId", "==", review.id));
       const interactionsSnap = await getDocs(interactionsQuery);
       const deletePromises = interactionsSnap.docs.map(docSnap => deleteDoc(doc(db, "interactions", docSnap.id)));
       await Promise.all(deletePromises);
       
-      // 2. Decrement user's reviewsWritten natively
       const userRef = doc(db, "users", currentUser.uid);
       await updateDoc(userRef, {
         "stats.reviewsWritten": increment(-1)
       });
       
-      // 3. Delete the review natively
       await deleteDoc(doc(db, "reviews", review.id));
       
       toast.success("Diary entry deleted successfully.");
@@ -70,6 +79,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
   };
 
   useEffect(() => {
+    if (!isVisible) return;
     const q = query(
       collection(db, "interactions"),
       where("reviewId", "==", review.id)
@@ -88,20 +98,18 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
         .sort((a, b) => {
           const timeA = a.createdAt?.toMillis?.() || 0;
           const timeB = b.createdAt?.toMillis?.() || 0;
-          return timeA - timeB; // Ascending order (oldest first)
+          return timeA - timeB; 
         });
         
       setComments(fetchedComments);
     }, (error) => {
-      // Intentionally swallow "missing perm" errors on render for unauthenticated/unconfigured users 
-      // so it doesn't spam the console, but the app won't crash.
+      // Ignore
     });
 
     return unsubscribe;
-  }, [review.id]);
+  }, [review.id, isVisible]);
 
   const hasLiked = currentUser ? likes.some(l => l.userId === currentUser.uid) : false;
-  // Dynamic additive likes (new interactions hook into old legacy number, if any)
   const totalLikes = (review.likes || 0) + likes.length;
 
   const handleLike = async () => {
@@ -148,12 +156,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
       }
     } catch (error: any) {
       console.error("Like error:", error);
-      
-      if(error.message.includes('Missing or insufficient permissions')) {
-         toast.error("Database denied. Did you deploy the new firestore.rules?");
-      } else {
-         toast.error("Failed to toggle like.");
-      }
+      toast.error("Failed to toggle like.");
     } finally {
       setIsLikeLoading(false);
     }
@@ -200,11 +203,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
       toast.success("Comment posted!");
     } catch (error: any) {
       console.error("Comment error:", error);
-      if(error.message.includes('Missing or insufficient permissions')) {
-         toast.error("Database denied. Did you deploy the new firestore.rules?");
-      } else {
-         toast.error("Failed to post comment.");
-      }
+      toast.error("Failed to post comment.");
     } finally {
       setIsCommentLoading(false);
     }
@@ -214,16 +213,15 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
   const firstImage = dishesWithImages[0]?.image;
 
   return (
-    <div className="group py-6 border-b border-white/5 last:border-0">
+    <div ref={cardRef} className="group py-6 border-b border-white/5 last:border-0 relative">
       <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-        {/* Poster-style image */}
         <Link 
           to={`/restaurant/${review.restaurantId}`}
           className="w-full h-48 sm:w-24 sm:h-36 bg-zinc-800 rounded-lg sm:rounded-sm overflow-hidden flex-shrink-0 border border-white/10 shadow-lg relative"
         >
           {firstImage ? (
             <img 
-              src={firstImage} 
+              src={optimizeImage(firstImage, { width: 400, quality: 75 })} 
               alt={review.dishes?.[0]?.name || "Meal"} 
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
               referrerPolicy="no-referrer"
@@ -320,7 +318,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
               className="flex items-center gap-1.5 group/user"
             >
               <img 
-                src={review.userPhoto} 
+                src={optimizeImage(review.userPhoto, { width: 40 })} 
                 alt={review.userName} 
                 className="w-4 h-4 rounded-full border border-white/10"
                 referrerPolicy="no-referrer"
@@ -379,7 +377,6 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
             </button>
           </div>
 
-          {/* Comments Section Overlay */}
           {showComments && (
             <div className="mt-4 bg-white/5 rounded-lg border border-white/10 overflow-hidden">
               <div className="max-h-60 overflow-y-auto p-4 space-y-4">
@@ -390,7 +387,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
                     <div key={comment.id} className="flex gap-3">
                       <Link to={`/profile/${comment.userId}`}>
                         <img 
-                          src={comment.userPhoto} 
+                          src={optimizeImage(comment.userPhoto, { width: 40 })} 
                           alt={comment.userName}
                           className="w-6 h-6 rounded-full border border-white/10 shrink-0 mt-0.5"
                           referrerPolicy="no-referrer"
@@ -466,4 +463,4 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
       )}
     </div>
   );
-}
+});

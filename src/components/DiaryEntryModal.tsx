@@ -231,8 +231,14 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
               )}
               
               {/* Mobile Native Back Header */}
-              <div className="md:hidden absolute top-0 left-0 w-full p-4 md:p-6 z-[100] bg-gradient-to-b from-black/60 to-transparent pointer-events-none flex justify-between">
-                 <button onClick={onClose} className="w-10 h-10 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white/80 pointer-events-auto active:scale-90 transition-transform">
+              <div className="md:hidden absolute top-0 left-0 w-full p-4 md:p-6 z-[100] flex justify-between pointer-events-none">
+                 <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClose();
+                  }} 
+                  className="w-10 h-10 bg-black/60 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white pointer-events-auto active:scale-95 transition-all shadow-2xl"
+                 >
                    <ChevronLeft size={24} className="mr-0.5" />
                  </button>
               </div>
@@ -240,10 +246,22 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
 
             {/* Narrative Stage (Right on Desktop, Bottom on Mobile) */}
             <div className="w-full md:w-1/2 flex flex-col h-full bg-[#0a0a0a] relative">
-               {/* Fixed Close Button Desktop */}
-               <button onClick={onClose} className="hidden md:flex absolute top-8 right-8 w-12 h-12 items-center justify-center bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10 text-white/40 hover:text-white z-[100] active:scale-90">
-                 <X size={24} />
-               </button>
+               {/* Fixed Header Desktop */}
+               <div className="hidden md:flex absolute top-8 left-8 right-8 justify-between items-center z-[100] pointer-events-none">
+                  <button 
+                    onClick={onClose} 
+                    className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10 text-white/60 hover:text-white pointer-events-auto active:scale-95 group"
+                  >
+                     <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
+                     <span className="text-[10px] uppercase font-black tracking-widest">Back to Profile</span>
+                  </button>
+                  <button 
+                    onClick={onClose} 
+                    className="w-12 h-12 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10 text-white/40 hover:text-white pointer-events-auto active:scale-90"
+                  >
+                    <X size={24} />
+                  </button>
+               </div>
 
                <div className="flex-1 overflow-y-auto px-8 md:px-12 py-12 md:py-16 space-y-10 custom-scrollbar">
                   {/* Meta Narrative Header */}

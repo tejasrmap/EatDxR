@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Star, StarHalf } from 'lucide-react';
 
 interface StarRatingProps {
@@ -9,7 +9,7 @@ interface StarRatingProps {
   inactiveColor?: string;
 }
 
-export const StarRating: React.FC<StarRatingProps> = ({ 
+export const StarRating: React.FC<StarRatingProps> = memo(({ 
   rating, 
   size = 18, 
   className = "flex items-center gap-1",
@@ -54,4 +54,4 @@ export const StarRating: React.FC<StarRatingProps> = ({
       })}
     </div>
   );
-};
+});

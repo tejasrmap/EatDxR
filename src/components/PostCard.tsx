@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, memo } from "react";
 import { Star, Heart, MessageSquare, MapPin, MoreVertical } from "lucide-react";
 import { Review, Interaction } from "../types";
 import { Link } from "react-router-dom";
@@ -10,12 +10,13 @@ import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTim
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import { CommentModal } from "./CommentModal";
+import { optimizeImage } from "../lib/imageOptimization";
 
 interface PostCardProps {
   review: Review;
 }
 
-export const PostCard: React.FC<PostCardProps> = ({ review }) => {
+export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
   const { dishdUser: currentUser } = useAuth();
   const [likes, setLikes] = useState<Interaction[]>([]);
   const [comments, setComments] = useState<Interaction[]>([]);
@@ -23,22 +24,33 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // Extract all images from dishes for the Instagram-style carousel
   const allImages = review.dishes?.filter(d => d.image).map(d => d.image) || [];
-  
+
+  // Intersection Observer to only load live data when visible
   useEffect(() => {
-    if (!currentUser) return;
-    const unsubscribe = onSnapshot(doc(db, "users", currentUser.uid), (snapshot) => {
-        const userData = snapshot.data();
-        if (userData?.stats?.followingList) {
-            setIsFollowing(userData.stats.followingList.includes(review.userId));
-        }
-    });
-    return unsubscribe;
-  }, [currentUser, review.userId]);
-  
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { threshold: 0.1, rootMargin: '200px' }
+    );
+    if (cardRef.current) observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // Use global follow state from AuthContext instead of separate listener
   useEffect(() => {
+    if (currentUser?.stats?.followingList) {
+        setIsFollowing(currentUser.stats.followingList.includes(review.userId));
+    }
+  }, [currentUser?.stats?.followingList, review.userId]);
+  
+  // Only subscribe to interactions when the card is actually visible on screen
+  useEffect(() => {
+    if (!review.id || !isVisible) return;
+    
     const q = query(
       collection(db, "interactions"),
       where("reviewId", "==", review.id)
@@ -53,11 +65,11 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
       setLikes(interactions.filter(i => i.type === "LIKE"));
       setComments(interactions.filter(i => i.type === "COMMENT"));
     }, (error) => {
-      console.warn("Interactions subscription error:", error.message);
+      // Quiet fail to prevent console spam
     });
 
     return unsubscribe;
-  }, [review.id]);
+  }, [review.id, isVisible]);
 
   const hasLiked = currentUser ? likes.some(l => l.userId === currentUser.uid) : false;
   const totalLikes = (review.likes || 0) + likes.length;
@@ -135,9 +147,10 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
 
   return (
     <motion.div 
+      ref={cardRef}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
+      viewport={{ once: true, margin: "-50px" }}
       className="bg-[#14181c] border border-white/5 rounded-3xl overflow-hidden shadow-2xl mb-12 group"
     >
       {/* User Header */}
@@ -187,7 +200,7 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
             allImages.map((img, i) => (
               <div key={i} className="min-w-full h-full snap-center relative">
                 <img 
-                  src={img} 
+                  src={optimizeImage(img, { width: 800, quality: 75 })} 
                   alt={`${review.restaurantName} - Dish ${i + 1}`}
                   className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
                   referrerPolicy="no-referrer"
@@ -319,4 +332,4 @@ export const PostCard: React.FC<PostCardProps> = ({ review }) => {
       />
     </motion.div>
   );
-};
+});
