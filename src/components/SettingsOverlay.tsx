@@ -33,7 +33,7 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
 
   const sections = [
     {
-      title: "How you use EatD",
+      title: "How you use EatR",
       items: [
         { 
           label: "Edit Profile", 
@@ -164,7 +164,7 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
 
           {/* Version Info */}
           <div className="pt-8 pb-12 text-center space-y-1">
-             <p className="text-[10px] uppercase tracking-[0.4em] font-black text-white/10">EatD v1.0.4</p>
+             <p className="text-[10px] uppercase tracking-[0.4em] font-black text-white/10">EatR v1.0.4</p>
              <p className="text-[9px] font-medium italic serif text-white/5">Designed for the Culinary Elite</p>
           </div>
         </div>

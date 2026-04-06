@@ -25,8 +25,8 @@ export function Layout({ children }: LayoutProps) {
               <div className="relative flex items-center justify-center w-6 h-6 bg-gradient-to-br from-orange-500 to-rose-500 rounded-md opacity-80 group-hover:opacity-100 group-hover:-rotate-12 transition-all duration-300">
                 <UtensilsCrossed className="text-white w-3 h-3" />
               </div>
-              <span className="text-white/80 group-hover:text-white transition-colors">
-                Eat<span className="text-rose-500">D</span>
+              <span className="text-white/80 group-hover:text-white transition-colors uppercase tracking-[0.2em] font-black">
+                Eat<span className="serif italic text-[1.4em] text-rose-500 ml-0.5 leading-none">R</span>
               </span>
             </div>
 
@@ -39,7 +39,7 @@ export function Layout({ children }: LayoutProps) {
             </div>
 
             <p className="text-xs text-white/20">
-              © EatD. Made by food lovers, for food lovers.
+              © EatR. Made by food lovers, for food lovers.
             </p>
           </div>
         </footer>

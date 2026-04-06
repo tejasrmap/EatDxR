@@ -178,7 +178,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
         }
       }
       
-      toast.success(isOnboarding ? "Welcome to EatDxR! Profile set up." : "Profile updated successfully!");
+      toast.success(isOnboarding ? "Welcome to EatR! Profile set up." : "Profile updated successfully!");
       onClose();
     } catch (error: any) {
       console.error("Error updating profile:", error);
