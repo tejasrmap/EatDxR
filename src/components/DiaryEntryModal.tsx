@@ -180,7 +180,7 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 40 }}
             transition={{ type: "spring", damping: 30, stiffness: 400 }}
-            className="relative w-full h-full md:h-auto md:max-h-[95vh] md:max-w-6xl bg-[#0a0a0a] md:rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.8)] flex flex-col md:flex-row overflow-hidden border border-white/10"
+            className="relative w-full h-full md:h-[90vh] md:max-w-6xl bg-[#0a0a0a] md:rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.8)] flex flex-col md:flex-row overflow-hidden border border-white/10"
           >
             {/* Cinematic Image Stage (Left on Desktop, Top on Mobile) */}
             <div className="w-full md:w-1/2 h-[50vh] md:h-full bg-zinc-900/50 relative overflow-hidden group">

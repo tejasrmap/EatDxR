@@ -35,9 +35,9 @@ export const StarRating: React.FC<StarRatingProps> = ({
         // Half star
         else if (diff >= 0.5) {
           return (
-            <div key={i} className="relative inline-flex" style={{ width: size, height: size }}>
+            <div key={i} className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
               <Star size={size} className={inactiveColor} />
-              <StarHalf size={size} fill="currentColor" className={`absolute inset-0 ${activeColor} fill-current`} />
+              <StarHalf size={size} fill="currentColor" className={`absolute top-0 left-0 ${activeColor} fill-current`} />
             </div>
           );
         } 
