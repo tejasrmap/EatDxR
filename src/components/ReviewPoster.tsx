@@ -17,7 +17,7 @@ export const ReviewPoster: React.FC<ReviewPosterProps> = ({ review, id = "review
   return (
     <div 
       id={id}
-      className="fixed inset-0 pointer-events-none opacity-0 overflow-hidden z-[-1]"
+      className="fixed top-[200vh] left-[200vw] pointer-events-none z-[-1]"
     >
       <div className="w-[1080px] h-[1920px] bg-[#0a0a0a] text-white flex flex-col font-sans overflow-hidden">
       {/* Cinematic Backdrop */}

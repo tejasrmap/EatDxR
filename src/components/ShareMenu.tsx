@@ -88,22 +88,32 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
       // Short delay to ensure browser paint
       await new Promise(r => setTimeout(r, 300));
 
-      const canvas = await html2canvas(element, {
-        useCORS: true,
-        backgroundColor: "#0a0a0a",
-        logging: true,
-        allowTaint: false, // Now we can safely set this to false because images are same-origin
-        // @ts-ignore
-        scale: 2 
-      });
+      let canvas;
+      try {
+        canvas = await html2canvas(element, {
+          useCORS: true,
+          backgroundColor: "#0a0a0a",
+          logging: true,
+          allowTaint: false, // Ensure image is completely safe
+          // @ts-ignore
+          scale: 2 
+        });
+      } catch (renderError) {
+         console.warn("Primary render crash. Attempting safe-mode...");
+         canvas = await html2canvas(element, {
+            useCORS: false,
+            backgroundColor: "#0a0a0a",
+            logging: false,
+            // @ts-ignore
+            scale: 1 
+         });
+      }
 
-      // If allowTaint was true, toDataURL might still throw if a cross-origin image was actually loaded
-      // without proper CORS headers. We catch that here.
       try {
         const dataUrl = canvas.toDataURL("image/png", 1.0);
         return dataUrl;
       } catch (dataError) {
-        console.warn("Tainted canvas detected, attempting safe-mode capture (no images)...");
+        console.warn("Tainted canvas detected, attempting ultra-safe-mode capture (no images)...");
         // Fallback: capture again without images if needed
         const safeCanvas = await html2canvas(element, {
           useCORS: false,
