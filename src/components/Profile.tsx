@@ -336,11 +336,6 @@ export const Profile: React.FC = () => {
                     </div>
                 </div>
              )}
-             
-             {/* Rating Graph (Mobile Only) */}
-             <div className="lg:hidden w-full max-w-[240px] mx-auto mt-6">
-                <RatingGraph reviews={reviews} />
-             </div>
           </div>
         </div>
       </div>
@@ -512,14 +507,6 @@ export const Profile: React.FC = () => {
                    </div>
                 </div>
               </div>
-
-              {/* RATINGS GRAPH Section */}
-              <div>
-                <div className="border-b border-white/5 pb-4 mb-6">
-                   <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40">RATINGS</h3>
-                </div>
-                <RatingGraph reviews={reviews} />
-              </div>
             </div>
           </motion.div>
         )}
@@ -531,9 +518,17 @@ export const Profile: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ type: 'spring', stiffness: 500, damping: 45 }}
-            className="w-full"
+            className="w-full flex flex-col pb-16"
           >
             <DiaryTable reviews={reviews} showUser={false} />
+            {reviews.length > 0 && (
+               <div className="mt-16 pt-8 border-t border-white/5 max-w-sm mx-auto w-full">
+                  <div className="text-center mb-6">
+                     <h3 className="text-[10px] uppercase tracking-[0.3em] font-black text-white/40">Ratings Distribution</h3>
+                  </div>
+                  <RatingGraph reviews={reviews} />
+               </div>
+            )}
           </motion.div>
         )}
 
