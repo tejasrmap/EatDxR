@@ -76,7 +76,7 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
 
       const canvas = await html2canvas(element, {
         useCORS: true,
-        background: "#0a0a0a",
+        backgroundColor: "#0a0a0a",
         logging: true,
         allowTaint: false, // Now we can safely set this to false because images are same-origin
         // @ts-ignore
@@ -93,7 +93,7 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
         // Fallback: capture again without images if needed
         const safeCanvas = await html2canvas(element, {
           useCORS: false,
-          background: "#0a0a0a",
+          backgroundColor: "#0a0a0a",
           logging: false,
           // @ts-ignore
           ignoreElements: (el) => el.tagName === 'IMG',
