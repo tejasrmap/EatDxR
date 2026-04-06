@@ -28,8 +28,8 @@ export const RatingGraph: React.FC<RatingGraphProps> = ({ reviews }) => {
   const maxCount = Math.max(...counts, 1);
 
   return (
-    <div className="w-full flex-1 max-w-[280px] md:max-w-md mx-auto py-4">
-      <div className="flex items-end justify-center gap-1 h-24 md:h-32 mb-3 border-b border-white/20 pb-1">
+    <div className="w-full flex-1 max-w-[320px] md:max-w-xl mx-auto py-6">
+      <div className="flex items-end justify-center gap-1.5 md:gap-2 h-32 md:h-48 mb-4 border-b border-white/20 pb-1.5">
         {counts.map((count, i) => {
           // Use square root scaling so small ratios remain highly visible
           const heightPercent = maxCount > 0 ? (Math.sqrt(count) / Math.sqrt(maxCount)) * 100 : 0;

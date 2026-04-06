@@ -522,9 +522,9 @@ export const Profile: React.FC = () => {
           >
             <DiaryTable reviews={reviews} showUser={false} />
             {reviews.length > 0 && (
-               <div className="mt-16 pt-8 border-t border-white/5 max-w-sm mx-auto w-full">
+               <div className="mt-16 pt-8 border-t border-white/5 max-w-2xl mx-auto w-full px-4">
                   <div className="text-center mb-6">
-                     <h3 className="text-[10px] uppercase tracking-[0.3em] font-black text-white/40">Ratings Distribution</h3>
+                     <h3 className="text-xs md:text-sm uppercase tracking-[0.4em] font-black text-white/60">Ratings Distribution</h3>
                   </div>
                   <RatingGraph reviews={reviews} />
                </div>
