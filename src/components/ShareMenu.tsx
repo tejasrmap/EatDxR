@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { Review } from "../types";
 import { X, Send, Instagram, MessageCircle, Share2, Copy, Download, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import html2canvas from "html2canvas";
+import * as htmlToImage from 'html-to-image';
 import { toast } from "sonner";
 import { ReviewPoster } from "./ReviewPoster";
 
@@ -40,8 +40,6 @@ const toBase64 = async (url: string): Promise<string | null> => {
 
   let b64 = await tryLoad(url);
   
-  // If native fetch fails (likely due to CORS like Google avatars/unsplash),
-  // leverage a public edge image cache that injects proper origin headers
   if (!b64) {
      b64 = await tryLoad(`https://wsrv.nl/?url=${encodeURIComponent(url)}`);
   }
@@ -59,11 +57,8 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
 
     setIsGenerating(true);
     try {
-      // Find all images in the poster
       const images = Array.from(element.getElementsByTagName('img'));
       
-      // Pre-process each image to convert to same-origin base64
-      // This bypasses html2canvas CORS issues entirely
       const proxyPromises = images.map(async (img) => {
         const originalSrc = img.src;
         if (!originalSrc || originalSrc.startsWith('data:')) return;
@@ -71,61 +66,36 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
         const b64 = await toBase64(originalSrc);
         if (b64) {
           img.src = b64;
-          // Wait for the new src to load
           return new Promise((resolve) => {
             img.onload = resolve;
             img.onerror = resolve;
           });
         } else {
-          // CORS completely blocked the image and proxy failed. 
-          // Swap image out for a transparent 1x1 pixel so html2canvas doesn't fatally crash.
           img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
           return Promise.resolve();
         }
       });
       await Promise.all(proxyPromises);
 
-      // Short delay to ensure browser paint
-      await new Promise(r => setTimeout(r, 300));
+      await new Promise(r => setTimeout(r, 400));
 
-      let canvas;
+      let dataUrl;
       try {
-        canvas = await html2canvas(element, {
-          useCORS: true,
-          backgroundColor: "#0a0a0a",
-          logging: true,
-          allowTaint: false, // Ensure image is completely safe
-          // @ts-ignore
-          scale: 2 
+        dataUrl = await htmlToImage.toPng(element, {
+          pixelRatio: 2,
+          backgroundColor: "#0a0a0a"
         });
       } catch (renderError) {
-         console.warn("Primary render crash. Attempting safe-mode...");
-         canvas = await html2canvas(element, {
-            useCORS: false,
+         console.warn("Primary html-to-image render crash. Attempting safe-mode...", renderError);
+         dataUrl = await htmlToImage.toPng(element, {
+            pixelRatio: 1,
             backgroundColor: "#0a0a0a",
-            logging: false,
-            // @ts-ignore
-            scale: 1 
+            skipFonts: true,
+            filter: (node) => node.tagName !== 'IMG'
          });
       }
 
-      try {
-        const dataUrl = canvas.toDataURL("image/png", 1.0);
-        return dataUrl;
-      } catch (dataError) {
-        console.warn("Tainted canvas detected, attempting ultra-safe-mode capture (no images)...");
-        // Fallback: capture again without images if needed
-        const safeCanvas = await html2canvas(element, {
-          useCORS: false,
-          backgroundColor: "#0a0a0a",
-          logging: false,
-          // @ts-ignore
-          ignoreElements: (el) => el.tagName === 'IMG',
-          // @ts-ignore
-          scale: 1
-        });
-        return safeCanvas.toDataURL("image/png");
-      }
+      return dataUrl;
     } catch (error) {
       console.error("Poster generation error:", error);
       toast.error("Failed to generate. Image security (CORS) might be blocking capture.");
