@@ -60,23 +60,24 @@ export function Critics() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-12">
-      <div className="flex flex-col items-center text-center mb-16 relative">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#ff8000]/10 via-transparent to-transparent blur-3xl rounded-full opacity-50 w-3/4 mx-auto h-64" />
+    <div className="max-w-5xl mx-auto px-6 py-20 elite-motion-safe">
+      <div className="flex flex-col items-center text-center mb-24 relative">
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-orange-500/10 via-transparent to-transparent blur-3xl rounded-full opacity-30 w-3/4 mx-auto h-96" />
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6"
+          transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel border border-white/10 mb-8"
         >
-          <TrendingUp size={14} className="text-[#ff8000]" />
-          <span className="text-xs font-bold uppercase tracking-widest text-[#ff8000]">Live Rankings</span>
+          <TrendingUp size={14} className="text-orange-500" />
+          <span className="small-caps text-orange-500">Global Leaderboard</span>
         </motion.div>
         
         <motion.h1 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-          className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-white leading-tight"
+          transition={{ delay: 0.1, duration: 1, ease: [0.19, 1, 0.22, 1] }}
+          className="title-text mb-8"
         >
           Top Critics
         </motion.h1>
@@ -84,32 +85,28 @@ export function Critics() {
         <motion.p 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="text-white/60 max-w-lg mx-auto text-lg leading-relaxed mb-10"
+          transition={{ delay: 0.2, duration: 1 }}
+          className="text-white/40 max-w-xl mx-auto text-lg leading-relaxed mb-12 font-serif italic"
         >
-          The most prolific and trusted voices in the culinary community. Ranked by total reviews written.
+          The most prolific and trusted voices in the culinary community. Ranked by their total gastronomic contributions.
         </motion.p>
 
         {/* Search Trigger */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="w-full max-w-md mx-auto relative group flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-2xl cursor-pointer hover:bg-white/10 hover:border-white/20 transition-all"
+          transition={{ delay: 0.3, duration: 0.8 }}
+          className="w-full max-w-lg mx-auto relative group flex items-center gap-4 px-6 py-4 bg-white/[0.03] border border-white/10 rounded-full cursor-pointer hover:bg-white/[0.06] hover:border-white/20 transition-all backdrop-blur-xl"
         >
-          <Search size={18} className="text-white/40 group-hover:text-white/60 transition-colors" />
-          <span className="text-sm text-white/20 group-hover:text-white/40 transition-colors font-medium">Search across all critics and users...</span>
-          <div className="ml-auto flex items-center gap-1.5 px-2 py-1 rounded border border-white/10 bg-black/20 text-[10px] font-bold text-white/20">
+          <Search size={18} className="text-white/20 group-hover:text-white/40 transition-colors" />
+          <span className="text-sm text-white/20 group-hover:text-white/40 transition-colors font-medium">Find a critic by name or expertise...</span>
+          <div className="ml-auto flex items-center gap-2 px-2.5 py-1 rounded bg-white/5 border border-white/10 small-caps text-[9px] text-white/20 tracking-normal">
             <span className="scale-110">⌘</span>K
           </div>
-          {/* Invisible Overlay to catch clicks in Navbar context is not needed here as we use a button click handler */}
           <button 
             type="button"
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
             onClick={() => {
-              // We need a way to open the Navbar search from here.
-              // Since the state is in Navbar, we could use a custom event or context.
-              // For simplicity, I'll trigger a 'CLICK_GLOBAL_SEARCH' event.
               window.dispatchEvent(new Event('OPEN_GLOBAL_SEARCH'));
             }} 
           />
@@ -117,100 +114,94 @@ export function Critics() {
       </div>
 
       {loading ? (
-        <div className="py-20 flex flex-col items-center justify-center space-y-4">
-          <Loader2 className="w-10 h-10 animate-spin text-[#00e054]" />
-          <p className="text-sm font-bold uppercase tracking-widest text-white/40 animate-pulse">Ranking Foodies...</p>
+        <div className="py-32 flex flex-col items-center justify-center space-y-6">
+          <Loader2 className="w-12 h-12 animate-spin text-white/10" />
+          <p className="small-caps text-white/20 animate-pulse">Ranking Foodies...</p>
         </div>
       ) : critics.length > 0 ? (
-        <div className="space-y-4 relative">
+        <div className="space-y-6 relative">
           <AnimatePresence>
             {critics.map((critic, index) => {
               const isTopThree = index < 3;
               const rankColorClasses = getRankColor(index).split(' ');
               const rankBorderClass = rankColorClasses.find(c => c.startsWith('border-')) || 'border-white/5';
-              const rankTextClass = rankColorClasses.find(c => c.startsWith('text-')) || 'text-white/40';
+              const rankTextClass = rankColorClasses.find(c => c.startsWith('text-')) || 'text-white/20';
               const rankGradientFromNode = rankColorClasses.find(c => c.startsWith('from-')) || 'from-white/10';
               const rankGradientToNode = rankColorClasses.find(c => c.startsWith('to-')) || 'to-white/5';
               
               return (
                 <motion.div
                   key={critic.uid}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ delay: index * 0.05, duration: 0.4 }}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ delay: index * 0.05, duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
                 >
                   <Link
                     to={`/profile/${critic.uid}`}
-                    className={`block relative overflow-hidden rounded-2xl border ${rankBorderClass} bg-zinc-900/50 backdrop-blur-xl transition-all duration-300 hover:scale-[1.01] hover:bg-white/5 group`}
+                    className={`block relative overflow-hidden rounded-3xl border ${isTopThree ? rankBorderClass : 'border-white/5'} bg-zinc-950/40 backdrop-blur-3xl transition-all duration-500 hover:bg-white/[0.03] group hover:-translate-y-1 shadow-2xl`}
                   >
                     {isTopThree && (
                       <div className={`absolute inset-0 bg-gradient-to-r ${rankGradientFromNode} ${rankGradientToNode} opacity-5 group-hover:opacity-10 transition-opacity`} />
                     )}
 
-                    <div className="flex flex-col sm:flex-row items-center gap-6 p-6 sm:p-8 relative z-10 w-full">
-                      <div className="flex items-center justify-center w-12 shrink-0">
+                    <div className="flex flex-col sm:flex-row items-center gap-8 p-8 sm:p-10 relative z-10 w-full text-center sm:text-left">
+                      <div className="flex items-center justify-center w-14 shrink-0">
                         {getRankMedal(index)}
                       </div>
 
                       <div className="relative shrink-0">
-                        <div className={`absolute -inset-1 rounded-full bg-gradient-to-br ${rankGradientFromNode} ${rankGradientToNode} opacity-20 blur-sm group-hover:opacity-40 transition-opacity`} />
+                        <div className={`absolute -inset-2 rounded-full bg-gradient-to-br ${rankGradientFromNode} ${rankGradientToNode} opacity-10 blur-md group-hover:opacity-30 transition-opacity`} />
                         <img
                           src={critic.photoURL || `https://ui-avatars.com/api/?name=${critic.displayName || 'User'}&background=random`}
                           alt={critic.displayName}
-                          className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 ${isTopThree ? rankBorderClass : 'border-white/10'} shadow-xl`}
+                          className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-2 shadow-2xl grayscale group-hover:grayscale-0 transition-all duration-700 ${isTopThree ? rankBorderClass : 'border-white/10'}`}
                           referrerPolicy="no-referrer"
                           loading="lazy"
                         />
                         {isTopThree && (
-                          <div className="absolute -bottom-2 -right-2 bg-black rounded-full p-1 border border-white/10">
-                            <Award size={16} className={rankTextClass} />
+                          <div className="absolute -bottom-2 -right-2 bg-zinc-950 rounded-full p-1.5 border border-white/10 shadow-xl">
+                            <Award size={18} className={rankTextClass} />
                           </div>
                         )}
                       </div>
 
-                      <div className="flex-1 text-center sm:text-left min-w-0">
-                        <h2 className="text-xl md:text-3xl font-black uppercase tracking-tighter truncate group-hover:text-[#00e054] transition-colors mb-1">
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-2xl md:text-4xl font-extrabold text-white group-hover:text-accent transition-colors mb-2 tracking-tight">
                           {critic.displayName}
                         </h2>
                         {critic.bio && (
-                          <p className="text-xs md:text-sm text-white/50 truncate mb-3 italic serif">
+                          <p className="text-[15px] text-white/40 line-clamp-1 mb-4 italic font-serif leading-relaxed">
                             "{critic.bio}"
                           </p>
                         )}
                         {critic.favoriteCuisines && critic.favoriteCuisines.length > 0 && (
-                          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
                             {critic.favoriteCuisines.slice(0, 3).map((cuisine, i) => (
-                              <span key={i} className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded bg-white/5 text-white/60 border border-white/5">
+                              <span key={i} className="small-caps text-[9px] text-white/30 px-3 py-1 rounded-full border border-white/5 bg-white/[0.02]">
                                 {cuisine}
                               </span>
                             ))}
                             {critic.favoriteCuisines.length > 3 && (
-                              <span className="text-[10px] font-bold text-white/40">+{critic.favoriteCuisines.length - 3}</span>
+                              <span className="small-caps text-[9px] text-white/10">+{critic.favoriteCuisines.length - 3} More</span>
                             )}
                           </div>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-8 bg-black/40 px-6 py-4 rounded-xl border border-white/5 shrink-0 mt-4 sm:mt-0">
+                      <div className="flex items-center gap-10 bg-white/[0.02] px-8 py-5 rounded-2xl border border-white/5 shrink-0 mt-6 sm:mt-0">
                         <div className="text-center">
-                          <div className="flex items-center justify-center gap-1.5 mb-1 text-white/40">
-                            <Star size={14} className={isTopThree ? rankTextClass : ""} />
-                            <span className="text-[10px] font-black uppercase tracking-widest leading-none">Reviews</span>
-                          </div>
-                          <span className={`text-2xl md:text-3xl font-black leading-none ${isTopThree ? rankTextClass : 'text-white'}`}>
+                          <p className="small-caps text-[9px] text-white/20 mb-2">Entries</p>
+                          <span className={`text-3xl md:text-4xl font-extrabold tracking-tighter ${isTopThree ? rankTextClass : 'text-white'}`}>
                             {critic.stats?.reviewsWritten || 0}
                           </span>
                         </div>
                         
-                        <div className="w-px h-8 bg-white/10" />
+                        <div className="w-px h-10 bg-white/5" />
                         
                         <div className="text-center">
-                          <div className="flex items-center justify-center gap-1.5 mb-1 text-white/40">
-                            <Users size={14} className={index === 0 ? "text-blue-400" : ""} />
-                            <span className="text-[10px] font-bold uppercase tracking-widest">Followers</span>
-                          </div>
-                          <span className="text-xl font-bold text-white/80">
+                          <p className="small-caps text-[9px] text-white/20 mb-2">Follows</p>
+                          <span className="text-2xl font-bold text-white/60">
                             {critic.stats?.followers ?? 0}
                           </span>
                         </div>
@@ -223,11 +214,11 @@ export function Critics() {
           </AnimatePresence>
         </div>
       ) : (
-        <div className="py-32 text-center border border-dashed border-white/10 rounded-3xl bg-white/[0.02]">
-          <Award className="w-16 h-16 mx-auto text-white/10 mb-6" />
-          <h3 className="text-xl font-bold mb-2">No critics found yet</h3>
-          <p className="text-white/40 italic serif max-w-sm mx-auto">
-            The leaderboard is empty. Be the first to log a meal and claim the top spot!
+        <div className="py-40 text-center glass-panel border-dashed border-white/10 max-w-2xl mx-auto p-12">
+          <Award className="w-16 h-16 mx-auto text-white/5 mb-8" />
+          <h3 className="text-2xl font-bold mb-4">No critics found yet</h3>
+          <p className="text-white/30 italic font-serif text-lg leading-relaxed">
+            The leaderboard is empty. Be the first to claim your status and log a meal today!
           </p>
         </div>
       )}

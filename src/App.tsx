@@ -201,7 +201,6 @@ function Home() {
   }, [location]);
 
   useEffect(() => {
-    // Test connection
     const testConnection = async () => {
       try {
         await getDocFromServer(doc(db, 'test', 'connection'));
@@ -215,7 +214,6 @@ function Home() {
 
     let q;
     if (filter === "nearby" && currentCity) {
-      // Note: This requires a composite index on city and createdAt
       q = query(
         collection(db, "reviews"), 
         where("city", "==", currentCity),
@@ -247,21 +245,21 @@ function Home() {
   }, [filter, currentCity]);
 
   return (
-    <div>
+    <div className="elite-motion-safe">
       <Hero />
       
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+      <div className="max-w-7xl mx-auto px-6 py-20">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-20">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-16">
+          <div className="lg:col-span-2 space-y-24">
             
             {/* Popular Meals (Poster Grid) */}
             <section id="popular-meals">
-              <div className="flex items-center justify-between mb-6 border-b border-white/10 pb-2">
-                <h2 className="text-[10px] uppercase tracking-widest font-bold text-white/40">Popular Meals this Week</h2>
-                <Link to="/restaurants" className="text-[10px] uppercase tracking-widest font-bold text-white/20 hover:text-white transition-colors">More</Link>
+              <div className="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
+                <h2 className="small-caps text-white/40">Popular Meals this Week</h2>
+                <Link to="/restaurants" className="small-caps text-white/20 hover:text-white transition-colors">See All Experience</Link>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
                 {reviews.slice(0, 4).map((review, i) => {
                   const dishesWithImages = review.dishes?.filter(d => d.image) || [];
                   const firstImage = dishesWithImages[0]?.image;
@@ -269,7 +267,7 @@ function Home() {
                     <Link 
                       key={i} 
                       to={`/restaurant/${review.restaurantId}`}
-                      className="aspect-[2/3] bg-zinc-800 rounded-sm overflow-hidden border border-white/10 group relative shadow-lg"
+                      className="aspect-[2/3] bg-zinc-900 rounded-lg overflow-hidden border border-white/10 group relative shadow-2xl transition-all duration-500 hover:border-white/20 hover:-translate-y-1 block"
                     >
                       <img 
                         src={firstImage || `https://images.unsplash.com/photo-${[
@@ -278,13 +276,13 @@ function Home() {
                           "1493770348161-369560ae357d",
                           "1473093226795-af9932fe5856"
                         ][i]}?auto=format&fit=crop&w=400&q=80`} 
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out grayscale-[20%] group-hover:grayscale-0"
                         referrerPolicy="no-referrer"
                         loading="lazy"
                       />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center p-4 transition-opacity text-center">
-                        <StarRating rating={review.rating} size={14} className="flex items-center gap-0.5 text-orange-500 mb-2" />
-                        <p className="text-[10px] font-bold text-white uppercase tracking-tighter line-clamp-2">{review.restaurantName}</p>
+                      <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent opacity-60 group-hover:opacity-90 transition-opacity flex flex-col items-center justify-end p-5 text-center">
+                        <StarRating rating={review.rating} size={12} className="flex items-center gap-0.5 text-accent mb-2" />
+                        <p className="text-[10px] font-extrabold text-white uppercase tracking-widest line-clamp-1 group-hover:text-accent transition-colors">{review.restaurantName}</p>
                       </div>
                     </Link>
                   );
@@ -294,35 +292,35 @@ function Home() {
 
             {/* Recent Reviews (List) */}
             <section>
-              <div className="flex items-center justify-between mb-6 border-b border-white/10 pb-2">
-                <h2 className="text-[10px] uppercase tracking-widest font-bold text-white/40">Recent Reviews from Critics</h2>
-                <div className="flex items-center gap-4">
+              <div className="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
+                <h2 className="small-caps text-white/40">Recent Reviews from Critics</h2>
+                <div className="flex items-center gap-6">
                   <button 
                     onClick={() => setFilter("all")}
-                    className={`text-[10px] uppercase tracking-widest font-bold transition-colors ${filter === "all" ? "text-white" : "text-white/20 hover:text-white"}`}
+                    className={`small-caps transition-colors ${filter === "all" ? "text-white" : "text-white/20 hover:text-white"}`}
                   >
                     Global
                   </button>
                   <button 
                     onClick={() => setFilter("nearby")}
-                    className={`text-[10px] uppercase tracking-widest font-bold transition-colors ${filter === "nearby" ? "text-white" : "text-white/20 hover:text-white"}`}
+                    className={`small-caps transition-colors ${filter === "nearby" ? "text-white" : "text-white/20 hover:text-white"}`}
                   >
                     Nearby
                   </button>
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {loading ? (
-                  <div className="py-20 text-center">
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto text-white/20" />
+                  <div className="py-24 text-center">
+                    <Loader2 className="w-10 h-10 animate-spin mx-auto text-white/10" />
                   </div>
                 ) : reviews.length > 0 ? (
                   reviews.map(review => (
                     <ReviewCard key={review.id} review={review} />
                   ))
                 ) : (
-                  <div className="py-20 text-center border border-dashed border-white/10 rounded-2xl">
-                    <p className="text-white/40 italic serif">No reviews yet. Be the first to log a meal!</p>
+                  <div className="py-24 text-center glass-panel border-dashed p-10">
+                    <p className="text-white/30 italic font-serif text-lg">No reviews yet. Be the first to log a meal!</p>
                   </div>
                 )}
               </div>
@@ -330,10 +328,10 @@ function Home() {
           </div>
           
           {/* Sidebar */}
-          <div className="space-y-12">
+          <div className="space-y-20">
             {/* Trending Cities */}
             <section>
-              <h2 className="text-[10px] uppercase tracking-widest font-bold text-white/40 mb-6 pb-2 border-b border-white/10">Trending Cities</h2>
+              <h2 className="small-caps text-white/40 mb-8 pb-4 border-b border-white/5">Trending Cities</h2>
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { name: "Mumbai", img: "https://images.unsplash.com/photo-1566552881560-0be862a7c445?auto=format&fit=crop&w=400&q=80" },
@@ -347,16 +345,16 @@ function Home() {
                       setCurrentCity(city.name);
                       setFilter("nearby");
                     }}
-                    className="group cursor-pointer relative aspect-video rounded-sm overflow-hidden border border-white/10"
+                    className="group cursor-pointer relative aspect-[4/3] rounded-xl overflow-hidden border border-white/10 shadow-lg"
                   >
                     <img 
                       src={city.img} 
-                      className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                      className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 group-hover:scale-110 transition-all duration-700"
                       referrerPolicy="no-referrer"
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                      <span className="text-[10px] uppercase tracking-widest font-bold text-white">{city.name}</span>
+                    <div className="absolute inset-0 bg-zinc-950/40 group-hover:bg-zinc-950/10 transition-all flex items-center justify-center">
+                      <span className="small-caps text-white drop-shadow-xl">{city.name}</span>
                     </div>
                   </div>
                 ))}
@@ -365,11 +363,11 @@ function Home() {
 
             {/* Popular Lists */}
             <section>
-              <div className="flex items-center justify-between mb-6 pb-2 border-b border-white/10">
-                <h2 className="text-[10px] uppercase tracking-widest font-bold text-white/40">Popular Food Lists</h2>
-                <Link to="/lists" className="text-[10px] uppercase tracking-widest font-bold text-white/20 hover:text-white transition-colors">More</Link>
+              <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
+                <h2 className="small-caps text-white/40">Popular Food Lists</h2>
+                <Link to="/lists" className="small-caps text-white/20 hover:text-white transition-colors">See More</Link>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {[
                   "Best Sushi in Mumbai",
                   "Authentic Street Food Delhi",
@@ -377,8 +375,8 @@ function Home() {
                   "Hidden Gems Hyderabad"
                 ].map((list, i) => (
                   <Link to="/lists" key={i} className="group block cursor-pointer">
-                    <p className="text-sm font-medium text-white/60 group-hover:text-white transition-colors">{list}</p>
-                    <p className="text-[10px] text-white/20 uppercase tracking-widest">1.2k likes • 45 items</p>
+                    <p className="text-[15px] font-bold text-white/70 group-hover:text-accent transition-all duration-300 mb-1">{list}</p>
+                    <p className="small-caps text-[9px] text-white/20 tracking-normal group-hover:text-white/40">1.2k likes • 45 items curated</p>
                   </Link>
                 ))}
               </div>
@@ -386,27 +384,27 @@ function Home() {
 
             {/* Top Critics */}
             <section>
-              <div className="flex items-center justify-between mb-6 pb-2 border-b border-white/10">
-                <h2 className="text-[10px] uppercase tracking-widest font-bold text-white/40">Top Critics</h2>
-                <Link to="/critics" className="text-[10px] uppercase tracking-widest font-bold text-white/20 hover:text-white transition-colors">More</Link>
+              <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
+                <h2 className="small-caps text-white/40">Top Critics</h2>
+                <Link to="/critics" className="small-caps text-white/20 hover:text-white transition-colors">Directory</Link>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {[
                   { id: "arjun", name: "Arjun Mehta", avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80" },
                   { id: "priya", name: "Priya Sharma", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80" },
                   { id: "vikram", name: "Vikram Singh", avatar: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=100&q=80" },
                   { id: "ananya", name: "Ananya Iyer", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=100&q=80" }
                 ].map((critic, i) => (
-                  <Link to={`/profile/${critic.id}`} key={i} className="flex items-center gap-3 group cursor-pointer">
+                  <Link to={`/profile/${critic.id}`} key={i} className="flex items-center gap-4 group cursor-pointer">
                     <img 
                       src={critic.avatar} 
-                      className="w-8 h-8 rounded-full grayscale group-hover:grayscale-0 transition-all border border-white/10"
+                      className="w-10 h-10 rounded-full grayscale brightness-90 group-hover:grayscale-0 group-hover:brightness-100 transition-all border border-white/10 group-hover:border-accent duration-500"
                       referrerPolicy="no-referrer"
                       loading="lazy"
                     />
-                    <div>
-                      <p className="text-xs font-medium group-hover:text-white transition-colors">{critic.name}</p>
-                      <p className="text-[10px] text-white/20 uppercase tracking-widest">1.2k reviews</p>
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-bold text-white group-hover:text-accent transition-colors truncate">{critic.name}</p>
+                      <p className="small-caps text-[9px] text-white/20 tracking-normal group-hover:text-white/40">Verified Critic • 1.2k entries</p>
                     </div>
                   </Link>
                 ))}

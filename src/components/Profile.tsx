@@ -5,7 +5,7 @@ import { collection, query, where, onSnapshot, orderBy, doc, getDoc, getDocs, up
 import { db } from "../firebase";
 import { Review, User, Restaurant } from "../types";
 import { useAuth } from "../App";
-import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus, Edit3, Share2 } from "lucide-react";
+import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus, Edit3, Share2, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 import { DiaryTable } from "./DiaryTable";
 import { FollowListModal } from "./FollowListModal";
@@ -230,14 +230,15 @@ export const Profile: React.FC = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
+    <div className="max-w-6xl mx-auto px-6 py-20 elite-motion-safe">
       {/* Letterboxd-Elite Profile Header */}
-      <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-12 mb-2 md:mb-4">
+      <div className="flex flex-col md:flex-row items-center md:items-start gap-10 md:gap-16 mb-20">
         <div className="relative group shrink-0">
+          <div className="absolute -inset-4 bg-gradient-to-br from-orange-500/20 to-rose-500/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
           <img
             src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`}
             alt={user.displayName}
-            className="w-40 h-40 rounded-full border-4 border-zinc-900 shadow-2xl object-cover cursor-pointer hover:opacity-80 transition-opacity"
+            className="w-48 h-48 rounded-full border-4 border-zinc-900 shadow-2xl object-cover cursor-pointer hover:scale-[1.02] transition-all duration-700 grayscale-[20%] hover:grayscale-0 relative z-10"
             referrerPolicy="no-referrer"
             loading="lazy"
             onClick={() => currentUser?.uid === user.uid && profileFileInputRef.current?.click()}
@@ -250,244 +251,230 @@ export const Profile: React.FC = () => {
             onChange={handleProfilePicChange}
           />
           {isUpdatingPhoto && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full z-20">
-              <Loader2 className="animate-spin text-white" />
+            <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/60 rounded-full z-20">
+              <Loader2 className="animate-spin text-white/40" />
             </div>
           )}
         </div>
 
         <div className="flex-1 w-full flex flex-col items-center md:items-start text-center md:text-left">
-          <div className="mb-2">
+          <div className="mb-4">
             {user.username && (
-              <span className="inline-block bg-white/5 border border-white/10 px-2 py-0.5 rounded text-[10px] font-black tracking-widest lowercase text-white/40 mb-2">
+              <span className="small-caps text-accent/60 bg-accent/5 border border-accent/10 px-3 py-1 rounded-full">
                 @{user.username}
               </span>
             )}
           </div>
 
-          <div className="flex flex-col md:flex-row items-center md:items-baseline gap-4 mb-4 md:mb-8">
-            <div className="flex flex-wrap items-baseline gap-2 justify-center md:justify-start">
-                <h1 className="text-xl md:text-2xl lg:text-4xl font-black text-white tracking-tighter font-serif leading-none">{user.displayName}</h1>
+          <div className="flex flex-col md:flex-row items-center md:items-baseline gap-6 mb-8">
+            <div className="flex flex-wrap items-baseline gap-4 justify-center md:justify-start">
+                <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tighter leading-none">{user.displayName}</h1>
                 {user.pronouns && (
-                    <span className="text-[9px] font-bold text-white/40 italic uppercase tracking-[0.2em]">{user.pronouns}</span>
+                    <span className="small-caps text-[10px] text-white/20 tracking-normal font-serif italic">{user.pronouns}</span>
                 )}
             </div>
             {currentUser?.uid !== user.uid && (
               <button
                 onClick={toggleFollow}
                 disabled={isUpdatingFollow}
-                className={`px-6 py-2 rounded-md text-[10px] font-black uppercase tracking-widest transition-colors ${isFollowing
-                    ? "bg-zinc-800 text-white/60 hover:text-white"
-                    : "bg-white text-black hover:bg-zinc-100"
+                className={`px-8 py-2.5 rounded-full small-caps transition-all active:scale-95 ${isFollowing
+                    ? "bg-zinc-900 text-white/40 border border-white/10 hover:text-white"
+                    : "bg-white text-black hover:bg-zinc-200"
                   }`}
               >
-                {isFollowing ? "Following" : "Follow"}
+                {isFollowing ? "Following" : "Follow Critic"}
+              </button>
+            )}
+            {currentUser?.uid === user.uid && (
+              <button
+                onClick={() => setIsEditModalOpen(true)}
+                className="p-2.5 rounded-full glass-panel border border-white/10 text-white/40 hover:text-white hover:border-white/20 transition-all"
+              >
+                <Edit3 size={18} />
               </button>
             )}
           </div>
 
-          <div className="flex items-center justify-center md:justify-start gap-8 md:gap-12 mb-2 border-b border-white/5 pb-4">
+          <div className="flex items-center justify-center md:justify-start gap-12 md:gap-16 border-t border-white/5 pt-8 w-full">
             <div className="text-center md:text-left">
-              <span className="text-xl md:text-2xl font-black text-white pr-1 italic font-serif">{reviews.length}</span>
-              <span className="block md:inline text-[7px] md:text-[10px] text-white/20 uppercase tracking-[0.2em] font-bold">posts</span>
+              <span className="text-3xl font-extrabold text-white italic tracking-tighter">{reviews.length}</span>
+              <p className="small-caps text-[9px] text-white/20 mt-1">Logs recorded</p>
             </div>
             <div
-              className="text-center md:text-left cursor-pointer group"
+              className="text-center md:text-left cursor-pointer group/stat"
               onClick={() => setFollowModalType("followers")}
             >
-              <span className="text-xl md:text-2xl font-black text-white pr-1 group-hover:text-orange-500 transition-colors italic font-serif">{followerCount}</span>
-              <span className="block md:inline text-[7px] md:text-[10px] text-white/20 group-hover:text-orange-500/60 transition-colors uppercase tracking-[0.2em] font-bold">followers</span>
+              <span className="text-3xl font-extrabold text-white group-hover/stat:text-accent transition-colors italic tracking-tighter">{followerCount}</span>
+              <p className="small-caps text-[9px] text-white/20 group-hover/stat:text-white/40 transition-colors mt-1">Followers</p>
             </div>
             <div
-              className="text-center md:text-left cursor-pointer group"
+              className="text-center md:text-left cursor-pointer group/stat"
               onClick={() => setFollowModalType("following")}
             >
-              <span className="text-xl md:text-2xl font-black text-white pr-1 group-hover:text-orange-500 transition-colors italic font-serif">
+              <span className="text-3xl font-extrabold text-white group-hover/stat:text-accent transition-colors italic tracking-tighter">
                 {user.stats?.followingList?.length || user.stats?.following || 0}
               </span>
-              <span className="block md:inline text-[7px] md:text-[10px] text-white/20 group-hover:text-orange-500/60 transition-colors uppercase tracking-[0.2em] font-bold">following</span>
+              <p className="small-caps text-[9px] text-white/20 group-hover/stat:text-white/40 transition-colors mt-1">Following</p>
             </div>
             <div className="text-center md:text-left">
-              <span className="text-lg md:text-xl font-black text-white pr-1 italic font-serif">
+              <span className="text-3xl font-extrabold text-white italic tracking-tighter">
                  {reviews.length > 0 
                   ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
                   : "0.0"}
               </span>
-              <span className="block md:inline text-[7px] md:text-[10px] text-white/20 uppercase tracking-[0.2em] font-bold">rating</span>
+              <p className="small-caps text-[9px] text-white/20 mt-1">Avg Rating</p>
             </div>
-          </div>
-
-          <div className="space-y-4 pb-6 md:pb-0">
-             {user.bio && (
-                <p className="lg:hidden text-lg text-white/80 leading-relaxed font-serif italic max-w-2xl text-center md:text-left mx-auto md:mx-0">
-                   "{user.bio}"
-                </p>
-             )}
-
-             {/* Letterboxd-Style Cuisines (Mobile Only) */}
-             {user.favoriteCuisines && user.favoriteCuisines.length > 0 && (
-                <div className="lg:hidden">
-                    <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                        {user.favoriteCuisines.map((cuisine, idx) => (
-                            <span key={idx} className="px-3 py-1 bg-zinc-800 border border-white/5 rounded-md text-[8px] uppercase tracking-widest font-black text-white/60">
-                                {cuisine}
-                            </span>
-                        ))}
-                    </div>
-                </div>
-             )}
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center justify-center md:justify-start gap-6 md:gap-8 border-b border-white/10 mb-4 overflow-x-auto whitespace-nowrap hide-scrollbar">
-        <button
-          onClick={() => setActiveTab("profile")}
-          className={`pb-4 text-[10px] uppercase tracking-widest font-bold transition-colors ${activeTab === "profile" ? "text-white border-b-2 border-orange-500" : "text-white/40 hover:text-white"}`}
-        >
-          Profile
-        </button>
-        <button
-          onClick={() => setActiveTab("diary")}
-          className={`pb-4 text-[10px] uppercase tracking-widest font-bold transition-colors ${activeTab === "diary" ? "text-white border-b-2 border-orange-500" : "text-white/40 hover:text-white"}`}
-        >
-          Diary
-        </button>
-        <button
-          onClick={() => setActiveTab("eatlist")}
-          className={`pb-4 text-[10px] uppercase tracking-widest font-bold transition-colors ${activeTab === "eatlist" ? "text-white border-b-2 border-orange-500" : "text-white/40 hover:text-white"}`}
-        >
-          Eatlist
-        </button>
+      <div className="flex items-center justify-center md:justify-start gap-10 md:gap-12 border-b border-white/5 mb-12">
+        {[
+          { id: "profile", label: "Overview", icon: Grid },
+          { id: "diary", label: "Diary", icon: Clock },
+          { id: "eatlist", label: "Eatlist", icon: Heart },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`flex items-center gap-2 pb-5 small-caps relative transition-all ${activeTab === tab.id ? "text-white" : "text-white/20 hover:text-white/40"}`}
+          >
+            <tab.icon size={12} className={activeTab === tab.id ? "text-accent" : "text-inherit"} />
+            {tab.label}
+            {activeTab === tab.id && (
+              <motion.div 
+                layoutId="profileTab"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent"
+              />
+            )}
+          </button>
+        ))}
       </div>
 
       <AnimatePresence mode="wait">
         {activeTab === "profile" && (
           <motion.div
             key="profile"
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 45 }}
-            className="grid grid-cols-1 lg:grid-cols-3 gap-12 w-full"
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
+            className="grid grid-cols-1 lg:grid-cols-3 gap-20 w-full"
           >
             <div className="lg:col-span-2">
-              <div className="flex items-center justify-between mb-2 pb-2 border-b border-white/5">
-                <div className="flex items-center gap-2">
-                  <Grid size={12} className="text-orange-500" />
-                  <h2 className="text-[9px] uppercase tracking-[0.4em] font-black text-white/20">The Film Strip</h2>
+              <div className="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
+                <div className="flex items-center gap-3">
+                  <h2 className="small-caps text-white/40">The Gastronomic Stream</h2>
                 </div>
-                <span className="text-[9px] font-black text-white/10 uppercase tracking-widest">{reviews.length} Logs</span>
+                <span className="small-caps text-[9px] text-white/10">{reviews.length} Experiences</span>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-1 md:gap-4 lg:gap-6 mb-12">
-                {reviews.map(review => {
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-12">
+                {reviews.map((review, i) => {
                   const allImages = review.dishes?.filter(d => d.image).map(d => d.image) || [];
                   const firstImage = allImages[0];
                   return (
-                    <div
+                    <motion.div
                       key={review.id}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: i * 0.05 }}
                       onClick={() => setSelectedReview(review)}
-                      className="aspect-square bg-zinc-800 rounded-sm md:rounded-xl overflow-hidden border border-white/5 group relative shadow-2xl hover:border-orange-500/50 transition-all cursor-pointer"
+                      className="aspect-[2/3] bg-zinc-900 rounded-2xl overflow-hidden border border-white/10 group relative shadow-2xl hover:border-accent/40 transition-all duration-500 cursor-pointer hover:-translate-y-1"
                     >
                       {firstImage ? (
                         <img
                           src={firstImage}
                           alt={review.restaurantName}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out grayscale-[20%] group-hover:grayscale-0 shadow-inner"
                           referrerPolicy="no-referrer"
                           loading="lazy"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[8px] md:text-[10px] text-white/20 uppercase tracking-widest text-center px-2 italic">
-                          {review.restaurantName}
+                        <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-br from-zinc-800 to-zinc-950">
+                           <UtensilsCrossed size={20} className="text-white/5 mb-3" />
+                           <span className="small-caps text-[9px] text-white/20">{review.restaurantName}</span>
                         </div>
                       )}
 
                       {allImages.length > 1 && (
-                        <div className="absolute top-2 right-2 p-1 bg-black/40 backdrop-blur-md rounded-md z-10">
-                          <Plus size={10} className="text-white" />
+                        <div className="absolute top-4 right-4 p-1.5 glass-panel border-white/10 rounded-lg z-10">
+                          <Plus size={10} className="text-white/40" />
                         </div>
                       )}
 
-                      <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center p-2 transition-all duration-300 transform group-hover:scale-100 scale-110">
-                        <StarRating rating={review.rating} size={14} className="flex items-center gap-0.5 text-orange-500 mb-1" />
-                        <p className="text-[8px] md:text-[10px] font-black text-white uppercase tracking-widest truncate w-full text-center px-2">{review.restaurantName}</p>
-                        <div className="mt-2 flex items-center gap-3 text-white/60">
-                          <div className="flex items-center gap-1">
-                            <Heart size={10} fill="currentColor" className="text-rose-500" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent opacity-0 group-hover:opacity-100 flex flex-col items-center justify-end p-6 transition-all duration-500">
+                        <StarRating rating={review.rating} size={12} className="flex items-center gap-0.5 text-accent mb-2" />
+                        <p className="small-caps text-[9px] text-white tracking-widest truncate w-full text-center mb-3">{review.restaurantName}</p>
+                        <div className="flex items-center gap-4 text-white/40">
+                          <div className="flex items-center gap-1.5">
+                            <Heart size={12} className={review.likes ? "fill-rose-500 text-rose-500" : ""} />
                             <span className="text-[10px] font-bold">{review.likes || 0}</span>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <MessageSquare size={10} fill="currentColor" />
-                            <span className="text-[10px] font-bold">0</span>
+                          <div className="flex items-center gap-1.5">
+                            <MessageSquare size={12} />
+                            <span className="text-[10px] font-bold">4</span>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>
 
               {reviews.length === 0 && (
-                <div className="py-20 text-center border border-dashed border-white/10 rounded-3xl">
-                  <p className="text-sm italic text-white/20 serif">No memories captured yet.</p>
+                <div className="py-32 text-center glass-panel border-dashed border-white/10 p-12">
+                  <p className="text-lg italic text-white/20 font-serif leading-relaxed">No culinary memories captured in this strip yet.</p>
                 </div>
               )}
             </div>
 
-            {/* Sidebar Section (Desktop Elite) */}
-            <div className="hidden lg:block space-y-12 pl-6 pt-2 border-l border-white/5">
+            {/* Sidebar Section */}
+            <div className="space-y-16">
               {/* BIO Section */}
-              <div>
-                <div className="border-b border-white/5 pb-4 mb-6">
-                   <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40">BIO</h3>
-                </div>
+              <section>
+                <h3 className="small-caps text-white/20 mb-8 pb-4 border-b border-white/5">Biography</h3>
                 {user.bio ? (
-                   <p className="text-base text-white/80 leading-relaxed font-serif italic">
+                   <p className="text-lg text-white/60 leading-relaxed font-serif italic">
                       "{user.bio}"
                    </p>
                 ) : (
-                   <p className="text-sm italic text-white/20 font-serif">No bio captured yet.</p>
+                   <p className="text-sm italic text-white/10 font-serif">A mysterious critic with no bio captured yet...</p>
                 )}
-              </div>
+              </section>
 
               {/* CUISINES Section */}
-              <div>
-                <div className="border-b border-white/5 pb-4 mb-6">
-                   <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40">FAVORITE CUISINES</h3>
-                </div>
-                <div className="flex flex-wrap gap-2">
+              <section>
+                <h3 className="small-caps text-white/20 mb-8 pb-4 border-b border-white/5">Expertise</h3>
+                <div className="flex flex-wrap gap-3">
                   {(user.favoriteCuisines && user.favoriteCuisines.length > 0) ? (
                      user.favoriteCuisines.map((cuisine, idx) => (
-                      <span key={idx} className="px-4 py-1.5 bg-zinc-900 border border-white/10 rounded-full text-[10px] uppercase tracking-widest font-black text-white/60">
+                      <span key={idx} className="small-caps text-[10px] text-white/40 px-4 py-1.5 rounded-full border border-white/5 bg-white/[0.02] hover:text-white hover:border-white/20 transition-all cursor-default">
                           {cuisine}
                       </span>
                      ))
                   ) : (
-                     <span className="text-[10px] uppercase tracking-widest font-black text-white/20">None added</span>
+                     <span className="small-caps text-[10px] text-white/10">No curated cuisines added</span>
                   )}
                 </div>
-              </div>
+              </section>
 
               {/* STATS Section */}
-              <div>
-                <div className="border-b border-white/5 pb-4 mb-6">
-                   <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-white/40">STATS</h3>
-                </div>
-                <div className="space-y-4">
-                   <div className="flex justify-between items-center">
-                      <span className="text-sm text-white/40 font-medium">Average Rating</span>
-                      <span className="text-base font-black text-white italic">
+              <section>
+                <h3 className="small-caps text-white/20 mb-8 pb-4 border-b border-white/5">Analytics</h3>
+                <div className="space-y-6">
+                   <div className="flex justify-between items-end">
+                      <span className="small-caps text-[10px] text-white/20 tracking-normal">Mean Rating</span>
+                      <span className="text-2xl font-extrabold text-white italic tracking-tighter">
                           {reviews.length > 0 
                              ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
                              : "0.0"}
                       </span>
                    </div>
-                   <div className="flex justify-between items-center">
-                      <span className="text-sm text-white/40 font-medium">Most Visited City</span>
-                      <span className="text-base font-black text-white italic">
+                   <div className="flex justify-between items-end">
+                      <span className="small-caps text-[10px] text-white/20 tracking-normal">Primary Territory</span>
+                      <span className="text-xl font-bold text-white/80 italic tracking-tight">
                           {(() => {
                              if (reviews.length === 0) return "N/A";
                              const cities = reviews.map(r => {
@@ -496,7 +483,7 @@ export const Profile: React.FC = () => {
                                return parts[parts.length - 1]?.trim() || null;
                              }).filter(Boolean);
                              
-                             if (cities.length === 0) return "N/A";
+                             if (cities.length === 0) return "Global";
                              const counts: Record<string, number> = {};
                              cities.forEach(c => {
                                if (c) counts[c] = (counts[c] || 0) + 1;
@@ -506,7 +493,7 @@ export const Profile: React.FC = () => {
                       </span>
                    </div>
                 </div>
-              </div>
+              </section>
             </div>
           </motion.div>
         )}

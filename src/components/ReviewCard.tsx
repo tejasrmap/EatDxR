@@ -4,6 +4,7 @@ import { formatDistanceToNow } from "date-fns";
 import { parseFirebaseDate } from "../lib/utils";
 import React, { useState, useEffect, useRef, memo } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "motion/react";
 import { toast } from "sonner";
 import { useAuth } from "../App";
 import { db } from "../firebase";
@@ -213,55 +214,56 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
   const firstImage = dishesWithImages[0]?.image;
 
   return (
-    <div ref={cardRef} className="group py-6 border-b border-white/5 last:border-0 relative">
-      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+    <div ref={cardRef} className="group py-8 border-b border-white/5 last:border-0 relative hover:bg-white/[0.01] transition-colors rounded-xl px-4 -mx-4">
+      <div className="flex flex-col sm:flex-row gap-6">
         <Link 
           to={`/restaurant/${review.restaurantId}`}
-          className="w-full h-48 sm:w-24 sm:h-36 bg-zinc-800 rounded-lg sm:rounded-sm overflow-hidden flex-shrink-0 border border-white/10 shadow-lg relative"
+          className="w-full h-56 sm:w-28 sm:h-40 bg-zinc-900 rounded-xl sm:rounded-lg overflow-hidden flex-shrink-0 border border-white/10 shadow-2xl relative block group/img"
         >
           {firstImage ? (
             <img 
               src={optimizeImage(firstImage, { width: 400, quality: 75 })} 
               alt={review.dishes?.[0]?.name || "Meal"} 
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+              className="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-1000 ease-out"
               referrerPolicy="no-referrer"
               loading="lazy"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-[10px] text-white/20 uppercase tracking-widest text-center px-2">
-              No Photo
+            <div className="w-full h-full flex items-center justify-center">
+              <span className="small-caps text-[9px] opacity-20">No Photo</span>
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity" />
         </Link>
         
         <div className="flex-1 min-w-0" onClick={() => setIsDetailedViewOpen(true)}>
-          <div className="flex items-start justify-between mb-1 cursor-pointer">
+          <div className="flex items-start justify-between mb-2 cursor-pointer">
             <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-baseline gap-x-2">
+              <div className="flex flex-wrap items-baseline gap-x-2 mb-1">
                 {review.dishes?.map((dish, i) => (
                   <React.Fragment key={i}>
-                    <h3 className="text-lg font-bold text-white group-hover:text-orange-400 transition-colors truncate">
+                    <h3 className="text-xl font-extrabold text-white group-hover:text-accent transition-colors truncate tracking-tight">
                       {dish.name}
                     </h3>
-                    {i < review.dishes.length - 1 && <span className="text-white/20">&</span>}
+                    {i < review.dishes.length - 1 && <span className="text-white/20 font-serif italic text-lg">&</span>}
                   </React.Fragment>
                 ))}
               </div>
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-white/40">at</span>
+                <span className="text-white/30 font-serif italic">at</span>
                 <Link 
                   to={`/restaurant/${review.restaurantId}`} 
-                  className="text-white/60 hover:text-white transition-colors underline decoration-white/10 underline-offset-4"
+                  className="text-white/60 hover:text-white transition-colors underline decoration-white/10 underline-offset-4 font-medium"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   {review.restaurantName}
                 </Link>
               </div>
             </div>
             
-            <div className="flex flex-col items-end gap-1">
-              <div className="flex items-center gap-2">
-                <StarRating rating={review.rating} size={18} />
+            <div className="flex flex-col items-end gap-1.5 shrink-0">
+              <div className="flex items-center gap-3">
+                <StarRating rating={review.rating} size={16} />
                 {currentUser?.uid === review.userId && (
                   <div className="relative" ref={optionsRef}>
                     <button 
@@ -270,12 +272,12 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                         e.preventDefault();
                         setShowOptions(!showOptions);
                       }}
-                      className="p-1 text-white/40 hover:text-white transition-colors"
+                      className="p-1 text-white/20 hover:text-white transition-colors"
                     >
                       <MoreVertical size={16} />
                     </button>
                     {showOptions && (
-                      <div className="absolute right-0 top-full mt-1 w-32 bg-[#2c3440] border border-white/10 rounded-sm shadow-2xl py-1 z-50">
+                      <div className="absolute right-0 top-full mt-2 w-40 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl py-2 z-50 backdrop-blur-xl">
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
@@ -283,9 +285,9 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                             setShowOptions(false);
                             setIsEditing(true);
                           }}
-                          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-white/5 text-[10px] font-bold uppercase tracking-widest text-white/80 hover:text-white transition-colors"
+                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 small-caps text-white/60 hover:text-white transition-colors"
                         >
-                          <Edit2 size={12} /> Edit
+                          <Edit2 size={12} /> Edit Entry
                         </button>
                         <button 
                           onClick={(e) => {
@@ -294,7 +296,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                             setShowOptions(false);
                             handleDelete();
                           }}
-                          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-red-500/10 text-[10px] font-bold uppercase tracking-widest text-red-400 hover:text-red-300 transition-colors"
+                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-500/10 small-caps text-red-500/60 hover:text-red-500 transition-colors"
                         >
                           <Trash2 size={12} /> Delete
                         </button>
@@ -303,65 +305,65 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                   </div>
                 )}
               </div>
-              <span className="text-[10px] text-white/30 uppercase tracking-widest font-medium">
+              <span className="small-caps text-[9px] text-white/20">
                 {formatDistanceToNow(parseFirebaseDate(review.createdAt), { addSuffix: true })}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-3 mb-4">
             <Link 
               to={`/profile/${review.userId}`} 
               onClick={(e) => {
                 e.stopPropagation();
               }}
-              className="flex items-center gap-1.5 group/user"
+              className="flex items-center gap-2 group/user"
             >
               <img 
                 src={optimizeImage(review.userPhoto, { width: 40 })} 
                 alt={review.userName} 
-                className="w-4 h-4 rounded-full border border-white/10"
+                className="w-5 h-5 rounded-full border border-white/10 grayscale group-hover/user:grayscale-0 transition-all"
                 referrerPolicy="no-referrer"
                 loading="lazy"
               />
-              <span className="text-xs text-white/40 group-hover/user:text-white transition-colors">{review.userName}</span>
+              <span className="text-xs font-medium text-white/40 group-hover/user:text-white transition-colors">{review.userName}</span>
             </Link>
-            {review.restaurantLocation && (
+            {review.city && (
               <>
                 <span className="text-white/10 text-[10px]">•</span>
-                <div className="flex items-center gap-1 text-white/30 text-[10px] uppercase tracking-tighter">
-                  <MapPin size={10} />
-                  <span>{review.city || "Nearby"}</span>
+                <div className="flex items-center gap-1.5 text-white/20 small-caps text-[9px] tracking-normal">
+                  <MapPin size={10} className="text-white/40" />
+                  <span>{review.city}</span>
                 </div>
               </>
             )}
           </div>
           
-          <p className="text-white/60 text-sm line-clamp-2 mb-4 leading-relaxed font-serif italic">
+          <p className="text-white/60 text-[15px] line-clamp-2 mb-6 leading-relaxed font-serif italic">
             "{review.content}"
           </p>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <button 
               onClick={(e) => {
                 e.stopPropagation();
                 handleLike();
               }}
               disabled={isLikeLoading}
-              className={`flex items-center gap-1.5 text-white/30 hover:text-orange-500 transition-colors group/btn ${hasLiked ? 'text-orange-500' : ''} ${isLikeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex items-center gap-2 text-white/30 hover:text-orange-500 transition-all group/btn ${hasLiked ? 'text-orange-500 scale-110' : ''} ${isLikeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <Heart size={14} className={hasLiked ? "fill-orange-500" : "group-hover/btn:fill-orange-500"} />
-              <span className="text-[10px] uppercase tracking-widest font-bold">{totalLikes}</span>
+              <Heart size={16} className={hasLiked ? "fill-orange-500" : "group-hover/btn:fill-orange-500 transition-transform group-hover/btn:scale-110"} />
+              <span className="small-caps text-[10px] text-inherit">{totalLikes}</span>
             </button>
             <button 
               onClick={(e) => {
                 e.stopPropagation();
                 setShowComments(!showComments);
               }}
-              className={`flex items-center gap-1.5 transition-colors ${showComments ? 'text-white' : 'text-white/30 hover:text-white'}`}
+              className={`flex items-center gap-2 transition-all ${showComments ? 'text-white' : 'text-white/30 hover:text-white'}`}
             >
-              <MessageSquare size={14} />
-              <span className="text-[10px] uppercase tracking-widest font-bold">
+              <MessageSquare size={16} className={showComments ? "fill-white/10" : ""} />
+              <span className="small-caps text-[10px]">
                 {comments.length > 0 ? comments.length : 'Review'}
               </span>
             </button>
@@ -370,51 +372,55 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                 e.stopPropagation();
                 setIsShareMenuOpen(true);
               }}
-              className="flex items-center gap-1.5 text-white/30 hover:text-white transition-colors"
+              className="flex items-center gap-2 text-white/30 hover:text-white transition-all group/share"
             >
-              <Share2 size={14} />
-              <span className="text-[10px] uppercase tracking-widest font-bold">Share</span>
+              <Share2 size={16} className="group-hover/share:rotate-12 transition-transform" />
+              <span className="small-caps text-[10px]">Share</span>
             </button>
           </div>
 
           {showComments && (
-            <div className="mt-4 bg-white/5 rounded-lg border border-white/10 overflow-hidden">
-              <div className="max-h-60 overflow-y-auto p-4 space-y-4">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-6 glass-panel overflow-hidden border-white/5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="max-h-80 overflow-y-auto p-6 space-y-6 scrollbar-hide">
                 {comments.length === 0 ? (
-                  <p className="text-xs text-center text-white/40 italic serif">No reviews yet. Be the first to share your thoughts!</p>
+                  <div className="py-4 text-center">
+                     <p className="text-xs text-white/20 italic font-serif">Be the first to share your thoughts...</p>
+                  </div>
                 ) : (
                   comments.map(comment => (
-                    <div key={comment.id} className="flex gap-3">
-                      <Link to={`/profile/${comment.userId}`}>
+                    <div key={comment.id} className="flex gap-4 group/comment">
+                      <Link to={`/profile/${comment.userId}`} className="shrink-0">
                         <img 
                           src={optimizeImage(comment.userPhoto, { width: 40 })} 
                           alt={comment.userName}
-                          className="w-6 h-6 rounded-full border border-white/10 shrink-0 mt-0.5"
+                          className="w-7 h-7 rounded-full border border-white/10 grayscale group-hover/comment:grayscale-0 transition-all mt-1"
                           referrerPolicy="no-referrer"
                           loading="lazy"
                         />
                       </Link>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Link to={`/profile/${comment.userId}`} className="text-xs font-bold text-white hover:underline decoration-white/30">{comment.userName}</Link>
-                          <span className="text-[10px] text-white/30">
+                        <div className="flex items-center justify-between mb-1">
+                          <Link to={`/profile/${comment.userId}`} className="text-xs font-bold text-white hover:text-accent transition-colors">{comment.userName}</Link>
+                          <span className="text-[9px] small-caps text-white/20">
                             {comment.createdAt?.toMillis ? formatDistanceToNow(comment.createdAt.toMillis(), { addSuffix: true }) : 'just now'}
                           </span>
                         </div>
-                        <p className="text-sm text-white/80 leading-relaxed font-serif">{comment.content}</p>
+                        <p className="text-sm text-white/70 leading-relaxed font-serif italic">"{comment.content}"</p>
                       </div>
                     </div>
                   ))
                 )}
               </div>
               
-              <div className="p-3 border-t border-white/10 bg-black/20">
+              <div className="p-4 bg-white/[0.02] border-t border-white/5">
                 <form 
                   onSubmit={handleCommentSubmit} 
-                  className="flex gap-2"
-                  onClick={(e) => {
-                    if (!currentUser) login();
-                  }}
+                  className="flex gap-3"
                 >
                   <input 
                     type="text" 
@@ -423,21 +429,20 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                     onFocus={() => {
                       if (!currentUser) login();
                     }}
-                    placeholder={currentUser ? "Add a comment..." : "Log in to join the discussion..."}
-                    className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-xs text-white focus:outline-none focus:ring-1 ring-orange-500/50 transition-all placeholder:text-white/20 cursor-pointer sm:cursor-text"
+                    placeholder={currentUser ? "Share your thoughts..." : "Sign in to join the conversation..."}
+                    className="flex-1 bg-white/[0.03] border border-white/10 rounded-full px-5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/20 transition-all placeholder:text-white/20"
                     readOnly={!currentUser}
                   />
                   <button 
                     type="submit"
-                    onClick={(e) => e.stopPropagation()}
                     disabled={!newComment.trim() || isCommentLoading}
-                    className="p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-400 transition-colors disabled:opacity-50 disabled:hover:bg-orange-50"
+                    className="w-10 h-10 flex items-center justify-center bg-white text-black rounded-full hover:bg-zinc-200 transition-all disabled:opacity-20 shadow-lg"
                   >
-                    {isCommentLoading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                    {isCommentLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                   </button>
                 </form>
               </div>
-            </div>
+            </motion.div>
           )}
         </div>
       </div>

@@ -20,28 +20,44 @@ export function Layout({ children }: LayoutProps) {
 
       {!isReelsMode && (
         <footer className="border-t border-white/10 py-12 mt-20">
-          <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8 text-center md:text-left">
-            <div className="flex items-center gap-2 text-xl font-black tracking-tighter group cursor-pointer justify-center md:justify-start">
-              <div className="relative flex items-center justify-center w-6 h-6 bg-gradient-to-br from-orange-500 to-rose-500 rounded-md opacity-80 group-hover:opacity-100 group-hover:-rotate-12 transition-all duration-300">
-                <UtensilsCrossed className="text-white w-3 h-3" />
-              </div>
-              <div className="serif flex items-baseline tracking-tighter group-hover:tracking-normal transition-all duration-500">
-                <span className="text-white/80 group-hover:text-white font-semibold text-xl">Eat</span>
-                <span className="bg-gradient-to-br from-orange-500 to-rose-500 bg-clip-text text-transparent font-black italic text-2xl ml-0.5">R</span>
-              </div>
+          <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-12 text-center md:text-left">
+            <div className="flex flex-col items-center md:items-start gap-4">
+              <Link to="/" className="flex items-center gap-2 group cursor-pointer">
+                <div className="relative flex items-center justify-center w-7 h-7 bg-gradient-to-br from-orange-500 to-rose-500 rounded-lg opacity-80 group-hover:opacity-100 group-hover:-rotate-12 transition-all duration-300">
+                  <UtensilsCrossed className="text-white w-3 h-3" />
+                </div>
+                <div className="logo-text flex items-baseline tracking-tighter transition-all duration-500">
+                  <span className="text-white/80 group-hover:text-white text-xl">Eat</span>
+                  <span className="bg-gradient-to-br from-orange-500 to-rose-500 bg-clip-text text-transparent text-2xl ml-0.5">R</span>
+                </div>
+              </Link>
+              <p className="max-w-xs text-xs text-white/40 leading-relaxed font-serif italic">
+                The social network for food critics and lovers. Track every meal you've ever eaten.
+              </p>
             </div>
 
-            <div className="flex flex-wrap justify-center md:justify-end gap-x-8 gap-y-4 text-xs font-medium text-white/40 uppercase tracking-widest">
-              <Link to="/" className="hover:text-white transition-colors">About</Link>
-              <Link to="/journal" className="hover:text-white transition-colors">Journal</Link>
-              <Link to="/critics" className="hover:text-white transition-colors">Critics</Link>
-              <Link to="/restaurants" className="hover:text-white transition-colors">Restaurants</Link>
-              <Link to="/lists" className="hover:text-white transition-colors">Lists</Link>
+            <div className="flex flex-wrap justify-center md:justify-end gap-x-10 gap-y-6">
+              {[
+                { label: "About", to: "/" },
+                { label: "Journal", to: "/journal" },
+                { label: "Critics", to: "/critics" },
+                { label: "Restaurants", to: "/restaurants" },
+                { label: "Lists", to: "/lists" }
+              ].map((link, i) => (
+                <Link 
+                  key={i} 
+                  to={link.to} 
+                  className="small-caps text-white/20 hover:text-white transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ))}
             </div>
-
-            <p className="text-xs text-white/20">
-              © EatR. Made by food lovers, for food lovers.
-            </p>
+          </div>
+          
+          <div className="max-w-7xl mx-auto px-6 pt-12 mt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="small-caps text-[9px]">© {new Date().getFullYear()} EatR Global</p>
+            <p className="small-caps text-[9px] lowercase italic font-serif tracking-normal">Made with passion by food lovers</p>
           </div>
         </footer>
       )}

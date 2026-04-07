@@ -16,7 +16,6 @@ export function Restaurants() {
   const [locationStatus, setLocationStatus] = useState<'prompt' | 'granted' | 'denied' | 'error'>('prompt');
 
   useEffect(() => {
-    // 1. Get User Location
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -37,7 +36,6 @@ export function Restaurants() {
       setLocationStatus('error');
     }
 
-    // 2. Fetch Restaurants
     const fetchRestaurants = async () => {
       try {
         const q = query(collection(db, "restaurants"), limit(100));
@@ -63,7 +61,6 @@ export function Restaurants() {
     toast.success("Location set to SRMAP Campus Hub.");
   };
 
-  // Calculate distances and sort
   const sortedRestaurants = useMemo(() => {
     if (!userLocation) return restaurants.sort((a,b) => (b.rating || 0) - (a.rating || 0));
 
@@ -75,95 +72,100 @@ export function Restaurants() {
     }).sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
   }, [restaurants, userLocation]);
 
-  // Split into Nearby (< 5km) and Others
   const nearby = sortedRestaurants.filter(r => (r.distance || Infinity) < 5);
   const others = sortedRestaurants.filter(r => (r.distance || Infinity) >= 5);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="space-y-4 text-center">
-           <Loader2 className="w-12 h-12 animate-spin text-[#00e054] mx-auto" />
-           <p className="text-white/40 uppercase tracking-[0.3em] text-[10px] font-black">Syncing Regional Eateries</p>
+      <div className="min-h-screen flex items-center justify-center bg-zinc-950">
+        <div className="space-y-6 text-center">
+           <Loader2 className="w-12 h-12 animate-spin text-white/10 mx-auto" />
+           <p className="small-caps text-white/20">Syncing Regional Eateries</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pt-20 md:pt-24 pb-32 md:pb-20 px-4 md:px-6 max-w-7xl mx-auto">
-      <header className="mb-10 md:mb-16">
-        <h1 className="text-3xl md:text-6xl font-black uppercase tracking-tighter mb-4 animate-in fade-in slide-in-from-left-4 duration-700 leading-tight">Discover <span className="text-[#00e054] italic serif lowercase">nearby</span></h1>
+    <div className="min-h-screen pt-32 pb-32 px-6 max-w-7xl mx-auto elite-motion-safe">
+      <header className="mb-20">
+        <motion.h1 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="title-text mb-8"
+        >
+          Discover <span className="text-accent italic font-serif font-light lowercase">nearby</span>
+        </motion.h1>
         
-        <div className="flex flex-col gap-4">
-           <div className="flex flex-wrap items-center gap-2 md:gap-4">
-              <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 md:px-5 py-2 md:py-3.5 rounded-xl md:rounded-[2rem] backdrop-blur-3xl shadow-xl">
-                 <MapPin size={14} className={locationStatus === 'granted' ? "text-[#00e054]" : "text-rose-500"} />
-                  <div className="flex flex-col text-left">
-                    <span className="text-[8px] md:text-[9px] uppercase font-black tracking-[0.2em] text-white/30">Precision</span>
-                    <span className="text-[10px] md:text-xs font-bold text-white uppercase tracking-tight">
-                      {locationStatus === 'granted' ? 'High Precision' : 'Locating...'}
-                    </span>
-                  </div>
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="flex flex-wrap items-center gap-6"
+        >
+          <div className="flex items-center gap-4 glass-panel px-6 py-3 border-white/10 shadow-2xl">
+             <MapPin size={14} className={locationStatus === 'granted' ? "text-accent" : "text-rose-500"} />
+              <div className="flex flex-col">
+                <span className="small-caps text-[9px] text-white/20">Precision Status</span>
+                <span className="text-xs font-bold text-white uppercase tracking-tight">
+                  {locationStatus === 'granted' ? 'High Precision Active' : 'Locating Pulse...'}
+                </span>
               </div>
- 
-              <button 
-                onClick={setSRMAPLocation}
-                className="bg-zinc-900 hover:bg-white text-white hover:text-black border border-white/10 px-4 md:px-8 py-2 md:py-3.5 rounded-xl md:rounded-[2rem] font-black uppercase tracking-[0.2em] text-[9px] md:text-[11px] transition-all active:scale-95 shadow-2xl flex items-center gap-2 group"
-              >
-                <Navigation size={12} className="fill-current group-hover:rotate-12 transition-transform" />
-                I'm at SRMAP
-              </button>
-           </div>
-        </div>
-      </header>
-
-      {/* Nearby Section - Horizontal Carousel for Mobile */}
-      {nearby.length > 0 && (
-        <section className="mb-12 md:mb-20 -mx-4 md:mx-0">
-          <div className="flex items-center justify-between mb-4 md:mb-8 px-4 md:px-0">
-            <div className="flex items-center gap-3">
-               <div className="hidden md:flex w-8 h-8 bg-[#00e054] rounded-lg items-center justify-center">
-                  <Navigation className="text-black" size={16} />
-               </div>
-               <h2 className="small-caps text-base md:text-lg tracking-[0.1em] text-white/80">Right Now & Nearby</h2>
-            </div>
-            <p className="text-[8px] md:text-[10px] uppercase font-bold text-white/20 tracking-widest">{nearby.length} Places</p>
           </div>
 
-          <div className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 overflow-x-auto md:overflow-visible px-4 md:px-0 pb-4 md:pb-0 scroll-smooth snap-x">
+          <button 
+            onClick={setSRMAPLocation}
+            className="group flex items-center gap-3 bg-white text-black px-8 py-3.5 rounded-full font-bold transition-all active:scale-95 shadow-xl shadow-white/5 hover:bg-zinc-200"
+          >
+            <Navigation size={14} className="group-hover:rotate-12 transition-transform" />
+            Quick Access: SRMAP Hub
+          </button>
+        </motion.div>
+      </header>
+
+      {/* Nearby Section */}
+      {nearby.length > 0 && (
+        <section className="mb-24">
+          <div className="flex items-center justify-between mb-10 border-b border-white/5 pb-6">
+            <div className="flex items-center gap-4">
+               <div className="w-10 h-10 glass-panel rounded-xl flex items-center justify-center border-white/10">
+                  <Navigation className="text-accent" size={18} />
+               </div>
+               <h2 className="small-caps text-white/60">Immediate Proximity</h2>
+            </div>
+            <p className="small-caps text-white/20 tracking-normal">{nearby.length} High-Ranked Places</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <AnimatePresence>
               {nearby.map((res, i) => (
-                <div key={res.id} className="min-w-[280px] md:min-w-0 snap-center">
-                  <RestaurantCard restaurant={res} index={i} />
-                </div>
+                <RestaurantCard key={res.id} restaurant={res} index={i} />
               ))}
             </AnimatePresence>
           </div>
         </section>
       )}
 
-      {/* Others / More Section - 2 Column Grid for Mobile */}
+      {/* Others / More Section */}
       <section>
-        <div className="flex items-center justify-between mb-4 md:mb-8 pb-3 border-b border-white/10">
-           <div className="flex items-center gap-3">
-              <div className="hidden md:flex w-8 h-8 bg-zinc-800 rounded-lg items-center justify-center">
-                 <Compass className="text-white/40" size={16} />
+        <div className="flex items-center justify-between mb-10 border-b border-white/5 pb-6">
+           <div className="flex items-center gap-4">
+              <div className="w-10 h-10 glass-panel rounded-xl flex items-center justify-center border-white/10">
+                 <Compass className="text-white/20" size={18} />
               </div>
-              <h2 className="small-caps text-base md:text-lg tracking-[0.1em] text-white/80">Explore the Region</h2>
+              <h2 className="small-caps text-white/60">Regional Gastronomy</h2>
            </div>
-           <ChevronRight className="text-white/10 md:hidden" size={20} />
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {others.length > 0 ? (
             others.map((res, i) => (
               <RestaurantCard key={res.id} restaurant={res} index={i} isSmall />
             ))
           ) : (
-             <div className="col-span-full py-20 text-center bg-white/[0.02] border border-dashed border-white/10 rounded-3xl">
-                <UtensilsCrossed className="w-12 h-12 text-white/10 mx-auto mb-4" />
-                <p className="text-white/40 font-serif italic text-sm">No other restaurants gathered in this sweep yet.</p>
+             <div className="col-span-full py-32 text-center glass-panel border-dashed p-12">
+                <UtensilsCrossed className="w-16 h-16 text-white/5 mx-auto mb-6" />
+                <p className="text-white/20 font-serif italic text-lg">No additional findings in this region sweep.</p>
              </div>
           )}
         </div>
@@ -177,47 +179,50 @@ function RestaurantCard({ restaurant, index, isSmall = false }: { restaurant: an
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      whileInView={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ delay: index * 0.05 }}
-      className="group relative"
+      transition={{ delay: index * 0.05, duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
+      className="group relative h-full"
     >
-      <div className="absolute top-4 right-4 z-10 hidden md:block opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute top-6 right-6 z-10 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0">
         <a 
           href={mapsUrl} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="bg-black/40 hover:bg-[#00e054] text-white hover:text-black p-3 rounded-full backdrop-blur-3xl border border-white/10 transition-all flex items-center justify-center shadow-2xl"
+          className="bg-zinc-950/60 hover:bg-white text-white hover:text-black p-3.5 rounded-full backdrop-blur-xl border border-white/10 transition-all flex items-center justify-center shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
         >
           <Navigation size={14} />
         </a>
       </div>
-      <Link to={`/restaurant/${restaurant.id}`} className="block">
-        <div className={`relative overflow-hidden rounded-2xl md:rounded-[2.5rem] bg-zinc-900 border border-white/5 shadow-2xl transition-all ${isSmall ? 'aspect-[3/4] md:aspect-[4/3]' : 'aspect-square md:aspect-video'}`}>
+      <Link to={`/restaurant/${restaurant.id}`} className="block h-full">
+        <div className={`relative overflow-hidden rounded-[2rem] bg-zinc-900 border border-white/10 shadow-2xl transition-all duration-700 hover:border-white/20 hover:-translate-y-1 h-full ${isSmall ? 'aspect-[3/4]' : 'aspect-[16/10]'}`}>
           {restaurant.image ? (
             <img 
               src={restaurant.image} 
               alt={restaurant.name}
-              className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 group-hover:scale-110"
+              className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 group-hover:scale-110 grayscale-[30%] group-hover:grayscale-0"
               referrerPolicy="no-referrer"
               loading="lazy"
             />
           ) : (
-            <div className="absolute inset-0 w-full h-full mesh-gradient opacity-40" />
+            <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent p-4 md:p-10 flex flex-col justify-end">
-            <div className="flex items-center justify-between mb-2 md:mb-4">
-                <span className="bg-[#00e054] text-black text-[8px] md:text-[11px] font-black uppercase tracking-[0.1em] md:tracking-[0.2em] px-2 md:px-4 py-0.5 md:py-1.5 rounded-full shadow-lg shadow-[#00e054]/20">
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent p-8 flex flex-col justify-end">
+            <div className="flex items-center justify-between mb-4">
+                <span className="small-caps text-[9px] text-white/40 px-3 py-1 rounded-full border border-white/10 bg-black/40 backdrop-blur-md">
                    {formatDistance(restaurant.distance)}
                 </span>
-                <div className="flex items-center gap-1 md:gap-1.5 text-[10px] md:text-sm font-black text-white px-2 py-1 bg-black/40 backdrop-blur-3xl rounded-full border border-white/10 shadow-2xl">
-                   <Star size={14} className="fill-[#00e054] text-[#00e054]" />
-                   {restaurant.rating?.toFixed ? restaurant.rating.toFixed(1) : restaurant.rating || "0.0"}
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-accent/10 backdrop-blur-md rounded-full border border-accent/20 shadow-xl">
+                   <Star size={12} className="fill-accent text-accent" />
+                   <span className="text-xs font-black text-white">
+                      {restaurant.rating?.toFixed ? restaurant.rating.toFixed(1) : restaurant.rating || "0.0"}
+                   </span>
                 </div>
             </div>
-            <h3 className="text-base md:text-xl font-black text-white uppercase tracking-tight line-clamp-1 leading-none">{restaurant.name}</h3>
-            <p className="text-white/40 text-[7px] md:text-[10px] uppercase font-bold tracking-widest mt-1 truncate">{restaurant.location}</p>
+            <h3 className="text-xl md:text-2xl font-extrabold text-white group-hover:text-accent transition-colors leading-tight mb-1">{restaurant.name}</h3>
+            <p className="small-caps text-[10px] text-white/30 tracking-normal truncate">{restaurant.location}</p>
           </div>
         </div>
       </Link>

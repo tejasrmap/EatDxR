@@ -90,29 +90,29 @@ export function Navbar() {
       <nav className="fixed top-0 left-0 right-0 z-[300] bg-black/40 backdrop-blur-3xl border-b border-white/5 h-16 transition-all">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-full flex items-center justify-between">
           {/* Logo Cluster */}
-          <Link to="/" className="text-xl md:text-2xl font-black tracking-tighter flex items-center gap-2 group shrink-0">
-            <div className="relative flex items-center justify-center w-7 h-7 md:w-8 md:h-8 bg-gradient-to-br from-orange-500 to-rose-500 rounded-lg group-hover:-rotate-12 transition-transform duration-300 shadow-lg shadow-rose-500/20">
-              <UtensilsCrossed className="text-white w-3 h-3 md:w-4 md:h-4" />
+          <Link to="/" className="flex items-center gap-2 group shrink-0">
+            <div className="relative flex items-center justify-center w-8 h-8 bg-gradient-to-br from-orange-500 to-rose-500 rounded-xl group-hover:-rotate-12 transition-all duration-500 shadow-lg shadow-rose-500/10">
+              <UtensilsCrossed className="text-white w-4 h-4" />
             </div>
-            <div className="serif hidden sm:flex items-baseline tracking-tighter group-hover:tracking-normal transition-all duration-500">
-              <span className="text-white font-semibold text-2xl">Eat</span>
-              <span className="bg-gradient-to-br from-orange-500 to-rose-500 bg-clip-text text-transparent font-black italic text-3xl ml-0.5">R</span>
+            <div className="logo-text hidden sm:flex items-baseline tracking-tighter group-hover:tracking-normal transition-all duration-700">
+              <span className="text-white text-2xl">Eat</span>
+              <span className="bg-gradient-to-br from-orange-500 to-rose-500 bg-clip-text text-transparent text-3xl ml-0.5">R</span>
             </div>
           </Link>
           
           {/* Desktop Central Navigation */}
-          <div className="hidden md:flex items-center gap-8 lg:gap-12 absolute left-1/2 -translate-x-1/2">
-            <Link to="/restaurants" className="text-[10px] uppercase font-black tracking-[0.2em] text-white/30 hover:text-[#00e054] transition-all relative group">
+          <div className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
+            <Link to="/restaurants" className="small-caps text-white/40 hover:text-white transition-all relative group">
               Restaurants
-              <span className="absolute -bottom-1 left-0 w-0 h-px bg-[#00e054] group-hover:w-full transition-all duration-300" />
+              <span className="absolute -bottom-1 left-0 w-0 h-px bg-white/20 group-hover:w-full transition-all duration-500" />
             </Link>
-            <Link to="/critics" className="text-[10px] uppercase font-black tracking-[0.2em] text-white/30 hover:text-[#00e054] transition-all relative group">
+            <Link to="/critics" className="small-caps text-white/40 hover:text-white transition-all relative group">
               Critics
-              <span className="absolute -bottom-1 left-0 w-0 h-px bg-[#00e054] group-hover:w-full transition-all duration-300" />
+              <span className="absolute -bottom-1 left-0 w-0 h-px bg-white/20 group-hover:w-full transition-all duration-500" />
             </Link>
-            <Link to="/journal" className="text-[10px] uppercase font-black tracking-[0.2em] text-white/30 hover:text-[#00e054] transition-all relative group">
+            <Link to="/journal" className="small-caps text-white/40 hover:text-white transition-all relative group">
               Journal
-              <span className="absolute -bottom-1 left-0 w-0 h-px bg-[#00e054] group-hover:w-full transition-all duration-300" />
+              <span className="absolute -bottom-1 left-0 w-0 h-px bg-white/20 group-hover:w-full transition-all duration-500" />
             </Link>
           </div>
 
