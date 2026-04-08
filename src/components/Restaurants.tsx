@@ -202,7 +202,7 @@ function RestaurantCard({ restaurant, index, isSmall = false }: { restaurant: an
             <img 
               src={restaurant.image} 
               alt={restaurant.name}
-              className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 group-hover:scale-110 grayscale-[30%] group-hover:grayscale-0"
+              className="absolute inset-0 w-full h-full object-cover transition-all duration-1000 group-hover:scale-110"
               referrerPolicy="no-referrer"
               loading="lazy"
             />

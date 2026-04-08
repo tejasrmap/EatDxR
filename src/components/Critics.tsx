@@ -155,7 +155,7 @@ export function Critics() {
                         <img
                           src={critic.photoURL || `https://ui-avatars.com/api/?name=${critic.displayName || 'User'}&background=random`}
                           alt={critic.displayName}
-                          className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-2 shadow-2xl grayscale group-hover:grayscale-0 transition-all duration-700 ${isTopThree ? rankBorderClass : 'border-white/10'}`}
+                          className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-2 shadow-2xl transition-all duration-700 ${isTopThree ? rankBorderClass : 'border-white/10'}`}
                           referrerPolicy="no-referrer"
                           loading="lazy"
                         />

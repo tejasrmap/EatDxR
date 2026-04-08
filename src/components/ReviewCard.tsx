@@ -322,7 +322,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
               <img 
                 src={optimizeImage(review.userPhoto, { width: 40 })} 
                 alt={review.userName} 
-                className="w-5 h-5 rounded-full border border-white/10 grayscale group-hover/user:grayscale-0 transition-all"
+                className="w-5 h-5 rounded-full border border-white/10 transition-all"
                 referrerPolicy="no-referrer"
                 loading="lazy"
               />
@@ -398,7 +398,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                         <img 
                           src={optimizeImage(comment.userPhoto, { width: 40 })} 
                           alt={comment.userName}
-                          className="w-7 h-7 rounded-full border border-white/10 grayscale group-hover/comment:grayscale-0 transition-all mt-1"
+                          className="w-7 h-7 rounded-full border border-white/10 transition-all mt-1"
                           referrerPolicy="no-referrer"
                           loading="lazy"
                         />

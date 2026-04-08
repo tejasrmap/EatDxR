@@ -186,7 +186,7 @@ export const Restaurant: React.FC = () => {
           transition={{ duration: 1.5, ease: [0.19, 1, 0.22, 1] }}
           src={restaurant.image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80`} 
           alt={restaurant.name}
-          className="w-full h-full object-cover grayscale-[20%]"
+          className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent" />
         

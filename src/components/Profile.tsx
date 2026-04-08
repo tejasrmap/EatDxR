@@ -238,7 +238,7 @@ export const Profile: React.FC = () => {
           <img
             src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`}
             alt={user.displayName}
-            className="w-48 h-48 rounded-full border-4 border-zinc-900 shadow-2xl object-cover cursor-pointer hover:scale-[1.02] transition-all duration-700 grayscale-[20%] hover:grayscale-0 relative z-10"
+            className="w-48 h-48 rounded-full border-4 border-zinc-900 shadow-2xl object-cover cursor-pointer hover:scale-[1.02] transition-all duration-700 relative z-10"
             referrerPolicy="no-referrer"
             loading="lazy"
             onClick={() => currentUser?.uid === user.uid && profileFileInputRef.current?.click()}
@@ -387,7 +387,7 @@ export const Profile: React.FC = () => {
                         <img
                           src={firstImage}
                           alt={review.restaurantName}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out grayscale-[20%] group-hover:grayscale-0 shadow-inner"
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out shadow-inner"
                           referrerPolicy="no-referrer"
                           loading="lazy"
                         />

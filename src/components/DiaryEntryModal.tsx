@@ -268,7 +268,7 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                   <header className="space-y-6">
                      <div className="flex flex-wrap items-center gap-3">
                         <Link to={`/profile/${review.userId}`} onClick={onClose} className="flex items-center gap-2 group/user p-1 px-2.5 bg-white/[0.03] border border-white/5 rounded-full hover:bg-white/[0.08] transition-all">
-                           <img loading="lazy" src={review.userPhoto} className="w-5 h-5 rounded-full border border-white/10 grayscale group-hover/user:grayscale-0 transition-all" referrerPolicy="no-referrer" />
+                           <img loading="lazy" src={review.userPhoto} className="w-5 h-5 rounded-full border border-white/10 transition-all" referrerPolicy="no-referrer" />
                            <span className="text-[10px] font-black text-white/40 group-hover/user:text-white uppercase tracking-widest">{review.userName}</span>
                         </Link>
                         <span className="text-white/10 text-[8px] uppercase font-black">•</span>
@@ -323,7 +323,7 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                               <div key={i} className="flex items-center justify-between p-3.5 bg-white/[0.02] border border-white/5 rounded-2xl group hover:bg-white/[0.05] transition-all">
                                  <div className="flex items-center gap-4">
                                     {dish.image && (
-                                       <img src={dish.image} className="w-10 h-10 rounded-lg object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all" />
+                                       <img src={dish.image} className="w-10 h-10 rounded-lg object-cover opacity-50 group-hover:opacity-100 transition-all" />
                                     )}
                                     <div className="flex flex-col">
                                        <span className="text-xs font-bold text-white tracking-tight">{dish.name}</span>
@@ -364,7 +364,7 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                            {comments.map((comment) => (
                               <div key={comment.id} className="flex gap-4 group/comm">
                                  <Link to={`/profile/${comment.userId}`} onClick={onClose}>
-                                    <img src={comment.userPhoto} className="w-8 h-8 rounded-full border border-white/10 grayscale group-hover/comm:grayscale-0 transition-all shrink-0 mt-1" referrerPolicy="no-referrer" />
+                                    <img src={comment.userPhoto} className="w-8 h-8 rounded-full border border-white/10 transition-all shrink-0 mt-1" referrerPolicy="no-referrer" />
                                  </Link>
                                  <div className="flex-1 space-y-1.5">
                                     <div className="flex items-center justify-between">

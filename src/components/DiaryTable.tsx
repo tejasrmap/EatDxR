@@ -129,7 +129,7 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                       >
                         <img 
                           src={review.userPhoto}
-                          className="w-6 h-6 rounded-full border border-white/10 grayscale group-hover/user:grayscale-0 transition-all"
+                          className="w-6 h-6 rounded-full border border-white/10 transition-all"
                           loading="lazy"
                         />
                         <span className="text-xs font-bold text-white/40 group-hover/user:text-white transition-colors truncate max-w-[120px]">

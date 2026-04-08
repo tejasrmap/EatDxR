@@ -446,7 +446,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                             >
                               <img 
                                 src={result.image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=100&q=80`} 
-                                className="w-10 h-10 rounded-lg object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all"
+                                className="w-10 h-10 rounded-lg object-cover opacity-50 group-hover:opacity-100 transition-all"
                                 referrerPolicy="no-referrer"
                               />
                               <div>

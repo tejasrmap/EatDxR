@@ -26,7 +26,7 @@ export const ReviewPoster: React.FC<ReviewPosterProps> = ({ review, id = "review
         <div className="absolute inset-0 z-0">
           <img 
             src={mainImage} 
-            className="w-full h-full object-cover opacity-40 grayscale" 
+            className="w-full h-full object-cover opacity-40" 
           />
           <div className="absolute inset-0 bg-black/60" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent" />
