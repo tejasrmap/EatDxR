@@ -60,6 +60,18 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
     return unsubscribe;
   }, [review?.id]);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
   if (!review) return null;
 
   const hasLiked = currentUser ? likes.some(l => l.userId === currentUser.uid) : false;
@@ -172,18 +184,18 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/95 backdrop-blur-3xl"
+            className="fixed inset-0 bg-black/60 backdrop-blur-md"
           />
           
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 40 }}
+            initial={{ opacity: 0, scale: 0.98, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 40 }}
-            transition={{ type: "spring", damping: 30, stiffness: 400 }}
-            className="relative w-full h-full md:h-[90vh] md:max-w-6xl bg-[#0a0a0a] md:rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.8)] flex flex-col md:flex-row overflow-hidden border border-white/10"
+            exit={{ opacity: 0, scale: 0.98, y: 20 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="relative w-full h-full md:h-[85vh] md:max-w-5xl bg-[#0a0a0a] md:rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col md:flex-row overflow-hidden border border-white/5"
           >
             {/* Cinematic Image Stage (Left on Desktop, Top on Mobile) */}
-            <div className="w-full md:w-1/2 h-[50vh] md:h-full bg-zinc-900/50 relative overflow-hidden group">
+            <div className="w-full md:w-1/2 h-[50vh] md:h-full relative overflow-hidden group">
               {images.length > 0 ? (
                 <>
                   <AnimatePresence mode="wait">
@@ -222,11 +234,12 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                   )}
                 </>
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-white/10 gap-4">
-                   <div className="w-20 h-20 rounded-full border border-white/5 flex items-center justify-center">
-                      <Star size={32} />
+                <div className="w-full h-full flex flex-col items-center justify-center text-white/50 gap-4 mesh-gradient relative">
+                   <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+                   <div className="w-24 h-24 rounded-full border border-white/10 flex items-center justify-center relative z-10 glass-panel shadow-2xl">
+                      <Star size={36} className="text-white/30" />
                    </div>
-                   <span className="text-[10px] uppercase font-black tracking-[0.4em] text-white/20">The Film Is Missing</span>
+                   <span className="text-[10px] uppercase font-black tracking-[0.5em] text-white/40 relative z-10">Data Unavailable</span>
                 </div>
               )}
               
