@@ -178,13 +178,14 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center p-0 md:p-8 xl:p-24 overflow-hidden">
-          {/* Backdrop Blur Layer */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-md"
+            style={{ transform: "translateZ(0)" }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-md will-change-transform"
           />
           
           <motion.div
