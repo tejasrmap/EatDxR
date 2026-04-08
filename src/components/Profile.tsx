@@ -234,7 +234,7 @@ export const Profile: React.FC = () => {
       {/* Letterboxd-Elite Profile Header */}
       <div className="flex flex-col md:flex-row items-center md:items-start gap-10 md:gap-16 mb-20">
         <div className="relative group shrink-0">
-          <div className="absolute -inset-4 bg-gradient-to-br from-orange-500/20 to-rose-500/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+          <div className="absolute -inset-4 bg-gradient-to-br from-orange-500/20 to-rose-500/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full will-change-transform" />
           <img
             src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`}
             alt={user.displayName}
