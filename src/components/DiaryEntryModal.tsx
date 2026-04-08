@@ -260,19 +260,12 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
             {/* Narrative Stage (Right on Desktop, Bottom on Mobile) */}
             <div className="w-full md:w-1/2 flex flex-col h-full bg-[#0a0a0a] relative">
                {/* Fixed Header Desktop */}
-               <div className="hidden md:flex absolute top-8 left-8 right-8 justify-between items-center z-[100] pointer-events-none">
+               <div className="hidden md:flex absolute top-6 right-6 justify-end items-center z-[100] pointer-events-none">
                   <button 
                     onClick={onClose} 
-                    className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10 text-white/60 hover:text-white pointer-events-auto active:scale-95 group"
+                    className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10 text-white/40 hover:text-white pointer-events-auto active:scale-90"
                   >
-                     <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
-                     <span className="text-[10px] uppercase font-black tracking-widest">Back to Profile</span>
-                  </button>
-                  <button 
-                    onClick={onClose} 
-                    className="w-12 h-12 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10 text-white/40 hover:text-white pointer-events-auto active:scale-90"
-                  >
-                    <X size={24} />
+                    <X size={20} />
                   </button>
                </div>
 
