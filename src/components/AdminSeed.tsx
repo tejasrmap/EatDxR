@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { MapPin, Zap, Database, Loader2, Search, Map as MapIcon, ChevronRight, Timer, Lock, ShieldCheck } from 'lucide-react';
 
 // Admin Security Constants
-const ADMIN_PASSWORD = "ADMIN-EAT-DxR";
+const ADMIN_PASSWORD = "ADMIN-MADEATER";
 
 interface LocationResult {
   lat: number;

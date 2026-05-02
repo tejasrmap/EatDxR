@@ -117,7 +117,7 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
 
     // Browser cannot direct share to IG story, so we download
     const link = document.createElement("a");
-    link.download = `EatR_Poster_${review.restaurantName.replace(/\s+/g, '_')}.png`;
+    link.download = `Madeater_Poster_${review.restaurantName.replace(/\s+/g, '_')}.png`;
     link.href = imgData;
     link.click();
     
@@ -125,13 +125,13 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
   };
 
   const shareToWhatsApp = () => {
-    const text = `Check out my latest culinary narrative at ${review.restaurantName}! 🍽️\n\nRead more on EatR: ${window.location.origin}/restaurant/${review.restaurantId}`;
+    const text = `Check out my latest culinary narrative at ${review.restaurantName}! 🍽️\n\nRead more on Madeater: ${window.location.origin}/restaurant/${review.restaurantId}`;
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
   };
 
   const shareToX = () => {
-    const text = `Just dropped a new culinary review of ${review.restaurantName} on EatR! 🍷✨`;
+    const text = `Just dropped a new culinary review of ${review.restaurantName} on Madeater! 🍷✨`;
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.origin + '/restaurant/' + review.restaurantId)}`;
     window.open(url, "_blank");
   };
@@ -146,7 +146,7 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
     const imgData = await generatePoster();
     if (imgData) {
       const link = document.createElement("a");
-      link.download = `EatR_Review_${review.id}.png`;
+      link.download = `Madeater_Review_${review.id}.png`;
       link.href = imgData;
       link.click();
       toast.success("Cinematic poster downloaded!");
@@ -227,7 +227,7 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
             </div>
             
             <div className="p-6 bg-black/40 text-center">
-               <p className="text-[8px] uppercase font-black text-white/10 tracking-[0.5em]">The Narrative Continuous • EATDxR</p>
+               <p className="text-[8px] uppercase font-black text-white/10 tracking-[0.5em]">The Narrative Continuous • MADEATER</p>
             </div>
           </motion.div>
 

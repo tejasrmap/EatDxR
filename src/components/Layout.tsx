@@ -27,8 +27,8 @@ export function Layout({ children }: LayoutProps) {
                   <UtensilsCrossed className="text-white w-3 h-3" />
                 </div>
                 <div className="logo-text flex items-baseline tracking-tighter transition-all duration-500">
-                  <span className="text-white/80 group-hover:text-white text-xl">Eat</span>
-                  <span className="bg-gradient-to-br from-orange-500 to-rose-500 bg-clip-text text-transparent text-2xl ml-0.5">R</span>
+                  <span className="text-white/80 group-hover:text-white text-xl">Madeat</span>
+                  <span className="bg-gradient-to-br from-orange-500 to-rose-500 bg-clip-text text-transparent text-2xl ml-0.5">ER</span>
                 </div>
               </Link>
               <p className="max-w-xs text-xs text-white/40 leading-relaxed font-serif italic">
@@ -56,7 +56,7 @@ export function Layout({ children }: LayoutProps) {
           </div>
           
           <div className="max-w-7xl mx-auto px-6 pt-12 mt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="small-caps text-[9px]">© {new Date().getFullYear()} EatR Global</p>
+            <p className="small-caps text-[9px]">© {new Date().getFullYear()} Madeater Global</p>
             <p className="small-caps text-[9px] lowercase italic font-serif tracking-normal">Made with passion by food lovers</p>
           </div>
         </footer>

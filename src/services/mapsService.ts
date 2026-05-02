@@ -39,7 +39,7 @@ async function fetchOpenRouter(prompt: string, expectJson: boolean = false) {
       "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
       "Content-Type": "application/json",
       "HTTP-Referer": window.location.origin, 
-      "X-Title": "EatR", 
+      "X-Title": "Madeater", 
     },
     body: JSON.stringify({
       model: "google/gemini-2.0-flash-001", // Corrected OpenRouter model path

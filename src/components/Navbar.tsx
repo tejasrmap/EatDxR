@@ -95,8 +95,8 @@ export function Navbar() {
               <UtensilsCrossed className="text-white w-4 h-4" />
             </div>
             <div className="logo-text hidden sm:flex items-baseline tracking-tighter group-hover:tracking-normal transition-all duration-700">
-              <span className="text-white text-2xl">Eat</span>
-              <span className="bg-gradient-to-br from-orange-500 to-rose-500 bg-clip-text text-transparent text-3xl ml-0.5">R</span>
+              <span className="text-white text-2xl">Madeat</span>
+              <span className="bg-gradient-to-br from-orange-500 to-rose-500 bg-clip-text text-transparent text-3xl ml-0.5">ER</span>
             </div>
           </Link>
           

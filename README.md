@@ -1,2 +1,2 @@
-# EatR
+# Madeater
 
