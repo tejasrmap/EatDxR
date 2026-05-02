@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Navbar } from "./Navbar";
 import { Link, useLocation } from "react-router-dom";
-import { Sparkles } from "lucide-react";
+import { Flame } from "lucide-react";
 
 interface LayoutProps {
   children: ReactNode;
@@ -23,12 +23,14 @@ export function Layout({ children }: LayoutProps) {
           <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-12 text-center md:text-left">
             <div className="flex flex-col items-center md:items-start gap-4">
               <Link to="/" className="flex items-center gap-2 group cursor-pointer">
-                <div className="relative flex items-center justify-center w-12 h-12 bg-gradient-to-br from-fuchsia-500 via-cyan-400 to-yellow-400 rounded-full group-hover:animate-spin shadow-[0_0_15px_rgba(255,0,255,0.5)] border-2 border-white/20">
-                  <Sparkles className="text-black w-6 h-6 fill-white" />
+                <div className="relative flex items-center justify-center w-8 h-8 bg-black border border-white/10 rounded-lg group-hover:border-orange-500/50 transition-all duration-500 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-rose-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <Flame className="text-orange-500 w-4 h-4 relative z-10 group-hover:scale-110 transition-transform duration-500" />
                 </div>
-                <div className="logo-text flex items-center -rotate-3 group-hover:rotate-2 transition-all duration-300 ml-1">
-                  <span className="font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-orange-500 text-4xl tracking-tighter" style={{ WebkitTextStroke: '1px #ff00ff', filter: 'drop-shadow(3px 3px 0px #00ffff)' }}>MAD</span>
-                  <span className="font-black text-white text-xl tracking-[0.2em] bg-black px-3 py-1 rounded-full border-2 border-[#ccff00] ml-2 shadow-[3px_3px_0px_#ff00ff] -translate-y-1">EATER</span>
+                <div className="logo-text flex items-baseline tracking-tighter transition-all duration-500">
+                  <span className="font-black text-white text-2xl tracking-tight">MAD</span>
+                  <span className="font-black bg-gradient-to-r from-orange-500 to-rose-500 bg-clip-text text-transparent text-2xl">EATER</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500 ml-1 mb-1 animate-pulse" />
                 </div>
               </Link>
               <p className="max-w-xs text-xs text-white/40 leading-relaxed font-serif italic">
