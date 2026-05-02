@@ -108,10 +108,10 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: [0.19, 1, 0.22, 1] }}
         >
-          <span className="font-black uppercase tracking-widest text-[12px] mb-6 block text-[#ccff00] bg-black border-2 border-black inline-block px-4 py-1 shadow-[2px_2px_0px_#ff00ff]">Track every meal you've ever eaten.</span>
-          <h1 className="title-text mb-10 text-white" style={{ textShadow: '4px 4px 0px #00ffff' }}>
-            The social network for <br />
-            <span className="font-black text-[#ff00ff] block" style={{ textShadow: '4px 4px 0px #ccff00' }}>food critics and lovers.</span>
+          <span className="font-medium uppercase tracking-[0.2em] text-[10px] mb-4 block text-white/50">Track every meal you've ever eaten.</span>
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-8">
+            The network for <br />
+            <span className="text-white/60 font-normal">food critics and lovers.</span>
           </h1>
           
           <div className="max-w-xl mx-auto mb-12 relative" ref={searchRef}>
@@ -123,7 +123,7 @@ export function Hero() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onFocus={() => query.length >= 1 && setShowResults(true)}
-                className="w-full bg-black border-4 border-[#333333] rounded-none py-5 pl-14 pr-14 text-white placeholder:text-white/40 focus:outline-none focus:border-[#00ffff] transition-all shadow-[8px_8px_0px_#ccff00] font-bold uppercase tracking-wider"
+                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 pl-12 pr-12 text-white placeholder:text-white/40 focus:outline-none focus:border-white/30 transition-all shadow-2xl backdrop-blur-xl font-medium text-sm"
               />
               {isLoading && (
                 <Loader2 className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 animate-spin" />
@@ -136,7 +136,7 @@ export function Hero() {
                   initial={{ opacity: 0, y: 10, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                  className="absolute top-full left-0 right-0 mt-3 bg-[#111111] border-4 border-[#333333] shadow-[8px_8px_0px_#ff00ff] z-50 text-left overflow-hidden"
+                  className="absolute top-full left-0 right-0 mt-2 bg-[#0a0a0a]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl z-50 text-left overflow-hidden"
                 >
                   <div className="max-h-[400px] overflow-y-auto scrollbar-hide">
                     {results.map((res, i) => (
@@ -148,7 +148,7 @@ export function Hero() {
                           navigate(`/restaurant/${res.id}`);
                         }}
                       >
-                        <div className="w-14 h-14 rounded-none overflow-hidden bg-black shrink-0 border-2 border-[#333333] shadow-[2px_2px_0px_#00ffff] group-hover/item:border-[#ccff00] transition-all">
+                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/5 shrink-0 border border-white/10 group-hover/item:border-white/20 transition-all">
                           <img 
                             src={res.image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=100&q=80`} 
                             alt={res.name}
@@ -157,14 +157,14 @@ export function Hero() {
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-black uppercase tracking-widest text-[12px] text-white group-hover/item:text-[#ff00ff] transition-colors">{res.name}</p>
-                          <p className="text-[10px] font-bold text-white/40 line-clamp-1 mb-1 uppercase">{res.location}</p>
+                          <p className="font-medium text-[13px] text-white group-hover/item:text-white/80 transition-colors">{res.name}</p>
+                          <p className="text-[11px] font-normal text-white/40 line-clamp-1 mb-1">{res.location}</p>
                           <div className="flex items-center gap-2">
-                             <span className="font-black text-[9px] uppercase tracking-widest text-[#00ffff] bg-black px-2 py-0.5 border border-[#333333]">{res.cuisine}</span>
+                             <span className="font-medium text-[9px] uppercase tracking-wider text-white/60 bg-white/5 px-2 py-0.5 rounded-md border border-white/10">{res.cuisine}</span>
                             {res.menuItems && res.menuItems.length > 0 && (
                               <>
-                                <span className="text-white/10 text-xs font-black">/</span>
-                                <p className="text-[9px] text-white/40 font-black uppercase tracking-widest line-clamp-1">
+                                <span className="text-white/10 text-xs font-light">/</span>
+                                <p className="text-[10px] text-white/40 font-medium line-clamp-1">
                                   Try {res.menuItems.slice(0, 2).join(", ")}
                                 </p>
                               </>
@@ -182,13 +182,13 @@ export function Hero() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 w-full px-4">
             <button 
               onClick={handleGetStarted}
-              className="bg-[#ccff00] text-black border-4 border-black px-10 py-4 font-black uppercase text-[14px] tracking-widest shadow-[4px_4px_0px_#ff00ff] hover:translate-x-1 hover:translate-y-1 hover:shadow-[0px_0px_0px_#ff00ff] transition-all w-full sm:w-auto"
+              className="bg-white text-black px-8 py-3.5 rounded-full font-medium text-sm hover:scale-105 transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)] w-full sm:w-auto"
             >
               Get Started — It's Free
             </button>
-            <Link to="/restaurants" className="bg-[#111111] border-4 border-[#333333] text-white px-10 py-4 flex items-center justify-center w-full sm:w-auto group font-black uppercase text-[14px] tracking-widest shadow-[4px_4px_0px_#00ffff] hover:translate-x-1 hover:translate-y-1 hover:shadow-[0px_0px_0px_#00ffff] transition-all">
+            <Link to="/restaurants" className="bg-white/[0.03] border border-white/10 text-white px-8 py-3.5 rounded-full flex items-center justify-center w-full sm:w-auto group font-medium text-sm hover:bg-white/[0.08] transition-all">
               Browse Popular Dishes
-              <span className="ml-2 font-black text-[#ff00ff] group-hover:translate-x-1 transition-transform">→</span>
+              <span className="ml-2 font-light text-white/40 group-hover:translate-x-1 transition-transform">→</span>
             </Link>
           </div>
         </motion.div>

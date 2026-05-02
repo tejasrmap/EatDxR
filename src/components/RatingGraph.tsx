@@ -29,7 +29,7 @@ export const RatingGraph: React.FC<RatingGraphProps> = ({ reviews }) => {
 
   return (
     <div className="w-full flex-1 max-w-[320px] md:max-w-xl mx-auto py-6">
-      <div className="flex items-end justify-center gap-1.5 md:gap-2 h-32 md:h-48 mb-4 border-b-4 border-[#333333] pb-1.5">
+      <div className="flex items-end justify-center gap-1.5 md:gap-2 h-32 md:h-48 mb-4 border-b border-white/10 pb-1.5">
         {counts.map((count, i) => {
           // Use square root scaling so small ratios remain highly visible
           const heightPercent = maxCount > 0 ? (Math.sqrt(count) / Math.sqrt(maxCount)) * 100 : 0;
@@ -41,12 +41,12 @@ export const RatingGraph: React.FC<RatingGraphProps> = ({ reviews }) => {
                 initial={{ height: 0 }}
                 animate={{ height: `${heightPercent}%` }}
                 transition={{ delay: i * 0.05, type: 'spring', damping: 20 }}
-                className="w-full bg-[#00ffff] hover:bg-[#ff00ff] rounded-none transition-colors relative border-x-2 border-t-2 border-[#333333] shadow-[2px_0px_0px_#ff00ff]"
+                className="w-full bg-white/40 hover:bg-white rounded-t-sm transition-colors relative border border-white/20 border-b-0"
                 style={{ minHeight: count > 0 ? '6px' : '0' }}
               >
                  {count > 0 && (
-                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-black border-2 border-[#333333] px-2.5 py-1 rounded-none text-[10px] font-black text-white transition-opacity whitespace-nowrap z-10 pointer-events-none shadow-[2px_2px_0px_#00ffff]">
-                       {count} <span className="text-[#00ffff] ml-0.5">{ratingValue} ★</span>
+                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-white border border-white/20 px-2.5 py-1 rounded-lg text-xs font-semibold text-black transition-opacity whitespace-nowrap z-10 pointer-events-none shadow-xl">
+                       {count} <span className="text-black/60 ml-0.5">{ratingValue} ★</span>
                     </div>
                  )}
               </motion.div>
@@ -54,9 +54,9 @@ export const RatingGraph: React.FC<RatingGraphProps> = ({ reviews }) => {
           );
         })}
       </div>
-      <div className="flex items-center justify-between text-[9px] md:text-[10px] font-black text-white/40 uppercase tracking-widest px-2">
+      <div className="flex items-center justify-between text-xs font-medium text-white/40 px-2">
          <span>1</span>
-         <span>★ Ratings Distribution ★</span>
+         <span className="uppercase tracking-widest text-[10px]">Ratings Distribution</span>
          <span>5</span>
       </div>
     </div>

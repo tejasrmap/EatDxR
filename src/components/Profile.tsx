@@ -238,7 +238,7 @@ export const Profile: React.FC = () => {
           <img
             src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`}
             alt={user.displayName}
-            className="w-48 h-48 rounded-none border-4 border-white shadow-[8px_8px_0px_#ccff00] object-cover cursor-pointer hover:translate-x-1 hover:-translate-y-1 hover:shadow-[12px_12px_0px_#ccff00] transition-all duration-300 relative z-10"
+            className="w-40 h-40 md:w-48 md:h-48 rounded-full border border-white/20 shadow-2xl object-cover cursor-pointer hover:scale-105 hover:border-white/50 transition-all duration-300 relative z-10"
             referrerPolicy="no-referrer"
             loading="lazy"
             onClick={() => currentUser?.uid === user.uid && profileFileInputRef.current?.click()}
@@ -260,7 +260,7 @@ export const Profile: React.FC = () => {
         <div className="flex-1 w-full flex flex-col items-center md:items-start text-center md:text-left">
           <div className="mb-4">
             {user.username && (
-              <span className="font-black uppercase tracking-widest text-[12px] text-black bg-[#ccff00] border-2 border-black shadow-[2px_2px_0px_#ff00ff] px-4 py-1.5">
+              <span className="font-medium text-xs text-white/80 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/20">
                 @{user.username}
               </span>
             )}
@@ -268,18 +268,18 @@ export const Profile: React.FC = () => {
 
           <div className="flex flex-col md:flex-row items-center md:items-baseline gap-6 mb-8">
             <div className="flex flex-wrap items-baseline gap-4 justify-center md:justify-start">
-                <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tighter leading-none">{user.displayName}</h1>
+                <h1 className="text-4xl md:text-5xl font-semibold text-white tracking-tight leading-none">{user.displayName}</h1>
                 {user.pronouns && (
-                    <span className="font-black text-[12px] text-white/40 uppercase tracking-widest border-2 border-[#333333] px-2 py-0.5 bg-[#111111]">{user.pronouns}</span>
+                    <span className="font-medium text-[11px] text-white/40 border border-white/10 px-2.5 py-1 rounded-full bg-white/[0.02]">{user.pronouns}</span>
                 )}
             </div>
             {currentUser?.uid !== user.uid && (
               <button
                 onClick={toggleFollow}
                 disabled={isUpdatingFollow}
-                className={`px-8 py-2.5 font-black uppercase tracking-widest text-[12px] border-2 transition-all shadow-[4px_4px_0px_#ff00ff] hover:translate-x-1 hover:translate-y-1 hover:shadow-none ${isFollowing
-                    ? "bg-[#111111] text-white border-[#333333]"
-                    : "bg-[#ccff00] text-black border-black"
+                className={`px-8 py-2.5 font-medium text-sm rounded-full transition-all shadow-lg hover:scale-105 ${isFollowing
+                    ? "bg-white/10 text-white border border-white/20"
+                    : "bg-white text-black border border-white"
                   }`}
               >
                 {isFollowing ? "Following" : "Follow Critic"}
@@ -295,41 +295,41 @@ export const Profile: React.FC = () => {
             )}
           </div>
 
-          <div className="flex items-center justify-center md:justify-start gap-12 md:gap-16 border-t border-white/5 pt-8 w-full">
+          <div className="flex items-center justify-center md:justify-start gap-12 md:gap-16 border-t border-white/10 pt-8 w-full">
             <div className="text-center md:text-left">
-              <span className="text-4xl font-black text-white" style={{ textShadow: '2px 2px 0px #ff00ff' }}>{reviews.length}</span>
-              <p className="font-black uppercase tracking-widest text-[10px] text-white/40 mt-2">Logs recorded</p>
+              <span className="text-4xl font-semibold text-white tracking-tight">{reviews.length}</span>
+              <p className="font-medium tracking-wide text-[11px] text-white/40 mt-2">Logs recorded</p>
             </div>
             <div
               className="text-center md:text-left cursor-pointer group/stat"
               onClick={() => setFollowModalType("followers")}
             >
-              <span className="text-4xl font-black text-white group-hover/stat:text-[#00ffff] transition-colors" style={{ textShadow: '2px 2px 0px #ccff00' }}>{followerCount}</span>
-              <p className="font-black uppercase tracking-widest text-[10px] text-white/40 group-hover/stat:text-white transition-colors mt-2">Followers</p>
+              <span className="text-4xl font-semibold text-white tracking-tight group-hover/stat:text-white/80 transition-colors">{followerCount}</span>
+              <p className="font-medium tracking-wide text-[11px] text-white/40 group-hover/stat:text-white transition-colors mt-2">Followers</p>
             </div>
             <div
               className="text-center md:text-left cursor-pointer group/stat"
               onClick={() => setFollowModalType("following")}
             >
-              <span className="text-4xl font-black text-white group-hover/stat:text-[#00ffff] transition-colors" style={{ textShadow: '2px 2px 0px #ff00ff' }}>
+              <span className="text-4xl font-semibold text-white tracking-tight group-hover/stat:text-white/80 transition-colors">
                 {user.stats?.followingList?.length || user.stats?.following || 0}
               </span>
-              <p className="font-black uppercase tracking-widest text-[10px] text-white/40 group-hover/stat:text-white transition-colors mt-2">Following</p>
+              <p className="font-medium tracking-wide text-[11px] text-white/40 group-hover/stat:text-white transition-colors mt-2">Following</p>
             </div>
             <div className="text-center md:text-left">
-              <span className="text-4xl font-black text-white" style={{ textShadow: '2px 2px 0px #00ffff' }}>
+              <span className="text-4xl font-semibold text-white tracking-tight">
                  {reviews.length > 0 
                   ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
                   : "0.0"}
               </span>
-              <p className="font-black uppercase tracking-widest text-[10px] text-white/40 mt-2">Avg Rating</p>
+              <p className="font-medium tracking-wide text-[11px] text-white/40 mt-2">Avg Rating</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center justify-center md:justify-start gap-10 md:gap-12 border-b border-white/5 mb-12">
+      <div className="flex items-center justify-center md:justify-start gap-10 md:gap-12 border-b border-white/10 mb-12">
         {[
           { id: "profile", label: "Overview", icon: Grid },
           { id: "diary", label: "Diary", icon: Clock },
@@ -338,14 +338,14 @@ export const Profile: React.FC = () => {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 pb-5 font-black uppercase text-[12px] tracking-widest relative transition-all ${activeTab === tab.id ? "text-white" : "text-white/40 hover:text-white"}`}
+            className={`flex items-center gap-2 pb-5 font-medium text-sm tracking-wide relative transition-all ${activeTab === tab.id ? "text-white" : "text-white/40 hover:text-white"}`}
           >
-            <tab.icon size={14} className={activeTab === tab.id ? "text-[#ccff00]" : "text-inherit"} />
+            <tab.icon size={16} className={activeTab === tab.id ? "text-white" : "text-inherit"} />
             {tab.label}
             {activeTab === tab.id && (
               <motion.div 
                 layoutId="profileTab"
-                className="absolute bottom-0 left-0 right-0 h-1 bg-[#ccff00]"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-white"
               />
             )}
           </button>
@@ -363,11 +363,11 @@ export const Profile: React.FC = () => {
             className="grid grid-cols-1 lg:grid-cols-3 gap-20 w-full"
           >
             <div className="lg:col-span-2">
-              <div className="flex items-center justify-between mb-8 border-b-2 border-[#333333] pb-4">
+              <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
                 <div className="flex items-center gap-3">
-                  <h2 className="font-black uppercase tracking-widest text-[14px] text-[#00ffff]">The Gastronomic Stream</h2>
+                  <h2 className="font-medium text-lg text-white/80">The Gastronomic Stream</h2>
                 </div>
-                <span className="font-black uppercase tracking-widest text-[10px] text-white/40 bg-black border border-[#333333] px-2 py-1">{reviews.length} Experiences</span>
+                <span className="font-medium text-xs text-white/40 bg-white/[0.02] border border-white/10 rounded-full px-3 py-1">{reviews.length} Experiences</span>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-12">
@@ -381,7 +381,7 @@ export const Profile: React.FC = () => {
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: i * 0.05 }}
                       onClick={() => setSelectedReview(review)}
-                      className="aspect-[2/3] bg-black rounded-none overflow-hidden border-2 border-[#333333] group relative shadow-[4px_4px_0px_#ff00ff] hover:border-[#ccff00] transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:translate-x-1 hover:shadow-[0px_0px_0px_#ff00ff]"
+                      className="aspect-[3/4] bg-white/[0.02] rounded-2xl overflow-hidden border border-white/10 group relative shadow-lg hover:border-white/30 transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-2xl"
                     >
                       {firstImage ? (
                         <img
@@ -392,29 +392,29 @@ export const Profile: React.FC = () => {
                           loading="lazy"
                         />
                       ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-br from-zinc-800 to-zinc-950">
-                           <UtensilsCrossed size={20} className="text-white/5 mb-3" />
-                           <span className="small-caps text-[9px] text-white/20">{review.restaurantName}</span>
+                        <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-white/5">
+                           <UtensilsCrossed size={20} className="text-white/20 mb-3" />
+                           <span className="font-medium text-xs text-white/40">{review.restaurantName}</span>
                         </div>
                       )}
 
                       {allImages.length > 1 && (
-                        <div className="absolute top-4 right-4 p-1.5 bg-[#111] border-2 border-[#333333] rounded-none z-10 shadow-[2px_2px_0px_#ccff00]">
-                          <Plus size={12} className="text-[#ccff00]" />
+                        <div className="absolute top-4 right-4 p-1.5 bg-black/50 backdrop-blur-md border border-white/20 rounded-full z-10">
+                          <Plus size={14} className="text-white" />
                         </div>
                       )}
 
-                      <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent opacity-0 group-hover:opacity-100 flex flex-col items-center justify-end p-6 transition-all duration-500">
-                        <StarRating rating={review.rating} size={12} className="flex items-center gap-0.5 text-accent mb-2" />
-                        <p className="small-caps text-[9px] text-white tracking-widest truncate w-full text-center mb-3">{review.restaurantName}</p>
-                        <div className="flex items-center gap-4 text-white/40">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 flex flex-col items-center justify-end p-6 transition-all duration-500">
+                        <StarRating rating={review.rating} size={14} className="flex items-center gap-0.5 text-white mb-2" />
+                        <p className="font-medium text-sm text-white truncate w-full text-center mb-3">{review.restaurantName}</p>
+                        <div className="flex items-center gap-4 text-white/60">
                           <div className="flex items-center gap-1.5">
-                            <Heart size={12} className={review.likes ? "fill-rose-500 text-rose-500" : ""} />
-                            <span className="text-[10px] font-bold">{review.likes || 0}</span>
+                            <Heart size={14} className={review.likes ? "fill-rose-500 text-rose-500" : ""} />
+                            <span className="text-xs font-medium">{review.likes || 0}</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <MessageSquare size={12} />
-                            <span className="text-[10px] font-bold">4</span>
+                            <MessageSquare size={14} />
+                            <span className="text-xs font-medium">4</span>
                           </div>
                         </div>
                       </div>
@@ -424,8 +424,8 @@ export const Profile: React.FC = () => {
               </div>
 
               {reviews.length === 0 && (
-                <div className="py-32 text-center bg-[#111111] border-4 border-dashed border-[#333333] p-12">
-                  <p className="text-lg font-black uppercase tracking-widest text-white/40">Empty stream.</p>
+                <div className="py-32 text-center bg-white/[0.02] border border-dashed border-white/10 rounded-3xl p-12">
+                  <p className="text-sm font-medium text-white/40">Empty stream.</p>
                 </div>
               )}
             </div>
@@ -434,47 +434,47 @@ export const Profile: React.FC = () => {
             <div className="space-y-16">
               {/* BIO Section */}
               <section>
-                <h3 className="small-caps text-white/20 mb-8 pb-4 border-b border-white/5">Biography</h3>
+                <h3 className="font-medium uppercase tracking-wider text-[11px] text-white/60 mb-6 pb-4 border-b border-white/10">Biography</h3>
                 {user.bio ? (
-                   <p className="text-lg text-white/60 leading-relaxed font-serif italic">
+                   <p className="text-base text-white/80 leading-relaxed font-normal">
                       "{user.bio}"
                    </p>
                 ) : (
-                   <p className="text-sm italic text-white/10 font-serif">A mysterious critic with no bio captured yet...</p>
+                   <p className="text-sm text-white/40 font-normal">A mysterious critic with no bio captured yet...</p>
                 )}
               </section>
 
               {/* CUISINES Section */}
               <section>
-                <h3 className="font-black uppercase tracking-widest text-[12px] text-white/40 mb-8 pb-4 border-b-2 border-[#333333]">Expertise</h3>
+                <h3 className="font-medium uppercase tracking-wider text-[11px] text-white/60 mb-6 pb-4 border-b border-white/10">Expertise</h3>
                 <div className="flex flex-wrap gap-3">
                   {(user.favoriteCuisines && user.favoriteCuisines.length > 0) ? (
                      user.favoriteCuisines.map((cuisine, idx) => (
-                      <span key={idx} className="font-black uppercase tracking-widest text-[10px] text-[#ccff00] px-4 py-1.5 border-2 border-[#333333] bg-[#111] hover:border-[#ccff00] transition-all cursor-default shadow-[2px_2px_0px_#ff00ff]">
+                      <span key={idx} className="bg-white/[0.03] border border-white/10 text-white rounded-full px-4 py-1.5 font-medium text-xs hover:bg-white/10 transition-all cursor-default">
                           {cuisine}
                       </span>
                      ))
                   ) : (
-                     <span className="font-black uppercase tracking-widest text-[10px] text-white/20">None added</span>
+                     <span className="text-[11px] font-medium text-white/40">None added</span>
                   )}
                 </div>
               </section>
 
               {/* STATS Section */}
               <section>
-                <h3 className="small-caps text-white/20 mb-8 pb-4 border-b border-white/5">Analytics</h3>
+                <h3 className="font-medium uppercase tracking-wider text-[11px] text-white/60 mb-6 pb-4 border-b border-white/10">Analytics</h3>
                 <div className="space-y-6">
                    <div className="flex justify-between items-end">
-                      <span className="small-caps text-[10px] text-white/20 tracking-normal">Mean Rating</span>
-                      <span className="text-2xl font-extrabold text-white italic tracking-tighter">
+                      <span className="font-medium tracking-wide text-xs text-white/40">Mean Rating</span>
+                      <span className="text-2xl font-semibold text-white tracking-tight">
                           {reviews.length > 0 
                              ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
                              : "0.0"}
                       </span>
                    </div>
                    <div className="flex justify-between items-end">
-                      <span className="small-caps text-[10px] text-white/20 tracking-normal">Primary Territory</span>
-                      <span className="text-xl font-bold text-white/80 italic tracking-tight">
+                      <span className="font-medium tracking-wide text-xs text-white/40">Primary Territory</span>
+                      <span className="text-xl font-medium text-white/80 tracking-tight">
                           {(() => {
                              if (reviews.length === 0) return "N/A";
                              const cities = reviews.map(r => {
@@ -511,7 +511,7 @@ export const Profile: React.FC = () => {
             {reviews.length > 0 && (
                <div className="mt-16 pt-8 border-t border-white/5 max-w-2xl mx-auto w-full px-4">
                   <div className="text-center mb-6">
-                     <h3 className="text-xs md:text-sm uppercase tracking-[0.4em] font-black text-white/60">Ratings Distribution</h3>
+                     <h3 className="text-xs md:text-sm font-medium tracking-widest uppercase text-white/60">Ratings Distribution</h3>
                   </div>
                   <RatingGraph reviews={reviews} />
                </div>
@@ -539,15 +539,15 @@ export const Profile: React.FC = () => {
                   <Link
                     key={rest.id}
                     to={`/restaurant/${rest.id}`}
-                    className="group bg-zinc-900 border border-white/5 rounded-2xl overflow-hidden hover:border-white/20 transition-all p-4 flex gap-4"
+                    className="group bg-white/[0.02] border border-white/10 rounded-2xl overflow-hidden hover:border-white/30 transition-all p-4 flex gap-4"
                   >
                     <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-white/10">
                       <img loading="lazy" src={rest.image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
-                      <h3 className="font-bold text-white group-hover:text-orange-500 transition-colors truncate">{rest.name}</h3>
+                      <h3 className="font-semibold text-white group-hover:text-white/80 transition-colors truncate">{rest.name}</h3>
                       <p className="text-[10px] uppercase tracking-widest text-white/40 mt-1">{rest.cuisine}</p>
-                      <p className="text-[10px] text-white/20 mt-1 truncate">{rest.location}</p>
+                      <p className="text-[10px] text-white/40 mt-1 truncate">{rest.location}</p>
                     </div>
                   </Link>
                 ))}

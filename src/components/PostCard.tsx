@@ -151,7 +151,7 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
-      className="bg-[#111111] border-4 border-[#333333] rounded-none shadow-[8px_8px_0px_#ccff00] mb-12 group"
+      className="bg-white/[0.02] border border-white/10 rounded-3xl shadow-xl hover:-translate-y-1 hover:shadow-2xl hover:border-white/20 transition-all mb-12 group overflow-hidden"
     >
       {/* User Header */}
       <div className="p-4 flex items-center justify-between">
@@ -159,24 +159,24 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
           <img 
             src={review.userPhoto} 
             alt="" 
-            className="w-8 h-8 rounded-none border-2 border-white shadow-[2px_2px_0px_#ff00ff]"
+            className="w-10 h-10 rounded-full border border-white/20 shadow-sm"
           />
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-                <span className="text-xs md:text-sm font-black uppercase tracking-[0.2em] text-white/90">{review.userName}</span>
-                <div className="w-0.5 h-0.5 bg-white/20 rounded-full" />
+                <span className="text-sm font-medium text-white/90">{review.userName}</span>
+                <div className="w-1 h-1 bg-white/20 rounded-full" />
                 <button 
                   onClick={(e) => {
                       e.preventDefault();
                       handleToggleFollow();
                   }}
                   disabled={isUpdatingFollow || currentUser?.uid === review.userId}
-                  className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-colors ${isFollowing ? 'text-white/20' : 'text-[#00ffff] hover:text-white active:translate-y-0.5'}`}
+                  className={`text-[11px] font-medium transition-colors ${isFollowing ? 'text-white/40' : 'text-white hover:text-white/80 active:scale-95'}`}
                 >
                   {isFollowing ? 'Following' : 'Follow'}
                 </button>
             </div>
-            <span className="text-[9px] md:text-[10px] text-white/40 font-bold uppercase tracking-widest">
+            <span className="text-[10px] text-white/40 font-medium">
                 {formatDistanceToNow(parseFirebaseDate(review.createdAt), { addSuffix: true })}
             </span>
           </div>
@@ -186,9 +186,9 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
         </button>
       </div>
 
-      <div className="relative group/carousel">
+      <div className="relative group/carousel px-4">
         <div 
-          className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide aspect-square md:aspect-video bg-[#000000] border-y-4 border-[#333333]"
+          className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide aspect-square md:aspect-[4/5] bg-black/50 rounded-2xl border border-white/5"
           onScroll={(e) => {
             const target = e.currentTarget;
             const index = Math.round(target.scrollLeft / target.clientWidth);
@@ -208,8 +208,8 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
                 
                 {/* Individual Dish Name overlay on image (Subtle) */}
                 {review.dishes?.[i]?.name && (
-                   <div className="absolute bottom-4 left-4 right-4 text-center pointer-events-none">
-                      <span className="bg-black border-2 border-black shadow-[2px_2px_0px_#ccff00] px-3 py-1 rounded-none text-[10px] font-black uppercase tracking-widest text-[#ccff00]">
+                   <div className="absolute bottom-6 left-4 right-4 text-center pointer-events-none">
+                      <span className="bg-black/50 backdrop-blur-md border border-white/10 px-4 py-1.5 rounded-full text-xs font-medium text-white">
                           {review.dishes[i].name}
                       </span>
                    </div>
@@ -226,27 +226,27 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
 
         {/* 1/N Badge Layer */}
         {allImages.length > 1 && (
-          <div className="absolute top-4 right-14 bg-black border-2 border-[#333333] px-2.5 py-1 rounded-none shadow-[2px_2px_0px_#ff00ff] pointer-events-none">
-              <span className="text-[10px] font-black text-white">{currentSlide + 1} / {allImages.length}</span>
+          <div className="absolute top-6 right-20 bg-black/50 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full pointer-events-none">
+              <span className="text-xs font-medium text-white">{currentSlide + 1} / {allImages.length}</span>
           </div>
         )}
         
         {/* Restaurant Badge Layer */}
-        <div className="absolute top-4 left-4 flex flex-col gap-2">
-            <Link to={`/restaurant/${review.restaurantId}`} className="bg-[#ccff00] border-2 border-black shadow-[4px_4px_0px_#ff00ff] px-4 py-2 rounded-none inline-flex items-center gap-2 group/rest hover:translate-x-1 hover:-translate-y-1 hover:shadow-[6px_6px_0px_#ff00ff] transition-all">
-                <span className="text-xs md:text-sm font-black uppercase tracking-[0.2em] text-black transition-colors">{review.restaurantName}</span>
+        <div className="absolute top-6 left-8 flex flex-col gap-2">
+            <Link to={`/restaurant/${review.restaurantId}`} className="bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full inline-flex items-center gap-2 group/rest hover:bg-black/60 transition-all shadow-lg">
+                <span className="text-sm font-medium text-white transition-colors">{review.restaurantName}</span>
             </Link>
         </div>
 
         {/* Global Rating Overlay */}
-        <div className="absolute top-4 right-4 bg-[#000000] border-2 border-[#333333] shadow-[2px_2px_0px_#00ffff] p-2 rounded-none">
-            <div className="flex items-center gap-0.5 text-[#00ffff]">
+        <div className="absolute top-6 right-8 bg-black/50 backdrop-blur-md border border-white/10 px-3 py-2 rounded-full shadow-lg">
+            <div className="flex items-center gap-1">
                 {[...Array(5)].map((_, i) => (
                     <Star 
                         key={i} 
-                        size={10} 
+                        size={12} 
                         fill={i < review.rating ? "currentColor" : "none"}
-                        className={i < review.rating ? "" : "text-white/20"}
+                        className={i < review.rating ? "text-white" : "text-white/20"}
                     />
                 ))}
             </div>
@@ -258,8 +258,8 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
             {allImages.map((_, i) => (
               <div 
                 key={i}
-                className={`w-1.5 h-1.5 rounded-none transition-all duration-300 ${
-                  i === currentSlide ? "bg-[#ccff00] w-3 border border-black shadow-[1px_1px_0px_#ff00ff]" : "bg-white/40"
+                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                  i === currentSlide ? "bg-white w-4" : "bg-white/40"
                 }`}
               />
             ))}
@@ -272,25 +272,25 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
         <div className="flex items-center gap-6 mb-4">
            <button 
              onClick={handleLike}
-             className={`flex items-center gap-2 transition-all ${hasLiked ? 'text-[#ff00ff]' : 'text-white/40 hover:text-[#ff00ff]'}`}
+             className={`flex items-center gap-2 transition-all ${hasLiked ? 'text-rose-500' : 'text-white/40 hover:text-rose-500'}`}
            >
-             <Heart size={22} className={hasLiked ? "fill-[#ff00ff]" : ""} />
-             <span className="text-xs font-black">{totalLikes}</span>
+             <Heart size={20} className={hasLiked ? "fill-rose-500" : ""} />
+             <span className="text-xs font-medium">{totalLikes}</span>
            </button>
            <button 
              onClick={() => setIsCommentModalOpen(true)}
              className="flex items-center gap-2 text-white/40 hover:text-white transition-all"
            >
-             <MessageSquare size={22} className={comments.length > 0 ? "text-white/80" : ""} />
-             <span className="text-xs font-black">{comments.length}</span>
-             <span className="text-[10px] font-black uppercase tracking-widest ml-1 hidden md:inline">Discuss</span>
+             <MessageSquare size={20} className={comments.length > 0 ? "text-white/80" : ""} />
+             <span className="text-xs font-medium">{comments.length}</span>
+             <span className="text-[11px] font-medium tracking-wide ml-1 hidden md:inline">Discuss</span>
            </button>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-3">
             <div className="flex items-baseline gap-2">
-                <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-white shrink-0 hover:text-[#00ffff] transition-colors cursor-pointer">{review.userName}</span>
-                <p className="text-sm md:text-base font-bold text-white/80 leading-relaxed max-w-lg">
+                <span className="text-sm font-semibold text-white shrink-0 hover:text-white/80 transition-colors cursor-pointer">{review.userName}</span>
+                <p className="text-sm text-white/80 font-normal leading-relaxed max-w-xl">
                    {review.content}
                 </p>
             </div>
@@ -298,17 +298,17 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
             {review.dishes && review.dishes.length > 0 && (
                 <div className="flex flex-wrap gap-2 pt-2">
                     {review.dishes.map((dish, i) => (
-                        <div key={i} className="flex items-center gap-1.5 bg-[#000000] border-2 border-[#333333] shadow-[2px_2px_0px_#00ffff] px-3 py-1 rounded-none hover:-translate-y-0.5 hover:border-[#00ffff] transition-all">
-                            <span className="text-[10px] md:text-xs uppercase font-black tracking-widest text-[#00ffff]">
+                        <div key={i} className="flex items-center gap-1.5 bg-white/5 border border-white/10 px-4 py-1.5 rounded-full hover:bg-white/10 transition-all">
+                            <span className="text-xs font-medium text-white tracking-wide">
                                 {dish.name}
                             </span>
-                            <div className="flex items-center gap-0.5 ml-1 border-l-2 border-[#333333] pl-1.5">
+                            <div className="flex items-center gap-0.5 ml-2 border-l border-white/20 pl-2">
                                 {[...Array(5)].map((_, si) => (
                                     <Star 
                                         key={si} 
-                                        size={8} 
-                                        fill={si < (dish.rating || 0) ? "#ccff00" : "none"}
-                                        className={si < (dish.rating || 0) ? "text-[#ccff00]" : "text-white/20"}
+                                        size={10} 
+                                        fill={si < (dish.rating || 0) ? "white" : "none"}
+                                        className={si < (dish.rating || 0) ? "text-white" : "text-white/20"}
                                     />
                                 ))}
                             </div>
@@ -318,9 +318,9 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
             )}
         </div>
 
-        <div className="mt-6 pt-4 border-t-2 border-[#333333] flex items-center gap-2 text-[#00ffff]">
+        <div className="mt-6 pt-4 border-t border-white/10 flex items-center gap-2 text-white/40">
             <MapPin size={12} />
-            <span className="text-[9px] uppercase font-black tracking-widest text-white/40">{review.city || review.restaurantLocation || "Nearby Spot"}</span>
+            <span className="text-[11px] font-medium tracking-wide">{review.city || review.restaurantLocation || "Nearby Spot"}</span>
         </div>
       </div>
 

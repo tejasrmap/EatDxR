@@ -87,25 +87,25 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-[300] bg-black border-b-4 border-[#333333] h-16 transition-all">
+      <nav className="fixed top-0 left-0 right-0 z-[300] bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5 h-16 transition-all">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-full flex items-center justify-between">
           {/* Logo Cluster */}
           <Link to="/" className="flex items-center gap-2 group shrink-0">
             <div className="logo-text flex items-baseline tracking-tighter">
-              <span className="font-black text-white text-3xl tracking-tight uppercase" style={{ textShadow: '3px 3px 0px #00ffff' }}>MAD</span>
-              <span className="font-black bg-[#ff00ff] text-black px-1.5 py-0.5 text-2xl uppercase ml-1 border-2 border-black shadow-[3px_3px_0px_#00ffff]">EATER</span>
+              <span className="font-bold text-white text-2xl tracking-tight uppercase">MAD</span>
+              <span className="font-bold text-white/50 text-2xl tracking-tight uppercase">EATER</span>
             </div>
           </Link>
           
           {/* Desktop Central Navigation */}
           <div className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
-            <Link to="/restaurants" className="font-black text-white/40 uppercase tracking-widest text-[10px] hover:text-[#ccff00] hover:-translate-y-0.5 transition-transform">
+            <Link to="/restaurants" className="font-medium text-white/40 text-sm hover:text-white transition-colors">
               Restaurants
             </Link>
-            <Link to="/critics" className="font-black text-white/40 uppercase tracking-widest text-[10px] hover:text-[#ccff00] hover:-translate-y-0.5 transition-transform">
+            <Link to="/critics" className="font-medium text-white/40 text-sm hover:text-white transition-colors">
               Critics
             </Link>
-            <Link to="/journal" className="font-black text-white/40 uppercase tracking-widest text-[10px] hover:text-[#ccff00] hover:-translate-y-0.5 transition-transform">
+            <Link to="/journal" className="font-medium text-white/40 text-sm hover:text-white transition-colors">
               Journal
             </Link>
           </div>
@@ -127,10 +127,10 @@ export function Navbar() {
                 <div className="hidden md:block relative">
                   <button
                     onClick={() => setShowActionMenu(!showActionMenu)}
-                    className="w-10 h-10 flex items-center justify-center bg-[#ccff00] text-black border-2 border-black shadow-[3px_3px_0px_#ff00ff] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0px_#ff00ff] transition-all group"
+                    className="w-9 h-9 flex items-center justify-center bg-white text-black rounded-full hover:scale-105 transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] group"
                     title="Create"
                   >
-                    <Plus size={24} className={`transition-transform ${showActionMenu ? "rotate-45" : ""}`} />
+                    <Plus size={20} className={`transition-transform ${showActionMenu ? "rotate-45" : ""}`} />
                   </button>
 
                   <AnimatePresence>
@@ -140,7 +140,7 @@ export function Navbar() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.98 }}
                         transition={{ type: 'spring', stiffness: 500, damping: 45 }}
-                        className="absolute top-full right-0 mt-3 w-56 bg-[#111111] border-2 border-[#333333] shadow-[4px_4px_0px_#ff00ff] py-3 z-[350] overflow-hidden will-change-transform"
+                        className="absolute top-full right-0 mt-3 w-56 bg-[#0a0a0a] border border-white/10 shadow-2xl py-3 rounded-2xl z-[350] overflow-hidden will-change-transform"
                       >
                         <button
                           onClick={() => { setIsReelModalOpen(true); setShowActionMenu(false); }}
@@ -156,10 +156,10 @@ export function Navbar() {
                           onClick={() => { setIsLogModalOpen(true); setShowActionMenu(false); }}
                           className="w-full flex items-center gap-4 px-6 py-3 hover:bg-white/5 transition-all text-xs font-bold uppercase tracking-widest text-white group"
                         >
-                          <div className="w-8 h-8 rounded-xl bg-[#00e054]/10 flex items-center justify-center group-hover:bg-[#00e054]/20 transition-colors">
-                            <Plus size={20} className="text-[#00e054]" />
+                          <div className="w-8 h-8 rounded-xl bg-green-500/10 flex items-center justify-center group-hover:bg-green-500/20 transition-colors">
+                            <Plus size={20} className="text-green-500" />
                           </div>
-                          <span>Culinary Log</span>
+                          <span className="font-medium tracking-normal text-sm">Culinary Log</span>
                         </button>
                       </motion.div>
                     )}
@@ -171,7 +171,7 @@ export function Navbar() {
                   <div className="relative">
                     <button
                       onClick={() => { setShowNotifMenu(!showNotifMenu); setShowUserMenu(false); }}
-                      className="p-2 text-white/40 hover:text-[#ccff00] transition-transform hover:-translate-y-0.5 relative"
+                      className="p-2 text-white/40 hover:text-white transition-transform hover:-translate-y-0.5 relative"
                     >
                       <Bell size={18} className={unreadCount > 0 ? "text-white" : ""} />
                       {unreadCount > 0 && (
@@ -188,10 +188,10 @@ export function Navbar() {
                           animate={{ opacity: 1, y: 0 }} 
                           exit={{ opacity: 0, y: 10 }}
                           transition={{ type: 'spring', stiffness: 500, damping: 45 }}
-                          className="absolute right-[-60px] md:right-0 mt-3 w-[300px] bg-[#111111] border-2 border-[#333333] shadow-[4px_4px_0px_#00ffff] z-[400] max-h-96 flex flex-col overflow-hidden will-change-transform"
+                          className="absolute right-[-60px] md:right-0 mt-3 w-[300px] bg-[#0a0a0a] border border-white/10 shadow-2xl rounded-2xl z-[400] max-h-96 flex flex-col overflow-hidden will-change-transform"
                         >
-                          <div className="p-4 border-b border-white/10">
-                            <span className="text-[10px] uppercase font-black tracking-widest text-[#00e054]">Activity</span>
+                          <div className="p-4 border-b border-white/5">
+                            <span className="text-[10px] uppercase font-bold tracking-widest text-white/40">Activity</span>
                           </div>
                           <div className="overflow-y-auto flex-1 p-2 space-y-1">
                             {notifications.length === 0 ? (
@@ -216,7 +216,7 @@ export function Navbar() {
                   <div className="relative">
                     <button
                       onClick={() => { setShowUserMenu(!showUserMenu); setShowNotifMenu(false); }}
-                      className="w-8 h-8 rounded-none overflow-hidden border-2 border-white hover:border-[#ccff00] shadow-[2px_2px_0px_#00ffff] transition-all active:translate-y-0.5"
+                      className="w-8 h-8 rounded-full overflow-hidden border border-white/20 hover:border-white transition-all active:scale-95"
                     >
                       <img src={dishdUser?.photoURL || user.photoURL || ""} alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     </button>
@@ -228,15 +228,15 @@ export function Navbar() {
                           animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
                           exit={{ opacity: 0, y: 20, scale: 0.95, filter: 'blur(10px)' }}
                           transition={{ type: 'spring', stiffness: 500, damping: 45 }}
-                          className="absolute right-0 mt-3 w-52 bg-[#111111] border-2 border-[#333333] shadow-[4px_4px_0px_#ccff00] py-2 z-[400] will-change-transform"
+                          className="absolute right-0 mt-3 w-52 bg-[#0a0a0a] border border-white/10 shadow-2xl rounded-2xl py-2 z-[400] will-change-transform"
                         >
-                          <Link to={`/profile/${dishdUser?.username || user.uid}`} className="flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white" onClick={() => setShowUserMenu(false)}>
-                            <User size={14} className="text-[#00e054]" /> Profile
+                          <Link to={`/profile/${dishdUser?.username || user.uid}`} className="flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors text-sm font-medium text-white/60 hover:text-white" onClick={() => setShowUserMenu(false)}>
+                            <User size={14} className="text-white/60" /> Profile
                           </Link>
-                          <button onClick={() => { setIsSettingsOpen(true); setShowUserMenu(false); }} className="w-full flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white">
-                            <Settings size={14} className="text-orange-500" /> Settings
+                          <button onClick={() => { setIsSettingsOpen(true); setShowUserMenu(false); }} className="w-full flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors text-sm font-medium text-white/60 hover:text-white">
+                            <Settings size={14} className="text-white/60" /> Settings
                           </button>
-                          <button onClick={() => { logout(); setShowUserMenu(false); }} className="w-full flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors text-[10px] font-black uppercase tracking-widest text-rose-500">
+                          <button onClick={() => { logout(); setShowUserMenu(false); }} className="w-full flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors text-sm font-medium text-rose-500">
                             <LogOut size={14} /> Sign Out
                           </button>
                         </motion.div>
@@ -248,9 +248,9 @@ export function Navbar() {
             ) : (
               <button 
                 onClick={login}
-                className="bg-[#ccff00] text-black text-[10px] font-black uppercase tracking-widest px-5 py-2.5 border-2 border-black shadow-[2px_2px_0px_#ff00ff] hover:translate-y-0.5 hover:translate-x-0.5 hover:shadow-[1px_1px_0px_#ff00ff] transition-all"
+                className="bg-white text-black text-xs font-medium px-6 py-2 rounded-full hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all"
               >
-                In
+                Sign In
               </button>
             )}
           </div>

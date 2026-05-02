@@ -11,24 +11,24 @@ export function Layout({ children }: LayoutProps) {
   const isReelsMode = new URLSearchParams(location.search).get('mode') === 'reels';
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-[#ccff00] selection:text-black">
+    <div className="min-h-screen bg-[#0a0a0a] text-white selection:bg-white/20 selection:text-white">
       {!isReelsMode && <Navbar />}
       <main className={`${isReelsMode ? 'pt-0' : 'pt-16'} pb-28 md:pb-40 lg:pb-52`}>
         {children}
       </main>
 
       {!isReelsMode && (
-        <footer className="border-t-4 border-[#333333] py-16 mt-20 bg-[#111111]">
+        <footer className="border-t border-white/5 py-16 mt-20 bg-[#0a0a0a]">
           <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-12 text-center md:text-left">
             <div className="flex flex-col items-center md:items-start gap-6">
               <Link to="/" className="flex items-center gap-2 group cursor-pointer">
                 <div className="logo-text flex items-baseline tracking-tighter">
-                  <span className="font-black text-white text-3xl tracking-tight uppercase" style={{ textShadow: '3px 3px 0px #00ffff' }}>MAD</span>
-                  <span className="font-black bg-[#ff00ff] text-black px-1.5 py-0.5 text-2xl uppercase ml-1 border-2 border-black shadow-[3px_3px_0px_#00ffff]">EATER</span>
+                  <span className="font-bold text-white text-2xl tracking-tight uppercase">MAD</span>
+                  <span className="font-bold text-white/50 text-2xl tracking-tight uppercase">EATER</span>
                 </div>
               </Link>
-              <p className="max-w-xs text-sm text-white/60 font-bold uppercase tracking-widest">
-                The social network for food critics and lovers.
+              <p className="max-w-xs text-sm text-white/40 font-medium">
+                The network for food critics and lovers.
               </p>
             </div>
 
@@ -43,7 +43,7 @@ export function Layout({ children }: LayoutProps) {
                 <Link 
                   key={i} 
                   to={link.to} 
-                  className="font-black text-white/40 uppercase tracking-widest text-xs hover:text-[#ccff00] hover:-translate-y-1 transition-transform"
+                  className="font-medium text-white/40 text-sm hover:text-white transition-colors"
                 >
                   {link.label}
                 </Link>
@@ -51,9 +51,9 @@ export function Layout({ children }: LayoutProps) {
             </div>
           </div>
           
-          <div className="max-w-7xl mx-auto px-6 pt-12 mt-12 border-t-2 border-[#333333] flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="font-black text-[10px] tracking-widest uppercase text-white/40">© {new Date().getFullYear()} Madeater Global</p>
-            <p className="font-black text-[10px] tracking-widest uppercase text-[#ff00ff]">Made with passion by food lovers</p>
+          <div className="max-w-7xl mx-auto px-6 pt-12 mt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="font-medium text-xs text-white/40">© {new Date().getFullYear()} Madeater Global</p>
+            <p className="font-medium text-xs text-white/40">Made with passion by food lovers</p>
           </div>
         </footer>
       )}

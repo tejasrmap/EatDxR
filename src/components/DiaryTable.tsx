@@ -61,19 +61,19 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
   };
 
   return (
-    <div className="bg-[#111111] border-4 border-[#333333] shadow-[8px_8px_0px_#ccff00] rounded-none overflow-hidden mb-10 mr-2 md:mr-4">
+    <div className="bg-white/[0.02] border border-white/10 shadow-xl rounded-3xl overflow-hidden mb-10 mr-2 md:mr-4">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-[#000000] border-b-4 border-[#333333] text-[10px] uppercase tracking-widest text-white/40">
-              <th className="py-4 px-6 font-bold">Month</th>
-              <th className="py-4 px-6 font-bold">Day</th>
-              <th className="py-4 px-6 font-bold">Location</th>
-              <th className="py-4 px-6 font-bold">Restaurant</th>
-              <th className="py-4 px-6 font-bold">Dish</th>
-              {showUser && <th className="py-4 px-6 font-bold">Critic</th>}
-              <th className="py-4 px-6 font-bold text-center">Rating</th>
-              <th className="py-4 px-6 font-bold text-center">Like</th>
+            <tr className="bg-white/5 border-b border-white/10 text-[11px] font-medium tracking-wider uppercase text-white/60">
+              <th className="py-4 px-6">Month</th>
+              <th className="py-4 px-6">Day</th>
+              <th className="py-4 px-6">Location</th>
+              <th className="py-4 px-6">Restaurant</th>
+              <th className="py-4 px-6">Dish</th>
+              {showUser && <th className="py-4 px-6">Critic</th>}
+              <th className="py-4 px-6 text-center">Rating</th>
+              <th className="py-4 px-6 text-center">Like</th>
               <th className="py-4 px-6"></th>
             </tr>
           </thead>
@@ -88,13 +88,13 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                   key={review.id} 
                   id={`review-${review.id}`}
                   onClick={() => setSelectedReview(review)}
-                  className={`border-b border-white/5 hover:bg-white/5 transition-colors group cursor-pointer ${i % 2 === 0 ? 'bg-black/10' : ''}`}
+                  className="border-b border-white/5 hover:bg-white/5 transition-colors group cursor-pointer bg-transparent"
                 >
-                  <td className="py-4 px-6 font-black uppercase tracking-widest text-white/60 text-xs">{month}</td>
-                  <td className="py-4 px-6 font-black text-white text-lg">{day}</td>
+                  <td className="py-4 px-6 font-medium uppercase tracking-wider text-white/60 text-xs">{month}</td>
+                  <td className="py-4 px-6 font-semibold text-white text-lg">{day}</td>
                   <td className="py-4 px-6">
-                    <div className="flex items-center gap-1.5 text-white/40 text-[10px] uppercase tracking-widest font-black">
-                      <MapPin size={12} className="text-[#00ffff]" />
+                    <div className="flex items-center gap-1.5 text-white/40 text-[11px] font-medium">
+                      <MapPin size={12} className="text-white/20" />
                       <span className="truncate max-w-[100px]">{review.city || "Nearby"}</span>
                     </div>
                   </td>
@@ -102,7 +102,7 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                     <Link 
                       to={`/restaurant/${review.restaurantId}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="font-black uppercase tracking-widest text-white hover:text-[#ff00ff] focus:outline-none transition-colors line-clamp-1 text-xs"
+                      className="font-medium text-white hover:text-white/80 focus:outline-none transition-colors line-clamp-1 text-sm"
                     >
                       {review.restaurantName}
                     </Link>
@@ -110,11 +110,11 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-2">
                       {review.dishes?.[0]?.image && (
-                        <div className="w-8 h-8 rounded-none shrink-0 overflow-hidden border-2 border-[#333333] shadow-[2px_2px_0px_#ccff00]">
+                        <div className="w-8 h-8 rounded-lg shrink-0 overflow-hidden border border-white/20 shadow-sm">
                           <img loading="lazy" src={review.dishes[0].image} className="w-full h-full object-cover" />
                         </div>
                       )}
-                      <span className="text-white/60 font-black uppercase tracking-widest line-clamp-1 text-[10px]">
+                      <span className="text-white/80 font-medium line-clamp-1 text-sm">
                         {review.dishes?.[0]?.name}
                         {review.dishes && review.dishes.length > 1 && ` & ${review.dishes.length - 1} more`}
                       </span>
@@ -129,23 +129,23 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                       >
                         <img 
                           src={review.userPhoto}
-                          className="w-6 h-6 rounded-none border-2 border-white transition-all shadow-[2px_2px_0px_#ff00ff]"
+                          className="w-6 h-6 rounded-full border border-white/20 transition-all shadow-sm group-hover/user:border-white"
                           loading="lazy"
                         />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-white/40 group-hover/user:text-[#ff00ff] transition-colors truncate max-w-[120px]">
+                        <span className="text-[11px] font-medium text-white/60 group-hover/user:text-white transition-colors truncate max-w-[120px]">
                           {review.userName}
                         </span>
                       </Link>
                     </td>
                   )}
                   <td className="py-4 px-6 text-center">
-                    <div className="flex items-center justify-center gap-0.5 text-[#ccff00]">
+                    <div className="flex items-center justify-center gap-0.5 text-white">
                       {[...Array(5)].map((_, j) => (
                         <Star 
                           key={j} 
                           size={12} 
                           fill={j < review.rating ? "currentColor" : "none"} 
-                          className={j < review.rating ? "text-[#ccff00]" : "text-white/10"} 
+                          className={j < review.rating ? "text-white" : "text-white/20"} 
                         />
                       ))}
                     </div>
@@ -156,9 +156,9 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                         e.stopPropagation();
                         if (!currentUser) login();
                       }}
-                      className="text-white/20 hover:text-[#ff00ff] transition-colors group/btn inline-flex"
+                      className="text-white/40 hover:text-rose-500 transition-colors group/btn inline-flex"
                     >
-                      <Heart size={16} className={`group-hover/btn:fill-[#ff00ff] ${review.likes > 0 ? "fill-[#ff00ff] text-[#ff00ff]" : ""}`} />
+                      <Heart size={16} className={`group-hover/btn:fill-rose-500 ${review.likes > 0 ? "fill-rose-500 text-rose-500" : ""}`} />
                     </button>
                   </td>
                   <td className="py-4 px-6 text-right">
@@ -170,7 +170,7 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                             e.preventDefault();
                             setEditingReview(review);
                           }}
-                          className="text-white/20 hover:text-[#00ffff] transition-colors cursor-pointer"
+                          className="text-white/40 hover:text-white transition-colors cursor-pointer"
                           title="Edit"
                         >
                           <Edit2 size={16} />
@@ -181,7 +181,7 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                             e.preventDefault();
                             handleDelete(review);
                           }}
-                          className="text-white/20 hover:text-[#ff00ff] transition-colors cursor-pointer"
+                          className="text-white/40 hover:text-rose-500 transition-colors cursor-pointer"
                           title="Delete"
                         >
                           <Trash2 size={16} />
@@ -195,8 +195,8 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
             
             {reviews.length === 0 && (
               <tr>
-                <td colSpan={showUser ? 8 : 7} className="py-20 text-center border-4 border-dashed border-[#333333]">
-                  <p className="text-white/40 font-black uppercase tracking-widest">No logs found.</p>
+                <td colSpan={showUser ? 8 : 7} className="py-20 text-center border border-dashed border-white/10">
+                  <p className="text-white/40 font-medium text-sm">No logs found.</p>
                 </td>
               </tr>
             )}
