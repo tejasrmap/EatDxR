@@ -151,7 +151,7 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
-      className="bg-[#14181c] border border-white/5 rounded-3xl overflow-hidden shadow-2xl mb-12 group"
+      className="bg-[#111111] border-4 border-[#333333] rounded-none shadow-[8px_8px_0px_#ccff00] mb-12 group"
     >
       {/* User Header */}
       <div className="p-4 flex items-center justify-between">
@@ -159,7 +159,7 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
           <img 
             src={review.userPhoto} 
             alt="" 
-            className="w-8 h-8 rounded-full border border-white/10"
+            className="w-8 h-8 rounded-none border-2 border-white shadow-[2px_2px_0px_#ff00ff]"
           />
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
@@ -171,7 +171,7 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
                       handleToggleFollow();
                   }}
                   disabled={isUpdatingFollow || currentUser?.uid === review.userId}
-                  className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-colors ${isFollowing ? 'text-white/20' : 'text-[#00e054] hover:text-white active:scale-95'}`}
+                  className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-colors ${isFollowing ? 'text-white/20' : 'text-[#00ffff] hover:text-white active:translate-y-0.5'}`}
                 >
                   {isFollowing ? 'Following' : 'Follow'}
                 </button>
@@ -186,10 +186,9 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
         </button>
       </div>
 
-      {/* Primary Media: Instagram-Style Carousel */}
       <div className="relative group/carousel">
         <div 
-          className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide aspect-square md:aspect-video bg-zinc-900"
+          className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide aspect-square md:aspect-video bg-[#000000] border-y-4 border-[#333333]"
           onScroll={(e) => {
             const target = e.currentTarget;
             const index = Math.round(target.scrollLeft / target.clientWidth);
@@ -210,7 +209,7 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
                 {/* Individual Dish Name overlay on image (Subtle) */}
                 {review.dishes?.[i]?.name && (
                    <div className="absolute bottom-4 left-4 right-4 text-center pointer-events-none">
-                      <span className="bg-black/60 backdrop-blur-3xl border border-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-[#00e054]">
+                      <span className="bg-black border-2 border-black shadow-[2px_2px_0px_#ccff00] px-3 py-1 rounded-none text-[10px] font-black uppercase tracking-widest text-[#ccff00]">
                           {review.dishes[i].name}
                       </span>
                    </div>
@@ -227,21 +226,21 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
 
         {/* 1/N Badge Layer */}
         {allImages.length > 1 && (
-          <div className="absolute top-4 right-14 bg-black/40 backdrop-blur-3xl border border-white/10 px-2.5 py-1 rounded-full pointer-events-none">
+          <div className="absolute top-4 right-14 bg-black border-2 border-[#333333] px-2.5 py-1 rounded-none shadow-[2px_2px_0px_#ff00ff] pointer-events-none">
               <span className="text-[10px] font-black text-white">{currentSlide + 1} / {allImages.length}</span>
           </div>
         )}
         
         {/* Restaurant Badge Layer */}
         <div className="absolute top-4 left-4 flex flex-col gap-2">
-            <Link to={`/restaurant/${review.restaurantId}`} className="bg-black/60 backdrop-blur-3xl border border-white/10 px-4 py-2 rounded-full inline-flex items-center gap-2 group/rest transform hover:translate-x-1 transition-transform">
-                <span className="text-xs md:text-sm font-black uppercase tracking-[0.2em] text-[#00e054] group-hover/rest:text-white transition-colors">{review.restaurantName}</span>
+            <Link to={`/restaurant/${review.restaurantId}`} className="bg-[#ccff00] border-2 border-black shadow-[4px_4px_0px_#ff00ff] px-4 py-2 rounded-none inline-flex items-center gap-2 group/rest hover:translate-x-1 hover:-translate-y-1 hover:shadow-[6px_6px_0px_#ff00ff] transition-all">
+                <span className="text-xs md:text-sm font-black uppercase tracking-[0.2em] text-black transition-colors">{review.restaurantName}</span>
             </Link>
         </div>
 
         {/* Global Rating Overlay */}
-        <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-3xl border border-white/10 p-2 rounded-full">
-            <div className="flex items-center gap-0.5 text-[#00e054]">
+        <div className="absolute top-4 right-4 bg-[#000000] border-2 border-[#333333] shadow-[2px_2px_0px_#00ffff] p-2 rounded-none">
+            <div className="flex items-center gap-0.5 text-[#00ffff]">
                 {[...Array(5)].map((_, i) => (
                     <Star 
                         key={i} 
@@ -259,8 +258,8 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
             {allImages.map((_, i) => (
               <div 
                 key={i}
-                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                  i === currentSlide ? "bg-[#00e054] w-3" : "bg-white/20"
+                className={`w-1.5 h-1.5 rounded-none transition-all duration-300 ${
+                  i === currentSlide ? "bg-[#ccff00] w-3 border border-black shadow-[1px_1px_0px_#ff00ff]" : "bg-white/40"
                 }`}
               />
             ))}
@@ -273,9 +272,9 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
         <div className="flex items-center gap-6 mb-4">
            <button 
              onClick={handleLike}
-             className={`flex items-center gap-2 transition-all ${hasLiked ? 'text-rose-500' : 'text-white/40 hover:text-white'}`}
+             className={`flex items-center gap-2 transition-all ${hasLiked ? 'text-[#ff00ff]' : 'text-white/40 hover:text-[#ff00ff]'}`}
            >
-             <Heart size={22} className={hasLiked ? "fill-rose-500" : ""} />
+             <Heart size={22} className={hasLiked ? "fill-[#ff00ff]" : ""} />
              <span className="text-xs font-black">{totalLikes}</span>
            </button>
            <button 
@@ -290,26 +289,26 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
 
         <div className="space-y-2">
             <div className="flex items-baseline gap-2">
-                <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-white shrink-0">{review.userName}</span>
-                <p className="text-sm md:text-base font-medium text-white/80 leading-relaxed max-w-lg">
-                   "{review.content}"
+                <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-white shrink-0 hover:text-[#00ffff] transition-colors cursor-pointer">{review.userName}</span>
+                <p className="text-sm md:text-base font-bold text-white/80 leading-relaxed max-w-lg">
+                   {review.content}
                 </p>
             </div>
             
             {review.dishes && review.dishes.length > 0 && (
                 <div className="flex flex-wrap gap-2 pt-2">
                     {review.dishes.map((dish, i) => (
-                        <div key={i} className="flex items-center gap-1.5 bg-[#00e054]/5 px-3 py-1 rounded-full border border-[#00e054]/10">
-                            <span className="text-[10px] md:text-xs uppercase font-black tracking-widest text-[#00e054]/60">
+                        <div key={i} className="flex items-center gap-1.5 bg-[#000000] border-2 border-[#333333] shadow-[2px_2px_0px_#00ffff] px-3 py-1 rounded-none hover:-translate-y-0.5 hover:border-[#00ffff] transition-all">
+                            <span className="text-[10px] md:text-xs uppercase font-black tracking-widest text-[#00ffff]">
                                 {dish.name}
                             </span>
-                            <div className="flex items-center gap-0.5 ml-1 border-l border-white/10 pl-1.5">
+                            <div className="flex items-center gap-0.5 ml-1 border-l-2 border-[#333333] pl-1.5">
                                 {[...Array(5)].map((_, si) => (
                                     <Star 
                                         key={si} 
                                         size={8} 
-                                        fill={si < (dish.rating || 0) ? "#00e054" : "none"}
-                                        className={si < (dish.rating || 0) ? "text-[#00e054]" : "text-white/10"}
+                                        fill={si < (dish.rating || 0) ? "#ccff00" : "none"}
+                                        className={si < (dish.rating || 0) ? "text-[#ccff00]" : "text-white/20"}
                                     />
                                 ))}
                             </div>
@@ -319,9 +318,9 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
             )}
         </div>
 
-        <div className="mt-6 pt-4 border-t border-white/5 flex items-center gap-2 text-white/20">
+        <div className="mt-6 pt-4 border-t-2 border-[#333333] flex items-center gap-2 text-[#00ffff]">
             <MapPin size={12} />
-            <span className="text-[9px] uppercase font-bold tracking-widest">{review.city || review.restaurantLocation || "Nearby Spot"}</span>
+            <span className="text-[9px] uppercase font-black tracking-widest text-white/40">{review.city || review.restaurantLocation || "Nearby Spot"}</span>
         </div>
       </div>
 

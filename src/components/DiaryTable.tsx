@@ -61,11 +61,11 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
   };
 
   return (
-    <div className="bg-zinc-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+    <div className="bg-[#111111] border-4 border-[#333333] shadow-[8px_8px_0px_#ccff00] rounded-none overflow-hidden mb-8">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-black/40 border-b border-white/10 text-[10px] uppercase tracking-widest text-white/40">
+            <tr className="bg-[#000000] border-b-4 border-[#333333] text-[10px] uppercase tracking-widest text-white/40">
               <th className="py-4 px-6 font-bold">Month</th>
               <th className="py-4 px-6 font-bold">Day</th>
               <th className="py-4 px-6 font-bold">Location</th>
@@ -90,11 +90,11 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                   onClick={() => setSelectedReview(review)}
                   className={`border-b border-white/5 hover:bg-white/5 transition-colors group cursor-pointer ${i % 2 === 0 ? 'bg-black/10' : ''}`}
                 >
-                  <td className="py-4 px-6 font-bold text-white/60 tracking-wider text-xs">{month}</td>
-                  <td className="py-4 px-6 font-bold text-white text-lg serif italic">{day}</td>
+                  <td className="py-4 px-6 font-black uppercase tracking-widest text-white/60 text-xs">{month}</td>
+                  <td className="py-4 px-6 font-black text-white text-lg">{day}</td>
                   <td className="py-4 px-6">
-                    <div className="flex items-center gap-1.5 text-white/40 text-[10px] uppercase tracking-widest">
-                      <MapPin size={12} className="text-orange-500" />
+                    <div className="flex items-center gap-1.5 text-white/40 text-[10px] uppercase tracking-widest font-black">
+                      <MapPin size={12} className="text-[#00ffff]" />
                       <span className="truncate max-w-[100px]">{review.city || "Nearby"}</span>
                     </div>
                   </td>
@@ -102,7 +102,7 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                     <Link 
                       to={`/restaurant/${review.restaurantId}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="font-bold text-white hover:text-orange-400 focus:outline-none focus:text-orange-400 transition-colors tracking-tight line-clamp-1"
+                      className="font-black uppercase tracking-widest text-white hover:text-[#ff00ff] focus:outline-none transition-colors line-clamp-1 text-xs"
                     >
                       {review.restaurantName}
                     </Link>
@@ -110,11 +110,11 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-2">
                       {review.dishes?.[0]?.image && (
-                        <div className="w-8 h-8 rounded shrink-0 overflow-hidden border border-white/10">
+                        <div className="w-8 h-8 rounded-none shrink-0 overflow-hidden border-2 border-[#333333] shadow-[2px_2px_0px_#ccff00]">
                           <img loading="lazy" src={review.dishes[0].image} className="w-full h-full object-cover" />
                         </div>
                       )}
-                      <span className="text-white/60 italic font-serif line-clamp-1 text-xs">
+                      <span className="text-white/60 font-black uppercase tracking-widest line-clamp-1 text-[10px]">
                         {review.dishes?.[0]?.name}
                         {review.dishes && review.dishes.length > 1 && ` & ${review.dishes.length - 1} more`}
                       </span>
@@ -129,23 +129,23 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                       >
                         <img 
                           src={review.userPhoto}
-                          className="w-6 h-6 rounded-full border border-white/10 transition-all"
+                          className="w-6 h-6 rounded-none border-2 border-white transition-all shadow-[2px_2px_0px_#ff00ff]"
                           loading="lazy"
                         />
-                        <span className="text-xs font-bold text-white/40 group-hover/user:text-white transition-colors truncate max-w-[120px]">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-white/40 group-hover/user:text-[#ff00ff] transition-colors truncate max-w-[120px]">
                           {review.userName}
                         </span>
                       </Link>
                     </td>
                   )}
                   <td className="py-4 px-6 text-center">
-                    <div className="flex items-center justify-center gap-0.5 text-orange-500">
+                    <div className="flex items-center justify-center gap-0.5 text-[#ccff00]">
                       {[...Array(5)].map((_, j) => (
                         <Star 
                           key={j} 
                           size={12} 
                           fill={j < review.rating ? "currentColor" : "none"} 
-                          className={j < review.rating ? "text-orange-500" : "text-white/10"} 
+                          className={j < review.rating ? "text-[#ccff00]" : "text-white/10"} 
                         />
                       ))}
                     </div>
@@ -156,9 +156,9 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                         e.stopPropagation();
                         if (!currentUser) login();
                       }}
-                      className="text-white/20 hover:text-orange-500 transition-colors group/btn inline-flex"
+                      className="text-white/20 hover:text-[#ff00ff] transition-colors group/btn inline-flex"
                     >
-                      <Heart size={16} className={`group-hover/btn:fill-orange-500 ${review.likes > 0 ? "fill-orange-500 text-orange-500" : ""}`} />
+                      <Heart size={16} className={`group-hover/btn:fill-[#ff00ff] ${review.likes > 0 ? "fill-[#ff00ff] text-[#ff00ff]" : ""}`} />
                     </button>
                   </td>
                   <td className="py-4 px-6 text-right">
@@ -170,7 +170,7 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                             e.preventDefault();
                             setEditingReview(review);
                           }}
-                          className="text-white/20 hover:text-white transition-colors cursor-pointer"
+                          className="text-white/20 hover:text-[#00ffff] transition-colors cursor-pointer"
                           title="Edit"
                         >
                           <Edit2 size={16} />
@@ -181,7 +181,7 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
                             e.preventDefault();
                             handleDelete(review);
                           }}
-                          className="text-white/20 hover:text-red-500 transition-colors cursor-pointer"
+                          className="text-white/20 hover:text-[#ff00ff] transition-colors cursor-pointer"
                           title="Delete"
                         >
                           <Trash2 size={16} />
@@ -195,8 +195,8 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
             
             {reviews.length === 0 && (
               <tr>
-                <td colSpan={showUser ? 8 : 7} className="py-20 text-center border-dashed border-white/10">
-                  <p className="text-white/40 italic serif">No logs found.</p>
+                <td colSpan={showUser ? 8 : 7} className="py-20 text-center border-4 border-dashed border-[#333333]">
+                  <p className="text-white/40 font-black uppercase tracking-widest">No logs found.</p>
                 </td>
               </tr>
             )}
