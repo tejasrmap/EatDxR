@@ -105,10 +105,10 @@ export const ReviewPoster: React.FC<ReviewPosterProps> = ({ review, id = "review
           </div>
         </div>
         <div className="flex flex-col items-end">
-          <span className="text-2xl font-black uppercase tracking-[0.4em] text-[#ccff00] mb-2 drop-shadow-md">Captured on</span>
-          <div className="flex items-center gap-2 italic">
-            <span className="font-black text-white text-5xl tracking-tighter uppercase drop-shadow-lg">Mad</span>
-            <div className="bg-[#ccff00] text-black px-3 py-1 rounded-lg font-black text-4xl tracking-widest -skew-x-12 uppercase shadow-2xl">Eater</div>
+          <span className="text-2xl font-black uppercase tracking-[0.4em] text-fuchsia-500 mb-2 drop-shadow-[1px_1px_0px_#00ffff]">Captured on</span>
+          <div className="flex items-center -rotate-3 mt-2">
+            <span className="font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-orange-500 text-6xl tracking-tighter" style={{ WebkitTextStroke: '2px #ff00ff', filter: 'drop-shadow(4px 4px 0px #00ffff)' }}>MAD</span>
+            <span className="font-black text-white text-3xl tracking-[0.2em] bg-black px-4 py-2 rounded-full border-2 border-[#ccff00] ml-3 shadow-[4px_4px_0px_#ff00ff] -translate-y-2">EATER</span>
           </div>
         </div>
       </div>

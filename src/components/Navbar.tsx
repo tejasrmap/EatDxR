@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Bell, User, LogOut, Settings, Plus, Flame, Film } from "lucide-react";
+import { Search, Bell, User, LogOut, Settings, Plus, Sparkles, Film } from "lucide-react";
 import { useState, useEffect } from "react";
 import { LogMealModal } from "./LogMealModal";
 import { ReelUploadModal } from "./ReelUploadModal";
@@ -90,13 +90,13 @@ export function Navbar() {
       <nav className="fixed top-0 left-0 right-0 z-[300] bg-black/40 backdrop-blur-3xl border-b border-white/5 h-16 transition-all">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-full flex items-center justify-between">
           {/* Logo Cluster */}
-          <Link to="/" className="flex items-center gap-3 group shrink-0">
-            <div className="relative flex items-center justify-center w-10 h-10 bg-[#ccff00] rounded-xl group-hover:rotate-180 transition-transform duration-700 shadow-[0_0_20px_rgba(204,255,0,0.3)]">
-              <Flame className="text-black w-6 h-6 fill-black" />
+          <Link to="/" className="flex items-center gap-2 group shrink-0">
+            <div className="relative flex items-center justify-center w-12 h-12 bg-gradient-to-br from-fuchsia-500 via-cyan-400 to-yellow-400 rounded-full group-hover:animate-spin shadow-[0_0_15px_rgba(255,0,255,0.5)] border-2 border-white/20">
+              <Sparkles className="text-black w-6 h-6 fill-white" />
             </div>
-            <div className="logo-text hidden sm:flex items-center gap-1 italic transition-all duration-500">
-              <span className="font-black text-white text-3xl tracking-tighter uppercase">Mad</span>
-              <div className="bg-[#ccff00] text-black px-2 py-0.5 rounded-md font-black text-xl tracking-widest -skew-x-12 uppercase group-hover:scale-110 transition-transform">Eater</div>
+            <div className="logo-text hidden sm:flex items-center -rotate-3 group-hover:rotate-2 transition-all duration-300 ml-1">
+              <span className="font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-orange-500 text-4xl tracking-tighter" style={{ WebkitTextStroke: '1px #ff00ff', filter: 'drop-shadow(3px 3px 0px #00ffff)' }}>MAD</span>
+              <span className="font-black text-white text-xl tracking-[0.2em] bg-black px-3 py-1 rounded-full border-2 border-[#ccff00] ml-2 shadow-[3px_3px_0px_#ff00ff] -translate-y-1">EATER</span>
             </div>
           </Link>
           
