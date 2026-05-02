@@ -91,7 +91,7 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-full flex items-center justify-between">
           {/* Logo Cluster */}
           <Link to="/" className="flex items-center gap-2 group shrink-0">
-            <div className="logo-text hidden sm:flex items-baseline tracking-tighter">
+            <div className="logo-text flex items-baseline tracking-tighter">
               <span className="font-black text-white text-3xl tracking-tight uppercase" style={{ textShadow: '3px 3px 0px #00ffff' }}>MAD</span>
               <span className="font-black bg-[#ff00ff] text-black px-1.5 py-0.5 text-2xl uppercase ml-1 border-2 border-black shadow-[3px_3px_0px_#00ffff]">EATER</span>
             </div>

@@ -120,7 +120,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, rev
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-black/80 backdrop-blur-md"
+          className="absolute inset-0 bg-black/90"
         />
 
         {/* Modal Content */}
@@ -129,15 +129,15 @@ export const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, rev
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: "100%", opacity: 0 }}
           transition={{ type: "spring", damping: 30, stiffness: 300, mass: 0.8 }}
-          className="relative w-full max-w-lg bg-[#0a0c0e]/90 backdrop-blur-2xl border-t md:border border-white/10 rounded-t-[2.5rem] md:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[75vh] md:h-[70vh] bottom-0"
+          className="relative w-full max-w-lg bg-[#111111] border-4 border-[#333333] rounded-none shadow-[8px_8px_0px_#ccff00] overflow-hidden flex flex-col h-[75vh] md:h-[70vh] bottom-0"
         >
           {/* Native Drag Handle */}
           <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1 bg-white/20 rounded-full z-50 md:hidden" />
 
           {/* Header: Slim & Professional */}
-          <div className="px-6 pt-10 pb-4 border-b border-white/5 bg-white/[0.01] flex items-center justify-between">
+          <div className="px-6 pt-10 pb-4 border-b-4 border-[#333333] bg-[#000000] flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500/20 to-orange-600/5 border border-orange-500/20 flex items-center justify-center text-orange-500/80">
+              <div className="w-8 h-8 rounded-none bg-[#ccff00] border-2 border-black shadow-[2px_2px_0px_#ff00ff] flex items-center justify-center text-black">
                 <MessageSquare size={16} />
               </div>
               <div className="flex flex-col">
@@ -147,7 +147,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, rev
             </div>
             <button 
               onClick={onClose}
-              className="w-10 h-10 flex items-center justify-center hover:bg-white/5 rounded-full transition-colors text-white/20 hover:text-white"
+              className="w-10 h-10 flex items-center justify-center hover:bg-[#ff00ff] rounded-none transition-colors text-white/40 hover:text-black border-2 border-transparent hover:border-black"
             >
               <X size={18} />
             </button>
@@ -165,11 +165,11 @@ export const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, rev
               </div>
             ) : comments.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-4">
-                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-white/10">
+                <div className="w-16 h-16 rounded-none bg-black border-4 border-[#333333] flex items-center justify-center text-[#ff00ff] shadow-[4px_4px_0px_#ccff00]">
                   <MessageSquare size={32} />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-bold text-white/60">No discussions yet</p>
+                  <p className="text-sm font-black uppercase tracking-widest text-white/60">No discussions yet</p>
                   <p className="text-[10px] uppercase tracking-widest text-white/20">Be the first to share your thoughts!</p>
                 </div>
               </div>
@@ -184,7 +184,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, rev
                 >
                   <img 
                     src={comment.userPhoto || `https://ui-avatars.com/api/?name=${comment.userName}&background=random`} 
-                    className="w-8 h-8 rounded-full border border-white/10 bg-zinc-900 object-cover" 
+                    className="w-8 h-8 rounded-none border-2 border-white shadow-[2px_2px_0px_#ff00ff] bg-black object-cover" 
                     alt="" 
                   />
                   <div className="flex-1 space-y-1.5 min-w-0">
@@ -192,18 +192,16 @@ export const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, rev
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-black uppercase tracking-wider text-white/90">{comment.userName}</span>
                         <div className="w-1 h-1 bg-white/10 rounded-full" />
-                        <span className="text-[8px] font-bold uppercase tracking-widest text-[#00e054] opacity-50">Local Guide</span>
+                        <span className="text-[8px] font-bold uppercase tracking-widest text-[#00ffff]">Local Guide</span>
                       </div>
                       <span className="text-[8px] font-bold uppercase tracking-widest text-white/20">
                         {comment.createdAt ? formatDistanceToNow(parseFirebaseDate(comment.createdAt), { addSuffix: true }) : "now"}
                       </span>
                     </div>
-                    <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 md:p-5 relative group-hover:bg-white/[0.05] transition-all backdrop-blur-sm">
-                        <p className="text-[13px] text-white/70 leading-relaxed font-medium">
+                    <div className="bg-[#000000] border-2 border-[#333333] rounded-none p-4 md:p-5 relative transition-all shadow-[2px_2px_0px_#00ffff] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#00ffff]">
+                        <p className="text-[13px] text-white/70 leading-relaxed font-bold">
                           {comment.content}
                         </p>
-                        {/* Interactive glow on bubble */}
-                        <div className="absolute -inset-0.5 bg-gradient-to-br from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity blur-xl -z-10" />
                     </div>
                   </div>
                 </motion.div>
@@ -212,20 +210,20 @@ export const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, rev
           </div>
 
           {/* Elite Bottom Dock: Unobstructed & Centered */}
-          <div className="px-4 pt-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] md:pb-8 bg-black/80 backdrop-blur-3xl border-t border-white/5">
-            <form onSubmit={handlePostComment} className="relative group">
+          <div className="px-4 pt-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] md:pb-8 bg-[#111111] border-t-4 border-[#333333]">
+            <form onSubmit={handlePostComment} className="relative group flex items-center gap-2">
               <input
                 type="text"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder={currentUser ? "Share your culinary thoughts..." : "Sign in to join the discussion"}
+                placeholder={currentUser ? "Share your thoughts..." : "Sign in to comment"}
                 disabled={!currentUser || isPosting}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl pl-6 pr-14 py-4 text-sm font-medium focus:outline-none focus:ring-2 ring-orange-500/50 transition-all text-white placeholder:text-white/20 disabled:opacity-50"
+                className="flex-1 bg-black border-4 border-[#333333] rounded-none px-4 py-4 text-[12px] font-black uppercase tracking-widest focus:outline-none focus:border-[#00ffff] transition-all text-white placeholder:text-white/40 disabled:opacity-50"
               />
               <button
                 type="submit"
                 disabled={!newComment.trim() || isPosting || !currentUser}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center text-black shadow-lg shadow-orange-500/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 disabled:shadow-none"
+                className="w-14 h-14 bg-[#ccff00] rounded-none flex items-center justify-center text-black border-4 border-[#333333] shadow-[4px_4px_0px_#ff00ff] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all disabled:opacity-50"
               >
                 {isPosting ? <Loader2 size={18} className="animate-spin text-black" /> : <Send size={18} />}
               </button>

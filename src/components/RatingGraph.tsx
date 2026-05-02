@@ -29,7 +29,7 @@ export const RatingGraph: React.FC<RatingGraphProps> = ({ reviews }) => {
 
   return (
     <div className="w-full flex-1 max-w-[320px] md:max-w-xl mx-auto py-6">
-      <div className="flex items-end justify-center gap-1.5 md:gap-2 h-32 md:h-48 mb-4 border-b border-white/20 pb-1.5">
+      <div className="flex items-end justify-center gap-1.5 md:gap-2 h-32 md:h-48 mb-4 border-b-4 border-[#333333] pb-1.5">
         {counts.map((count, i) => {
           // Use square root scaling so small ratios remain highly visible
           const heightPercent = maxCount > 0 ? (Math.sqrt(count) / Math.sqrt(maxCount)) * 100 : 0;
@@ -41,12 +41,12 @@ export const RatingGraph: React.FC<RatingGraphProps> = ({ reviews }) => {
                 initial={{ height: 0 }}
                 animate={{ height: `${heightPercent}%` }}
                 transition={{ delay: i * 0.05, type: 'spring', damping: 20 }}
-                className="w-full bg-[#00e054]/80 group-hover:bg-[#00e054] rounded-t-sm transition-all relative shadow-[0_0_15px_rgba(0,224,84,0.15)] group-hover:shadow-[0_0_20px_rgba(0,224,84,0.4)]"
+                className="w-full bg-[#00ffff] hover:bg-[#ff00ff] rounded-none transition-colors relative border-x-2 border-t-2 border-[#333333] shadow-[2px_0px_0px_#ff00ff]"
                 style={{ minHeight: count > 0 ? '6px' : '0' }}
               >
                  {count > 0 && (
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-zinc-900 border border-white/20 px-2.5 py-1 rounded text-[10px] font-black text-white transition-opacity whitespace-nowrap z-10 pointer-events-none shadow-2xl">
-                       {count} <span className="text-[#00e054]/80 ml-0.5">{ratingValue} ★</span>
+                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-black border-2 border-[#333333] px-2.5 py-1 rounded-none text-[10px] font-black text-white transition-opacity whitespace-nowrap z-10 pointer-events-none shadow-[2px_2px_0px_#00ffff]">
+                       {count} <span className="text-[#00ffff] ml-0.5">{ratingValue} ★</span>
                     </div>
                  )}
               </motion.div>

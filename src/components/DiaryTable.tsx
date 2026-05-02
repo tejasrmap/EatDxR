@@ -61,7 +61,7 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
   };
 
   return (
-    <div className="bg-[#111111] border-4 border-[#333333] shadow-[8px_8px_0px_#ccff00] rounded-none overflow-hidden mb-8">
+    <div className="bg-[#111111] border-4 border-[#333333] shadow-[8px_8px_0px_#ccff00] rounded-none overflow-hidden mb-10 mr-2 md:mr-4">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
