@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Navbar } from "./Navbar";
 import { Link, useLocation } from "react-router-dom";
-import { UtensilsCrossed } from "lucide-react";
+import { Flame } from "lucide-react";
 
 interface LayoutProps {
   children: ReactNode;
@@ -22,13 +22,13 @@ export function Layout({ children }: LayoutProps) {
         <footer className="border-t border-white/10 py-12 mt-20">
           <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-12 text-center md:text-left">
             <div className="flex flex-col items-center md:items-start gap-4">
-              <Link to="/" className="flex items-center gap-2 group cursor-pointer">
-                <div className="relative flex items-center justify-center w-7 h-7 bg-gradient-to-br from-orange-500 to-rose-500 rounded-lg opacity-80 group-hover:opacity-100 group-hover:-rotate-12 transition-all duration-300">
-                  <UtensilsCrossed className="text-white w-3 h-3" />
+              <Link to="/" className="flex items-center gap-3 group cursor-pointer">
+                <div className="relative flex items-center justify-center w-10 h-10 bg-[#ccff00] rounded-xl group-hover:rotate-180 transition-transform duration-700 shadow-[0_0_20px_rgba(204,255,0,0.3)]">
+                  <Flame className="text-black w-6 h-6 fill-black" />
                 </div>
-                <div className="logo-text flex items-baseline tracking-tighter transition-all duration-500">
-                  <span className="text-white/80 group-hover:text-white text-xl">Madeat</span>
-                  <span className="bg-gradient-to-br from-orange-500 to-rose-500 bg-clip-text text-transparent text-2xl ml-0.5">ER</span>
+                <div className="logo-text flex items-center gap-1 italic transition-all duration-500">
+                  <span className="font-black text-white text-3xl tracking-tighter uppercase">Mad</span>
+                  <div className="bg-[#ccff00] text-black px-2 py-0.5 rounded-md font-black text-xl tracking-widest -skew-x-12 uppercase group-hover:scale-110 transition-transform">Eater</div>
                 </div>
               </Link>
               <p className="max-w-xs text-xs text-white/40 leading-relaxed font-serif italic">
