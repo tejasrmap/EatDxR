@@ -155,24 +155,24 @@ export const Restaurant: React.FC = () => {
   const headerOpacity = Math.min(1, scrollY / 200);
 
   return (
-    <div className="min-h-screen bg-black text-white pb-40 elite-motion-safe">
+    <div className="min-h-screen bg-background text-foreground pb-40 elite-motion-safe">
       {/* Dynamic Header */}
       <header 
-        className="fixed top-0 left-0 right-0 z-[110] h-20 flex items-center justify-between px-6 transition-all duration-500 bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/5"
+        className="fixed top-0 left-0 right-0 z-[110] h-20 flex items-center justify-between px-6 transition-all duration-500 bg-background/90 backdrop-blur-xl border-b border-border"
       >
         <button 
           onClick={() => navigate(-1)}
-          className="p-2.5 bg-white/5 border border-white/10 hover:bg-white hover:text-black rounded-full shadow-lg transition-all"
+          className="p-2.5 bg-muted border border-border hover:bg-foreground hover:text-background rounded-full shadow-lg transition-all"
         >
           <ChevronLeft size={20} />
         </button>
         <h2 
-          className="font-medium tracking-wide uppercase text-xs text-white/80 transition-opacity duration-300"
+          className="font-medium tracking-wide uppercase text-xs text-foreground/80 transition-opacity duration-300"
           style={{ opacity: headerOpacity }}
         >
           {restaurant.name}
         </h2>
-        <button className="p-2.5 bg-white/5 border border-white/10 hover:bg-white hover:text-black rounded-full shadow-lg transition-all">
+        <button className="p-2.5 bg-muted border border-border hover:bg-foreground hover:text-background rounded-full shadow-lg transition-all">
           <Share2 size={18} />
         </button>
       </header>
@@ -187,7 +187,7 @@ export const Restaurant: React.FC = () => {
           alt={restaurant.name}
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         
         <div className="absolute bottom-0 left-0 right-0 p-8 md:p-16 max-w-7xl mx-auto w-full">
             <motion.div 
@@ -196,14 +196,14 @@ export const Restaurant: React.FC = () => {
               transition={{ delay: 0.3 }}
               className="flex items-center gap-3 mb-6"
             >
-               <span className="font-medium text-[11px] uppercase tracking-wider text-white bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-1.5">{restaurant.cuisine}</span>
-               <span className="font-medium text-[11px] uppercase tracking-wider text-white bg-black/50 backdrop-blur-md border border-white/10 rounded-full px-4 py-1.5">{restaurant.location}</span>
+               <span className="font-medium text-[11px] uppercase tracking-wider text-foreground bg-background/50 backdrop-blur-md border border-border rounded-full px-4 py-1.5">{restaurant.cuisine}</span>
+               <span className="font-medium text-[11px] uppercase tracking-wider text-foreground bg-background/80 backdrop-blur-md border border-border rounded-full px-4 py-1.5">{restaurant.location}</span>
             </motion.div>
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="text-5xl md:text-7xl font-bold text-white tracking-tight leading-none mb-4"
+              className="text-5xl md:text-7xl font-bold text-foreground tracking-tight leading-none mb-4"
             >
               {restaurant.name}
             </motion.h1>
@@ -215,33 +215,33 @@ export const Restaurant: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 md:gap-20">
            <div className="lg:col-span-2 space-y-16">
              {/* Summary Bar */}
-             <div className="flex items-center justify-around md:justify-start md:gap-16 bg-white/[0.02] border border-white/10 rounded-3xl shadow-2xl p-10 relative overflow-hidden">
+             <div className="flex items-center justify-around md:justify-start md:gap-16 bg-muted/30 border border-border rounded-3xl shadow-2xl p-10 relative overflow-hidden">
                <div className="text-center md:text-left">
                   <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
                      <span className="text-5xl font-semibold tracking-tight">{averageRating}</span>
-                     <Star className="w-6 h-6 fill-white text-white" />
+                     <Star className="w-6 h-6 fill-foreground text-foreground" />
                   </div>
-                  <p className="font-medium uppercase tracking-wider text-[11px] text-white/40">Mean Score</p>
+                  <p className="font-medium uppercase tracking-wider text-[11px] text-muted-foreground">Mean Score</p>
                </div>
-               <div className="w-[1px] h-12 bg-white/10" />
+               <div className="w-[1px] h-12 bg-border" />
                <div className="text-center md:text-left">
                   <p className="text-5xl font-semibold tracking-tight mb-2">{reviews.length}</p>
-                  <p className="font-medium uppercase tracking-wider text-[11px] text-white/40">Logs Recorded</p>
+                  <p className="font-medium uppercase tracking-wider text-[11px] text-muted-foreground">Logs Recorded</p>
                </div>
-               <div className="w-[1px] h-12 bg-white/10" />
+               <div className="w-[1px] h-12 bg-border" />
                <div className="flex gap-8">
                  <button 
                   onClick={toggleLike}
-                  className={`flex flex-col items-center gap-2 transition-all group ${hasLiked ? 'text-rose-500' : 'text-white/40 hover:text-rose-500'}`}
+                  className={`flex flex-col items-center gap-2 transition-all group ${hasLiked ? 'text-rose-500' : 'text-muted-foreground hover:text-rose-500'}`}
                  >
                    <Heart className={`w-8 h-8 transition-transform group-active:scale-90 ${hasLiked ? 'fill-rose-500' : ''}`} />
                    <span className="font-medium text-[11px] uppercase tracking-wider">{restaurant.likesCount || 0}</span>
                  </button>
                  <button 
                   onClick={toggleEatlist}
-                  className={`flex flex-col items-center gap-2 transition-all group ${isInEatlist ? 'text-white' : 'text-white/40 hover:text-white'}`}
+                  className={`flex flex-col items-center gap-2 transition-all group ${isInEatlist ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                  >
-                   <Bookmark className={`w-8 h-8 transition-transform group-active:scale-90 ${isInEatlist ? 'fill-white' : ''}`} />
+                   <Bookmark className={`w-8 h-8 transition-transform group-active:scale-90 ${isInEatlist ? 'fill-foreground' : ''}`} />
                    <span className="font-medium text-[11px] uppercase tracking-wider">List</span>
                  </button>
                </div>
@@ -250,11 +250,11 @@ export const Restaurant: React.FC = () => {
              {/* Signature Flavors */}
               {restaurant.menuItems && restaurant.menuItems.length > 0 && (
                 <section>
-                  <h3 className="font-medium uppercase tracking-wider text-[11px] text-white/60 mb-6 border-b border-white/10 pb-4">Culinary Pillars</h3>
+                  <h3 className="font-medium uppercase tracking-wider text-[11px] text-muted-foreground mb-6 border-b border-border pb-4">Culinary Pillars</h3>
                   <div className="flex flex-wrap gap-3">
                     {restaurant.menuItems.map((item, i) => (
-                      <div key={i} className="bg-white/[0.03] border border-white/10 rounded-xl px-5 py-2.5 text-sm font-medium text-white flex items-center gap-3 hover:bg-white/10 transition-all cursor-default">
-                        <div className="w-1.5 h-1.5 rounded-full bg-white/40 transition-all" />
+                      <div key={i} className="bg-muted/30 border border-border rounded-xl px-5 py-2.5 text-sm font-medium text-foreground flex items-center gap-3 hover:bg-muted/50 transition-all cursor-default">
+                        <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground transition-all" />
                         {item}
                       </div>
                     ))}
@@ -264,9 +264,9 @@ export const Restaurant: React.FC = () => {
 
              {/* Experiences */}
              <section>
-                <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/10">
-                   <h3 className="font-medium uppercase tracking-wider text-[11px] text-white/80">The Critic Stream</h3>
-                   <span className="font-medium uppercase tracking-wider text-[10px] text-white/40">{reviews.length} Experiences</span>
+                <div className="flex items-center justify-between mb-8 pb-4 border-b border-border">
+                   <h3 className="font-medium uppercase tracking-wider text-[11px] text-foreground/80">The Critic Stream</h3>
+                   <span className="font-medium uppercase tracking-wider text-[10px] text-muted-foreground">{reviews.length} Experiences</span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {reviews.length > 0 ? (
@@ -274,8 +274,8 @@ export const Restaurant: React.FC = () => {
                       <ReviewCard key={review.id} review={review} />
                     ))
                   ) : (
-                    <div className="col-span-full py-24 text-center bg-white/[0.02] border border-dashed border-white/10 rounded-3xl p-12">
-                       <p className="text-white/40 font-medium text-sm">Empty Territory...</p>
+                    <div className="col-span-full py-24 text-center bg-muted/30 border border-dashed border-border rounded-3xl p-12">
+                       <p className="text-muted-foreground font-medium text-sm">Empty Territory...</p>
                     </div>
                   )}
                 </div>
@@ -284,21 +284,21 @@ export const Restaurant: React.FC = () => {
 
            {/* Sidebar */}
            <div className="hidden lg:block">
-              <div className="bg-white/[0.02] border border-white/10 rounded-3xl shadow-2xl p-8 sticky top-32 overflow-hidden group">
-                 <h4 className="font-medium uppercase tracking-wider text-[11px] text-white/60 mb-6">Spatial Context</h4>
-                 <div className="aspect-square bg-[#0a0a0a] border border-white/10 rounded-2xl mb-8 flex items-center justify-center relative overflow-hidden shadow-inner">
+              <div className="bg-muted/30 border border-border rounded-3xl shadow-2xl p-8 sticky top-32 overflow-hidden group">
+                 <h4 className="font-medium uppercase tracking-wider text-[11px] text-muted-foreground mb-6">Spatial Context</h4>
+                 <div className="aspect-square bg-muted border border-border rounded-2xl mb-8 flex items-center justify-center relative overflow-hidden shadow-inner">
                     <img 
                       src={`https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=400&q=80`} 
                       className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 opacity-50"
                     />
-                    <Map className="text-white/80 group-hover:text-white transition-colors relative z-10" size={48} />
+                    <Map className="text-foreground/80 group-hover:text-foreground transition-colors relative z-10" size={48} />
                  </div>
                  {restaurant.lat && restaurant.lng && (
                     <a 
                       href={`https://www.google.com/maps/search/?api=1&query=${restaurant.lat},${restaurant.lng}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full bg-white text-black rounded-full py-3.5 font-medium text-sm text-center hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all block"
+                      className="w-full bg-foreground text-background rounded-full py-3.5 font-medium text-sm text-center hover:scale-105 shadow-lg transition-all block"
                     >
                       Open in Maps
                     </a>
@@ -313,7 +313,7 @@ export const Restaurant: React.FC = () => {
           <div className="flex gap-4 max-w-lg w-full pointer-events-auto">
             <button 
               onClick={() => (user ? setIsLogModalOpen(true) : login())}
-              className="flex-1 bg-white text-black font-medium text-sm h-14 rounded-full flex items-center justify-center gap-3 transition-all hover:scale-105 shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+              className="flex-1 bg-foreground text-background font-medium text-sm h-14 rounded-full flex items-center justify-center gap-3 transition-all hover:scale-105 shadow-2xl"
             >
               <Edit3 size={18} />
               Log Your Experience
@@ -324,7 +324,7 @@ export const Restaurant: React.FC = () => {
                 href={`https://www.google.com/maps/search/?api=1&query=${restaurant.lat},${restaurant.lng}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-white/10 backdrop-blur-xl text-white w-14 h-14 rounded-full border border-white/20 flex items-center justify-center transition-all hover:bg-white/20 shadow-lg md:hidden"
+                className="bg-background/50 backdrop-blur-xl text-foreground w-14 h-14 rounded-full border border-border flex items-center justify-center transition-all hover:bg-muted shadow-lg md:hidden"
               >
                 <Map size={20} />
               </a>

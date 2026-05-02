@@ -238,7 +238,7 @@ export const Profile: React.FC = () => {
           <img
             src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`}
             alt={user.displayName}
-            className="w-40 h-40 md:w-48 md:h-48 rounded-full border border-white/20 shadow-2xl object-cover cursor-pointer hover:scale-105 hover:border-white/50 transition-all duration-300 relative z-10"
+            className="w-40 h-40 md:w-48 md:h-48 rounded-full border border-border shadow-2xl object-cover cursor-pointer hover:scale-105 hover:border-muted-foreground transition-all duration-300 relative z-10"
             referrerPolicy="no-referrer"
             loading="lazy"
             onClick={() => currentUser?.uid === user.uid && profileFileInputRef.current?.click()}
@@ -251,8 +251,8 @@ export const Profile: React.FC = () => {
             onChange={handleProfilePicChange}
           />
           {isUpdatingPhoto && (
-            <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/60 rounded-full z-20">
-              <Loader2 className="animate-spin text-white/40" />
+            <div className="absolute inset-0 flex items-center justify-center bg-background/60 rounded-full z-20">
+              <Loader2 className="animate-spin text-muted-foreground" />
             </div>
           )}
         </div>
@@ -260,7 +260,7 @@ export const Profile: React.FC = () => {
         <div className="flex-1 w-full flex flex-col items-center md:items-start text-center md:text-left">
           <div className="mb-4">
             {user.username && (
-              <span className="font-medium text-xs text-white/80 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/20">
+              <span className="font-medium text-xs text-foreground/80 bg-muted/50 backdrop-blur-md px-4 py-1.5 rounded-full border border-border">
                 @{user.username}
               </span>
             )}
@@ -268,9 +268,9 @@ export const Profile: React.FC = () => {
 
           <div className="flex flex-col md:flex-row items-center md:items-baseline gap-6 mb-8">
             <div className="flex flex-wrap items-baseline gap-4 justify-center md:justify-start">
-                <h1 className="text-4xl md:text-5xl font-semibold text-white tracking-tight leading-none">{user.displayName}</h1>
+                <h1 className="text-4xl md:text-5xl font-semibold text-foreground tracking-tight leading-none">{user.displayName}</h1>
                 {user.pronouns && (
-                    <span className="font-medium text-[11px] text-white/40 border border-white/10 px-2.5 py-1 rounded-full bg-white/[0.02]">{user.pronouns}</span>
+                    <span className="font-medium text-[11px] text-muted-foreground border border-border px-2.5 py-1 rounded-full bg-muted/30">{user.pronouns}</span>
                 )}
             </div>
             {currentUser?.uid !== user.uid && (
@@ -278,8 +278,8 @@ export const Profile: React.FC = () => {
                 onClick={toggleFollow}
                 disabled={isUpdatingFollow}
                 className={`px-8 py-2.5 font-medium text-sm rounded-full transition-all shadow-lg hover:scale-105 ${isFollowing
-                    ? "bg-white/10 text-white border border-white/20"
-                    : "bg-white text-black border border-white"
+                    ? "bg-muted text-foreground border border-border"
+                    : "bg-foreground text-background border border-foreground"
                   }`}
               >
                 {isFollowing ? "Following" : "Follow Critic"}
@@ -288,48 +288,48 @@ export const Profile: React.FC = () => {
             {currentUser?.uid === user.uid && (
               <button
                 onClick={() => setIsEditModalOpen(true)}
-                className="p-2.5 rounded-full glass-panel border border-white/10 text-white/40 hover:text-white hover:border-white/20 transition-all"
+                className="p-2.5 rounded-full glass-panel border border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground transition-all"
               >
                 <Edit3 size={18} />
               </button>
             )}
           </div>
 
-          <div className="flex items-center justify-center md:justify-start gap-12 md:gap-16 border-t border-white/10 pt-8 w-full">
+          <div className="flex items-center justify-center md:justify-start gap-12 md:gap-16 border-t border-border pt-8 w-full">
             <div className="text-center md:text-left">
-              <span className="text-4xl font-semibold text-white tracking-tight">{reviews.length}</span>
-              <p className="font-medium tracking-wide text-[11px] text-white/40 mt-2">Logs recorded</p>
+              <span className="text-4xl font-semibold text-foreground tracking-tight">{reviews.length}</span>
+              <p className="font-medium tracking-wide text-[11px] text-muted-foreground mt-2">Logs recorded</p>
             </div>
             <div
               className="text-center md:text-left cursor-pointer group/stat"
               onClick={() => setFollowModalType("followers")}
             >
-              <span className="text-4xl font-semibold text-white tracking-tight group-hover/stat:text-white/80 transition-colors">{followerCount}</span>
-              <p className="font-medium tracking-wide text-[11px] text-white/40 group-hover/stat:text-white transition-colors mt-2">Followers</p>
+              <span className="text-4xl font-semibold text-foreground tracking-tight group-hover/stat:text-foreground/80 transition-colors">{followerCount}</span>
+              <p className="font-medium tracking-wide text-[11px] text-muted-foreground group-hover/stat:text-foreground transition-colors mt-2">Followers</p>
             </div>
             <div
               className="text-center md:text-left cursor-pointer group/stat"
               onClick={() => setFollowModalType("following")}
             >
-              <span className="text-4xl font-semibold text-white tracking-tight group-hover/stat:text-white/80 transition-colors">
+              <span className="text-4xl font-semibold text-foreground tracking-tight group-hover/stat:text-foreground/80 transition-colors">
                 {user.stats?.followingList?.length || user.stats?.following || 0}
               </span>
-              <p className="font-medium tracking-wide text-[11px] text-white/40 group-hover/stat:text-white transition-colors mt-2">Following</p>
+              <p className="font-medium tracking-wide text-[11px] text-muted-foreground group-hover/stat:text-foreground transition-colors mt-2">Following</p>
             </div>
             <div className="text-center md:text-left">
-              <span className="text-4xl font-semibold text-white tracking-tight">
+              <span className="text-4xl font-semibold text-foreground tracking-tight">
                  {reviews.length > 0 
                   ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
                   : "0.0"}
               </span>
-              <p className="font-medium tracking-wide text-[11px] text-white/40 mt-2">Avg Rating</p>
+              <p className="font-medium tracking-wide text-[11px] text-muted-foreground mt-2">Avg Rating</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center justify-center md:justify-start gap-10 md:gap-12 border-b border-white/10 mb-12">
+      <div className="flex items-center justify-center md:justify-start gap-10 md:gap-12 border-b border-border mb-12">
         {[
           { id: "profile", label: "Overview", icon: Grid },
           { id: "diary", label: "Diary", icon: Clock },
@@ -338,14 +338,14 @@ export const Profile: React.FC = () => {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 pb-5 font-medium text-sm tracking-wide relative transition-all ${activeTab === tab.id ? "text-white" : "text-white/40 hover:text-white"}`}
+            className={`flex items-center gap-2 pb-5 font-medium text-sm tracking-wide relative transition-all ${activeTab === tab.id ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
           >
-            <tab.icon size={16} className={activeTab === tab.id ? "text-white" : "text-inherit"} />
+            <tab.icon size={16} className={activeTab === tab.id ? "text-foreground" : "text-inherit"} />
             {tab.label}
             {activeTab === tab.id && (
               <motion.div 
                 layoutId="profileTab"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-white"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground"
               />
             )}
           </button>
@@ -363,11 +363,11 @@ export const Profile: React.FC = () => {
             className="grid grid-cols-1 lg:grid-cols-3 gap-20 w-full"
           >
             <div className="lg:col-span-2">
-              <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
+              <div className="flex items-center justify-between mb-8 border-b border-border pb-4">
                 <div className="flex items-center gap-3">
-                  <h2 className="font-medium text-lg text-white/80">The Gastronomic Stream</h2>
+                  <h2 className="font-medium text-lg text-foreground/80">The Gastronomic Stream</h2>
                 </div>
-                <span className="font-medium text-xs text-white/40 bg-white/[0.02] border border-white/10 rounded-full px-3 py-1">{reviews.length} Experiences</span>
+                <span className="font-medium text-xs text-muted-foreground bg-muted/30 border border-border rounded-full px-3 py-1">{reviews.length} Experiences</span>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-12">
@@ -381,7 +381,7 @@ export const Profile: React.FC = () => {
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: i * 0.05 }}
                       onClick={() => setSelectedReview(review)}
-                      className="aspect-[3/4] bg-white/[0.02] rounded-2xl overflow-hidden border border-white/10 group relative shadow-lg hover:border-white/30 transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-2xl"
+                      className="aspect-[3/4] bg-muted/30 rounded-2xl overflow-hidden border border-border group relative shadow-lg hover:border-muted-foreground transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-2xl"
                     >
                       {firstImage ? (
                         <img
@@ -392,22 +392,22 @@ export const Profile: React.FC = () => {
                           loading="lazy"
                         />
                       ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-white/5">
-                           <UtensilsCrossed size={20} className="text-white/20 mb-3" />
-                           <span className="font-medium text-xs text-white/40">{review.restaurantName}</span>
+                        <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-muted">
+                           <UtensilsCrossed size={20} className="text-muted-foreground mb-3" />
+                           <span className="font-medium text-xs text-muted-foreground">{review.restaurantName}</span>
                         </div>
                       )}
 
                       {allImages.length > 1 && (
-                        <div className="absolute top-4 right-4 p-1.5 bg-black/50 backdrop-blur-md border border-white/20 rounded-full z-10">
-                          <Plus size={14} className="text-white" />
+                        <div className="absolute top-4 right-4 p-1.5 bg-background/50 backdrop-blur-md border border-border rounded-full z-10">
+                          <Plus size={14} className="text-foreground" />
                         </div>
                       )}
 
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 flex flex-col items-center justify-end p-6 transition-all duration-500">
-                        <StarRating rating={review.rating} size={14} className="flex items-center gap-0.5 text-white mb-2" />
-                        <p className="font-medium text-sm text-white truncate w-full text-center mb-3">{review.restaurantName}</p>
-                        <div className="flex items-center gap-4 text-white/60">
+                      <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/40 to-transparent opacity-0 group-hover:opacity-100 flex flex-col items-center justify-end p-6 transition-all duration-500">
+                        <StarRating rating={review.rating} size={14} className="flex items-center gap-0.5 text-foreground mb-2" />
+                        <p className="font-medium text-sm text-foreground truncate w-full text-center mb-3">{review.restaurantName}</p>
+                        <div className="flex items-center gap-4 text-muted-foreground">
                           <div className="flex items-center gap-1.5">
                             <Heart size={14} className={review.likes ? "fill-rose-500 text-rose-500" : ""} />
                             <span className="text-xs font-medium">{review.likes || 0}</span>
@@ -424,8 +424,8 @@ export const Profile: React.FC = () => {
               </div>
 
               {reviews.length === 0 && (
-                <div className="py-32 text-center bg-white/[0.02] border border-dashed border-white/10 rounded-3xl p-12">
-                  <p className="text-sm font-medium text-white/40">Empty stream.</p>
+                <div className="py-32 text-center bg-muted/30 border border-dashed border-border rounded-3xl p-12">
+                  <p className="text-sm font-medium text-muted-foreground">Empty stream.</p>
                 </div>
               )}
             </div>
@@ -434,47 +434,47 @@ export const Profile: React.FC = () => {
             <div className="space-y-16">
               {/* BIO Section */}
               <section>
-                <h3 className="font-medium uppercase tracking-wider text-[11px] text-white/60 mb-6 pb-4 border-b border-white/10">Biography</h3>
+                <h3 className="font-medium uppercase tracking-wider text-[11px] text-muted-foreground mb-6 pb-4 border-b border-border">Biography</h3>
                 {user.bio ? (
-                   <p className="text-base text-white/80 leading-relaxed font-normal">
+                   <p className="text-base text-foreground/80 leading-relaxed font-normal">
                       "{user.bio}"
                    </p>
                 ) : (
-                   <p className="text-sm text-white/40 font-normal">A mysterious critic with no bio captured yet...</p>
+                   <p className="text-sm text-muted-foreground font-normal">A mysterious critic with no bio captured yet...</p>
                 )}
               </section>
 
               {/* CUISINES Section */}
               <section>
-                <h3 className="font-medium uppercase tracking-wider text-[11px] text-white/60 mb-6 pb-4 border-b border-white/10">Expertise</h3>
+                <h3 className="font-medium uppercase tracking-wider text-[11px] text-muted-foreground mb-6 pb-4 border-b border-border">Expertise</h3>
                 <div className="flex flex-wrap gap-3">
                   {(user.favoriteCuisines && user.favoriteCuisines.length > 0) ? (
                      user.favoriteCuisines.map((cuisine, idx) => (
-                      <span key={idx} className="bg-white/[0.03] border border-white/10 text-white rounded-full px-4 py-1.5 font-medium text-xs hover:bg-white/10 transition-all cursor-default">
+                      <span key={idx} className="bg-muted/30 border border-border text-foreground rounded-full px-4 py-1.5 font-medium text-xs hover:bg-muted/50 transition-all cursor-default">
                           {cuisine}
                       </span>
                      ))
                   ) : (
-                     <span className="text-[11px] font-medium text-white/40">None added</span>
+                     <span className="text-[11px] font-medium text-muted-foreground">None added</span>
                   )}
                 </div>
               </section>
 
               {/* STATS Section */}
               <section>
-                <h3 className="font-medium uppercase tracking-wider text-[11px] text-white/60 mb-6 pb-4 border-b border-white/10">Analytics</h3>
+                <h3 className="font-medium uppercase tracking-wider text-[11px] text-muted-foreground mb-6 pb-4 border-b border-border">Analytics</h3>
                 <div className="space-y-6">
                    <div className="flex justify-between items-end">
-                      <span className="font-medium tracking-wide text-xs text-white/40">Mean Rating</span>
-                      <span className="text-2xl font-semibold text-white tracking-tight">
+                      <span className="font-medium tracking-wide text-xs text-muted-foreground">Mean Rating</span>
+                      <span className="text-2xl font-semibold text-foreground tracking-tight">
                           {reviews.length > 0 
                              ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
                              : "0.0"}
                       </span>
                    </div>
                    <div className="flex justify-between items-end">
-                      <span className="font-medium tracking-wide text-xs text-white/40">Primary Territory</span>
-                      <span className="text-xl font-medium text-white/80 tracking-tight">
+                      <span className="font-medium tracking-wide text-xs text-muted-foreground">Primary Territory</span>
+                      <span className="text-xl font-medium text-foreground/80 tracking-tight">
                           {(() => {
                              if (reviews.length === 0) return "N/A";
                              const cities = reviews.map(r => {
@@ -530,8 +530,8 @@ export const Profile: React.FC = () => {
           >
             {loadingEatlist ? (
               <div className="py-20 flex flex-col items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-white/20 mb-4" />
-                <p className="text-xs uppercase tracking-widest font-bold text-white/20">Loading Eatlist...</p>
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground mb-4" />
+                <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground">Loading Eatlist...</p>
               </div>
             ) : eatlistRestaurants.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -539,22 +539,22 @@ export const Profile: React.FC = () => {
                   <Link
                     key={rest.id}
                     to={`/restaurant/${rest.id}`}
-                    className="group bg-white/[0.02] border border-white/10 rounded-2xl overflow-hidden hover:border-white/30 transition-all p-4 flex gap-4"
+                    className="group bg-muted/30 border border-border rounded-2xl overflow-hidden hover:border-muted-foreground transition-all p-4 flex gap-4"
                   >
-                    <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-white/10">
+                    <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-border">
                       <img loading="lazy" src={rest.image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
-                      <h3 className="font-semibold text-white group-hover:text-white/80 transition-colors truncate">{rest.name}</h3>
-                      <p className="text-[10px] uppercase tracking-widest text-white/40 mt-1">{rest.cuisine}</p>
-                      <p className="text-[10px] text-white/40 mt-1 truncate">{rest.location}</p>
+                      <h3 className="font-semibold text-foreground group-hover:text-foreground/80 transition-colors truncate">{rest.name}</h3>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">{rest.cuisine}</p>
+                      <p className="text-[10px] text-muted-foreground mt-1 truncate">{rest.location}</p>
                     </div>
                   </Link>
                 ))}
               </div>
             ) : (
-              <div className="w-full text-center py-20 border border-dashed border-white/10 rounded-2xl">
-                <p className="text-white/40 italic serif">Your Eatlist (Watchlist) is currently empty.</p>
+              <div className="w-full text-center py-20 border border-dashed border-border rounded-2xl">
+                <p className="text-muted-foreground italic serif">Your Eatlist (Watchlist) is currently empty.</p>
                 <Link to="/restaurants" className="inline-block mt-4 text-[10px] uppercase tracking-widest font-bold text-orange-500 hover:text-orange-400">Explore Restaurants</Link>
               </div>
             )}

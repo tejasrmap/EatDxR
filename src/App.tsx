@@ -7,6 +7,7 @@ import React, { useEffect, useState, createContext, useContext, ReactNode, Error
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { Layout } from "./components/Layout";
+import { ThemeProvider } from "./components/ThemeProvider";
 import { StarRating } from "./components/StarRating";
 import { Hero } from "./components/Hero";
 import { ReviewCard } from "./components/ReviewCard";
@@ -420,32 +421,34 @@ function Home() {
 export function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <Router>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/profile/:userId" element={<Profile />} />
-              <Route path="/restaurant/:restaurantId" element={<Restaurant />} />
-              <Route path="/restaurants" element={<Restaurants />} />
-              <Route path="/lists" element={<PlaceholderPage title="Food Lists" />} />
-              <Route path="/critics" element={<Critics />} />
-              <Route path="/journal" element={<Journal />} />
-              <Route 
-                path="/admin/seed" 
-                element={
-                  <AdminRoute>
-                    <AdminSeed />
-                  </AdminRoute>
-                } 
-              />
-              <Route path="*" element={<Home />} />
-            </Routes>
-          </Layout>
-          <MobileBottomNav />
-          <Toaster theme="dark" position="bottom-right" />
-        </Router>
-      </AuthProvider>
+      <ThemeProvider defaultTheme="dark" storageKey="eatdxr-theme">
+        <AuthProvider>
+          <Router>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/profile/:userId" element={<Profile />} />
+                <Route path="/restaurant/:restaurantId" element={<Restaurant />} />
+                <Route path="/restaurants" element={<Restaurants />} />
+                <Route path="/lists" element={<PlaceholderPage title="Food Lists" />} />
+                <Route path="/critics" element={<Critics />} />
+                <Route path="/journal" element={<Journal />} />
+                <Route 
+                  path="/admin/seed" 
+                  element={
+                    <AdminRoute>
+                      <AdminSeed />
+                    </AdminRoute>
+                  } 
+                />
+                <Route path="*" element={<Home />} />
+              </Routes>
+            </Layout>
+            <MobileBottomNav />
+            <Toaster position="bottom-right" />
+          </Router>
+        </AuthProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

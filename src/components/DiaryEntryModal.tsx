@@ -185,7 +185,7 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
             transition={{ duration: 0.4 }}
             onClick={onClose}
             style={{ transform: "translateZ(0)" }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-md will-change-transform"
+            className="fixed inset-0 bg-background/60 backdrop-blur-md will-change-transform"
           />
           
           <motion.div
@@ -193,7 +193,7 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: 20 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full h-full md:h-[85vh] md:max-w-5xl bg-[#0a0a0a] md:rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col md:flex-row overflow-hidden border border-white/5"
+            className="relative w-full h-full md:h-[85vh] md:max-w-5xl bg-background md:rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col md:flex-row overflow-hidden border border-border"
           >
             {/* Cinematic Image Stage (Left on Desktop, Top on Mobile) */}
             <div className="w-full md:w-1/2 h-[50vh] md:h-full relative overflow-hidden group">
@@ -216,31 +216,31 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                     <>
                       <button 
                         onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(prev => (prev === 0 ? images.length - 1 : prev - 1)); }}
-                        className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center bg-black/40 backdrop-blur-xl rounded-full border border-white/10 text-white/60 hover:text-white transition-all opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95"
+                        className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center bg-background/40 backdrop-blur-xl rounded-full border border-border text-muted-foreground hover:text-foreground transition-all opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95"
                       >
                         <ChevronLeft size={24} />
                       </button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(prev => (prev === images.length - 1 ? 0 : prev + 1)); }}
-                        className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center bg-black/40 backdrop-blur-xl rounded-full border border-white/10 text-white/60 hover:text-white transition-all opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95"
+                        className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center bg-background/40 backdrop-blur-xl rounded-full border border-border text-muted-foreground hover:text-foreground transition-all opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95"
                       >
                         <ChevronRight size={24} />
                       </button>
-                      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-1.5 p-2 px-3 bg-black/40 backdrop-blur-xl rounded-full border border-white/10 z-10">
+                      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-1.5 p-2 px-3 bg-background/40 backdrop-blur-xl rounded-full border border-border z-10">
                         {images.map((_, i) => (
-                           <div key={i} className={`h-1 rounded-full transition-all ${i === currentImageIndex ? "w-8 bg-orange-500" : "w-1.5 bg-white/10"}`} />
+                           <div key={i} className={`h-1 rounded-full transition-all ${i === currentImageIndex ? "w-8 bg-orange-500" : "w-1.5 bg-muted-foreground/30"}`} />
                         ))}
                       </div>
                     </>
                   )}
                 </>
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-white/50 gap-4 mesh-gradient relative">
-                   <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
-                   <div className="w-24 h-24 rounded-full border border-white/10 flex items-center justify-center relative z-10 glass-panel shadow-2xl">
-                      <Star size={36} className="text-white/30" />
+                <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-4 mesh-gradient relative">
+                   <div className="absolute inset-0 bg-background/40 backdrop-blur-[2px]" />
+                   <div className="w-24 h-24 rounded-full border border-border flex items-center justify-center relative z-10 glass-panel shadow-2xl">
+                      <Star size={36} className="text-muted-foreground" />
                    </div>
-                   <span className="text-[10px] uppercase font-black tracking-[0.5em] text-white/40 relative z-10">Data Unavailable</span>
+                   <span className="text-[10px] uppercase font-black tracking-[0.5em] text-muted-foreground relative z-10">Data Unavailable</span>
                 </div>
               )}
               
@@ -251,7 +251,7 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                     e.stopPropagation();
                     onClose();
                   }} 
-                  className="w-10 h-10 bg-black/60 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white pointer-events-auto active:scale-95 transition-all shadow-2xl"
+                  className="w-10 h-10 bg-background/60 backdrop-blur-xl border border-border rounded-full flex items-center justify-center text-foreground pointer-events-auto active:scale-95 transition-all shadow-2xl"
                  >
                    <ChevronLeft size={24} className="mr-0.5" />
                  </button>
@@ -259,12 +259,12 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
             </div>
 
             {/* Narrative Stage (Right on Desktop, Bottom on Mobile) */}
-            <div className="w-full md:w-1/2 flex flex-col h-full bg-[#0a0a0a] relative">
+            <div className="w-full md:w-1/2 flex flex-col h-full bg-background relative">
                {/* Fixed Header Desktop */}
                <div className="hidden md:flex absolute top-6 right-6 justify-end items-center z-[100] pointer-events-none">
                   <button 
                     onClick={onClose} 
-                    className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10 text-white/40 hover:text-white pointer-events-auto active:scale-90"
+                    className="w-10 h-10 flex items-center justify-center bg-muted hover:bg-muted/80 rounded-full transition-all border border-border text-muted-foreground hover:text-foreground pointer-events-auto active:scale-90"
                   >
                     <X size={20} />
                   </button>
@@ -274,19 +274,19 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                   {/* Meta Narrative Header */}
                   <header className="space-y-6">
                      <div className="flex flex-wrap items-center gap-3">
-                        <Link to={`/profile/${review.userId}`} onClick={onClose} className="flex items-center gap-2 group/user p-1 px-2.5 bg-white/[0.03] border border-white/5 rounded-full hover:bg-white/[0.08] transition-all">
-                           <img loading="lazy" src={review.userPhoto} className="w-5 h-5 rounded-full border border-white/10 transition-all" referrerPolicy="no-referrer" />
-                           <span className="text-[10px] font-black text-white/40 group-hover/user:text-white uppercase tracking-widest">{review.userName}</span>
+                        <Link to={`/profile/${review.userId}`} onClick={onClose} className="flex items-center gap-2 group/user p-1 px-2.5 bg-muted/30 border border-border rounded-full hover:bg-muted transition-all">
+                           <img loading="lazy" src={review.userPhoto} className="w-5 h-5 rounded-full border border-border transition-all" referrerPolicy="no-referrer" />
+                           <span className="text-[10px] font-black text-muted-foreground group-hover/user:text-foreground uppercase tracking-widest">{review.userName}</span>
                         </Link>
-                        <span className="text-white/10 text-[8px] uppercase font-black">•</span>
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-white/30 uppercase tracking-widest">
-                           <Calendar size={12} className="text-white/10" />
+                        <span className="text-muted-foreground/30 text-[8px] uppercase font-black">•</span>
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                           <Calendar size={12} className="text-muted-foreground" />
                            {format(date, "MMMM dd, yyyy")}
                         </div>
                      </div>
 
                      <div className="space-y-2">
-                        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter leading-tight">{review.restaurantName}</h1>
+                        <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tighter leading-tight">{review.restaurantName}</h1>
                         <Link 
                            to={`/restaurant/${review.restaurantId}`} 
                            onClick={onClose}
@@ -297,14 +297,14 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                         </Link>
                      </div>
 
-                     <div className="flex items-center gap-8 py-4 border-y border-white/5">
+                     <div className="flex items-center gap-8 py-4 border-y border-border">
                         <div className="space-y-1">
-                           <span className="text-[8px] uppercase font-black tracking-[0.3em] text-white/20 block">The Verdict</span>
+                           <span className="text-[8px] uppercase font-black tracking-[0.3em] text-muted-foreground block">The Verdict</span>
                             <StarRating rating={review.rating} size={24} />
                         </div>
-                        <div className="space-y-1 border-l border-white/5 pl-8">
-                           <span className="text-[8px] uppercase font-black tracking-[0.3em] text-white/20 block">Curation Type</span>
-                           <span className="text-xs font-bold text-white uppercase tracking-widest italic font-serif">
+                        <div className="space-y-1 border-l border-border pl-8">
+                           <span className="text-[8px] uppercase font-black tracking-[0.3em] text-muted-foreground block">Curation Type</span>
+                           <span className="text-xs font-bold text-foreground uppercase tracking-widest italic font-serif">
                               {review.videoUrl ? "Reel Narrative" : "Culinary Post"}
                            </span>
                         </div>
@@ -315,8 +315,8 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                   <article className="space-y-8">
                      {review.content && (
                         <div className="relative">
-                           <div className="absolute -left-6 top-0 text-6xl text-white/[0.02] serif italic select-none">“</div>
-                           <p className="text-lg md:text-xl text-white/80 leading-relaxed font-serif italic first-letter:text-5xl first-letter:font-black first-letter:mr-3 first-letter:float-left first-letter:text-white first-letter:italic">
+                           <div className="absolute -left-6 top-0 text-6xl text-muted-foreground/10 serif italic select-none">“</div>
+                           <p className="text-lg md:text-xl text-foreground/80 leading-relaxed font-serif italic first-letter:text-5xl first-letter:font-black first-letter:mr-3 first-letter:float-left first-letter:text-foreground first-letter:italic">
                               {review.content}
                            </p>
                         </div>
@@ -324,17 +324,17 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
 
                      {/* Highlighted Elements (Dishes) */}
                      <div className="space-y-4 pt-4">
-                        <h3 className="text-[10px] uppercase font-black tracking-[0.4em] text-white/30 border-b border-white/5 pb-2">The Cast</h3>
+                        <h3 className="text-[10px] uppercase font-black tracking-[0.4em] text-muted-foreground border-b border-border pb-2">The Cast</h3>
                         <div className="grid grid-cols-1 gap-2.5">
                            {review.dishes?.map((dish, i) => (
-                              <div key={i} className="flex items-center justify-between p-3.5 bg-white/[0.02] border border-white/5 rounded-2xl group hover:bg-white/[0.05] transition-all">
+                              <div key={i} className="flex items-center justify-between p-3.5 bg-muted/30 border border-border rounded-2xl group hover:bg-muted transition-all">
                                  <div className="flex items-center gap-4">
                                     {dish.image && (
                                        <img src={dish.image} className="w-10 h-10 rounded-lg object-cover opacity-50 group-hover:opacity-100 transition-all" />
                                     )}
                                     <div className="flex flex-col">
-                                       <span className="text-xs font-bold text-white tracking-tight">{dish.name}</span>
-                                       <span className="text-[9px] uppercase tracking-widest text-white/30 font-black">Featured Highlight</span>
+                                       <span className="text-xs font-bold text-foreground tracking-tight">{dish.name}</span>
+                                       <span className="text-[9px] uppercase tracking-widest text-muted-foreground font-black">Featured Highlight</span>
                                     </div>
                                  </div>
                                   <StarRating rating={dish.rating || 5} size={14} className="flex gap-0.5 text-orange-500/40 group-hover:text-orange-500 transition-colors" activeColor="text-current" />
@@ -345,19 +345,19 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                   </article>
 
                   {/* Reactions */}
-                  <footer className="space-y-8 pt-10 border-t border-white/5">
+                  <footer className="space-y-8 pt-10 border-t border-border">
                      <div className="flex items-center gap-4 py-1">
                         <button 
                            onClick={handleLike}
                            disabled={isLikeLoading}
-                           className={`h-12 px-8 flex items-center gap-3 rounded-full transition-all border ${hasLiked ? "bg-rose-500 border-rose-500 text-white shadow-[0_10px_30px_rgba(244,63,94,0.3)]" : "bg-white/5 border-white/10 text-white/60 hover:text-white hover:bg-white/10"}`}
+                           className={`h-12 px-8 flex items-center gap-3 rounded-full transition-all border ${hasLiked ? "bg-rose-500 border-rose-500 text-white shadow-[0_10px_30px_rgba(244,63,94,0.3)]" : "bg-muted border-border text-muted-foreground hover:text-foreground hover:bg-muted/80"}`}
                         >
-                           <Heart size={18} fill={hasLiked ? "currentColor" : "none"} className={hasLiked ? "animate-pulse" : ""} />
+                           <Heart size={18} fill={hasLiked ? "currentColor" : "none"} className={hasLiked ? "animate-pulse text-white" : ""} />
                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">{totalLikes} Hearts</span>
                         </button>
                         <button 
                            onClick={shareReview}
-                           className="w-12 h-12 flex items-center justify-center bg-white/5 border border-white/10 rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-all active:scale-90"
+                           className="w-12 h-12 flex items-center justify-center bg-muted border border-border rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all active:scale-90"
                         >
                            <Share2 size={18} />
                         </button>
@@ -365,22 +365,22 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
 
                      {/* Exchange (Comments) */}
                      <div className="space-y-6">
-                        <h3 className="text-[9px] uppercase font-black tracking-[0.4em] text-white/30">Exchange • {comments.length}</h3>
+                        <h3 className="text-[9px] uppercase font-black tracking-[0.4em] text-muted-foreground">Exchange • {comments.length}</h3>
                         
                         <div className="space-y-6">
                            {comments.map((comment) => (
                               <div key={comment.id} className="flex gap-4 group/comm">
                                  <Link to={`/profile/${comment.userId}`} onClick={onClose}>
-                                    <img src={comment.userPhoto} className="w-8 h-8 rounded-full border border-white/10 transition-all shrink-0 mt-1" referrerPolicy="no-referrer" />
+                                    <img src={comment.userPhoto} className="w-8 h-8 rounded-full border border-border transition-all shrink-0 mt-1" referrerPolicy="no-referrer" />
                                  </Link>
                                  <div className="flex-1 space-y-1.5">
                                     <div className="flex items-center justify-between">
-                                       <Link to={`/profile/${comment.userId}`} onClick={onClose} className="text-[10px] font-black text-white hover:text-orange-500 uppercase tracking-widest">{comment.userName}</Link>
-                                       <span className="text-[9px] font-medium text-white/10">
+                                       <Link to={`/profile/${comment.userId}`} onClick={onClose} className="text-[10px] font-black text-foreground hover:text-orange-500 uppercase tracking-widest">{comment.userName}</Link>
+                                       <span className="text-[9px] font-medium text-muted-foreground">
                                           {comment.createdAt?.toMillis ? formatDistanceToNow(comment.createdAt.toMillis()) : "Moment ago"}
                                        </span>
                                     </div>
-                                    <p className="text-sm text-white/60 leading-relaxed font-serif">{comment.content}</p>
+                                    <p className="text-sm text-foreground/80 leading-relaxed font-serif">{comment.content}</p>
                                  </div>
                               </div>
                            ))}
@@ -393,15 +393,15 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                                  onChange={(e) => setNewComment(e.target.value)}
                                  onFocus={() => !currentUser && login()}
                                  placeholder={currentUser ? "Add your perspective..." : "Login to participate..."}
-                                 className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-xs font-medium focus:outline-none focus:ring-1 ring-white/10 transition-all pr-16 placeholder:text-white/10"
+                                 className="w-full bg-muted/30 border border-border rounded-2xl px-6 py-4 text-xs font-medium focus:outline-none focus:ring-1 ring-border transition-all pr-16 placeholder:text-muted-foreground text-foreground"
                                  disabled={isCommentLoading}
                               />
                               <button 
                                  type="submit" 
                                  disabled={!newComment.trim() || isCommentLoading}
-                                 className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-white text-black rounded-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-0 disabled:scale-90"
+                                 className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-foreground text-background rounded-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-0 disabled:scale-90"
                               >
-                                 {isCommentLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                                 {isCommentLoading ? <Loader2 size={16} className="animate-spin text-background" /> : <Send size={16} />}
                               </button>
                            </form>
                         </div>
@@ -410,7 +410,7 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                         <div className="pt-12 pb-8">
                            <button 
                              onClick={onClose}
-                             className="w-full flex items-center justify-center gap-2 p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-colors text-white/60 hover:text-white group"
+                             className="w-full flex items-center justify-center gap-2 p-4 bg-muted border border-border rounded-2xl hover:bg-muted/80 transition-colors text-muted-foreground hover:text-foreground group"
                            >
                               <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
                               <span className="text-[10px] uppercase font-black tracking-widest">Go Back</span>

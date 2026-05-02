@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Bell, User, LogOut, Settings, Plus, Film } from "lucide-react";
+import { Search, Bell, User, LogOut, Settings, Plus, Film, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { LogMealModal } from "./LogMealModal";
 import { ReelUploadModal } from "./ReelUploadModal";
@@ -12,9 +12,11 @@ import { formatDistanceToNow } from "date-fns";
 import { SettingsOverlay } from "./SettingsOverlay";
 import { EditProfileModal } from "./EditProfileModal";
 import { motion, AnimatePresence } from "motion/react";
+import { useTheme } from "./ThemeProvider";
 
 export function Navbar() {
   const { user, dishdUser, login, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -87,35 +89,43 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-[300] bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5 h-16 transition-all">
+      <nav className="fixed top-0 left-0 right-0 z-[300] bg-background/80 backdrop-blur-xl border-b border-border h-16 transition-all">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-full flex items-center justify-between">
           {/* Logo Cluster */}
           <Link to="/" className="flex items-center gap-2 group shrink-0">
             <div className="logo-text flex items-baseline tracking-tighter">
-              <span className="font-bold text-white text-2xl tracking-tight uppercase">MAD</span>
-              <span className="font-bold text-white/50 text-2xl tracking-tight uppercase">EATER</span>
+              <span className="font-bold text-foreground text-2xl tracking-tight uppercase">MAD</span>
+              <span className="font-bold text-muted-foreground text-2xl tracking-tight uppercase">EATER</span>
             </div>
           </Link>
           
           {/* Desktop Central Navigation */}
           <div className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
-            <Link to="/restaurants" className="font-medium text-white/40 text-sm hover:text-white transition-colors">
+            <Link to="/restaurants" className="font-medium text-muted-foreground text-sm hover:text-foreground transition-colors">
               Restaurants
             </Link>
-            <Link to="/critics" className="font-medium text-white/40 text-sm hover:text-white transition-colors">
+            <Link to="/critics" className="font-medium text-muted-foreground text-sm hover:text-foreground transition-colors">
               Critics
             </Link>
-            <Link to="/journal" className="font-medium text-white/40 text-sm hover:text-white transition-colors">
+            <Link to="/journal" className="font-medium text-muted-foreground text-sm hover:text-foreground transition-colors">
               Journal
             </Link>
           </div>
 
           {/* Action Row: Unified & Accessible on Mobile */}
           <div className="flex items-center gap-1 md:gap-4">
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+              title="Toggle Theme"
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
             {/* Direct Creation Hub (Mobile-Ready Search) */}
             <button 
               onClick={() => setIsSearchOpen(true)}
-              className="p-2 text-white/40 hover:text-white transition-colors" 
+              className="p-2 text-muted-foreground hover:text-foreground transition-colors" 
               title="Search"
             >
               <Search size={18} />
@@ -127,7 +137,7 @@ export function Navbar() {
                 <div className="hidden md:block relative">
                   <button
                     onClick={() => setShowActionMenu(!showActionMenu)}
-                    className="w-9 h-9 flex items-center justify-center bg-white text-black rounded-full hover:scale-105 transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] group"
+                    className="w-9 h-9 flex items-center justify-center bg-foreground text-background rounded-full hover:scale-105 transition-all shadow-lg group"
                     title="Create"
                   >
                     <Plus size={20} className={`transition-transform ${showActionMenu ? "rotate-45" : ""}`} />
@@ -140,24 +150,24 @@ export function Navbar() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.98 }}
                         transition={{ type: 'spring', stiffness: 500, damping: 45 }}
-                        className="absolute top-full right-0 mt-3 w-56 bg-[#0a0a0a] border border-white/10 shadow-2xl py-3 rounded-2xl z-[350] overflow-hidden will-change-transform"
+                        className="absolute top-full right-0 mt-3 w-56 bg-background border border-border shadow-2xl py-3 rounded-2xl z-[350] overflow-hidden will-change-transform"
                       >
                         <button
                           onClick={() => { setIsReelModalOpen(true); setShowActionMenu(false); }}
-                          className="w-full flex items-center gap-4 px-6 py-3 hover:bg-white/5 transition-all text-xs font-bold uppercase tracking-widest text-white group"
+                          className="w-full flex items-center gap-4 px-6 py-3 hover:bg-muted transition-all text-xs font-bold uppercase tracking-widest text-foreground group"
                         >
-                          <div className="w-8 h-8 rounded-xl bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20 transition-colors">
-                            <Film size={18} className="text-orange-500" />
+                          <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                            <Film size={18} className="text-primary" />
                           </div>
                           <span>Reel Narrative</span>
                         </button>
                         
                         <button
                           onClick={() => { setIsLogModalOpen(true); setShowActionMenu(false); }}
-                          className="w-full flex items-center gap-4 px-6 py-3 hover:bg-white/5 transition-all text-xs font-bold uppercase tracking-widest text-white group"
+                          className="w-full flex items-center gap-4 px-6 py-3 hover:bg-muted transition-all text-xs font-bold uppercase tracking-widest text-foreground group"
                         >
-                          <div className="w-8 h-8 rounded-xl bg-green-500/10 flex items-center justify-center group-hover:bg-green-500/20 transition-colors">
-                            <Plus size={20} className="text-green-500" />
+                          <div className="w-8 h-8 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                            <Plus size={20} className="text-accent" />
                           </div>
                           <span className="font-medium tracking-normal text-sm">Culinary Log</span>
                         </button>
@@ -167,15 +177,15 @@ export function Navbar() {
                 </div>
 
                 {/* Notifications & User Cluster */}
-                <div className="flex items-center gap-1 md:gap-3 border-l border-white/5 pl-2 md:pl-4">
+                <div className="flex items-center gap-1 md:gap-3 border-l border-border pl-2 md:pl-4">
                   <div className="relative">
                     <button
                       onClick={() => { setShowNotifMenu(!showNotifMenu); setShowUserMenu(false); }}
-                      className="p-2 text-white/40 hover:text-white transition-transform hover:-translate-y-0.5 relative"
+                      className="p-2 text-muted-foreground hover:text-foreground transition-transform hover:-translate-y-0.5 relative"
                     >
-                      <Bell size={18} className={unreadCount > 0 ? "text-white" : ""} />
+                      <Bell size={18} className={unreadCount > 0 ? "text-foreground" : ""} />
                       {unreadCount > 0 && (
-                        <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-black flex items-center justify-center text-[7px] font-black text-white">
+                        <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-background flex items-center justify-center text-[7px] font-black text-accent-foreground">
                           {unreadCount}
                         </span>
                       )}
@@ -188,21 +198,21 @@ export function Navbar() {
                           animate={{ opacity: 1, y: 0 }} 
                           exit={{ opacity: 0, y: 10 }}
                           transition={{ type: 'spring', stiffness: 500, damping: 45 }}
-                          className="absolute right-[-60px] md:right-0 mt-3 w-[300px] bg-[#0a0a0a] border border-white/10 shadow-2xl rounded-2xl z-[400] max-h-96 flex flex-col overflow-hidden will-change-transform"
+                          className="absolute right-[-60px] md:right-0 mt-3 w-[300px] bg-background border border-border shadow-2xl rounded-2xl z-[400] max-h-96 flex flex-col overflow-hidden will-change-transform"
                         >
-                          <div className="p-4 border-b border-white/5">
-                            <span className="text-[10px] uppercase font-bold tracking-widest text-white/40">Activity</span>
+                          <div className="p-4 border-b border-border">
+                            <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Activity</span>
                           </div>
                           <div className="overflow-y-auto flex-1 p-2 space-y-1">
                             {notifications.length === 0 ? (
-                              <div className="p-8 text-center text-white/20 text-[10px] uppercase font-black tracking-widest italic">Silent...</div>
+                              <div className="p-8 text-center text-muted-foreground text-[10px] uppercase font-black tracking-widest italic">Silent...</div>
                             ) : (
                               notifications.map(notif => (
-                                <div key={notif.id} onClick={() => handleNotificationClick(notif)} className={`flex items-start gap-4 p-3 rounded-xl cursor-pointer transition-all ${notif.read ? 'opacity-40' : 'bg-white/5'}`}>
-                                  <img src={notif.actorPhoto} alt="" className="w-9 h-9 rounded-full border border-white/10 object-cover shrink-0" />
+                                <div key={notif.id} onClick={() => handleNotificationClick(notif)} className={`flex items-start gap-4 p-3 rounded-xl cursor-pointer transition-all ${notif.read ? 'opacity-40' : 'bg-muted/50'}`}>
+                                  <img src={notif.actorPhoto} alt="" className="w-9 h-9 rounded-full border border-border object-cover shrink-0" />
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-[11px] text-white/80 leading-snug"><span className="font-bold text-white">{notif.actorName}</span> {getNotificationText(notif)}</p>
-                                    <span className="text-[9px] text-orange-500/80 font-black uppercase mt-1 block">{notif.createdAt?.toMillis ? formatDistanceToNow(notif.createdAt.toMillis(), { addSuffix: true }) : 'now'}</span>
+                                    <p className="text-[11px] text-foreground/80 leading-snug"><span className="font-bold text-foreground">{notif.actorName}</span> {getNotificationText(notif)}</p>
+                                    <span className="text-[9px] text-primary/80 font-black uppercase mt-1 block">{notif.createdAt?.toMillis ? formatDistanceToNow(notif.createdAt.toMillis(), { addSuffix: true }) : 'now'}</span>
                                   </div>
                                 </div>
                               ))
@@ -216,7 +226,7 @@ export function Navbar() {
                   <div className="relative">
                     <button
                       onClick={() => { setShowUserMenu(!showUserMenu); setShowNotifMenu(false); }}
-                      className="w-8 h-8 rounded-full overflow-hidden border border-white/20 hover:border-white transition-all active:scale-95"
+                      className="w-8 h-8 rounded-full overflow-hidden border border-border hover:border-foreground transition-all active:scale-95"
                     >
                       <img src={dishdUser?.photoURL || user.photoURL || ""} alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     </button>
@@ -228,15 +238,15 @@ export function Navbar() {
                           animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
                           exit={{ opacity: 0, y: 20, scale: 0.95, filter: 'blur(10px)' }}
                           transition={{ type: 'spring', stiffness: 500, damping: 45 }}
-                          className="absolute right-0 mt-3 w-52 bg-[#0a0a0a] border border-white/10 shadow-2xl rounded-2xl py-2 z-[400] will-change-transform"
+                          className="absolute right-0 mt-3 w-52 bg-background border border-border shadow-2xl rounded-2xl py-2 z-[400] will-change-transform"
                         >
-                          <Link to={`/profile/${dishdUser?.username || user.uid}`} className="flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors text-sm font-medium text-white/60 hover:text-white" onClick={() => setShowUserMenu(false)}>
-                            <User size={14} className="text-white/60" /> Profile
+                          <Link to={`/profile/${dishdUser?.username || user.uid}`} className="flex items-center gap-3 px-5 py-3 hover:bg-muted transition-colors text-sm font-medium text-muted-foreground hover:text-foreground" onClick={() => setShowUserMenu(false)}>
+                            <User size={14} className="text-muted-foreground" /> Profile
                           </Link>
-                          <button onClick={() => { setIsSettingsOpen(true); setShowUserMenu(false); }} className="w-full flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors text-sm font-medium text-white/60 hover:text-white">
-                            <Settings size={14} className="text-white/60" /> Settings
+                          <button onClick={() => { setIsSettingsOpen(true); setShowUserMenu(false); }} className="w-full flex items-center gap-3 px-5 py-3 hover:bg-muted transition-colors text-sm font-medium text-muted-foreground hover:text-foreground">
+                            <Settings size={14} className="text-muted-foreground" /> Settings
                           </button>
-                          <button onClick={() => { logout(); setShowUserMenu(false); }} className="w-full flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors text-sm font-medium text-rose-500">
+                          <button onClick={() => { logout(); setShowUserMenu(false); }} className="w-full flex items-center gap-3 px-5 py-3 hover:bg-muted transition-colors text-sm font-medium text-rose-500">
                             <LogOut size={14} /> Sign Out
                           </button>
                         </motion.div>
@@ -248,7 +258,7 @@ export function Navbar() {
             ) : (
               <button 
                 onClick={login}
-                className="bg-white text-black text-xs font-medium px-6 py-2 rounded-full hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all"
+                className="bg-foreground text-background text-xs font-medium px-6 py-2 rounded-full hover:scale-105 shadow-lg transition-all"
               >
                 Sign In
               </button>

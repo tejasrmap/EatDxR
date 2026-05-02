@@ -69,18 +69,18 @@ export const FollowListModal: React.FC<FollowListModalProps> = ({ isOpen, onClos
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
       <div 
-        className="w-full max-w-sm bg-[#1a202c] border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col"
+        className="w-full max-w-sm bg-background border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col"
         style={{ maxHeight: '80vh' }}
       >
-        <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5">
-          <h2 className="text-sm font-bold uppercase tracking-widest text-white">
+        <div className="flex items-center justify-between p-4 border-b border-border bg-muted">
+          <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">
             {type === "followers" ? "Followers" : "Following"}
           </h2>
           <button 
             onClick={onClose}
-            className="p-1 text-white/40 hover:text-white transition-colors"
+            className="p-1 text-muted-foreground hover:text-foreground transition-colors"
           >
             <X size={20} />
           </button>
@@ -92,7 +92,7 @@ export const FollowListModal: React.FC<FollowListModalProps> = ({ isOpen, onClos
               <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
             </div>
           ) : users.length === 0 ? (
-            <div className="py-12 text-center text-white/30 text-sm font-serif italic">
+            <div className="py-12 text-center text-muted-foreground/50 text-sm font-serif italic">
               Nobody here yet.
             </div>
           ) : (
@@ -115,11 +115,11 @@ export const FollowListModal: React.FC<FollowListModalProps> = ({ isOpen, onClos
                     <Link 
                       to={`/profile/${u.uid}`}
                       onClick={onClose}
-                      className="text-sm font-bold text-white hover:text-orange-500 transition-colors truncate block"
+                      className="text-sm font-bold text-foreground hover:text-orange-500 transition-colors truncate block"
                     >
                       {u.displayName}
                     </Link>
-                    <p className="text-[10px] text-white/40 uppercase tracking-widest truncate">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest truncate">
                       {u.stats?.followingList?.length || 0} Following
                     </p>
                   </div>

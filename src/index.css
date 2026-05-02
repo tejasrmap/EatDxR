@@ -1,9 +1,19 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Outfit:wght@500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Outfit:wght@500;700;900&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   
   --color-zinc-950: #000000;
   --color-zinc-900: #111111;
@@ -12,13 +22,28 @@
 }
 
 :root {
-  --background: #000000;
+  /* Light Mode - Soft streetwear/clean aesthetic */
+  --background: #f8fafc;
+  --foreground: #09090b;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --border: #e2e8f0;
+  --primary: #3b82f6; /* Electric Blue */
+  --primary-foreground: #ffffff;
+  --accent: #ec4899; /* Hot Pink */
+  --accent-foreground: #ffffff;
+}
+
+.dark {
+  /* Dark Mode - Deep minimal with neon undertones */
+  --background: #050505;
   --foreground: #ffffff;
-  --muted: #a1a1aa;
-  --border: #333333;
-  --accent: #ccff00; /* Neon Lime */
-  --accent-secondary: #ff00ff; /* Hot Pink */
-  --accent-tertiary: #00ffff; /* Cyan */
+  --muted: #111111;
+  --muted-foreground: #a1a1aa;
+  --border: rgba(255, 255, 255, 0.1);
+  --primary: #8b5cf6; /* Violet */
+  --primary-foreground: #ffffff;
+  --accent: #06b6d4; /* Cyan */
   --accent-foreground: #000000;
 }
 
@@ -28,6 +53,7 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .serif {
@@ -56,28 +82,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.2em;
   font-weight: 700;
-  color: var(--muted);
-}
-
-.nav-pill {
-  border: 2px solid var(--border);
-  border-radius: 0;
-  padding: 0.5rem 1.25rem;
-  font-size: 0.875rem;
-  font-weight: 900;
-  background: var(--color-zinc-900);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  transition: all 0.2s ease-out;
-  box-shadow: 2px 2px 0px rgba(255,255,255,0.1);
-}
-
-.nav-pill:hover {
-  background: var(--accent);
-  color: #000;
-  border-color: var(--accent);
-  transform: translate(-2px, -2px);
-  box-shadow: 4px 4px 0px var(--accent-secondary);
+  color: var(--muted-foreground);
 }
 
 .horizontal-line {
@@ -93,6 +98,10 @@ body {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+  }
 }
 
 /* Global & Custom Scrollbar */
@@ -101,22 +110,18 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--background);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--muted-foreground);
 }
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+  scrollbar-color: var(--border) transparent;
 }
 
 .snap-y-container {
@@ -130,59 +135,37 @@ body {
   scroll-snap-stop: always;
 }
 
-.mesh-gradient {
-  background: #000000;
-  background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  background-size: 40px 40px;
-  position: relative;
-}
-
-.mesh-gradient::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle at 50% 50%, transparent 20%, #000000 100%);
+/* Aurora Dynamic Background */
+.aurora-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background-color: var(--background);
+  transition: background-color 0.3s ease;
   pointer-events: none;
 }
 
-/* Brutalist Classes */
-.glass-panel, .brutal-panel {
-  background: #000000;
-  border: 2px solid var(--border);
-  box-shadow: 4px 4px 0px rgba(255,255,255,0.1);
+.aurora-gradient {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 50% 50%, var(--primary) 0%, transparent 40%),
+              radial-gradient(circle at 30% 70%, var(--accent) 0%, transparent 40%);
+  filter: blur(120px);
+  opacity: 0.15;
+  animation: rotateAurora 25s linear infinite;
 }
 
-.glass-card, .brutal-card {
-  background: var(--color-zinc-900);
-  border: 2px solid var(--border);
-  transition: all 0.2s ease-out;
+.dark .aurora-gradient {
+  opacity: 0.25;
 }
 
-.glass-card:hover, .brutal-card:hover {
-  background: #000000;
-  border-color: var(--accent);
-  transform: translate(-4px, -4px);
-  box-shadow: 8px 8px 0px var(--accent-secondary);
-}
-
-.brutal-button {
-  background: var(--accent);
-  color: #000;
-  border: 2px solid #000;
-  font-weight: 900;
-  text-transform: uppercase;
-  transition: all 0.1s;
-  box-shadow: 4px 4px 0px var(--accent-secondary);
-}
-
-.brutal-button:active {
-  transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0px var(--accent-secondary);
+@keyframes rotateAurora {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Performance & GPU Acceleration Utilities */
@@ -203,7 +186,6 @@ html, body {
 }
 
 ::selection {
-  background: var(--accent);
-  color: var(--accent-foreground);
+  background: var(--primary);
+  color: var(--primary-foreground);
 }
-

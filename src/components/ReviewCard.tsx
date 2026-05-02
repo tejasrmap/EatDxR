@@ -214,11 +214,11 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
   const firstImage = dishesWithImages[0]?.image;
 
   return (
-    <div ref={cardRef} className="group p-6 mb-6 bg-white/[0.02] border border-white/10 rounded-3xl shadow-xl relative transition-all hover:-translate-y-1 hover:shadow-2xl hover:border-white/20">
+    <div ref={cardRef} className="group p-6 mb-6 bg-muted/30 border border-border rounded-3xl shadow-xl relative transition-all hover:-translate-y-1 hover:shadow-2xl hover:border-muted-foreground">
       <div className="flex flex-col sm:flex-row gap-6">
         <Link 
           to={`/restaurant/${review.restaurantId}`}
-          className="w-full h-56 sm:w-32 sm:h-44 bg-white/5 rounded-2xl border border-white/10 relative block group/img overflow-hidden shrink-0"
+          className="w-full h-56 sm:w-32 sm:h-44 bg-muted rounded-2xl border border-border relative block group/img overflow-hidden shrink-0"
         >
           {firstImage ? (
             <img 
@@ -230,10 +230,10 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <span className="text-[10px] font-medium text-white/20">No Photo</span>
+              <span className="text-[10px] font-medium text-muted-foreground">No Photo</span>
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity" />
         </Link>
         
         <div className="flex-1 min-w-0" onClick={() => setIsDetailedViewOpen(true)}>
@@ -242,18 +242,18 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
               <div className="flex flex-wrap items-baseline gap-x-2 mb-1">
                 {review.dishes?.map((dish, i) => (
                   <React.Fragment key={i}>
-                    <h3 className="text-xl font-semibold text-white transition-colors truncate tracking-tight">
+                    <h3 className="text-xl font-semibold text-foreground transition-colors truncate tracking-tight">
                       {dish.name}
                     </h3>
-                    {i < review.dishes.length - 1 && <span className="text-white/40 font-medium text-lg mx-1">+</span>}
+                    {i < review.dishes.length - 1 && <span className="text-muted-foreground font-medium text-lg mx-1">+</span>}
                   </React.Fragment>
                 ))}
               </div>
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-white/40 font-medium text-xs">at</span>
+                <span className="text-muted-foreground font-medium text-xs">at</span>
                 <Link 
                   to={`/restaurant/${review.restaurantId}`} 
-                  className="text-white hover:text-white transition-colors underline decoration-white/30 hover:decoration-white underline-offset-4 font-medium text-sm"
+                  className="text-foreground hover:text-foreground transition-colors underline decoration-border hover:decoration-foreground underline-offset-4 font-medium text-sm"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {review.restaurantName}
@@ -272,12 +272,12 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                         e.preventDefault();
                         setShowOptions(!showOptions);
                       }}
-                      className="p-1 text-white/20 hover:text-white transition-colors"
+                      className="p-1 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <MoreVertical size={16} />
                     </button>
                     {showOptions && (
-                      <div className="absolute right-0 top-full mt-2 w-40 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl py-2 z-50 backdrop-blur-xl">
+                      <div className="absolute right-0 top-full mt-2 w-40 bg-background border border-border rounded-xl shadow-2xl py-2 z-50 backdrop-blur-xl">
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
@@ -285,7 +285,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                             setShowOptions(false);
                             setIsEditing(true);
                           }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 small-caps text-white/60 hover:text-white transition-colors"
+                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 small-caps text-muted-foreground hover:text-foreground transition-colors"
                         >
                           <Edit2 size={12} /> Edit Entry
                         </button>
@@ -296,7 +296,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                             setShowOptions(false);
                             handleDelete();
                           }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-500/10 small-caps text-red-500/60 hover:text-red-500 transition-colors"
+                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-rose-500/10 small-caps text-rose-500/60 hover:text-rose-500 transition-colors"
                         >
                           <Trash2 size={12} /> Delete
                         </button>
@@ -305,7 +305,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                   </div>
                 )}
               </div>
-              <span className="font-medium text-[10px] text-white/40">
+              <span className="font-medium text-[10px] text-muted-foreground">
                 {formatDistanceToNow(parseFirebaseDate(review.createdAt), { addSuffix: true })}
               </span>
             </div>
@@ -322,24 +322,24 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
               <img 
                 src={optimizeImage(review.userPhoto, { width: 40 })} 
                 alt={review.userName} 
-                className="w-6 h-6 rounded-full border border-white/20 shadow-sm group-hover/user:border-white transition-all"
+                className="w-6 h-6 rounded-full border border-border shadow-sm group-hover/user:border-foreground transition-all"
                 referrerPolicy="no-referrer"
                 loading="lazy"
               />
-              <span className="text-[11px] font-medium text-white/60 group-hover/user:text-white transition-colors">{review.userName}</span>
+              <span className="text-[11px] font-medium text-muted-foreground group-hover/user:text-foreground transition-colors">{review.userName}</span>
             </Link>
             {review.city && (
               <>
-                <span className="text-white/20 text-[10px] font-medium">/</span>
-                <div className="flex items-center gap-1.5 text-white/60 font-medium text-[10px]">
-                  <MapPin size={10} className="text-white/40" />
+                <span className="text-border text-[10px] font-medium">/</span>
+                <div className="flex items-center gap-1.5 text-muted-foreground font-medium text-[10px]">
+                  <MapPin size={10} className="text-muted-foreground" />
                   <span>{review.city}</span>
                 </div>
               </>
             )}
           </div>
           
-          <p className="text-white/80 text-sm line-clamp-3 mb-6 leading-relaxed font-normal">
+          <p className="text-foreground/80 text-sm line-clamp-3 mb-6 leading-relaxed font-normal">
             {review.content}
           </p>
 
@@ -350,7 +350,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                 handleLike();
               }}
               disabled={isLikeLoading}
-              className={`flex items-center gap-2 text-white/40 hover:text-rose-500 transition-all group/btn ${hasLiked ? 'text-rose-500 scale-110' : ''} ${isLikeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex items-center gap-2 text-muted-foreground hover:text-rose-500 transition-all group/btn ${hasLiked ? 'text-rose-500 scale-110' : ''} ${isLikeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <Heart size={16} className={hasLiked ? "fill-rose-500" : "group-hover/btn:fill-rose-500 transition-transform group-hover/btn:scale-110"} />
               <span className="font-medium text-[11px] text-inherit">{totalLikes}</span>
@@ -360,9 +360,9 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                 e.stopPropagation();
                 setShowComments(!showComments);
               }}
-              className={`flex items-center gap-2 transition-all ${showComments ? 'text-white' : 'text-white/40 hover:text-white'}`}
+              className={`flex items-center gap-2 transition-all ${showComments ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              <MessageSquare size={16} className={showComments ? "fill-white" : ""} />
+              <MessageSquare size={16} className={showComments ? "fill-foreground" : ""} />
               <span className="font-medium text-[11px]">
                 {comments.length > 0 ? comments.length : 'Review'}
               </span>
@@ -372,7 +372,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                 e.stopPropagation();
                 setIsShareMenuOpen(true);
               }}
-              className="flex items-center gap-2 text-white/40 hover:text-white transition-all group/share"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-all group/share"
             >
               <Share2 size={16} className="group-hover/share:-rotate-12 transition-transform" />
               <span className="font-medium text-[11px]">Share</span>
@@ -383,13 +383,13 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-6 bg-white/[0.02] border border-white/10 rounded-2xl shadow-xl overflow-hidden"
+              className="mt-6 bg-muted/30 border border-border rounded-2xl shadow-xl overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="max-h-80 overflow-y-auto p-6 space-y-6 scrollbar-hide">
                 {comments.length === 0 ? (
                   <div className="py-4 text-center">
-                     <p className="text-xs font-medium text-white/40">No thoughts yet.</p>
+                     <p className="text-xs font-medium text-muted-foreground">No thoughts yet.</p>
                   </div>
                 ) : (
                   comments.map(comment => (
@@ -398,26 +398,26 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                         <img 
                           src={optimizeImage(comment.userPhoto, { width: 40 })} 
                           alt={comment.userName}
-                          className="w-8 h-8 rounded-full border border-white/20 transition-all"
+                          className="w-8 h-8 rounded-full border border-border transition-all"
                           referrerPolicy="no-referrer"
                           loading="lazy"
                         />
                       </Link>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <Link to={`/profile/${comment.userId}`} className="text-xs font-medium text-white hover:text-white transition-colors">{comment.userName}</Link>
-                          <span className="text-[10px] font-medium text-white/40">
+                          <Link to={`/profile/${comment.userId}`} className="text-xs font-medium text-foreground hover:text-foreground/80 transition-colors">{comment.userName}</Link>
+                          <span className="text-[10px] font-medium text-muted-foreground">
                             {comment.createdAt?.toMillis ? formatDistanceToNow(comment.createdAt.toMillis(), { addSuffix: true }) : 'just now'}
                           </span>
                         </div>
-                        <p className="text-sm text-white/80 leading-relaxed font-normal">{comment.content}</p>
+                        <p className="text-sm text-foreground/80 leading-relaxed font-normal">{comment.content}</p>
                       </div>
                     </div>
                   ))
                 )}
               </div>
               
-              <div className="p-4 bg-transparent border-t border-white/5">
+              <div className="p-4 bg-transparent border-t border-border">
                 <form 
                   onSubmit={handleCommentSubmit} 
                   className="flex gap-3"
@@ -430,13 +430,13 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                       if (!currentUser) login();
                     }}
                     placeholder={currentUser ? "Add a comment..." : "Sign in to comment..."}
-                    className="flex-1 bg-white/5 border border-white/10 rounded-full px-5 py-2.5 text-sm font-normal text-white focus:outline-none focus:border-white/30 transition-all placeholder:text-white/40"
+                    className="flex-1 bg-muted border border-border rounded-full px-5 py-2.5 text-sm font-normal text-foreground focus:outline-none focus:border-muted-foreground transition-all placeholder:text-muted-foreground"
                     readOnly={!currentUser}
                   />
                   <button 
                     type="submit"
                     disabled={!newComment.trim() || isCommentLoading}
-                    className="w-10 h-10 flex items-center justify-center bg-white text-black rounded-full transition-all disabled:opacity-20 shadow-lg hover:scale-105"
+                    className="w-10 h-10 flex items-center justify-center bg-foreground text-background rounded-full transition-all disabled:opacity-20 shadow-lg hover:scale-105"
                   >
                     {isCommentLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                   </button>

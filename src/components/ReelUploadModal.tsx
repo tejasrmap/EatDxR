@@ -168,41 +168,41 @@ export function ReelUploadModal({ isOpen, onClose }: ReelUploadModalProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/95 backdrop-blur-3xl"
+            className="fixed inset-0 bg-background/95 backdrop-blur-3xl"
           />
           
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full h-full md:h-auto md:max-h-[90vh] md:max-w-lg bg-[#0a0a0a] md:rounded-[2rem] shadow-2xl flex flex-col overflow-hidden"
+            className="relative w-full h-full md:h-auto md:max-h-[90vh] md:max-w-lg bg-background md:rounded-[2rem] shadow-2xl flex flex-col overflow-hidden border border-border"
           >
             {/* Stage Header */}
-            <div className="px-6 py-5 flex items-center justify-between border-b border-white/5 bg-black/40 backdrop-blur-2xl shrink-0 z-50">
+            <div className="px-6 py-5 flex items-center justify-between border-b border-border bg-background/40 backdrop-blur-2xl shrink-0 z-50">
               <div className="flex items-center gap-3">
                 {stage === "NARRATIVE" && (
-                   <button onClick={() => setStage("CLIP")} className="p-2 hover:bg-white/5 rounded-full text-white/40 hover:text-white transition-all">
+                   <button onClick={() => setStage("CLIP")} className="p-2 hover:bg-muted/80 rounded-full text-muted-foreground hover:text-foreground transition-all">
                      <ArrowLeft size={18} />
                    </button>
                 )}
                 <div className="flex flex-col">
                   <span className="text-[9px] uppercase font-black tracking-[0.4em] text-orange-500">Reel Narrative</span>
-                  <h2 className="text-base font-bold text-white serif italic">
+                  <h2 className="text-base font-bold text-foreground serif italic">
                     {stage === "CLIP" ? "Select the Moment" : "The Diary"}
                   </h2>
                 </div>
               </div>
               <button 
                 onClick={onClose} 
-                className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10 group"
+                className="w-10 h-10 flex items-center justify-center bg-muted hover:bg-muted/80 rounded-full transition-all border border-border group"
               >
-                <X size={18} className="text-white/40 group-hover:text-white transition-colors" />
+                <X size={18} className="text-muted-foreground group-hover:text-foreground transition-colors" />
               </button>
             </div>
 
             {/* Omni-Progress Bar */}
             {isUploading && (
-              <div className="h-1 w-full bg-white/5 relative z-[100]">
+              <div className="h-1 w-full bg-muted relative z-[100]">
                 <motion.div className="h-full bg-gradient-to-r from-orange-500 to-rose-500" initial={{ width: 0 }} animate={{ width: `${uploadProgress}%` }} />
               </div>
             )}
@@ -213,13 +213,13 @@ export function ReelUploadModal({ isOpen, onClose }: ReelUploadModalProps) {
                 <div className="p-8 h-full flex flex-col items-center justify-center gap-8">
                    <div 
                      onClick={() => videoInputRef.current?.click()}
-                     className="w-full aspect-[9/16] max-h-[60vh] bg-white/[0.02] border border-white/10 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition-all overflow-hidden relative group"
+                     className="w-full aspect-[9/16] max-h-[60vh] bg-muted/30 border border-border rounded-[2rem] flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-all overflow-hidden relative group"
                    >
                      {videoPreview ? (
                        <>
                          <video src={videoPreview} className="w-full h-full object-cover" muted loop autoPlay />
-                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-white">Replace Clip</span>
+                         <div className="absolute inset-0 bg-background/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-foreground">Replace Clip</span>
                          </div>
                        </>
                      ) : (
@@ -228,8 +228,8 @@ export function ReelUploadModal({ isOpen, onClose }: ReelUploadModalProps) {
                              <Film size={28} className="text-orange-500" />
                           </div>
                           <div className="text-center">
-                             <p className="text-xs font-bold text-white mb-1">Select Cinematic Clip</p>
-                             <p className="text-[9px] uppercase tracking-widest text-white/20 font-black">70s Elite Limit</p>
+                             <p className="text-xs font-bold text-foreground mb-1">Select Cinematic Clip</p>
+                             <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-black">70s Elite Limit</p>
                           </div>
                        </div>
                      )}
@@ -239,7 +239,7 @@ export function ReelUploadModal({ isOpen, onClose }: ReelUploadModalProps) {
                    {videoPreview && (
                      <button 
                        onClick={() => setStage("NARRATIVE")}
-                       className="w-full h-14 bg-white text-black font-black uppercase text-[10px] tracking-[0.4em] rounded-2xl flex items-center justify-center gap-3 transition-transform active:scale-95"
+                       className="w-full h-14 bg-foreground text-background font-black uppercase text-[10px] tracking-[0.4em] rounded-2xl flex items-center justify-center gap-3 transition-transform active:scale-95"
                      >
                        Next: The Narrative
                        <ArrowRight size={16} />
@@ -249,35 +249,35 @@ export function ReelUploadModal({ isOpen, onClose }: ReelUploadModalProps) {
               ) : (
                 /* STAGE 2: NARRATIVE DIARY */
                 <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-8 pb-32">
-                  <div className="aspect-video w-full rounded-2xl overflow-hidden border border-white/10 relative">
+                  <div className="aspect-video w-full rounded-2xl overflow-hidden border border-border relative">
                      <video src={videoPreview!} className="w-full h-full object-cover" muted loop autoPlay />
-                     <div className="absolute bottom-4 right-4 px-3 py-1 bg-black/40 backdrop-blur-xl rounded-full border border-white/10 text-[9px] font-black uppercase text-white/60">
+                     <div className="absolute bottom-4 right-4 px-3 py-1 bg-background/40 backdrop-blur-xl rounded-full border border-border text-[9px] font-black uppercase text-muted-foreground">
                         70s Narrative
                      </div>
                   </div>
 
                   <div className="space-y-6">
                     <section className="space-y-4">
-                       <h3 className="text-[9px] uppercase font-black tracking-widest text-white/30">Culinary Context</h3>
+                       <h3 className="text-[9px] uppercase font-black tracking-widest text-muted-foreground">Culinary Context</h3>
                        <div className="grid gap-4">
                           <div className="relative group">
-                             <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" />
+                             <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
                              <input 
                                 value={searchQuery}
                                 onChange={handleSearchChange}
                                 placeholder="Where did this happen?"
-                                className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-xs font-medium focus:outline-none focus:ring-1 ring-orange-500/40"
+                                className="w-full bg-muted/30 border border-border rounded-xl pl-12 pr-4 py-4 text-xs font-medium focus:outline-none focus:ring-1 ring-orange-500/40 text-foreground"
                              />
                              {errors.restaurant && <p className="text-[9px] text-rose-500 font-black uppercase text-right mt-1">{errors.restaurant.message}</p>}
                              <AnimatePresence>
                                {showResults && (searchResults.length > 0 || isSearching) && (
-                                 <motion.div className="absolute z-[100] left-0 right-0 mt-2 bg-[#121212]/95 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden max-h-48 overflow-y-auto">
-                                    {isSearching ? <div className="p-4 text-[9px] text-white/20 uppercase font-black text-center italic">Identifying...</div> : searchResults.map(r => (
-                                      <button key={r.id} type="button" onClick={() => { setSelectedRestaurant(r); setSearchQuery(r.name); setManualLocation(r.location || ""); setShowResults(false); setValue("restaurant", r.name); }} className="w-full p-4 hover:bg-white/5 text-left border-b border-white/5 last:border-0 flex items-center gap-3">
-                                         <div className="w-8 h-8 rounded bg-white/5 shrink-0" />
+                                 <motion.div className="absolute z-[100] left-0 right-0 mt-2 bg-background/95 backdrop-blur-3xl border border-border rounded-2xl shadow-2xl overflow-hidden max-h-48 overflow-y-auto">
+                                    {isSearching ? <div className="p-4 text-[9px] text-muted-foreground uppercase font-black text-center italic">Identifying...</div> : searchResults.map(r => (
+                                      <button key={r.id} type="button" onClick={() => { setSelectedRestaurant(r); setSearchQuery(r.name); setManualLocation(r.location || ""); setShowResults(false); setValue("restaurant", r.name); }} className="w-full p-4 hover:bg-muted/50 text-left border-b border-border last:border-0 flex items-center gap-3">
+                                         <div className="w-8 h-8 rounded bg-muted/50 shrink-0" />
                                          <div>
-                                            <p className="text-xs font-bold text-white">{r.name}</p>
-                                            <p className="text-[9px] text-white/40 uppercase font-black">{r.location}</p>
+                                            <p className="text-xs font-bold text-foreground">{r.name}</p>
+                                            <p className="text-[9px] text-muted-foreground uppercase font-black">{r.location}</p>
                                          </div>
                                       </button>
                                     ))}
@@ -289,48 +289,48 @@ export function ReelUploadModal({ isOpen, onClose }: ReelUploadModalProps) {
                     </section>
 
                     <section className="space-y-3">
-                       <h3 className="text-[9px] uppercase font-black tracking-widest text-white/30">The Diary Entry</h3>
+                       <h3 className="text-[9px] uppercase font-black tracking-widest text-muted-foreground">The Diary Entry</h3>
                        <textarea 
                          {...register("diary")}
                          placeholder="The story behind the lens..."
                          rows={4}
-                         className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 text-xs font-medium focus:outline-none focus:ring-1 ring-white/10 resize-none"
+                         className="w-full bg-muted/30 border border-border rounded-2xl p-5 text-xs font-medium focus:outline-none focus:ring-1 ring-border resize-none text-foreground"
                        />
                        {errors.diary && <p className="text-[9px] text-rose-500 font-black uppercase text-right">{errors.diary.message}</p>}
                     </section>
 
                     <section className="space-y-4">
                        <div className="flex items-center justify-between">
-                          <h3 className="text-[9px] uppercase font-black tracking-widest text-white/30">Dish Highlights</h3>
+                          <h3 className="text-[9px] uppercase font-black tracking-widest text-muted-foreground">Dish Highlights</h3>
                           <button type="button" onClick={() => append({ name: "", rating: 5 })} className="text-[10px] font-black text-orange-500 hover:text-orange-400 p-2 bg-orange-500/5 rounded-full">+ Tag Dish</button>
                        </div>
                        <div className="space-y-3">
                           {fields.map((field, i) => (
-                             <div key={field.id} className="flex items-center gap-3 bg-white/[0.02] border border-white/5 rounded-xl p-3">
+                             <div key={field.id} className="flex items-center gap-3 bg-muted/30 border border-border rounded-xl p-3">
                                 <input 
                                   {...register(`dishes.${i}.name` as const)}
                                   placeholder="Dish title..."
-                                  className="flex-1 bg-transparent text-xs font-bold focus:outline-none placeholder:text-white/10"
+                                  className="flex-1 bg-transparent text-xs font-bold text-foreground focus:outline-none placeholder:text-muted-foreground"
                                 />
                                 <div className="flex items-center gap-1.5">
                                    {[1,2,3,4,5].map(s => (
                                      <button key={s} type="button" onClick={() => setValue(`dishes.${i}.rating`, s)}>
-                                        <Star size={12} fill={s <= watch(`dishes.${i}.rating`) ? "currentColor" : "none"} className={s <= watch(`dishes.${i}.rating`) ? "text-orange-500" : "text-white/5"} />
+                                        <Star size={12} fill={s <= watch(`dishes.${i}.rating`) ? "currentColor" : "none"} className={s <= watch(`dishes.${i}.rating`) ? "text-orange-500" : "text-muted-foreground/30"} />
                                      </button>
                                    ))}
                                 </div>
-                                <button type="button" onClick={() => remove(i)} className="p-1.5 text-white/10 hover:text-rose-500"><Trash2 size={14} /></button>
+                                <button type="button" onClick={() => remove(i)} className="p-1.5 text-muted-foreground hover:text-rose-500"><Trash2 size={14} /></button>
                              </div>
                           ))}
                        </div>
                     </section>
 
-                    <section className="space-y-4 pt-4 border-t border-white/5">
-                        <h3 className="text-[9px] uppercase font-black tracking-widest text-white/30 text-center">Overall Culinary Verdict</h3>
+                    <section className="space-y-4 pt-4 border-t border-border">
+                        <h3 className="text-[9px] uppercase font-black tracking-widest text-muted-foreground text-center">Overall Culinary Verdict</h3>
                         <div className="flex justify-center gap-4">
                            {[1,2,3,4,5].map(s => (
                              <button key={s} type="button" onClick={() => setValue("rating", s)} className="hover:scale-125 transition-transform">
-                                <Star size={32} fill={s <= watchRating ? "currentColor" : "none"} className={s <= watchRating ? "text-orange-500" : "text-white/5"} />
+                                <Star size={32} fill={s <= watchRating ? "currentColor" : "none"} className={s <= watchRating ? "text-orange-500" : "text-muted-foreground/30"} />
                              </button>
                            ))}
                         </div>
@@ -338,7 +338,7 @@ export function ReelUploadModal({ isOpen, onClose }: ReelUploadModalProps) {
                     </section>
                   </div>
 
-                  <div className="fixed bottom-0 left-0 right-0 p-6 bg-black/60 backdrop-blur-2xl border-t border-white/5 z-[200]">
+                  <div className="fixed bottom-0 left-0 right-0 p-6 bg-background/60 backdrop-blur-2xl border-t border-border z-[200]">
                     <button 
                       type="submit"
                       disabled={isUploading || isSubmitting}

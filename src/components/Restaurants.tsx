@@ -77,10 +77,10 @@ export function Restaurants() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+      <div className="min-h-screen flex items-center justify-center bg-transparent">
         <div className="space-y-6 text-center">
-           <Loader2 className="w-12 h-12 animate-spin text-white/40 mx-auto" />
-           <p className="font-medium tracking-widest text-[12px] text-white/60">Syncing Regional Eateries</p>
+           <Loader2 className="w-12 h-12 animate-spin text-muted-foreground mx-auto" />
+           <p className="font-medium tracking-widest text-[12px] text-muted-foreground">Syncing Regional Eateries</p>
         </div>
       </div>
     );
@@ -92,9 +92,9 @@ export function Restaurants() {
         <motion.h1 
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-8"
+          className="text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-8"
         >
-          Discover <span className="text-white/60 font-medium">Nearby Places</span>
+          Discover <span className="text-muted-foreground font-medium">Nearby Places</span>
         </motion.h1>
         
         <motion.div 
@@ -103,11 +103,11 @@ export function Restaurants() {
           transition={{ delay: 0.2 }}
           className="flex flex-wrap items-center gap-6"
         >
-          <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl px-6 py-3 backdrop-blur-md">
-             <MapPin size={18} className={locationStatus === 'granted' ? "text-white" : "text-white/40"} />
+          <div className="flex items-center gap-4 bg-muted border border-border rounded-2xl px-6 py-3 backdrop-blur-md">
+             <MapPin size={18} className={locationStatus === 'granted' ? "text-foreground" : "text-muted-foreground"} />
               <div className="flex flex-col">
-                <span className="font-medium text-[10px] text-white/40 uppercase tracking-widest">Precision Status</span>
-                <span className="text-xs font-medium text-white">
+                <span className="font-medium text-[10px] text-muted-foreground uppercase tracking-widest">Precision Status</span>
+                <span className="text-xs font-medium text-foreground">
                   {locationStatus === 'granted' ? 'High Precision Active' : 'Locating Pulse...'}
                 </span>
               </div>
@@ -115,7 +115,7 @@ export function Restaurants() {
 
           <button 
             onClick={setSRMAPLocation}
-            className="group flex items-center gap-3 bg-white text-black px-6 py-3.5 rounded-full font-medium text-[13px] hover:scale-105 shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all"
+            className="group flex items-center gap-3 bg-foreground text-background px-6 py-3.5 rounded-full font-medium text-[13px] hover:scale-105 shadow-lg transition-all"
           >
             <Navigation size={16} className="group-hover:rotate-12 transition-transform" />
             Quick Access: SRMAP Hub
@@ -126,14 +126,14 @@ export function Restaurants() {
       {/* Nearby Section */}
       {nearby.length > 0 && (
         <section className="mb-24">
-          <div className="flex items-center justify-between mb-10 border-b border-white/5 pb-6">
+          <div className="flex items-center justify-between mb-10 border-b border-border pb-6">
             <div className="flex items-center gap-4">
-               <div className="w-10 h-10 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center">
-                  <Navigation className="text-white" size={18} />
+               <div className="w-10 h-10 bg-muted rounded-xl border border-border flex items-center justify-center">
+                  <Navigation className="text-foreground" size={18} />
                </div>
-               <h2 className="font-semibold text-white/80 tracking-wide text-[16px]">Immediate Proximity</h2>
+               <h2 className="font-semibold text-foreground/80 tracking-wide text-[16px]">Immediate Proximity</h2>
             </div>
-            <p className="font-medium text-[12px] text-white/40">{nearby.length} High-Ranked Places</p>
+            <p className="font-medium text-[12px] text-muted-foreground">{nearby.length} High-Ranked Places</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -148,12 +148,12 @@ export function Restaurants() {
 
       {/* Others / More Section */}
       <section>
-          <div className="flex items-center justify-between mb-10 border-b border-white/5 pb-6">
+          <div className="flex items-center justify-between mb-10 border-b border-border pb-6">
             <div className="flex items-center gap-4">
-               <div className="w-10 h-10 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center">
-                  <Compass className="text-white" size={18} />
+               <div className="w-10 h-10 bg-muted rounded-xl border border-border flex items-center justify-center">
+                  <Compass className="text-foreground" size={18} />
                </div>
-               <h2 className="font-semibold text-[16px] text-white/80 tracking-wide">Regional Gastronomy</h2>
+               <h2 className="font-semibold text-[16px] text-foreground/80 tracking-wide">Regional Gastronomy</h2>
             </div>
           </div>
 
@@ -163,9 +163,9 @@ export function Restaurants() {
               <RestaurantCard key={res.id} restaurant={res} index={i} isSmall />
             ))
           ) : (
-             <div className="col-span-full py-32 text-center bg-white/[0.02] border border-dashed border-white/10 rounded-3xl p-12">
-                <UtensilsCrossed className="w-16 h-16 text-white/20 mx-auto mb-6" />
-                <p className="text-white/60 font-medium text-lg">No additional findings in this region sweep.</p>
+             <div className="col-span-full py-32 text-center bg-muted/30 border border-dashed border-border rounded-3xl p-12">
+                <UtensilsCrossed className="w-16 h-16 text-muted-foreground/50 mx-auto mb-6" />
+                <p className="text-muted-foreground font-medium text-lg">No additional findings in this region sweep.</p>
              </div>
           )}
         </div>
@@ -190,14 +190,14 @@ function RestaurantCard({ restaurant, index, isSmall = false }: { restaurant: an
           href={mapsUrl} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="bg-white/10 backdrop-blur-xl hover:bg-white text-white hover:text-black p-3.5 rounded-full border border-white/20 transition-all flex items-center justify-center shadow-xl"
+          className="bg-background/50 backdrop-blur-xl hover:bg-foreground text-foreground hover:text-background p-3.5 rounded-full border border-border transition-all flex items-center justify-center shadow-xl"
           onClick={(e) => e.stopPropagation()}
         >
           <Navigation size={16} />
         </a>
       </div>
       <Link to={`/restaurant/${restaurant.id}`} className="block h-full">
-        <div className={`relative overflow-hidden rounded-3xl bg-white/[0.02] border border-white/10 shadow-2xl transition-all duration-500 hover:border-white/30 hover:-translate-y-1 h-full ${isSmall ? 'aspect-[3/4]' : 'aspect-[16/10]'}`}>
+        <div className={`relative overflow-hidden rounded-3xl bg-muted/30 border border-border shadow-2xl transition-all duration-500 hover:border-foreground/30 hover:-translate-y-1 h-full ${isSmall ? 'aspect-[3/4]' : 'aspect-[16/10]'}`}>
           {restaurant.image ? (
             <img 
               src={restaurant.image} 
@@ -207,14 +207,14 @@ function RestaurantCard({ restaurant, index, isSmall = false }: { restaurant: an
               loading="lazy"
             />
           ) : (
-            <div className="absolute inset-0 w-full h-full bg-[#111111]" />
+            <div className="absolute inset-0 w-full h-full bg-muted" />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent p-6 md:p-8 flex flex-col justify-end">
             <div className="flex items-center justify-between mb-4">
-                <span className="font-medium text-[11px] text-white px-3 py-1 rounded-full border border-white/10 bg-black/50 backdrop-blur-md">
+                <span className="font-medium text-[11px] text-white px-3 py-1 rounded-full border border-white/20 bg-black/50 backdrop-blur-md">
                    {formatDistance(restaurant.distance)}
                 </span>
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-black/50 backdrop-blur-md rounded-full border border-white/10">
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-black/50 backdrop-blur-md rounded-full border border-white/20">
                    <Star size={12} className="fill-white text-white" />
                    <span className="text-xs font-medium text-white">
                       {restaurant.rating?.toFixed ? restaurant.rating.toFixed(1) : restaurant.rating || "0.0"}
