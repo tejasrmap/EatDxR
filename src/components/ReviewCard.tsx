@@ -214,11 +214,11 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
   const firstImage = dishesWithImages[0]?.image;
 
   return (
-    <div ref={cardRef} className="group py-8 border-b border-white/5 last:border-0 relative hover:bg-white/[0.01] transition-colors rounded-xl px-4 -mx-4">
+    <div ref={cardRef} className="group p-6 mb-6 bg-black border-2 border-[#333333] shadow-[4px_4px_0px_#ff00ff] relative transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_#ff00ff]">
       <div className="flex flex-col sm:flex-row gap-6">
         <Link 
           to={`/restaurant/${review.restaurantId}`}
-          className="w-full h-56 sm:w-28 sm:h-40 bg-zinc-900 rounded-xl sm:rounded-lg overflow-hidden flex-shrink-0 border border-white/10 shadow-2xl relative block group/img"
+          className="w-full h-56 sm:w-28 sm:h-40 bg-[#111111] border-2 border-[#333333] shadow-[2px_2px_0px_#00ffff] relative block group/img"
         >
           {firstImage ? (
             <img 
@@ -242,18 +242,18 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
               <div className="flex flex-wrap items-baseline gap-x-2 mb-1">
                 {review.dishes?.map((dish, i) => (
                   <React.Fragment key={i}>
-                    <h3 className="text-xl font-extrabold text-white group-hover:text-accent transition-colors truncate tracking-tight">
+                    <h3 className="text-xl font-black text-white uppercase group-hover:text-[#ccff00] transition-colors truncate tracking-tight">
                       {dish.name}
                     </h3>
-                    {i < review.dishes.length - 1 && <span className="text-white/20 font-serif italic text-lg">&</span>}
+                    {i < review.dishes.length - 1 && <span className="text-[#00ffff] font-black text-lg mx-1">+</span>}
                   </React.Fragment>
                 ))}
               </div>
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-white/30 font-serif italic">at</span>
+                <span className="text-white/40 font-black uppercase tracking-widest text-[10px]">at</span>
                 <Link 
                   to={`/restaurant/${review.restaurantId}`} 
-                  className="text-white/60 hover:text-white transition-colors underline decoration-white/10 underline-offset-4 font-medium"
+                  className="text-[#ff00ff] hover:text-[#00ffff] transition-colors underline decoration-[#ff00ff]/50 hover:decoration-[#00ffff] underline-offset-4 font-black uppercase text-[12px]"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {review.restaurantName}
@@ -322,25 +322,25 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
               <img 
                 src={optimizeImage(review.userPhoto, { width: 40 })} 
                 alt={review.userName} 
-                className="w-5 h-5 rounded-full border border-white/10 transition-all"
+                className="w-6 h-6 rounded-none border-2 border-white transition-all shadow-[2px_2px_0px_#ccff00] group-hover/user:shadow-[1px_1px_0px_#ccff00]"
                 referrerPolicy="no-referrer"
                 loading="lazy"
               />
-              <span className="text-xs font-medium text-white/40 group-hover/user:text-white transition-colors">{review.userName}</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/40 group-hover/user:text-white transition-colors">{review.userName}</span>
             </Link>
             {review.city && (
               <>
-                <span className="text-white/10 text-[10px]">•</span>
-                <div className="flex items-center gap-1.5 text-white/20 small-caps text-[9px] tracking-normal">
-                  <MapPin size={10} className="text-white/40" />
+                <span className="text-[#00ffff] text-[10px] font-black">/</span>
+                <div className="flex items-center gap-1.5 text-white/40 font-black uppercase tracking-widest text-[10px]">
+                  <MapPin size={10} className="text-[#00ffff]" />
                   <span>{review.city}</span>
                 </div>
               </>
             )}
           </div>
           
-          <p className="text-white/60 text-[15px] line-clamp-2 mb-6 leading-relaxed font-serif italic">
-            "{review.content}"
+          <p className="text-white/80 text-[15px] line-clamp-2 mb-6 leading-relaxed font-bold">
+            {review.content}
           </p>
 
           <div className="flex items-center gap-6">
@@ -350,20 +350,20 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                 handleLike();
               }}
               disabled={isLikeLoading}
-              className={`flex items-center gap-2 text-white/30 hover:text-orange-500 transition-all group/btn ${hasLiked ? 'text-orange-500 scale-110' : ''} ${isLikeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex items-center gap-2 text-white/30 hover:text-[#ff00ff] transition-all group/btn ${hasLiked ? 'text-[#ff00ff] scale-110' : ''} ${isLikeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <Heart size={16} className={hasLiked ? "fill-orange-500" : "group-hover/btn:fill-orange-500 transition-transform group-hover/btn:scale-110"} />
-              <span className="small-caps text-[10px] text-inherit">{totalLikes}</span>
+              <Heart size={16} className={hasLiked ? "fill-[#ff00ff]" : "group-hover/btn:fill-[#ff00ff] transition-transform group-hover/btn:scale-110"} />
+              <span className="font-black text-[10px] text-inherit">{totalLikes}</span>
             </button>
             <button 
               onClick={(e) => {
                 e.stopPropagation();
                 setShowComments(!showComments);
               }}
-              className={`flex items-center gap-2 transition-all ${showComments ? 'text-white' : 'text-white/30 hover:text-white'}`}
+              className={`flex items-center gap-2 transition-all ${showComments ? 'text-[#00ffff]' : 'text-white/30 hover:text-[#00ffff]'}`}
             >
-              <MessageSquare size={16} className={showComments ? "fill-white/10" : ""} />
-              <span className="small-caps text-[10px]">
+              <MessageSquare size={16} className={showComments ? "fill-[#00ffff]/20" : ""} />
+              <span className="font-black text-[10px] uppercase tracking-widest">
                 {comments.length > 0 ? comments.length : 'Review'}
               </span>
             </button>
@@ -372,10 +372,10 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                 e.stopPropagation();
                 setIsShareMenuOpen(true);
               }}
-              className="flex items-center gap-2 text-white/30 hover:text-white transition-all group/share"
+              className="flex items-center gap-2 text-white/30 hover:text-[#ccff00] transition-all group/share"
             >
-              <Share2 size={16} className="group-hover/share:rotate-12 transition-transform" />
-              <span className="small-caps text-[10px]">Share</span>
+              <Share2 size={16} className="group-hover/share:-rotate-12 transition-transform" />
+              <span className="font-black text-[10px] uppercase tracking-widest">Share</span>
             </button>
           </div>
 
@@ -383,13 +383,13 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-6 glass-panel overflow-hidden border-white/5"
+              className="mt-6 bg-[#000000] border-2 border-[#333333] shadow-[4px_4px_0px_#00ffff]"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="max-h-80 overflow-y-auto p-6 space-y-6 scrollbar-hide">
                 {comments.length === 0 ? (
                   <div className="py-4 text-center">
-                     <p className="text-xs text-white/20 italic font-serif">Be the first to share your thoughts...</p>
+                     <p className="text-[10px] font-black tracking-widest text-white/20 uppercase">No thoughts yet.</p>
                   </div>
                 ) : (
                   comments.map(comment => (
@@ -398,26 +398,26 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                         <img 
                           src={optimizeImage(comment.userPhoto, { width: 40 })} 
                           alt={comment.userName}
-                          className="w-7 h-7 rounded-full border border-white/10 transition-all mt-1"
+                          className="w-7 h-7 rounded-none border-2 border-[#ccff00] transition-all shadow-[2px_2px_0px_#ff00ff]"
                           referrerPolicy="no-referrer"
                           loading="lazy"
                         />
                       </Link>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <Link to={`/profile/${comment.userId}`} className="text-xs font-bold text-white hover:text-accent transition-colors">{comment.userName}</Link>
-                          <span className="text-[9px] small-caps text-white/20">
+                          <Link to={`/profile/${comment.userId}`} className="text-[11px] font-black uppercase tracking-wider text-white hover:text-[#00ffff] transition-colors">{comment.userName}</Link>
+                          <span className="text-[9px] font-black tracking-widest text-white/40 uppercase">
                             {comment.createdAt?.toMillis ? formatDistanceToNow(comment.createdAt.toMillis(), { addSuffix: true }) : 'just now'}
                           </span>
                         </div>
-                        <p className="text-sm text-white/70 leading-relaxed font-serif italic">"{comment.content}"</p>
+                        <p className="text-sm text-white/80 leading-relaxed font-bold">{comment.content}</p>
                       </div>
                     </div>
                   ))
                 )}
               </div>
               
-              <div className="p-4 bg-white/[0.02] border-t border-white/5">
+              <div className="p-4 bg-[#111111] border-t-2 border-[#333333]">
                 <form 
                   onSubmit={handleCommentSubmit} 
                   className="flex gap-3"
@@ -429,14 +429,14 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                     onFocus={() => {
                       if (!currentUser) login();
                     }}
-                    placeholder={currentUser ? "Share your thoughts..." : "Sign in to join the conversation..."}
-                    className="flex-1 bg-white/[0.03] border border-white/10 rounded-full px-5 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/20 transition-all placeholder:text-white/20"
+                    placeholder={currentUser ? "TYPE SHIT..." : "SIGN IN..."}
+                    className="flex-1 bg-black border-2 border-[#333333] rounded-none px-5 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-[#ccff00] transition-all placeholder:text-white/20"
                     readOnly={!currentUser}
                   />
                   <button 
                     type="submit"
                     disabled={!newComment.trim() || isCommentLoading}
-                    className="w-10 h-10 flex items-center justify-center bg-white text-black rounded-full hover:bg-zinc-200 transition-all disabled:opacity-20 shadow-lg"
+                    className="w-10 h-10 flex items-center justify-center bg-[#ccff00] text-black border-2 border-black rounded-none transition-all disabled:opacity-20 shadow-[2px_2px_0px_#ff00ff] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0px_#ff00ff]"
                   >
                     {isCommentLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                   </button>

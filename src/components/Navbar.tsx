@@ -87,34 +87,29 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-[300] bg-black/40 backdrop-blur-3xl border-b border-white/5 h-16 transition-all">
+      <nav className="fixed top-0 left-0 right-0 z-[300] bg-black border-b-4 border-[#333333] h-16 transition-all">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-full flex items-center justify-between">
           {/* Logo Cluster */}
           <Link to="/" className="flex items-center gap-2 group shrink-0">
-            <div className="relative flex items-center justify-center w-8 h-8 bg-black border border-white/10 rounded-lg group-hover:border-orange-500/50 transition-all duration-500 overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-rose-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <Flame className="text-orange-500 w-4 h-4 relative z-10 group-hover:scale-110 transition-transform duration-500" />
+            <div className="relative flex items-center justify-center w-10 h-10 bg-[#ccff00] border-2 border-black shadow-[4px_4px_0px_#ff00ff] group-hover:translate-x-1 group-hover:translate-y-1 group-hover:shadow-[2px_2px_0px_#ff00ff] transition-all duration-100">
+              <Flame className="text-black w-5 h-5 fill-black" />
             </div>
-            <div className="logo-text hidden sm:flex items-baseline tracking-tighter transition-all duration-500">
-              <span className="font-black text-white text-2xl tracking-tight">MAD</span>
-              <span className="font-black bg-gradient-to-r from-orange-500 to-rose-500 bg-clip-text text-transparent text-2xl">EATER</span>
-              <div className="w-1.5 h-1.5 rounded-full bg-orange-500 ml-1 mb-1 animate-pulse" />
+            <div className="logo-text hidden sm:flex items-baseline tracking-tighter ml-2">
+              <span className="font-black text-white text-3xl tracking-tight uppercase" style={{ textShadow: '3px 3px 0px #00ffff' }}>MAD</span>
+              <span className="font-black bg-[#ff00ff] text-black px-1.5 py-0.5 text-2xl uppercase ml-1 border-2 border-black shadow-[3px_3px_0px_#00ffff]">EATER</span>
             </div>
           </Link>
           
           {/* Desktop Central Navigation */}
           <div className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
-            <Link to="/restaurants" className="small-caps text-white/40 hover:text-white transition-all relative group">
+            <Link to="/restaurants" className="font-black text-white/40 uppercase tracking-widest text-[10px] hover:text-[#ccff00] hover:-translate-y-0.5 transition-transform">
               Restaurants
-              <span className="absolute -bottom-1 left-0 w-0 h-px bg-white/20 group-hover:w-full transition-all duration-500" />
             </Link>
-            <Link to="/critics" className="small-caps text-white/40 hover:text-white transition-all relative group">
+            <Link to="/critics" className="font-black text-white/40 uppercase tracking-widest text-[10px] hover:text-[#ccff00] hover:-translate-y-0.5 transition-transform">
               Critics
-              <span className="absolute -bottom-1 left-0 w-0 h-px bg-white/20 group-hover:w-full transition-all duration-500" />
             </Link>
-            <Link to="/journal" className="small-caps text-white/40 hover:text-white transition-all relative group">
+            <Link to="/journal" className="font-black text-white/40 uppercase tracking-widest text-[10px] hover:text-[#ccff00] hover:-translate-y-0.5 transition-transform">
               Journal
-              <span className="absolute -bottom-1 left-0 w-0 h-px bg-white/20 group-hover:w-full transition-all duration-500" />
             </Link>
           </div>
 
@@ -135,7 +130,7 @@ export function Navbar() {
                 <div className="hidden md:block relative">
                   <button
                     onClick={() => setShowActionMenu(!showActionMenu)}
-                    className="p-2 text-[#00e054]/60 hover:text-[#00e054] transition-all active:scale-90 hover:bg-[#00e054]/5 rounded-xl border border-transparent hover:border-[#00e054]/10 group"
+                    className="w-10 h-10 flex items-center justify-center bg-[#ccff00] text-black border-2 border-black shadow-[3px_3px_0px_#ff00ff] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[1px_1px_0px_#ff00ff] transition-all group"
                     title="Create"
                   >
                     <Plus size={24} className={`transition-transform ${showActionMenu ? "rotate-45" : ""}`} />
@@ -148,7 +143,7 @@ export function Navbar() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.98 }}
                         transition={{ type: 'spring', stiffness: 500, damping: 45 }}
-                        className="absolute top-full right-0 mt-3 w-56 bg-[#1a1c1d]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl py-3 z-[350] overflow-hidden will-change-transform"
+                        className="absolute top-full right-0 mt-3 w-56 bg-[#111111] border-2 border-[#333333] shadow-[4px_4px_0px_#ff00ff] py-3 z-[350] overflow-hidden will-change-transform"
                       >
                         <button
                           onClick={() => { setIsReelModalOpen(true); setShowActionMenu(false); }}
@@ -179,7 +174,7 @@ export function Navbar() {
                   <div className="relative">
                     <button
                       onClick={() => { setShowNotifMenu(!showNotifMenu); setShowUserMenu(false); }}
-                      className="p-2 text-white/40 hover:text-white transition-colors relative"
+                      className="p-2 text-white/40 hover:text-[#ccff00] transition-transform hover:-translate-y-0.5 relative"
                     >
                       <Bell size={18} className={unreadCount > 0 ? "text-white" : ""} />
                       {unreadCount > 0 && (
@@ -196,7 +191,7 @@ export function Navbar() {
                           animate={{ opacity: 1, y: 0 }} 
                           exit={{ opacity: 0, y: 10 }}
                           transition={{ type: 'spring', stiffness: 500, damping: 45 }}
-                          className="absolute right-[-60px] md:right-0 mt-3 w-[300px] bg-[#1a1c1d]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl z-[400] max-h-96 flex flex-col overflow-hidden will-change-transform"
+                          className="absolute right-[-60px] md:right-0 mt-3 w-[300px] bg-[#111111] border-2 border-[#333333] shadow-[4px_4px_0px_#00ffff] z-[400] max-h-96 flex flex-col overflow-hidden will-change-transform"
                         >
                           <div className="p-4 border-b border-white/10">
                             <span className="text-[10px] uppercase font-black tracking-widest text-[#00e054]">Activity</span>
@@ -224,7 +219,7 @@ export function Navbar() {
                   <div className="relative">
                     <button
                       onClick={() => { setShowUserMenu(!showUserMenu); setShowNotifMenu(false); }}
-                      className="w-8 h-8 rounded-full overflow-hidden border border-white/10 hover:border-[#00e054] transition-all active:scale-95"
+                      className="w-8 h-8 rounded-none overflow-hidden border-2 border-white hover:border-[#ccff00] shadow-[2px_2px_0px_#00ffff] transition-all active:translate-y-0.5"
                     >
                       <img src={dishdUser?.photoURL || user.photoURL || ""} alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     </button>
@@ -236,7 +231,7 @@ export function Navbar() {
                           animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
                           exit={{ opacity: 0, y: 20, scale: 0.95, filter: 'blur(10px)' }}
                           transition={{ type: 'spring', stiffness: 500, damping: 45 }}
-                          className="absolute right-0 mt-3 w-52 bg-[#1a1c1d]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl py-2 z-[400] will-change-transform"
+                          className="absolute right-0 mt-3 w-52 bg-[#111111] border-2 border-[#333333] shadow-[4px_4px_0px_#ccff00] py-2 z-[400] will-change-transform"
                         >
                           <Link to={`/profile/${dishdUser?.username || user.uid}`} className="flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white" onClick={() => setShowUserMenu(false)}>
                             <User size={14} className="text-[#00e054]" /> Profile
@@ -256,7 +251,7 @@ export function Navbar() {
             ) : (
               <button 
                 onClick={login}
-                className="bg-white text-black text-[10px] font-black uppercase tracking-widest px-5 py-2.5 rounded-xl hover:bg-[#00e054] transition-all shadow-xl active:scale-95"
+                className="bg-[#ccff00] text-black text-[10px] font-black uppercase tracking-widest px-5 py-2.5 border-2 border-black shadow-[2px_2px_0px_#ff00ff] hover:translate-y-0.5 hover:translate-x-0.5 hover:shadow-[1px_1px_0px_#ff00ff] transition-all"
               >
                 In
               </button>
