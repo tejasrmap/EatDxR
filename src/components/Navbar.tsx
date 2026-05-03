@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Bell, User, LogOut, Settings, Plus, Film, Sun, Moon } from "lucide-react";
+import { Search, Bell, User, LogOut, Settings, Plus, Film } from "lucide-react";
 import { useState, useEffect } from "react";
 import { LogMealModal } from "./LogMealModal";
 import { ReelUploadModal } from "./ReelUploadModal";
@@ -16,7 +16,7 @@ import { useTheme } from "./ThemeProvider";
 
 export function Navbar() {
   const { user, dishdUser, login, logout } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -114,13 +114,7 @@ export function Navbar() {
 
           {/* Action Row: Unified & Accessible on Mobile */}
           <div className="flex items-center gap-1 md:gap-4">
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
-              title="Toggle Theme"
-            >
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
+
 
             {/* Direct Creation Hub (Mobile-Ready Search) */}
             <button 
