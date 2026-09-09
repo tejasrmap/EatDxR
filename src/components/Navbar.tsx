@@ -1,9 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Bell, User, LogOut, Settings, Plus, Film } from "lucide-react";
+import { Search, Bell, User, LogOut, Settings, Plus, Flame, Sparkles, Map, ListOrdered, Utensils } from "lucide-react";
 import { useState, useEffect } from "react";
 import { LogMealModal } from "./LogMealModal";
-import { ReelUploadModal } from "./ReelUploadModal";
+import { CravingUploadModal } from "./CravingUploadModal";
 import { SearchOverlay } from "./SearchOverlay";
+import { AIFoodAssistant } from "./AIFoodAssistant";
 import { useAuth } from "../App";
 import { collection, query, where, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
@@ -22,7 +23,8 @@ export function Navbar() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
-  const [isReelModalOpen, setIsReelModalOpen] = useState(false);
+  const [isCravingModalOpen, setIsCravingModalOpen] = useState(false);
+  const [isAIOpen, setIsAIOpen] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
@@ -78,15 +80,6 @@ export function Navbar() {
     navigate(`/profile/${notif.actorId}`);
   };
 
-  const getNotificationText = (notif: AppNotification) => {
-    switch (notif.type) {
-      case "LIKE": return "liked your review.";
-      case "COMMENT": return "commented on your review.";
-      case "FOLLOW": return "started following you.";
-      default: return "interacted with you.";
-    }
-  };
-
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-[300] bg-background/80 backdrop-blur-xl border-b border-border h-16 transition-all">
@@ -95,40 +88,59 @@ export function Navbar() {
           <Link to="/" className="flex items-center gap-2 group shrink-0">
             <div className="logo-text flex items-baseline tracking-tighter">
               <span className="font-bold text-foreground text-2xl tracking-tight uppercase">MAD</span>
-              <span className="font-bold text-muted-foreground text-2xl tracking-tight uppercase">EATER</span>
+              <span className="font-bold text-orange-500 text-2xl tracking-tight uppercase">EATER</span>
             </div>
           </Link>
           
           {/* Desktop Central Navigation */}
-          <div className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
+          <div className="hidden lg:flex items-center gap-7 absolute left-1/2 -translate-x-1/2">
+            <Link to="/cravings" className="font-medium text-muted-foreground text-sm hover:text-orange-400 transition-colors flex items-center gap-1.5">
+              <Flame size={14} className="text-orange-500" />
+              <span>Cravings</span>
+            </Link>
+            <Link to="/dishes" className="font-medium text-muted-foreground text-sm hover:text-foreground transition-colors">
+              Dishes
+            </Link>
             <Link to="/restaurants" className="font-medium text-muted-foreground text-sm hover:text-foreground transition-colors">
               Restaurants
+            </Link>
+            <Link to="/lists" className="font-medium text-muted-foreground text-sm hover:text-foreground transition-colors">
+              Lists
+            </Link>
+            <Link to="/map" className="font-medium text-muted-foreground text-sm hover:text-foreground transition-colors">
+              Map
             </Link>
             <Link to="/critics" className="font-medium text-muted-foreground text-sm hover:text-foreground transition-colors">
               Critics
             </Link>
-            <Link to="/journal" className="font-medium text-muted-foreground text-sm hover:text-foreground transition-colors">
-              Journal
-            </Link>
           </div>
 
-          {/* Action Row: Unified & Accessible on Mobile */}
-          <div className="flex items-center gap-1 md:gap-4">
+          {/* Action Row */}
+          <div className="flex items-center gap-2 md:gap-3">
+            
+            {/* AI Concierge Trigger */}
+            <button
+              onClick={() => setIsAIOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 hover:bg-orange-500 hover:text-black transition-all text-xs font-black uppercase tracking-wider group"
+              title="Madeater AI Food Concierge"
+            >
+              <Sparkles size={13} className="text-orange-400 group-hover:text-black transition-colors" />
+              <span className="hidden sm:inline">Ask AI</span>
+            </button>
 
-
-            {/* Direct Creation Hub (Mobile-Ready Search) */}
+            {/* Global Search */}
             <button 
               onClick={() => setIsSearchOpen(true)}
-              className="p-2 text-muted-foreground hover:text-foreground transition-colors" 
-              title="Search"
+              className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-muted" 
+              title="Search (⌘K)"
             >
               <Search size={18} />
             </button>
 
             {user ? (
-              <div className="flex items-center gap-1 md:gap-3">
-                {/* Creator Choice (Laptop Only) */}
-                <div className="hidden md:block relative">
+              <div className="flex items-center gap-2 md:gap-3">
+                {/* Create Menu (Desktop) */}
+                <div className="relative">
                   <button
                     onClick={() => setShowActionMenu(!showActionMenu)}
                     className="w-9 h-9 flex items-center justify-center bg-foreground text-background rounded-full hover:scale-105 transition-all shadow-lg group"
@@ -144,115 +156,121 @@ export function Navbar() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.98 }}
                         transition={{ type: 'spring', stiffness: 500, damping: 45 }}
-                        className="absolute top-full right-0 mt-3 w-56 bg-background border border-border shadow-2xl py-3 rounded-2xl z-[350] overflow-hidden will-change-transform"
+                        className="absolute top-full right-0 mt-3 w-60 bg-background border border-border shadow-2xl py-3 rounded-2xl z-[350] overflow-hidden will-change-transform"
                       >
                         <button
-                          onClick={() => { setIsReelModalOpen(true); setShowActionMenu(false); }}
-                          className="w-full flex items-center gap-4 px-6 py-3 hover:bg-muted transition-all text-xs font-bold uppercase tracking-widest text-foreground group"
+                          onClick={() => { setIsCravingModalOpen(true); setShowActionMenu(false); }}
+                          className="w-full flex items-center gap-3 px-5 py-3 hover:bg-muted transition-all text-xs font-bold uppercase tracking-widest text-foreground group text-left"
                         >
-                          <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                            <Film size={18} className="text-primary" />
+                          <div className="w-8 h-8 rounded-xl bg-orange-500/15 flex items-center justify-center text-orange-400 group-hover:bg-orange-500 group-hover:text-black transition-colors">
+                            <Flame size={17} />
                           </div>
-                          <span>Reel Narrative</span>
+                          <div>
+                            <span className="block">Post a Craving</span>
+                            <span className="text-[9px] text-muted-foreground lowercase">short-form food video</span>
+                          </div>
                         </button>
                         
                         <button
                           onClick={() => { setIsLogModalOpen(true); setShowActionMenu(false); }}
-                          className="w-full flex items-center gap-4 px-6 py-3 hover:bg-muted transition-all text-xs font-bold uppercase tracking-widest text-foreground group"
+                          className="w-full flex items-center gap-3 px-5 py-3 hover:bg-muted transition-all text-xs font-bold uppercase tracking-widest text-foreground group text-left"
                         >
-                          <div className="w-8 h-8 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
-                            <Plus size={20} className="text-accent" />
+                          <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                            <Plus size={17} />
                           </div>
-                          <span className="font-medium tracking-normal text-sm">Culinary Log</span>
+                          <div>
+                            <span className="block">Log an Experience</span>
+                            <span className="text-[9px] text-muted-foreground lowercase">review dishes & venues</span>
+                          </div>
                         </button>
+
+                        <Link
+                          to="/lists"
+                          onClick={() => setShowActionMenu(false)}
+                          className="w-full flex items-center gap-3 px-5 py-3 hover:bg-muted transition-all text-xs font-bold uppercase tracking-widest text-foreground group text-left"
+                        >
+                          <div className="w-8 h-8 rounded-xl bg-emerald-500/15 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-black transition-colors">
+                            <ListOrdered size={17} />
+                          </div>
+                          <div>
+                            <span className="block">Curate a List</span>
+                            <span className="text-[9px] text-muted-foreground lowercase">ranked food guides</span>
+                          </div>
+                        </Link>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
 
-                {/* Notifications & User Cluster */}
-                <div className="flex items-center gap-1 md:gap-3 border-l border-border pl-2 md:pl-4">
-                  <div className="relative">
-                    <button
-                      onClick={() => { setShowNotifMenu(!showNotifMenu); setShowUserMenu(false); }}
-                      className="p-2 text-muted-foreground hover:text-foreground transition-transform hover:-translate-y-0.5 relative"
-                    >
-                      <Bell size={18} className={unreadCount > 0 ? "text-foreground" : ""} />
-                      {unreadCount > 0 && (
-                        <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-background flex items-center justify-center text-[7px] font-black text-accent-foreground">
-                          {unreadCount}
-                        </span>
-                      )}
-                    </button>
-                    
-                    <AnimatePresence>
-                      {showNotifMenu && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: 10 }} 
-                          animate={{ opacity: 1, y: 0 }} 
-                          exit={{ opacity: 0, y: 10 }}
-                          transition={{ type: 'spring', stiffness: 500, damping: 45 }}
-                          className="absolute right-[-60px] md:right-0 mt-3 w-[300px] bg-background border border-border shadow-2xl rounded-2xl z-[400] max-h-96 flex flex-col overflow-hidden will-change-transform"
-                        >
-                          <div className="p-4 border-b border-border">
-                            <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Activity</span>
-                          </div>
-                          <div className="overflow-y-auto flex-1 p-2 space-y-1">
-                            {notifications.length === 0 ? (
-                              <div className="p-8 text-center text-muted-foreground text-[10px] uppercase font-black tracking-widest italic">Silent...</div>
-                            ) : (
-                              notifications.map(notif => (
-                                <div key={notif.id} onClick={() => handleNotificationClick(notif)} className={`flex items-start gap-4 p-3 rounded-xl cursor-pointer transition-all ${notif.read ? 'opacity-40' : 'bg-muted/50'}`}>
-                                  <img src={notif.actorPhoto} alt="" className="w-9 h-9 rounded-full border border-border object-cover shrink-0" />
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-[11px] text-foreground/80 leading-snug"><span className="font-bold text-foreground">{notif.actorName}</span> {getNotificationText(notif)}</p>
-                                    <span className="text-[9px] text-primary/80 font-black uppercase mt-1 block">{notif.createdAt?.toMillis ? formatDistanceToNow(notif.createdAt.toMillis(), { addSuffix: true }) : 'now'}</span>
-                                  </div>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
+                {/* Notifications */}
+                <div className="relative">
+                  <button 
+                    onClick={() => setShowNotifMenu(!showNotifMenu)}
+                    className="p-2 text-muted-foreground hover:text-foreground transition-colors relative rounded-full hover:bg-muted"
+                  >
+                    <Bell size={18} />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-orange-500" />
+                    )}
+                  </button>
+                </div>
 
-                  <div className="relative">
-                    <button
-                      onClick={() => { setShowUserMenu(!showUserMenu); setShowNotifMenu(false); }}
-                      className="w-8 h-8 rounded-full overflow-hidden border border-border hover:border-foreground transition-all active:scale-95"
-                    >
-                      <img src={dishdUser?.photoURL || user.photoURL || ""} alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    </button>
+                {/* User Menu */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="w-8 h-8 rounded-full overflow-hidden border border-border hover:border-foreground transition-colors"
+                  >
+                    <img 
+                      src={dishdUser?.photoURL || user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`} 
+                      alt="" 
+                      className="w-full h-full object-cover" 
+                    />
+                  </button>
 
-                    <AnimatePresence>
-                      {showUserMenu && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 20, scale: 0.95, filter: 'blur(10px)' }}
-                          animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-                          exit={{ opacity: 0, y: 20, scale: 0.95, filter: 'blur(10px)' }}
-                          transition={{ type: 'spring', stiffness: 500, damping: 45 }}
-                          className="absolute right-0 mt-3 w-52 bg-background border border-border shadow-2xl rounded-2xl py-2 z-[400] will-change-transform"
+                  <AnimatePresence>
+                    {showUserMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute top-full right-0 mt-3 w-56 bg-background border border-border shadow-2xl py-2 rounded-2xl z-[350] overflow-hidden"
+                      >
+                        <Link 
+                          to={`/profile/${dishdUser?.username || user.uid}`}
+                          onClick={() => setShowUserMenu(false)}
+                          className="w-full flex items-center gap-3 px-5 py-3 hover:bg-muted transition-colors text-sm font-medium text-foreground"
                         >
-                          <Link to={`/profile/${dishdUser?.username || user.uid}`} className="flex items-center gap-3 px-5 py-3 hover:bg-muted transition-colors text-sm font-medium text-muted-foreground hover:text-foreground" onClick={() => setShowUserMenu(false)}>
-                            <User size={14} className="text-muted-foreground" /> Profile
-                          </Link>
-                          <button onClick={() => { setIsSettingsOpen(true); setShowUserMenu(false); }} className="w-full flex items-center gap-3 px-5 py-3 hover:bg-muted transition-colors text-sm font-medium text-muted-foreground hover:text-foreground">
-                            <Settings size={14} className="text-muted-foreground" /> Settings
-                          </button>
-                          <button onClick={() => { logout(); setShowUserMenu(false); }} className="w-full flex items-center gap-3 px-5 py-3 hover:bg-muted transition-colors text-sm font-medium text-rose-500">
-                            <LogOut size={14} /> Sign Out
-                          </button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
+                          <User size={15} /> Your Profile
+                        </Link>
+                        <Link 
+                          to="/wrapped"
+                          onClick={() => setShowUserMenu(false)}
+                          className="w-full flex items-center gap-3 px-5 py-3 hover:bg-muted transition-colors text-sm font-medium text-orange-400"
+                        >
+                          <Sparkles size={15} /> Year in Food
+                        </Link>
+                        <button 
+                          onClick={() => { setIsSettingsOpen(true); setShowUserMenu(false); }} 
+                          className="w-full flex items-center gap-3 px-5 py-3 hover:bg-muted transition-colors text-sm font-medium text-muted-foreground hover:text-foreground"
+                        >
+                          <Settings size={15} /> Settings
+                        </button>
+                        <button 
+                          onClick={() => { logout(); setShowUserMenu(false); }} 
+                          className="w-full flex items-center gap-3 px-5 py-3 hover:bg-muted transition-colors text-sm font-medium text-rose-500"
+                        >
+                          <LogOut size={15} /> Sign Out
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
             ) : (
               <button 
                 onClick={login}
-                className="bg-foreground text-background text-xs font-medium px-6 py-2 rounded-full hover:scale-105 shadow-lg transition-all"
+                className="bg-foreground text-background text-xs font-black uppercase tracking-wider px-5 py-2 rounded-full hover:scale-105 shadow-lg transition-all"
               >
                 Sign In
               </button>
@@ -262,7 +280,8 @@ export function Navbar() {
       </nav>
 
       <LogMealModal isOpen={isLogModalOpen} onClose={() => setIsLogModalOpen(false)} />
-      <ReelUploadModal isOpen={isReelModalOpen} onClose={() => setIsReelModalOpen(false)} />
+      <CravingUploadModal isOpen={isCravingModalOpen} onClose={() => setIsCravingModalOpen(false)} />
+      <AIFoodAssistant isOpen={isAIOpen} onClose={() => setIsAIOpen(false)} />
       <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       <SettingsOverlay isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onEditProfile={() => setIsEditModalOpen(true)} />
       {dishdUser && <EditProfileModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} user={dishdUser} />}

@@ -34,6 +34,15 @@ interface LogMealModalProps {
 
 export function LogMealModal({ isOpen, onClose, existingReview, initialRestaurant }: LogMealModalProps) {
   const [rating, setRating] = useState(5);
+  const [ratingMode, setRatingMode] = useState<"simple" | "critic">("simple");
+  const [tasteScore, setTasteScore] = useState(9.2);
+  const [qualityScore, setQualityScore] = useState(8.8);
+  const [portionScore, setPortionScore] = useState(8.4);
+  const [valueScore, setValueScore] = useState(8.7);
+  const [presentationScore, setPresentationScore] = useState(8.3);
+  const [serviceScore, setServiceScore] = useState(8.9);
+  const [ambienceScore, setAmbienceScore] = useState(8.2);
+  const [isVerifiedVisit, setIsVerifiedVisit] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<RestaurantSearchResult[]>([]);
@@ -319,6 +328,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
           userId: user.uid,
           userName: dishdUser?.displayName || user.displayName || "Anonymous Critic",
           userPhoto: dishdUser?.photoURL || user.photoURL || `https://ui-avatars.com/api/?name=${dishdUser?.displayName || user.displayName || 'User'}&background=random`,
+          userCriticLevel: dishdUser?.criticLevel || "Food Critic",
           restaurantName: data.restaurant,
           restaurantId: restaurantId,
           restaurantLocation: manualLocation,
@@ -326,6 +336,18 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
           dishes: uploadedDishes,
           rating: data.rating,
           content: data.review || "",
+          type: "review",
+          isVerifiedVisit: isVerifiedVisit,
+          visitProofType: "receipt",
+          ratingsDetail: ratingMode === "critic" ? {
+            taste: tasteScore,
+            quality: qualityScore,
+            portion: portionScore,
+            value: valueScore,
+            presentation: presentationScore,
+            service: serviceScore,
+            ambience: ambienceScore
+          } : undefined,
           createdAt: serverTimestamp(),
           likes: 0
         };
@@ -562,26 +584,109 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
               {/* The Verdict */}
               <section className="space-y-6">
                 <div className="flex flex-col gap-6">
-                  <div className="space-y-3">
-                    <label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground text-center block">Overall Score</label>
-                    <div className="flex justify-center gap-4">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => handleSetRating(star)}
-                          className="hover:scale-125 transition-transform"
-                        >
-                          <Star 
-                            size={28} 
-                            fill={star <= rating ? "currentColor" : "none"} 
-                            className={star <= rating ? "text-orange-500" : "text-muted-foreground/50"}
+                  
+                  {/* Mode Selector */}
+                  <div className="flex items-center justify-between p-1 bg-muted rounded-full border border-border">
+                    <button
+                      type="button"
+                      onClick={() => setRatingMode("simple")}
+                      className={`flex-1 py-1.5 rounded-full text-xs font-bold transition-all ${
+                        ratingMode === "simple"
+                          ? "bg-foreground text-background shadow-md"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      ⭐ Simple Mode
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRatingMode("critic")}
+                      className={`flex-1 py-1.5 rounded-full text-xs font-bold transition-all ${
+                        ratingMode === "critic"
+                          ? "bg-foreground text-background shadow-md"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      🔬 Deep Critic Mode
+                    </button>
+                  </div>
+
+                  {ratingMode === "simple" ? (
+                    <div className="space-y-3">
+                      <label className="text-[10px] uppercase font-black tracking-widest text-muted-foreground text-center block">Overall Score (1-5)</label>
+                      <div className="flex justify-center gap-4">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => handleSetRating(star)}
+                            className="hover:scale-125 transition-transform"
+                          >
+                            <Star 
+                              size={28} 
+                              fill={star <= rating ? "currentColor" : "none"} 
+                              className={star <= rating ? "text-orange-500" : "text-muted-foreground/50"}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                      {errors.rating && <p className="text-[9px] text-rose-500 font-black uppercase text-center mt-2">{errors.rating.message}</p>}
+                    </div>
+                  ) : (
+                    /* Deep Critic Mode: 7 Dimensional Sliders */
+                    <div className="p-4 bg-muted/40 rounded-2xl border border-border space-y-4">
+                      <div className="flex items-center justify-between pb-2 border-b border-border">
+                        <span className="text-xs font-bold text-foreground">Multidimensional Sensory Analysis</span>
+                        <span className="text-xs font-black text-orange-400">
+                          {((tasteScore + qualityScore + portionScore + valueScore + presentationScore + serviceScore + ambienceScore) / 7).toFixed(1)} / 10
+                        </span>
+                      </div>
+
+                      {[
+                        { label: "Taste & Flavor Balance", val: tasteScore, set: setTasteScore },
+                        { label: "Ingredient Quality", val: qualityScore, set: setQualityScore },
+                        { label: "Portion Size", val: portionScore, set: setPortionScore },
+                        { label: "Value for Money", val: valueScore, set: setValueScore },
+                        { label: "Plating & Presentation", val: presentationScore, set: setPresentationScore },
+                        { label: "Hospitality & Service", val: serviceScore, set: setServiceScore },
+                        { label: "Atmosphere & Ambience", val: ambienceScore, set: setAmbienceScore },
+                      ].map(dim => (
+                        <div key={dim.label} className="space-y-1">
+                          <div className="flex justify-between text-[11px]">
+                            <span className="text-muted-foreground font-medium">{dim.label}</span>
+                            <span className="font-bold text-foreground">{dim.val.toFixed(1)}</span>
+                          </div>
+                          <input 
+                            type="range"
+                            min="1"
+                            max="10"
+                            step="0.1"
+                            value={dim.val}
+                            onChange={(e) => dim.set(parseFloat(e.target.value))}
+                            className="w-full accent-orange-500 cursor-pointer h-1.5"
                           />
-                        </button>
+                        </div>
                       ))}
                     </div>
-                    {errors.rating && <p className="text-[9px] text-rose-500 font-black uppercase text-center mt-2">{errors.rating.message}</p>}
+                  )}
+
+                  {/* Verified Visit Toggle */}
+                  <div className="flex items-center justify-between p-3.5 bg-muted/30 rounded-2xl border border-border">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <div>
+                        <p className="text-xs font-bold text-foreground">Verified Dining Visit</p>
+                        <p className="text-[10px] text-muted-foreground">Receipt / QR check-in attached</p>
+                      </div>
+                    </div>
+                    <input 
+                      type="checkbox"
+                      checked={isVerifiedVisit}
+                      onChange={(e) => setIsVerifiedVisit(e.target.checked)}
+                      className="w-5 h-5 accent-emerald-500 rounded cursor-pointer"
+                    />
                   </div>
+
                   <div className="space-y-2.5">
                     <label className="text-[9px] uppercase font-black tracking-widest text-muted-foreground">The Narrative</label>
                     <textarea 

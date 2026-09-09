@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Compass, Search, Plus, User, LayoutGrid } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Compass, Search, Plus, User, LayoutGrid, Flame, Utensils, ListOrdered } from 'lucide-react';
 import { useAuth } from '../App';
 import { LogMealModal } from './LogMealModal';
-import { ReelUploadModal } from './ReelUploadModal';
+import { CravingUploadModal } from './CravingUploadModal';
 import { motion, AnimatePresence } from 'motion/react';
-import { Film } from 'lucide-react';
 
 export function MobileBottomNav() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, dishdUser, login } = useAuth();
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
-  const [isReelModalOpen, setIsReelModalOpen] = useState(false);
+  const [isCravingModalOpen, setIsCravingModalOpen] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
 
@@ -29,34 +29,39 @@ export function MobileBottomNav() {
 
   return (
     <>
-      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-[50] pointer-events-none transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${isHidden ? 'translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`}>
-        <div className="w-full bg-background/90 backdrop-blur-xl border-t border-border shadow-2xl pointer-events-auto relative group">
+      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-[250] pointer-events-none transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${isHidden ? 'translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`}>
+        <div className="w-full bg-background/95 backdrop-blur-2xl border-t border-border shadow-2xl pointer-events-auto relative group">
           <div className="flex items-center justify-around h-16 relative z-10 px-2">
+            
+            {/* 1. Home Feed */}
             <Link 
-              to="/restaurants" 
-              className={`flex flex-col items-center gap-1 transition-all active:translate-y-0.5 ${isActive('/restaurants') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              to="/" 
+              className={`flex flex-col items-center gap-1 transition-all active:translate-y-0.5 ${isActive('/') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              <Compass size={20} className={isActive('/restaurants') ? "fill-foreground/20" : ""} />
-              <span className="text-[10px] font-medium">Explore</span>
+              <LayoutGrid size={20} className={isActive('/') ? "fill-foreground/20" : ""} />
+              <span className="text-[10px] font-bold">Feed</span>
             </Link>
 
-            <button 
-              onClick={() => window.dispatchEvent(new CustomEvent('OPEN_GLOBAL_SEARCH'))}
-              className="flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground transition-all active:translate-y-0.5"
+            {/* 2. Discover Dishes & Venues */}
+            <Link 
+              to="/dishes" 
+              className={`flex flex-col items-center gap-1 transition-all active:translate-y-0.5 ${isActive('/dishes') || isActive('/restaurants') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              <Search size={20} />
-              <span className="text-[10px] font-medium">Search</span>
-            </button>
+              <Compass size={20} className={isActive('/dishes') ? "fill-foreground/20" : ""} />
+              <span className="text-[10px] font-bold">Discover</span>
+            </Link>
 
+            {/* 3. Center Create Trigger */}
             <div className="relative -mt-6">
               <button 
                 onClick={() => {
                    if (!user) { login(); return; }
                    setShowActionMenu(!showActionMenu);
                 }}
-                className="w-12 h-12 bg-foreground rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95 transition-all group/btn"
+                className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(249,115,22,0.4)] hover:scale-105 active:scale-95 transition-all group/btn text-black"
+                title="Create"
               >
-                <Plus size={24} className={`text-background transition-transform duration-300 ${showActionMenu ? 'rotate-45' : ''}`} />
+                <Plus size={24} className={`transition-transform duration-300 ${showActionMenu ? 'rotate-45' : ''}`} />
               </button>
 
               <AnimatePresence>
@@ -67,43 +72,56 @@ export function MobileBottomNav() {
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       onClick={() => setShowActionMenu(false)}
-                      className="fixed inset-0 bg-background/80 z-[340]"
+                      className="fixed inset-0 bg-black/80 z-[340]"
                     />
                     <motion.div
                       initial={{ opacity: 0, y: 100 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 100 }}
                       transition={{ type: 'spring', stiffness: 400, damping: 40, mass: 0.8 }}
-                      className="fixed bottom-24 left-4 right-4 bg-background/95 backdrop-blur-xl border border-border rounded-3xl shadow-2xl py-6 z-[350] overflow-hidden will-change-transform"
+                      className="fixed bottom-24 left-4 right-4 bg-zinc-950 border border-white/15 rounded-3xl shadow-2xl py-6 z-[350] overflow-hidden text-white"
                     >
                       <div className="px-8 pb-4 mb-2 flex justify-center">
-                        <div className="w-12 h-1 bg-border rounded-full" />
+                        <div className="w-12 h-1 bg-white/20 rounded-full" />
                       </div>
                       
-                      <div className="px-4 space-y-3">
+                      <div className="px-4 space-y-2.5">
                         <button
-                          onClick={() => { setIsReelModalOpen(true); setShowActionMenu(false); }}
-                          className="w-full flex items-center gap-6 px-6 py-5 bg-muted/50 border border-border rounded-2xl hover:bg-muted transition-all text-sm font-medium text-foreground group"
+                          onClick={() => { setIsCravingModalOpen(true); setShowActionMenu(false); }}
+                          className="w-full flex items-center gap-4 px-5 py-4 bg-zinc-900 border border-white/10 rounded-2xl hover:bg-zinc-800 transition-all text-xs font-bold uppercase tracking-wider text-left text-white"
                         >
-                          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center transition-colors">
-                            <Film size={22} className="text-primary" />
+                          <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-400">
+                            <Flame size={20} />
                           </div>
-                          <div className="flex flex-col items-start gap-1">
-                            <span className="group-hover:text-foreground transition-colors">Reel Narrative</span>
-                            <span className="text-xs text-muted-foreground">Upload media</span>
+                          <div>
+                            <span className="block text-sm font-black">Post a Craving</span>
+                            <span className="text-[10px] text-white/50 lowercase">share short-form food video</span>
                           </div>
                         </button>
                         
                         <button
                           onClick={() => { setIsLogModalOpen(true); setShowActionMenu(false); }}
-                          className="w-full flex items-center gap-6 px-6 py-5 bg-muted/50 border border-border rounded-2xl hover:bg-muted transition-all text-sm font-medium text-foreground group"
+                          className="w-full flex items-center gap-4 px-5 py-4 bg-zinc-900 border border-white/10 rounded-2xl hover:bg-zinc-800 transition-all text-xs font-bold uppercase tracking-wider text-left text-white"
                         >
-                          <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center transition-colors">
-                            <Plus size={24} className="text-accent" />
+                          <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
+                            <Plus size={20} />
                           </div>
-                          <div className="flex flex-col items-start gap-1">
-                            <span className="group-hover:text-foreground transition-colors">Culinary Log</span>
-                            <span className="text-xs text-muted-foreground">Log an experience</span>
+                          <div>
+                            <span className="block text-sm font-black">Log an Experience</span>
+                            <span className="text-[10px] text-white/50 lowercase">rate dishes & dining spots</span>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={() => { navigate("/lists"); setShowActionMenu(false); }}
+                          className="w-full flex items-center gap-4 px-5 py-4 bg-zinc-900 border border-white/10 rounded-2xl hover:bg-zinc-800 transition-all text-xs font-bold uppercase tracking-wider text-left text-white"
+                        >
+                          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                            <ListOrdered size={20} />
+                          </div>
+                          <div>
+                            <span className="block text-sm font-black">Curate a List</span>
+                            <span className="text-[10px] text-white/50 lowercase">build ranked food guides</span>
                           </div>
                         </button>
                       </div>
@@ -113,26 +131,29 @@ export function MobileBottomNav() {
               </AnimatePresence>
             </div>
 
+            {/* 4. Cravings */}
             <Link 
-              to="/journal" 
-              className={`flex flex-col items-center gap-1 transition-all active:translate-y-0.5 ${isActive('/journal') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              to="/cravings" 
+              className={`flex flex-col items-center gap-1 transition-all active:translate-y-0.5 ${isActive('/cravings') ? 'text-orange-400' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              <LayoutGrid size={20} className={isActive('/journal') ? "fill-foreground/20" : ""} />
-              <span className="text-[10px] font-medium">Feed</span>
+              <Flame size={20} className={isActive('/cravings') ? "fill-orange-400" : ""} />
+              <span className="text-[10px] font-bold">Cravings</span>
             </Link>
 
-             <Link 
+            {/* 5. Profile */}
+            <Link 
               to={user ? `/profile/${dishdUser?.username || user.uid}` : "/"} 
+              onClick={() => { if (!user) login(); }}
               className={`flex flex-col items-center gap-1 transition-all active:translate-y-0.5 ${location.pathname.startsWith('/profile') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
               {user ? (
-                 <div className={`w-6 h-6 rounded-full overflow-hidden border ${location.pathname.startsWith('/profile') ? 'border-foreground' : 'border-border'}`}>
+                 <div className={`w-6 h-6 rounded-full overflow-hidden border ${location.pathname.startsWith('/profile') ? 'border-orange-400' : 'border-border'}`}>
                     <img src={dishdUser?.photoURL || user.photoURL || ""} alt="" className="w-full h-full object-cover" />
                  </div>
               ) : (
                  <User size={20} />
               )}
-              <span className="text-[10px] font-medium">Profile</span>
+              <span className="text-[10px] font-bold">Profile</span>
             </Link>
           </div>
         </div>
@@ -143,9 +164,9 @@ export function MobileBottomNav() {
         onClose={() => setIsLogModalOpen(false)} 
       />
 
-      <ReelUploadModal
-        isOpen={isReelModalOpen}
-        onClose={() => setIsReelModalOpen(false)}
+      <CravingUploadModal
+        isOpen={isCravingModalOpen}
+        onClose={() => setIsCravingModalOpen(false)}
       />
     </>
   );

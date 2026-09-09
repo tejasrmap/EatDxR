@@ -27,7 +27,18 @@ import { Navigate } from "react-router-dom";
 import { MobileBottomNav } from "./components/MobileBottomNav";
 import { useLocation } from "./hooks/useLocation";
 import { getCurrentCity } from "./services/mapsService";
-import { MapPin, Globe, Star, Loader2 } from "lucide-react";
+import { MapPin, Globe, Star, Loader2, Flame, Sparkles, Utensils, ListOrdered, Award, ArrowRight, Play } from "lucide-react";
+
+// Madeater Ecosystem Additions
+import { CravingsFeed } from "./components/CravingsFeed";
+import { DishesDirectory } from "./components/DishesDirectory";
+import { DishPage } from "./components/DishPage";
+import { FoodLists } from "./components/FoodLists";
+import { ListDetail } from "./components/ListDetail";
+import { FoodMap } from "./components/FoodMap";
+import { YearInFood } from "./components/YearInFood";
+import { AIFoodAssistant } from "./components/AIFoodAssistant";
+import { MOCK_DISHES, MOCK_LISTS, MOCK_CRAVINGS, MOCK_CRITICS_DATA } from "./data/mockData";
 
 // --- Error Boundary ---
 interface ErrorBoundaryProps {
@@ -54,7 +65,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-center">
-          <h1 className="text-3xl font-bold mb-4 serif italic">Something went wrong.</h1>
+          <h1 className="text-3xl font-bold mb-4 serif italic text-white">Something went wrong.</h1>
           <p className="text-white/60 mb-8 max-w-md">
             {this.state.error?.message.startsWith('{') 
               ? "A database error occurred. Please check your permissions." 
@@ -62,7 +73,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
           </p>
           <button 
             onClick={() => window.location.reload()}
-            className="nav-pill px-8 py-2"
+            className="px-8 py-2.5 rounded-full bg-white text-black font-bold text-xs uppercase tracking-wider"
           >
             Reload Page
           </button>
@@ -94,7 +105,6 @@ function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [dishdUser, setDishdUser] = useState<DishdUser | null>(null);
   const [loading, setLoading] = useState(true);
-
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
@@ -103,7 +113,6 @@ function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        // Sync user to Firestore
         const userRef = doc(db, "users", firebaseUser.uid);
         try {
           const userSnap = await getDoc(userRef);
@@ -112,6 +121,8 @@ function AuthProvider({ children }: { children: ReactNode }) {
               uid: firebaseUser.uid,
               displayName: firebaseUser.displayName || "Anonymous Critic",
               photoURL: firebaseUser.photoURL || `https://ui-avatars.com/api/?name=${firebaseUser.displayName || 'User'}&background=random`,
+              criticLevel: "Foodie",
+              credibilityScore: 85,
               stats: { mealsLogged: 0, reviewsWritten: 0, followers: 0, following: 0, followingList: [] },
               eatlist: [],
               likes: []
@@ -119,7 +130,6 @@ function AuthProvider({ children }: { children: ReactNode }) {
             await setDoc(userRef, newUser);
           }
           
-          // Stream updates for live data changes (like following/unfollowing)
           unsubscribeUserDoc = onSnapshot(userRef, (snapshot) => {
             if (snapshot.exists()) {
               setDishdUser(snapshot.data() as DishdUser);
@@ -177,7 +187,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
       {isOnboarding && (
         <EditProfileModal 
           isOpen={true}
-          onClose={() => {}} // Non-dismissible
+          onClose={() => {}} 
           user={dishdUser}
           isOnboarding={true}
         />
@@ -187,10 +197,12 @@ function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 function Home() {
+  const { dishdUser } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "nearby">("all");
-  const [currentCity, setCurrentCity] = useState<string | null>(null);
+  const [feedTab, setFeedTab] = useState<"for-you" | "following" | "trending" | "nearby">("for-you");
+  const [currentCity, setCurrentCity] = useState<string>("Hyderabad");
+  const [isAIOpen, setIsAIOpen] = useState(false);
   const { location } = useLocation();
 
   useEffect(() => {
@@ -202,28 +214,7 @@ function Home() {
   }, [location]);
 
   useEffect(() => {
-    const testConnection = async () => {
-      try {
-        await getDocFromServer(doc(db, 'test', 'connection'));
-      } catch (error) {
-        if(error instanceof Error && error.message.includes('the client is offline')) {
-          console.error("Please check your Firebase configuration.");
-        }
-      }
-    };
-    testConnection();
-
-    let q;
-    if (filter === "nearby" && currentCity) {
-      q = query(
-        collection(db, "reviews"), 
-        where("city", "==", currentCity),
-        orderBy("createdAt", "desc"), 
-        limit(20)
-      );
-    } else {
-      q = query(collection(db, "reviews"), orderBy("createdAt", "desc"), limit(10));
-    }
+    let q = query(collection(db, "reviews"), orderBy("createdAt", "desc"), limit(25));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       let fetchedReviews = snapshot.docs.map(doc => ({
@@ -232,181 +223,269 @@ function Home() {
         createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
       })) as Review[];
 
-      if (filter === "nearby" && currentCity) {
-        fetchedReviews = fetchedReviews.filter(r => r.city?.toLowerCase() === currentCity.toLowerCase());
-      }
+      // Merge with MOCK_CRAVINGS ensuring zero empty feeds
+      const existingIds = new Set(fetchedReviews.map(r => r.id));
+      const combined = [...fetchedReviews, ...MOCK_CRAVINGS.filter(m => !existingIds.has(m.id))];
 
-      setReviews(fetchedReviews);
+      setReviews(combined);
       setLoading(false);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, "reviews");
+      console.warn("Firestore reviews fallback to mock:", error.message);
+      setReviews(MOCK_CRAVINGS);
+      setLoading(false);
     });
 
     return unsubscribe;
-  }, [filter, currentCity]);
+  }, []);
+
+  // Filter reviews based on active feedTab
+  const displayedReviews = reviews.filter(r => {
+    if (feedTab === "for-you") return true;
+    if (feedTab === "following") {
+      const followingList = dishdUser?.stats?.followingList || ["teja", "priya"];
+      return followingList.includes(r.userId);
+    }
+    if (feedTab === "trending") {
+      return (r.likes || 0) > 10 || r.rating >= 9.0;
+    }
+    if (feedTab === "nearby") {
+      return !r.city || r.city.toLowerCase().includes(currentCity.toLowerCase());
+    }
+    return true;
+  });
 
   return (
-    <div className="elite-motion-safe">
+    <div className="elite-motion-safe min-h-screen bg-black text-white">
       <Hero />
       
-      <div className="max-w-7xl mx-auto px-6 py-20">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-20">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-24">
-            
-            {/* Popular Meals (Poster Grid) */}
-            <section id="popular-meals">
-              <div className="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
-                <h2 className="small-caps text-white/40">Popular Meals this Week</h2>
-                <Link to="/restaurants" className="small-caps text-white/20 hover:text-white transition-colors">See All Experience</Link>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-                {reviews.slice(0, 4).map((review, i) => {
-                  const dishesWithImages = review.dishes?.filter(d => d.image) || [];
-                  const firstImage = dishesWithImages[0]?.image;
-                  return (
-                    <Link 
-                      key={i} 
-                      to={`/restaurant/${review.restaurantId}`}
-                      className="aspect-[2/3] bg-zinc-900 rounded-lg overflow-hidden border border-white/10 group relative shadow-2xl transition-all duration-500 hover:border-white/20 hover:-translate-y-1 block"
-                    >
-                      <img 
-                        src={firstImage || `https://images.unsplash.com/photo-${[
-                          "1504674900247-0877df9cc836",
-                          "1476224489451-f8a61e8a93b5",
-                          "1493770348161-369560ae357d",
-                          "1473093226795-af9932fe5856"
-                        ][i]}?auto=format&fit=crop&w=400&q=80`} 
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out grayscale-[20%] group-hover:grayscale-0"
-                        referrerPolicy="no-referrer"
-                        loading="lazy"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent opacity-60 group-hover:opacity-90 transition-opacity flex flex-col items-center justify-end p-5 text-center">
-                        <StarRating rating={review.rating} size={12} className="flex items-center gap-0.5 text-accent mb-2" />
-                        <p className="text-[10px] font-extrabold text-white uppercase tracking-widest line-clamp-1 group-hover:text-accent transition-colors">{review.restaurantName}</p>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </section>
-
-            {/* Recent Reviews (List) */}
-            <section>
-              <div className="flex items-center justify-between mb-8 border-b border-white/5 pb-4">
-                <h2 className="small-caps text-white/40">Recent Reviews from Critics</h2>
-                <div className="flex items-center gap-6">
-                  <button 
-                    onClick={() => setFilter("all")}
-                    className={`small-caps transition-colors ${filter === "all" ? "text-white" : "text-white/20 hover:text-white"}`}
-                  >
-                    Global
-                  </button>
-                  <button 
-                    onClick={() => setFilter("nearby")}
-                    className={`small-caps transition-colors ${filter === "nearby" ? "text-white" : "text-white/20 hover:text-white"}`}
-                  >
-                    Nearby
-                  </button>
-                </div>
-              </div>
-              <div className="space-y-4">
-                {loading ? (
-                  <div className="py-24 text-center">
-                    <Loader2 className="w-10 h-10 animate-spin mx-auto text-white/10" />
-                  </div>
-                ) : reviews.length > 0 ? (
-                  reviews.map(review => (
-                    <ReviewCard key={review.id} review={review} />
-                  ))
-                ) : (
-                  <div className="py-24 text-center glass-panel border-dashed p-10">
-                    <p className="text-white/30 italic font-serif text-lg">No reviews yet. Be the first to log a meal!</p>
-                  </div>
-                )}
-              </div>
-            </section>
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-16">
+        
+        {/* SECTION 17: SIGNATURE DISHES SHOWCASE (The Biggest Madeater Differentiator) */}
+        <section className="mb-20">
+          <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white/70">
+                Signature Dishes • The Madeater Index
+              </h2>
+            </div>
+            <Link to="/dishes" className="text-xs text-orange-400 hover:text-orange-300 font-bold uppercase tracking-wider flex items-center gap-1">
+              <span>View All Dishes</span>
+              <ArrowRight size={13} />
+            </Link>
           </div>
-          
-          {/* Sidebar */}
-          <div className="space-y-20">
-            {/* Trending Cities */}
-            <section>
-              <h2 className="small-caps text-white/40 mb-8 pb-4 border-b border-white/5">Trending Cities</h2>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { name: "Mumbai", img: "https://images.unsplash.com/photo-1566552881560-0be862a7c445?auto=format&fit=crop&w=400&q=80" },
-                  { name: "Delhi", img: "https://images.unsplash.com/photo-1587474260584-136574528ed5?auto=format&fit=crop&w=400&q=80" },
-                  { name: "Bangalore", img: "https://images.unsplash.com/photo-1596760407110-2f75d0d2475d?auto=format&fit=crop&w=400&q=80" },
-                  { name: "Hyderabad", img: "https://images.unsplash.com/photo-1524230507669-5ff97982bb5e?auto=format&fit=crop&w=400&q=80" }
-                ].map((city, i) => (
-                  <div 
-                    key={i} 
-                    onClick={() => {
-                      setCurrentCity(city.name);
-                      setFilter("nearby");
-                    }}
-                    className="group cursor-pointer relative aspect-[4/3] rounded-xl overflow-hidden border border-white/10 shadow-lg"
-                  >
-                    <img 
-                      src={city.img} 
-                      className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 group-hover:scale-110 transition-all duration-700"
-                      referrerPolicy="no-referrer"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-zinc-950/40 group-hover:bg-zinc-950/10 transition-all flex items-center justify-center">
-                      <span className="small-caps text-white drop-shadow-xl">{city.name}</span>
-                    </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {MOCK_DISHES.map((dish) => (
+              <Link
+                key={dish.id}
+                to={`/dish/${dish.id}`}
+                className="group rounded-2xl bg-zinc-900/60 hover:bg-zinc-900 border border-white/10 hover:border-orange-500/50 p-3 transition-all flex flex-col justify-between shadow-lg"
+              >
+                <div className="relative aspect-square rounded-xl overflow-hidden mb-2.5 border border-white/10">
+                  <img 
+                    src={dish.image} 
+                    alt={dish.name}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                  />
+                  <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 px-2 py-0.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/20 text-[11px] font-black text-white">
+                    <Star size={10} className="text-amber-400 fill-amber-400" />
+                    <span>{dish.madeaterScore.toFixed(1)}</span>
                   </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-tight text-white group-hover:text-orange-400 transition-colors line-clamp-1">
+                    {dish.name}
+                  </h3>
+                  <p className="text-[10px] text-white/40 truncate mt-0.5">
+                    {dish.topRestaurants[0]?.name || "Top Spot"}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* SECTION 2: CRAVINGS SPOTLIGHT */}
+        <section className="mb-20">
+          <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <Flame size={16} className="text-orange-500 fill-orange-500 animate-pulse" />
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white/70">
+                Trending Cravings • Food-First Video
+              </h2>
+            </div>
+            <Link to="/cravings" className="text-xs text-orange-400 hover:text-orange-300 font-bold uppercase tracking-wider flex items-center gap-1">
+              <span>Watch Full Feed</span>
+              <ArrowRight size={13} />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {MOCK_CRAVINGS.slice(0, 4).map((craving) => (
+              <Link
+                key={craving.id}
+                to="/cravings"
+                className="group relative aspect-[9/14] rounded-3xl overflow-hidden border border-white/10 hover:border-orange-500/50 transition-all shadow-xl block"
+              >
+                <img 
+                  src={craving.dishes?.[0]?.image || "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=400&q=80"}
+                  alt="" 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+                
+                <div className="absolute top-3 left-3">
+                  <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-[9px] font-black uppercase text-orange-400">
+                    {craving.cravingTag || "Craving"}
+                  </span>
+                </div>
+
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-orange-500 text-black flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-xl">
+                  <Play size={18} className="fill-black ml-0.5" />
+                </div>
+
+                <div className="absolute bottom-3 left-3 right-3 space-y-1">
+                  <p className="text-xs font-black text-white group-hover:text-orange-400 transition-colors truncate">
+                    {craving.attachedDish || craving.restaurantName}
+                  </p>
+                  <p className="text-[10px] text-white/60 truncate flex items-center gap-1">
+                    <MapPin size={10} className="text-orange-400" />
+                    {craving.restaurantName}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* SECTION 1: HOME FEED (4 TABS) + SIDEBAR */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
+          
+          {/* Main Feed Column */}
+          <div className="lg:col-span-2 space-y-10">
+            
+            {/* 4 FEED TABS: For You / Following / Trending / Nearby */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-2 sm:gap-4">
+                {[
+                  { id: "for-you", label: "For You" },
+                  { id: "following", label: "Following" },
+                  { id: "trending", label: "Trending" },
+                  { id: "nearby", label: `Nearby (${currentCity})` }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setFeedTab(tab.id as any)}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-wider transition-all border ${
+                      feedTab === tab.id
+                        ? "bg-white text-black border-white shadow-lg"
+                        : "bg-zinc-900/60 text-white/50 border-white/10 hover:border-white/30 hover:text-white"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
                 ))}
               </div>
-            </section>
+            </div>
 
-            {/* Popular Lists */}
-            <section>
-              <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
-                <h2 className="small-caps text-white/40">Popular Food Lists</h2>
-                <Link to="/lists" className="small-caps text-white/20 hover:text-white transition-colors">See More</Link>
+            {/* Reviews Stream */}
+            <div className="space-y-6">
+              {loading ? (
+                <div className="py-24 text-center">
+                  <Loader2 className="w-10 h-10 animate-spin mx-auto text-orange-400" />
+                </div>
+              ) : displayedReviews.length > 0 ? (
+                displayedReviews.map(review => (
+                  <ReviewCard key={review.id} review={review} />
+                ))
+              ) : (
+                <div className="py-24 text-center bg-zinc-900/40 border border-dashed border-white/10 rounded-3xl p-10">
+                  <p className="text-white/40 italic font-serif text-lg">No reviews found in this feed tab yet.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Sidebar: Concierge + Curated Lists + Critics */}
+          <div className="space-y-16">
+            
+            {/* AI Concierge Promo Card */}
+            <div className="p-6 rounded-3xl bg-gradient-to-br from-zinc-900 to-zinc-950 border border-orange-500/30 space-y-4 shadow-2xl relative overflow-hidden">
+              <div className="flex items-center gap-2">
+                <Sparkles size={16} className="text-orange-400" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-orange-400">Autonomous Assistant</span>
               </div>
-              <div className="space-y-6">
-                {[
-                  "Best Sushi in Mumbai",
-                  "Authentic Street Food Delhi",
-                  "Top 10 Cafes Bangalore",
-                  "Hidden Gems Hyderabad"
-                ].map((list, i) => (
-                  <Link to="/lists" key={i} className="group block cursor-pointer">
-                    <p className="text-[15px] font-bold text-white/70 group-hover:text-accent transition-all duration-300 mb-1">{list}</p>
-                    <p className="small-caps text-[9px] text-white/20 tracking-normal group-hover:text-white/40">1.2k likes • 45 items curated</p>
+              <h3 className="text-lg font-black uppercase tracking-tight text-white">
+                What are you craving today?
+              </h3>
+              <p className="text-xs text-white/60 font-serif italic">
+                Ask Madeater AI for late-night spicy food, budget hidden gems, or romantic dinner spots.
+              </p>
+              <button
+                onClick={() => setIsAIOpen(true)}
+                className="w-full py-3 rounded-full bg-orange-500 text-black font-black uppercase tracking-wider text-xs hover:bg-orange-400 transition-colors shadow-lg shadow-orange-500/20"
+              >
+                Ask Madeater AI →
+              </button>
+            </div>
+
+            {/* Popular Curated Lists */}
+            <section>
+              <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10">
+                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white/50">Popular Lists</h2>
+                <Link to="/lists" className="text-xs text-orange-400 hover:text-orange-300 font-bold uppercase tracking-wider">Explore</Link>
+              </div>
+              <div className="space-y-4">
+                {MOCK_LISTS.map((list) => (
+                  <Link 
+                    to={`/list/${list.id}`} 
+                    key={list.id} 
+                    className="p-4 rounded-2xl bg-zinc-900/40 hover:bg-zinc-900 border border-white/10 hover:border-orange-500/40 transition-all block group"
+                  >
+                    <p className="text-sm font-bold text-white group-hover:text-orange-400 transition-colors line-clamp-1">
+                      {list.title}
+                    </p>
+                    <p className="text-[10px] text-white/40 mt-1">
+                      by {list.userName} • {list.likes} likes
+                    </p>
                   </Link>
                 ))}
               </div>
             </section>
 
-            {/* Top Critics */}
+            {/* Top Verified Critics */}
             <section>
-              <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
-                <h2 className="small-caps text-white/40">Top Critics</h2>
-                <Link to="/critics" className="small-caps text-white/20 hover:text-white transition-colors">Directory</Link>
+              <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10">
+                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white/50">Top Critics</h2>
+                <Link to="/critics" className="text-xs text-orange-400 hover:text-orange-300 font-bold uppercase tracking-wider">Directory</Link>
               </div>
-              <div className="space-y-5">
-                {[
-                  { id: "arjun", name: "Arjun Mehta", avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80" },
-                  { id: "priya", name: "Priya Sharma", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80" },
-                  { id: "vikram", name: "Vikram Singh", avatar: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=100&q=80" },
-                  { id: "ananya", name: "Ananya Iyer", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=100&q=80" }
-                ].map((critic, i) => (
-                  <Link to={`/profile/${critic.id}`} key={i} className="flex items-center gap-4 group cursor-pointer">
-                    <img 
-                      src={critic.avatar} 
-                      className="w-10 h-10 rounded-full grayscale brightness-90 group-hover:grayscale-0 group-hover:brightness-100 transition-all border border-white/10 group-hover:border-accent duration-500"
-                      referrerPolicy="no-referrer"
-                      loading="lazy"
-                    />
-                    <div className="min-w-0">
-                      <p className="text-[13px] font-bold text-white group-hover:text-accent transition-colors truncate">{critic.name}</p>
-                      <p className="small-caps text-[9px] text-white/20 tracking-normal group-hover:text-white/40">Verified Critic • 1.2k entries</p>
+              <div className="space-y-3">
+                {MOCK_CRITICS_DATA.map((critic) => (
+                  <Link 
+                    to={`/profile/${critic.username || critic.uid}`} 
+                    key={critic.uid} 
+                    className="p-3.5 rounded-2xl bg-zinc-900/40 hover:bg-zinc-900 border border-white/10 hover:border-orange-500/40 transition-all flex items-center justify-between gap-3 group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img 
+                        src={critic.photoURL} 
+                        className="w-10 h-10 rounded-full border border-white/20 object-cover" 
+                        alt="" 
+                      />
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-white group-hover:text-orange-400 transition-colors truncate">
+                          {critic.displayName}
+                        </p>
+                        <p className="text-[10px] text-white/40 truncate">
+                          {critic.criticLevel}
+                        </p>
+                      </div>
                     </div>
+                    <span className="text-xs font-black text-orange-400 shrink-0">
+                      {critic.credibilityScore}/100
+                    </span>
                   </Link>
                 ))}
               </div>
@@ -414,6 +493,11 @@ function Home() {
           </div>
         </div>
       </div>
+
+      <AIFoodAssistant 
+        isOpen={isAIOpen}
+        onClose={() => setIsAIOpen(false)}
+      />
     </div>
   );
 }
@@ -427,10 +511,16 @@ export function App() {
             <Layout>
               <Routes>
                 <Route path="/" element={<Home />} />
+                <Route path="/cravings" element={<CravingsFeed />} />
+                <Route path="/dishes" element={<DishesDirectory />} />
+                <Route path="/dish/:dishId" element={<DishPage />} />
+                <Route path="/lists" element={<FoodLists />} />
+                <Route path="/list/:listId" element={<ListDetail />} />
+                <Route path="/map" element={<FoodMap />} />
+                <Route path="/wrapped" element={<YearInFood />} />
                 <Route path="/profile/:userId" element={<Profile />} />
                 <Route path="/restaurant/:restaurantId" element={<Restaurant />} />
                 <Route path="/restaurants" element={<Restaurants />} />
-                <Route path="/lists" element={<PlaceholderPage title="Food Lists" />} />
                 <Route path="/critics" element={<Critics />} />
                 <Route path="/journal" element={<Journal />} />
                 <Route 
@@ -464,17 +554,3 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   
   return <>{children}</>;
 }
-
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <div className="max-w-7xl mx-auto px-6 py-20 text-center">
-      <h1 className="text-4xl font-black uppercase tracking-widest mb-4">{title}</h1>
-      <p className="text-white/40 italic serif">This section is coming soon. We're currently curating the best content for you!</p>
-      <Link to="/" className="inline-block mt-8 bg-white text-black px-8 py-3 rounded-full font-bold hover:bg-white/90 transition-colors">
-        Back to Home
-      </Link>
-    </div>
-  );
-}
-
-

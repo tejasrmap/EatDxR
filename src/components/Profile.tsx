@@ -5,7 +5,7 @@ import { collection, query, where, onSnapshot, orderBy, doc, getDoc, getDocs, up
 import { db } from "../firebase";
 import { Review, User, Restaurant } from "../types";
 import { useAuth } from "../App";
-import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus, Edit3, Share2, UtensilsCrossed } from "lucide-react";
+import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus, Edit3, Share2, UtensilsCrossed, Sparkles, ListOrdered, ShieldCheck, Award } from "lucide-react";
 import { toast } from "sonner";
 import { DiaryTable } from "./DiaryTable";
 import { FollowListModal } from "./FollowListModal";
@@ -13,6 +13,8 @@ import { EditProfileModal } from "./EditProfileModal";
 import { DiaryEntryModal } from "./DiaryEntryModal";
 import { StarRating } from "./StarRating";
 import { RatingGraph } from "./RatingGraph";
+import { TasteDNAView } from "./TasteDNAView";
+import { MOCK_LISTS } from "../data/mockData";
 
 export const Profile: React.FC = () => {
   const { userId: identifier } = useParams<{ userId: string }>();
@@ -21,7 +23,7 @@ export const Profile: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"profile" | "diary" | "eatlist">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "diary" | "eatlist" | "taste" | "lists">("profile");
   const [followerCount, setFollowerCount] = useState(0);
   const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
   const [followModalType, setFollowModalType] = useState<"followers" | "following" | null>(null);
@@ -258,12 +260,17 @@ export const Profile: React.FC = () => {
         </div>
 
         <div className="flex-1 w-full flex flex-col items-center md:items-start text-center md:text-left">
-          <div className="mb-4">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
             {user.username && (
               <span className="font-medium text-xs text-foreground/80 bg-muted/50 backdrop-blur-md px-4 py-1.5 rounded-full border border-border">
                 @{user.username}
               </span>
             )}
+            <span className="flex items-center gap-1.5 font-black text-xs uppercase tracking-wider text-orange-400 bg-orange-500/10 border border-orange-500/30 px-3.5 py-1.5 rounded-full shadow-sm">
+              <Award size={13} className="text-orange-400" />
+              <span>{user.criticLevel || "Food Critic"}</span>
+              <span className="text-white/40">• {user.credibilityScore || 94}/100 Credibility</span>
+            </span>
           </div>
 
           <div className="flex flex-col md:flex-row items-center md:items-baseline gap-6 mb-8">
@@ -273,26 +280,37 @@ export const Profile: React.FC = () => {
                     <span className="font-medium text-[11px] text-muted-foreground border border-border px-2.5 py-1 rounded-full bg-muted/30">{user.pronouns}</span>
                 )}
             </div>
-            {currentUser?.uid !== user.uid && (
-              <button
-                onClick={toggleFollow}
-                disabled={isUpdatingFollow}
-                className={`px-8 py-2.5 font-medium text-sm rounded-full transition-all shadow-lg hover:scale-105 ${isFollowing
-                    ? "bg-muted text-foreground border border-border"
-                    : "bg-foreground text-background border border-foreground"
-                  }`}
+            
+            <div className="flex items-center gap-3">
+              {currentUser?.uid !== user.uid ? (
+                <button
+                  onClick={toggleFollow}
+                  disabled={isUpdatingFollow}
+                  className={`px-8 py-2.5 font-medium text-sm rounded-full transition-all shadow-lg hover:scale-105 ${isFollowing
+                      ? "bg-muted text-foreground border border-border"
+                      : "bg-foreground text-background border border-foreground"
+                    }`}
+                >
+                  {isFollowing ? "Following" : "Follow Critic"}
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="p-2.5 rounded-full glass-panel border border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground transition-all"
+                  title="Edit Profile"
+                >
+                  <Edit3 size={18} />
+                </button>
+              )}
+
+              <Link
+                to="/wrapped"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/10 hover:bg-orange-500 hover:text-black border border-white/15 text-xs font-black uppercase tracking-wider transition-all shadow-md"
               >
-                {isFollowing ? "Following" : "Follow Critic"}
-              </button>
-            )}
-            {currentUser?.uid === user.uid && (
-              <button
-                onClick={() => setIsEditModalOpen(true)}
-                className="p-2.5 rounded-full glass-panel border border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground transition-all"
-              >
-                <Edit3 size={18} />
-              </button>
-            )}
+                <Sparkles size={13} />
+                <span>Year in Food</span>
+              </Link>
+            </div>
           </div>
 
           <div className="flex items-center justify-center md:justify-start gap-12 md:gap-16 border-t border-border pt-8 w-full">
@@ -329,16 +347,18 @@ export const Profile: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center justify-center md:justify-start gap-10 md:gap-12 border-b border-border mb-12">
+      <div className="flex items-center justify-center md:justify-start gap-8 md:gap-10 border-b border-border mb-12 overflow-x-auto scrollbar-hide">
         {[
           { id: "profile", label: "Overview", icon: Grid },
           { id: "diary", label: "Diary", icon: Clock },
-          { id: "eatlist", label: "Eatlist", icon: Heart },
+          { id: "taste", label: "Taste DNA", icon: Sparkles },
+          { id: "lists", label: "Lists", icon: ListOrdered },
+          { id: "eatlist", label: "Want-to-Eat", icon: Heart },
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 pb-5 font-medium text-sm tracking-wide relative transition-all ${activeTab === tab.id ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            className={`flex items-center gap-2 pb-5 font-medium text-sm tracking-wide relative whitespace-nowrap transition-all ${activeTab === tab.id ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
           >
             <tab.icon size={16} className={activeTab === tab.id ? "text-foreground" : "text-inherit"} />
             {tab.label}
@@ -558,6 +578,55 @@ export const Profile: React.FC = () => {
                 <Link to="/restaurants" className="inline-block mt-4 text-[10px] uppercase tracking-widest font-bold text-orange-500 hover:text-orange-400">Explore Restaurants</Link>
               </div>
             )}
+          </motion.div>
+        )}
+
+        {activeTab === "taste" && (
+          <motion.div
+            key="taste"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 45 }}
+            className="w-full"
+          >
+            <TasteDNAView user={user} />
+          </motion.div>
+        )}
+
+        {activeTab === "lists" && (
+          <motion.div
+            key="lists"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 45 }}
+            className="w-full"
+          >
+            <div className="flex items-center justify-between mb-8 pb-4 border-b border-border">
+              <h3 className="font-bold uppercase tracking-wider text-xs text-muted-foreground">Curated Food Collections</h3>
+              <Link to="/lists" className="text-xs text-orange-400 hover:text-orange-300 font-bold uppercase tracking-wider">Explore Community Lists →</Link>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {MOCK_LISTS.slice(0, 2).map((list) => (
+                <Link
+                  key={list.id}
+                  to={`/list/${list.id}`}
+                  className="p-5 rounded-3xl bg-muted/30 border border-border hover:border-muted-foreground transition-all flex flex-col justify-between group"
+                >
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">Curated List</span>
+                    <h4 className="text-base font-bold text-foreground group-hover:text-orange-400 transition-colors">{list.title}</h4>
+                    <p className="text-xs text-muted-foreground line-clamp-2 font-serif italic">"{list.description}"</p>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{list.items?.length || 4} Entries</span>
+                    <span className="text-foreground font-bold group-hover:text-orange-400">View →</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
