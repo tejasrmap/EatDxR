@@ -94,6 +94,7 @@ interface AuthContextType {
   isAuthModalOpen: boolean;
   openAuthModal: () => void;
   closeAuthModal: () => void;
+  updateDishdUser: (updated: Partial<DishdUser>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -117,6 +118,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
@@ -127,13 +130,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setDishdUser(supabaseUser);
             localStorage.setItem("madeater_dishd_user", JSON.stringify(supabaseUser));
           } else {
+            const defaultUsername = currentUser.displayName
+              ? currentUser.displayName.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 15)
+              : `critic_${currentUser.uid.slice(0, 6)}`;
             const newUser: DishdUser = {
               uid: currentUser.uid,
               displayName: currentUser.displayName || "Food Lover",
               email: currentUser.email || "",
               photoURL: currentUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.uid}`,
-              username: "",
-              bio: "",
+              username: defaultUsername,
+              bio: "Food critic on Madeater",
               tasteDNA: {
                 spice: 60,
                 indian: 75,
@@ -160,8 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error("Error fetching user profile from Supabase:", error);
         }
       } else {
-        // Only clear if user explicitly logged out (auth state null and not cached)
-        // If there's an ongoing guest session, keep it
+        // Auth state signed out
       }
       setLoading(false);
     });
@@ -185,7 +190,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const isOnboarding = !!user && !!dishdUser && !dishdUser.username;
+  const updateDishdUser = (updated: Partial<DishdUser>) => {
+    setDishdUser(prev => {
+      if (!prev) return null;
+      const next = { ...prev, ...updated };
+      try {
+        localStorage.setItem("madeater_dishd_user", JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+  };
+
+  const isOnboarding = !onboardingDismissed && !!user && !!dishdUser && (!dishdUser.username || dishdUser.username === "");
 
   return (
     <AuthContext.Provider 
@@ -197,7 +213,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout, 
         isAuthModalOpen, 
         openAuthModal: () => setIsAuthModalOpen(true), 
-        closeAuthModal: () => setIsAuthModalOpen(false) 
+        closeAuthModal: () => setIsAuthModalOpen(false),
+        updateDishdUser
       }}
     >
       {children}
@@ -205,7 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {isOnboarding && (
         <EditProfileModal 
           isOpen={true} 
-          onClose={() => {}} 
+          onClose={() => setOnboardingDismissed(true)} 
           user={dishdUser} 
           isOnboarding={true} 
         />

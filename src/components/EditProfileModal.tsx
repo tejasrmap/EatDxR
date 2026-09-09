@@ -1,10 +1,11 @@
 import React, { useState, useRef } from "react";
 import { User } from "../types";
 import { X, Loader2, Save, Camera, ChevronRight } from "lucide-react";
-import { doc, updateDoc, collection, query, where, getDocs, writeBatch } from "firebase/firestore";
+import { doc, setDoc, updateDoc, collection, query, where, getDocs, writeBatch } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
 import { db, auth, storage } from "../firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { upsertProfile } from "../services/supabaseService";
 import { toast } from "sonner";
 
 interface EditProfileModalProps {
@@ -133,7 +134,22 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
       };
 
       const cleanPayload = Object.fromEntries(Object.entries(payload).filter(([_, v]) => v !== undefined));
-      await updateDoc(userRef, cleanPayload);
+      await setDoc(userRef, cleanPayload, { merge: true });
+
+      // --- Universal Sync to Supabase & LocalStorage ---
+      const updatedUserObj: User = {
+        ...user,
+        displayName: displayName.trim(),
+        photoURL: finalPhotoURL.trim(),
+        username: username.trim().toLowerCase() || user.username || `critic_${user.uid.slice(0, 6)}`,
+        pronouns: pronouns.trim() || user.pronouns,
+        bio: bio.trim() || user.bio,
+        favoriteCuisines: favoriteCuisines.length > 0 ? favoriteCuisines : user.favoriteCuisines
+      };
+      await upsertProfile(updatedUserObj);
+      try {
+        localStorage.setItem("madeater_dishd_user", JSON.stringify(updatedUserObj));
+      } catch (e) {}
 
       // --- Universal Sync Engine (Infinite-Batch Capacity) ---
       if (finalPhotoURL !== user.photoURL || displayName !== user.displayName) {
@@ -194,7 +210,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-background/95 backdrop-blur-2xl transition-opacity animate-in fade-in"
-        onClick={!isOnboarding ? onClose : undefined}
+        onClick={onClose}
       />
       
       {/* Edit Panel */}
@@ -202,18 +218,20 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
         
         {/* Instagram-Style Header */}
         <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md px-4 py-4 md:px-6 md:py-6 border-b border-border flex items-center justify-between">
-          {!isOnboarding ? (
-             <button 
-               onClick={onClose} 
-               className="text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
-             >
-                Cancel
-             </button>
-          ) : <div className="w-12" />}
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {isOnboarding ? "Skip for now" : "Cancel"}
+          </button>
           
-          <h2 className="text-sm font-black tracking-[0.2em] uppercase text-foreground">Edit Profile</h2>
+          <h2 className="text-sm font-black tracking-[0.2em] uppercase text-foreground">
+            {isOnboarding ? "Critic Profile" : "Edit Profile"}
+          </h2>
           
           <button 
+            type="button"
             onClick={() => handleSave()}
             disabled={isSaving}
             className="text-xs font-bold text-orange-500 hover:text-orange-400 transition-colors disabled:opacity-50"
