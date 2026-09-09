@@ -37,6 +37,7 @@ import { Restaurant } from "./components/Restaurant";
 import { Restaurants } from "./components/Restaurants";
 import { Critics } from "./components/Critics";
 import { Journal } from "./components/Journal";
+import { ApecERPPrivacy } from "./pages/ApecERPPrivacy";
 
 // --- Error Boundary ---
 interface ErrorBoundaryProps {
@@ -125,45 +126,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(currentUser);
       if (currentUser) {
         try {
-          const supabaseUser = await getProfile(currentUser.uid);
-          if (supabaseUser) {
-            setDishdUser(supabaseUser);
-            localStorage.setItem("madeater_dishd_user", JSON.stringify(supabaseUser));
+          // 1. Primary: Check Firebase Firestore `users` collection
+          const userDocRef = doc(db, "users", currentUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+
+          if (userDocSnap.exists()) {
+            const firestoreUser = userDocSnap.data() as DishdUser;
+            setDishdUser(firestoreUser);
+            localStorage.setItem("madeater_dishd_user", JSON.stringify(firestoreUser));
           } else {
-            const defaultUsername = currentUser.displayName
-              ? currentUser.displayName.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 15)
-              : `critic_${currentUser.uid.slice(0, 6)}`;
-            const newUser: DishdUser = {
-              uid: currentUser.uid,
-              displayName: currentUser.displayName || "Food Lover",
-              email: currentUser.email || "",
-              photoURL: currentUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.uid}`,
-              username: defaultUsername,
-              bio: "Food critic on Madeater",
-              tasteDNA: {
-                spice: 60,
-                indian: 75,
-                nonVeg: 50,
-                asian: 40,
-                desserts: 50,
-                coffee: 70,
-                personaTitle: "The Flavor Explorer"
-              },
-              stats: {
-                mealsLogged: 0,
-                reviewsWritten: 0,
-                followers: 0,
-                following: 0,
-                followingList: []
-              },
-              createdAt: new Date().toISOString()
-            };
-            await upsertProfile(newUser);
-            setDishdUser(newUser);
-            localStorage.setItem("madeater_dishd_user", JSON.stringify(newUser));
+            // 2. Secondary check: Supabase profiles
+            const supabaseUser = await getProfile(currentUser.uid);
+            if (supabaseUser) {
+              setDishdUser(supabaseUser);
+              localStorage.setItem("madeater_dishd_user", JSON.stringify(supabaseUser));
+              // Sync back to Firebase Firestore
+              await setDoc(userDocRef, supabaseUser, { merge: true });
+            } else {
+              // 3. New User: Create full profile in Firebase Firestore & sync to Supabase
+              const defaultUsername = currentUser.displayName
+                ? currentUser.displayName.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 15)
+                : `critic_${currentUser.uid.slice(0, 6)}`;
+              const newUser: DishdUser = {
+                uid: currentUser.uid,
+                displayName: currentUser.displayName || "Food Lover",
+                email: currentUser.email || "",
+                photoURL: currentUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.uid}`,
+                username: defaultUsername,
+                bio: "Food critic on Madeater",
+                tasteDNA: {
+                  spice: 60,
+                  indian: 75,
+                  nonVeg: 50,
+                  asian: 40,
+                  desserts: 50,
+                  coffee: 70,
+                  personaTitle: "The Flavor Explorer"
+                },
+                stats: {
+                  mealsLogged: 0,
+                  reviewsWritten: 0,
+                  followers: 0,
+                  following: 0,
+                  followingList: []
+                },
+                createdAt: new Date().toISOString()
+              };
+              // Save directly to Firebase Firestore
+              await setDoc(userDocRef, newUser, { merge: true });
+              // Sync to Supabase
+              await upsertProfile(newUser);
+              setDishdUser(newUser);
+              localStorage.setItem("madeater_dishd_user", JSON.stringify(newUser));
+            }
           }
         } catch (error) {
-          console.error("Error fetching user profile from Supabase:", error);
+          console.error("Error fetching user profile from Firebase Firestore:", error);
         }
       } else {
         // Auth state signed out
@@ -509,6 +527,10 @@ export function App() {
                   </AdminRoute>
                 } 
               />
+
+              {/* Privacy Policy Routes (Google Play & Web) */}
+              <Route path="/privacy" element={<ApecERPPrivacy />} />
+              <Route path="/apecerp/privacy" element={<ApecERPPrivacy />} />
 
               {/* Fallback */}
               <Route path="*" element={<Navigate to="/" replace />} />
