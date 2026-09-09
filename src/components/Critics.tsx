@@ -5,8 +5,11 @@ import { User } from "../types";
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
 import { Medal, Star, Users, Loader2, Award, TrendingUp, Search } from "lucide-react";
+import { useAppUrl } from "../hooks/useAppUrl";
+import { triggerHaptic } from "../services/nativeService";
 
 export function Critics() {
+  const { getAppUrl } = useAppUrl();
   const [critics, setCritics] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -138,8 +141,9 @@ export function Critics() {
                   transition={{ delay: index * 0.05, duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
                 >
                   <Link
-                    to={`/profile/${critic.uid}`}
-                    className={`block relative overflow-hidden rounded-3xl border ${isTopThree ? rankBorderClass : 'border-white/5'} bg-zinc-950/40 backdrop-blur-3xl transition-all duration-500 hover:bg-white/[0.03] group hover:-translate-y-1 shadow-2xl`}
+                    to={getAppUrl(`/profile/${critic.uid}`)}
+                    onClick={() => triggerHaptic()}
+                    className={`block relative overflow-hidden rounded-3xl border ${isTopThree ? rankBorderClass : 'border-white/5'} bg-zinc-950/40 backdrop-blur-3xl transition-all duration-500 hover:bg-white/[0.03] group hover:-translate-y-1 shadow-2xl active:scale-[0.99] touch-manipulation`}
                   >
                     {isTopThree && (
                       <div className={`absolute inset-0 bg-gradient-to-r ${rankGradientFromNode} ${rankGradientToNode} opacity-5 group-hover:opacity-10 transition-opacity`} />

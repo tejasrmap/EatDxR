@@ -8,9 +8,12 @@ import { ListOrdered, Heart, Plus, Search, Sparkles, CheckCircle2, Bookmark, Sha
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../App";
 import { toast } from "sonner";
+import { useAppUrl } from "../hooks/useAppUrl";
+import { triggerHaptic } from "../services/nativeService";
 
 export function FoodLists() {
   const { user, dishdUser, login } = useAuth();
+  const { getAppUrl } = useAppUrl();
   const [lists, setLists] = useState<FoodList[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTag, setSelectedTag] = useState("All");
@@ -109,63 +112,68 @@ export function FoodLists() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white py-12 md:py-16 px-6 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-black text-white py-6 sm:py-12 md:py-16 px-3.5 sm:px-6 max-w-7xl mx-auto">
       
       {/* Header */}
-      <div className="flex flex-col items-center text-center mb-12">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black uppercase tracking-widest mb-4">
-          <ListOrdered size={14} />
+      <div className="flex flex-col items-center text-center mb-8 sm:mb-12">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] sm:text-xs font-black uppercase tracking-widest mb-3">
+          <ListOrdered size={13} />
           <span>Community Curation</span>
         </div>
-        <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tight mb-4">
+        <h1 className="text-2xl sm:text-4xl md:text-5xl font-black uppercase tracking-tight mb-2 sm:mb-3">
           Food Lists
         </h1>
-        <p className="text-white/50 text-sm md:text-base font-serif italic max-w-xl">
+        <p className="text-white/50 text-xs sm:text-sm font-serif italic max-w-xl px-2">
           Like Letterboxd's canonical lists, but for food. Explore ranked local guides, budget roundups, and secret culinary circuits.
         </p>
 
         {/* Action button */}
         <button
-          onClick={() => (user ? setIsCreateModalOpen(true) : login())}
-          className="mt-6 flex items-center gap-2 px-6 py-3 rounded-full bg-white text-black font-black uppercase tracking-wider text-xs hover:bg-orange-400 transition-all shadow-xl hover:scale-105 active:scale-95"
+          onClick={() => { triggerHaptic(); user ? setIsCreateModalOpen(true) : login(); }}
+          className="mt-4 sm:mt-6 flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white text-black font-black uppercase tracking-wider text-xs hover:bg-orange-400 transition-all shadow-xl hover:scale-105 active:scale-95 cursor-pointer"
         >
-          <Plus size={16} />
+          <Plus size={15} />
           <span>Curate a List</span>
         </button>
 
-        {/* Tag Filters */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mt-8">
-          {tags.map(tag => (
-            <button
-              key={tag}
-              onClick={() => setSelectedTag(tag)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border ${
-                selectedTag === tag
-                  ? "bg-white text-black border-white"
-                  : "bg-zinc-900 text-white/60 border-white/10 hover:border-white/30 hover:text-white"
-              }`}
-            >
-              {tag}
-            </button>
-          ))}
+        {/* Tag Filters with touch scroll */}
+        <div className="w-full overflow-x-auto no-scrollbar py-2 mt-5 sm:mt-8">
+          <div className="flex items-center sm:justify-center gap-1.5 sm:gap-2 px-1 min-w-max mx-auto">
+            {tags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => { triggerHaptic(); setSelectedTag(tag); }}
+                className={`px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition-all border shrink-0 active:scale-95 touch-manipulation ${
+                  selectedTag === tag
+                    ? "bg-white text-black border-white font-black"
+                    : "bg-zinc-900 text-white/60 border-white/10 hover:border-white/30 hover:text-white"
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Lists Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
         {filteredLists.map((list) => (
           <Link
             key={list.id}
-            to={`/list/${list.id}`}
-            className="group rounded-3xl bg-zinc-900/40 hover:bg-zinc-900/90 border border-white/10 hover:border-white/25 p-6 transition-all shadow-xl flex flex-col justify-between"
+            to={getAppUrl(`/list/${list.id}`)}
+            onClick={() => triggerHaptic()}
+            className="group rounded-2xl sm:rounded-3xl bg-zinc-900/40 hover:bg-zinc-900/90 border border-white/10 hover:border-white/25 p-4 sm:p-6 transition-all shadow-xl flex flex-col justify-between active:scale-[0.99] touch-manipulation"
           >
             <div>
               {/* Cover Banner */}
-              <div className="relative aspect-[16/9] rounded-2xl overflow-hidden mb-5 border border-white/10">
+              <div className="relative aspect-[16/9] rounded-xl sm:rounded-2xl overflow-hidden mb-4 sm:mb-5 border border-white/10">
                 <img 
                   src={list.coverImage || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80"} 
                   alt={list.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                  loading="lazy"
+                  decoding="async"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
                 

@@ -12,17 +12,31 @@ import { Sparkles, Flame, Users, MapPin, Loader2, Plus } from "lucide-react";
 
 export function CustomAppHome() {
   const { dishdUser } = useAuth();
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [reviews, setReviews] = useState<Review[]>(() => {
+    try {
+      const cached = localStorage.getItem("madeater_feed_cache");
+      return cached ? JSON.parse(cached) : MOCK_CRAVINGS;
+    } catch {
+      return MOCK_CRAVINGS;
+    }
+  });
+  const [loading, setLoading] = useState(false);
   const [feedTab, setFeedTab] = useState<"for-you" | "following" | "trending" | "nearby">("for-you");
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [isCravingModalOpen, setIsCravingModalOpen] = useState(false);
 
   useEffect(() => {
     getReviews().then((fetched) => {
-      setReviews(fetched);
+      if (fetched && fetched.length > 0) {
+        setReviews(fetched);
+        try {
+          localStorage.setItem("madeater_feed_cache", JSON.stringify(fetched));
+        } catch {
+          // ignore quota error
+        }
+      }
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
   const displayedReviews = reviews.filter((r) => {

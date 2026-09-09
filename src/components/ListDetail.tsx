@@ -7,11 +7,14 @@ import { MOCK_LISTS } from "../data/mockData";
 import { ChevronLeft, Heart, Bookmark, Share2, Star, MapPin, Plus, ArrowRight, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../App";
+import { useAppUrl } from "../hooks/useAppUrl";
+import { triggerHaptic } from "../services/nativeService";
 
 export function ListDetail() {
   const { listId } = useParams<{ listId: string }>();
   const navigate = useNavigate();
   const { user, login } = useAuth();
+  const { getAppUrl, isAppMode } = useAppUrl();
   const [list, setList] = useState<FoodList | null>(null);
   const [likesCount, setLikesCount] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
@@ -63,17 +66,19 @@ export function ListDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white pt-24 pb-36 px-6 max-w-5xl mx-auto">
+    <div className="min-h-screen bg-black text-white pt-4 sm:pt-12 pb-24 px-4 sm:px-6 max-w-5xl mx-auto">
       
       {/* Back button & Action controls */}
-      <div className="flex items-center justify-between mb-8">
-        <button 
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-xs uppercase font-bold text-white/60 hover:text-white transition-colors"
-        >
-          <ChevronLeft size={16} />
-          <span>Back to Lists</span>
-        </button>
+      <div className="flex items-center justify-between mb-6 sm:mb-8">
+        {!isAppMode ? (
+          <button 
+            onClick={() => { triggerHaptic(); navigate(-1); }}
+            className="flex items-center gap-1.5 text-xs uppercase font-bold text-white/60 hover:text-white transition-colors active:scale-95"
+          >
+            <ChevronLeft size={16} />
+            <span>Back to Lists</span>
+          </button>
+        ) : <div />}
 
         <div className="flex items-center gap-3">
           <button 
@@ -172,8 +177,9 @@ export function ListDetail() {
                 </div>
               )}
               <Link 
-                to={item.type === "dish" ? `/dish/${encodeURIComponent(item.name)}` : `/restaurant/${item.id}`}
-                className="px-4 py-2 rounded-full bg-white/10 hover:bg-orange-500 hover:text-black text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1"
+                to={getAppUrl(item.type === "dish" ? `/dish/${encodeURIComponent(item.name)}` : `/restaurant/${item.id}`)}
+                onClick={() => triggerHaptic()}
+                className="px-4 py-2 rounded-full bg-white/10 hover:bg-orange-500 hover:text-black text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1 active:scale-95 touch-manipulation"
               >
                 <span>View</span>
                 <ArrowRight size={12} />

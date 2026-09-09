@@ -14,6 +14,8 @@ import { DiaryEntryModal } from "./DiaryEntryModal";
 import { ShareMenu } from "./ShareMenu";
 import { StarRating } from "./StarRating";
 import { optimizeImage } from "../lib/imageOptimization";
+import { useAppUrl } from "../hooks/useAppUrl";
+import { triggerHaptic } from "../services/nativeService";
 
 interface ReviewCardProps {
   review: Review;
@@ -21,6 +23,7 @@ interface ReviewCardProps {
 
 export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
   const { dishdUser: currentUser, login } = useAuth();
+  const { getAppUrl } = useAppUrl();
   const [likes, setLikes] = useState<Interaction[]>([]);
   const [comments, setComments] = useState<Interaction[]>([]);
   const [showComments, setShowComments] = useState(false);
@@ -118,14 +121,32 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
       login();
       return;
     }
-    if (isLikeLoading) return;
-    
-    setIsLikeLoading(true);
+    triggerHaptic();
+
+    const likeId = `${review.id}_${currentUser.uid}_LIKE`;
+    const previousLikes = [...likes];
+    const willLike = !hasLiked;
+
+    // Instagram-level instant optimistic UI update
+    if (willLike) {
+      setLikes(prev => [
+        ...prev,
+        {
+          id: likeId,
+          reviewId: review.id,
+          userId: currentUser.uid,
+          userName: currentUser.displayName,
+          userPhoto: currentUser.photoURL,
+          type: "LIKE"
+        }
+      ]);
+    } else {
+      setLikes(prev => prev.filter(l => l.userId !== currentUser.uid));
+    }
+
     try {
-      const likeId = `${review.id}_${currentUser.uid}_LIKE`;
       const likeRef = doc(db, "interactions", likeId);
-      
-      if (hasLiked) {
+      if (!willLike) {
         await deleteDoc(likeRef);
         if (currentUser.uid !== review.userId) {
           await deleteDoc(doc(db, "notifications", likeId)).catch(() => {});
@@ -152,14 +173,13 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
             targetId: review.id,
             read: false,
             createdAt: serverTimestamp()
-          });
+          }).catch(() => {});
         }
       }
     } catch (error: any) {
       console.error("Like error:", error);
-      toast.error("Failed to toggle like.");
-    } finally {
-      setIsLikeLoading(false);
+      // Revert state if error occurred
+      setLikes(previousLikes);
     }
   };
 
@@ -214,19 +234,20 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
   const firstImage = dishesWithImages[0]?.image;
 
   return (
-    <div ref={cardRef} className="group p-4 sm:p-6 md:p-7 mb-4 sm:mb-6 bg-zinc-900/40 hover:bg-zinc-900/80 border border-white/10 hover:border-white/20 rounded-3xl shadow-xl relative transition-all hover:-translate-y-0.5">
-      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 md:gap-7">
+    <div ref={cardRef} className="group p-3.5 sm:p-5 md:p-6 mb-3 sm:mb-5 bg-zinc-900/40 hover:bg-zinc-900/80 border border-white/10 hover:border-white/20 rounded-2xl sm:rounded-3xl shadow-xl relative transition-all active:scale-[0.99] touch-manipulation">
+      <div className="flex flex-col sm:flex-row gap-3.5 sm:gap-6 md:gap-7">
         <Link 
-          to={`/restaurant/${review.restaurantId}`}
-          className="w-full h-52 sm:w-44 sm:h-44 md:w-52 md:h-52 bg-zinc-900 rounded-2xl border border-white/10 relative block group/img overflow-hidden shrink-0 shadow-md"
+          to={getAppUrl(`/restaurant/${review.restaurantId}`)}
+          className="w-full h-48 sm:w-44 sm:h-44 md:w-52 md:h-52 bg-zinc-900 rounded-2xl border border-white/10 relative block group/img overflow-hidden shrink-0 shadow-md"
         >
           {firstImage ? (
             <img 
               src={optimizeImage(firstImage, { width: 400, quality: 75 })} 
               alt={review.dishes?.[0]?.name || "Meal"} 
-              className="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-1000 ease-out"
+              className="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-700 ease-out"
               referrerPolicy="no-referrer"
               loading="lazy"
+              decoding="async"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
@@ -242,7 +263,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
               <div className="flex flex-wrap items-baseline gap-x-2 mb-1">
                 {review.dishes?.map((dish, i) => (
                   <React.Fragment key={i}>
-                    <h3 className="text-xl font-semibold text-foreground transition-colors truncate tracking-tight">
+                    <h3 className="text-lg sm:text-xl font-semibold text-foreground transition-colors truncate tracking-tight">
                       {dish.name}
                     </h3>
                     {i < review.dishes.length - 1 && <span className="text-muted-foreground font-medium text-lg mx-1">+</span>}
@@ -252,8 +273,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground font-medium text-xs">at</span>
                 <Link 
-                  to={`/restaurant/${review.restaurantId}`} 
-                  className="text-foreground hover:text-foreground transition-colors underline decoration-border hover:decoration-foreground underline-offset-4 font-medium text-sm"
+                  to={getAppUrl(`/restaurant/${review.restaurantId}`)} 
+                  className="text-foreground hover:text-foreground transition-colors underline decoration-border hover:decoration-foreground underline-offset-4 font-medium text-xs sm:text-sm"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {review.restaurantName}
@@ -313,7 +334,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
 
           <div className="flex items-center gap-3 mb-4">
             <Link 
-              to={`/profile/${review.userId}`} 
+              to={getAppUrl(`/profile/${review.userId}`)} 
               onClick={(e) => {
                 e.stopPropagation();
               }}
@@ -394,18 +415,19 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                 ) : (
                   comments.map(comment => (
                     <div key={comment.id} className="flex gap-4 group/comment">
-                      <Link to={`/profile/${comment.userId}`} className="shrink-0">
+                      <Link to={getAppUrl(`/profile/${comment.userId}`)} className="shrink-0">
                         <img 
                           src={optimizeImage(comment.userPhoto, { width: 40 })} 
                           alt={comment.userName}
                           className="w-8 h-8 rounded-full border border-border transition-all"
                           referrerPolicy="no-referrer"
                           loading="lazy"
+                          decoding="async"
                         />
                       </Link>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <Link to={`/profile/${comment.userId}`} className="text-xs font-medium text-foreground hover:text-foreground/80 transition-colors">{comment.userName}</Link>
+                          <Link to={getAppUrl(`/profile/${comment.userId}`)} className="text-xs font-medium text-foreground hover:text-foreground/80 transition-colors">{comment.userName}</Link>
                           <span className="text-[10px] font-medium text-muted-foreground">
                             {comment.createdAt?.toMillis ? formatDistanceToNow(comment.createdAt.toMillis(), { addSuffix: true }) : 'just now'}
                           </span>

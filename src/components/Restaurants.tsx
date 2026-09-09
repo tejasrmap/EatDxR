@@ -5,11 +5,13 @@ import { db } from "../firebase";
 import { Restaurant } from "../types";
 import { Link } from "react-router-dom";
 import { Star, MapPin, Navigation, Loader2, Compass, UtensilsCrossed, ChevronRight } from "lucide-react";
-import { toast } from "sonner";
 import { getDistanceKM, formatDistance } from "../lib/distance";
 import { motion, AnimatePresence } from "motion/react";
+import { useAppUrl } from "../hooks/useAppUrl";
+import { triggerHaptic } from "../services/nativeService";
 
 export function Restaurants() {
+  const { getAppUrl } = useAppUrl();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -87,12 +89,12 @@ export function Restaurants() {
   }
 
   return (
-    <div className="min-h-screen py-12 md:py-16 px-6 max-w-7xl mx-auto elite-motion-safe">
-      <header className="mb-20">
+    <div className="min-h-screen py-6 sm:py-12 md:py-16 px-4 sm:px-6 max-w-7xl mx-auto elite-motion-safe">
+      <header className="mb-10 sm:mb-20">
         <motion.h1 
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-8"
+          className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-4 sm:mb-8"
         >
           Discover <span className="text-muted-foreground font-medium">Nearby Places</span>
         </motion.h1>
@@ -196,7 +198,11 @@ function RestaurantCard({ restaurant, index, isSmall = false }: { restaurant: an
           <Navigation size={16} />
         </a>
       </div>
-      <Link to={`/restaurant/${restaurant.id}`} className="block h-full">
+      <Link 
+        to={getAppUrl(`/restaurant/${restaurant.id}`)} 
+        onClick={() => triggerHaptic()} 
+        className="block h-full active:scale-[0.98] transition-transform touch-manipulation"
+      >
         <div className={`relative overflow-hidden rounded-3xl bg-muted/30 border border-border shadow-2xl transition-all duration-500 hover:border-foreground/30 hover:-translate-y-1 h-full ${isSmall ? 'aspect-[3/4]' : 'aspect-[16/10]'}`}>
           {restaurant.image ? (
             <img 

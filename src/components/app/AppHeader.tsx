@@ -32,15 +32,23 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
           <div className="flex items-center gap-2">
             {showBack ? (
               <button
-                onClick={() => { triggerHaptic(); navigate(-1); }}
-                className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 active:scale-95 transition-all"
+                onClick={() => { 
+                  triggerHaptic(); 
+                  if (window.history.length > 1) {
+                    navigate(-1);
+                  } else {
+                    navigate('/app');
+                  }
+                }}
+                className="w-9 h-9 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-white hover:bg-white/20 active:scale-90 transition-all cursor-pointer shrink-0"
+                title="Go Back"
               >
                 <ArrowLeft size={18} />
               </button>
             ) : null}
 
             {title ? (
-              <h1 className="text-base font-black uppercase tracking-tight text-white truncate max-w-[200px]">{title}</h1>
+              <h1 className="text-sm sm:text-base font-black uppercase tracking-tight text-white truncate max-w-[170px] sm:max-w-[240px]">{title}</h1>
             ) : (
               <div className="flex items-center gap-2 min-w-0">
                 <Link 

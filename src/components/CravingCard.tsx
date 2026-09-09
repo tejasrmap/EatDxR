@@ -8,6 +8,8 @@ import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTim
 import { toast } from "sonner";
 import { CommentModal } from "./CommentModal";
 import { ShareMenu } from "./ShareMenu";
+import { useAppUrl } from "../hooks/useAppUrl";
+import { triggerHaptic } from "../services/nativeService";
 
 interface CravingCardProps {
   review: Review;
@@ -15,7 +17,8 @@ interface CravingCardProps {
 }
 
 export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = true }) => {
-  const { dishdUser: currentUser } = useAuth();
+  const { dishdUser: currentUser, login } = useAuth();
+  const { getAppUrl } = useAppUrl();
   const [likes, setLikes] = useState<Interaction[]>([]);
   const [comments, setComments] = useState<Interaction[]>([]);
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
@@ -216,15 +219,17 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
                   <div className="min-w-0">
                     {attachedDish && (
                       <Link 
-                        to={`/dish/${review.attachedDish ? encodeURIComponent(review.attachedDish) : 'biryani'}`}
-                        className="text-xs font-black uppercase tracking-tight text-white group-hover/badge:text-orange-400 transition-colors block truncate"
+                        to={getAppUrl(`/dish/${review.attachedDish ? encodeURIComponent(review.attachedDish) : 'biryani'}`)}
+                        onClick={() => triggerHaptic()}
+                        className="text-xs font-black uppercase tracking-tight text-white group-hover/badge:text-orange-400 transition-colors block truncate active:scale-95"
                       >
                         {attachedDish}
                       </Link>
                     )}
                     <Link
-                      to={`/restaurant/${review.restaurantId}`}
-                      className="text-[11px] font-medium text-white/70 hover:text-white transition-colors flex items-center gap-1 truncate"
+                      to={getAppUrl(`/restaurant/${review.restaurantId}`)}
+                      onClick={() => triggerHaptic()}
+                      className="text-[11px] font-medium text-white/70 hover:text-white transition-colors flex items-center gap-1 truncate active:scale-95"
                     >
                       <MapPin size={10} className="text-orange-400 shrink-0" />
                       <span>{review.restaurantName}</span>
@@ -244,7 +249,11 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
           {/* Author & Follow Row */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Link to={`/profile/${review.userId}`} className="flex items-center gap-2.5 group/user">
+              <Link 
+                to={getAppUrl(`/profile/${review.userId}`)} 
+                onClick={() => triggerHaptic()} 
+                className="flex items-center gap-2.5 group/user active:scale-95"
+              >
                 <img 
                   src={review.userPhoto || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80"} 
                   className="w-9 h-9 rounded-full border border-white/30 object-cover" 

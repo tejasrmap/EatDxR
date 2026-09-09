@@ -1,5 +1,4 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
@@ -10,7 +9,12 @@ import firebaseConfig from './firebase-applet-config.json';
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const storage = getStorage(app);
-export const auth = getAuth();
+export const auth = getAuth(app);
+
+// Save login session forever until explicit logout
+setPersistence(auth, browserLocalPersistence).catch((err) => {
+  console.warn('Firebase persistence setup notice:', err);
+});
 
 export enum OperationType {
   CREATE = 'create',

@@ -82,13 +82,18 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 }
 
+import { AuthModal } from "./components/AuthModal";
+
 // --- Auth Context ---
 interface AuthContextType {
   user: FirebaseUser | null;
   dishdUser: DishdUser | null;
   loading: boolean;
-  login: () => Promise<void>;
+  login: () => void;
   logout: () => Promise<void>;
+  isAuthModalOpen: boolean;
+  openAuthModal: () => void;
+  closeAuthModal: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -101,18 +106,26 @@ export function useAuth() {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [dishdUser, setDishdUser] = useState<DishdUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [dishdUser, setDishdUser] = useState<DishdUser | null>(() => {
+    try {
+      const cached = localStorage.getItem("madeater_dishd_user");
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        const userRef = doc(db, "users", currentUser.uid);
         try {
           const supabaseUser = await getProfile(currentUser.uid);
           if (supabaseUser) {
             setDishdUser(supabaseUser);
+            localStorage.setItem("madeater_dishd_user", JSON.stringify(supabaseUser));
           } else {
             const newUser: DishdUser = {
               uid: currentUser.uid,
@@ -141,12 +154,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             };
             await upsertProfile(newUser);
             setDishdUser(newUser);
+            localStorage.setItem("madeater_dishd_user", JSON.stringify(newUser));
           }
         } catch (error) {
           console.error("Error fetching user profile from Supabase:", error);
         }
       } else {
-        setDishdUser(null);
+        // Only clear if user explicitly logged out (auth state null and not cached)
+        // If there's an ongoing guest session, keep it
       }
       setLoading(false);
     });
@@ -154,21 +169,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const login = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      toast.success("Welcome to Madeater!");
-    } catch (error) {
-      console.error("Login error:", error);
-      toast.error("Failed to sign in. Please try again.");
-    }
+  const login = () => {
+    setIsAuthModalOpen(true);
   };
 
   const logout = async () => {
     try {
       await signOut(auth);
-      toast.success("Logged out.");
+      setDishdUser(null);
+      setUser(null);
+      localStorage.removeItem("madeater_dishd_user");
+      toast.success("Logged out successfully.");
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -177,8 +188,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isOnboarding = !!user && !!dishdUser && !dishdUser.username;
 
   return (
-    <AuthContext.Provider value={{ user, dishdUser, loading, login, logout }}>
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        dishdUser, 
+        loading, 
+        login, 
+        logout, 
+        isAuthModalOpen, 
+        openAuthModal: () => setIsAuthModalOpen(true), 
+        closeAuthModal: () => setIsAuthModalOpen(false) 
+      }}
+    >
       {children}
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
       {isOnboarding && (
         <EditProfileModal 
           isOpen={true} 
@@ -210,7 +233,7 @@ export function App() {
         <AuthProvider>
           <Router>
             <Routes>
-              {/* 1. PUBLIC WEBSITE ROUTES (Wrapped in WebsiteLayout with marketing navbar & footer) */}
+              {/* 1. PUBLIC WEBSITE ROUTES (Wrapped in WebsiteLayout on web, AppLayout on Native APK) */}
               <Route 
                 path="/" 
                 element={
@@ -226,81 +249,111 @@ export function App() {
               <Route 
                 path="/dishes" 
                 element={
-                  <WebsiteLayout>
-                    <DishesDirectory />
-                  </WebsiteLayout>
+                  isNative ? (
+                    <AppLayout><DishesDirectory /></AppLayout>
+                  ) : (
+                    <WebsiteLayout><DishesDirectory /></WebsiteLayout>
+                  )
+                } 
+              />
+              <Route 
+                path="/explore" 
+                element={
+                  isNative ? (
+                    <AppLayout><DishesDirectory /></AppLayout>
+                  ) : (
+                    <WebsiteLayout><DishesDirectory /></WebsiteLayout>
+                  )
                 } 
               />
               <Route 
                 path="/dish/:dishId" 
                 element={
-                  <WebsiteLayout>
-                    <DishPage />
-                  </WebsiteLayout>
+                  isNative ? (
+                    <AppLayout><DishPage /></AppLayout>
+                  ) : (
+                    <WebsiteLayout><DishPage /></WebsiteLayout>
+                  )
                 } 
               />
               <Route 
                 path="/restaurants" 
                 element={
-                  <WebsiteLayout>
-                    <Restaurants />
-                  </WebsiteLayout>
+                  isNative ? (
+                    <AppLayout><Restaurants /></AppLayout>
+                  ) : (
+                    <WebsiteLayout><Restaurants /></WebsiteLayout>
+                  )
                 } 
               />
               <Route 
                 path="/restaurant/:restaurantId" 
                 element={
-                  <WebsiteLayout>
-                    <Restaurant />
-                  </WebsiteLayout>
+                  isNative ? (
+                    <AppLayout><Restaurant /></AppLayout>
+                  ) : (
+                    <WebsiteLayout><Restaurant /></WebsiteLayout>
+                  )
                 } 
               />
               <Route 
                 path="/map" 
                 element={
-                  <WebsiteLayout>
-                    <FoodMap />
-                  </WebsiteLayout>
+                  isNative ? (
+                    <AppLayout><FoodMap /></AppLayout>
+                  ) : (
+                    <WebsiteLayout><FoodMap /></WebsiteLayout>
+                  )
                 } 
               />
               <Route 
                 path="/critics" 
                 element={
-                  <WebsiteLayout>
-                    <Critics />
-                  </WebsiteLayout>
+                  isNative ? (
+                    <AppLayout><Critics /></AppLayout>
+                  ) : (
+                    <WebsiteLayout><Critics /></WebsiteLayout>
+                  )
                 } 
               />
               <Route 
                 path="/lists" 
                 element={
-                  <WebsiteLayout>
-                    <FoodLists />
-                  </WebsiteLayout>
+                  isNative ? (
+                    <AppLayout><FoodLists /></AppLayout>
+                  ) : (
+                    <WebsiteLayout><FoodLists /></WebsiteLayout>
+                  )
                 } 
               />
               <Route 
                 path="/list/:listId" 
                 element={
-                  <WebsiteLayout>
-                    <ListDetail />
-                  </WebsiteLayout>
+                  isNative ? (
+                    <AppLayout><ListDetail /></AppLayout>
+                  ) : (
+                    <WebsiteLayout><ListDetail /></WebsiteLayout>
+                  )
                 } 
               />
               <Route 
                 path="/journal" 
                 element={
-                  <WebsiteLayout>
-                    <Journal />
-                  </WebsiteLayout>
+                  isNative ? (
+                    <AppLayout><Journal /></AppLayout>
+                  ) : (
+                    <WebsiteLayout><Journal /></WebsiteLayout>
+                  )
                 } 
               />
               <Route 
                 path="/wrapped" 
                 element={
-                  <WebsiteLayout>
-                    <YearInFood />
-                  </WebsiteLayout>
+                  isNative ? (
+                    <AppLayout><YearInFood /></AppLayout>
+                  ) : (
+                    <WebsiteLayout><YearInFood /></WebsiteLayout>
+                  )
                 } 
               />
 
@@ -323,6 +376,14 @@ export function App() {
               />
               <Route 
                 path="/app/dishes" 
+                element={
+                  <AppLayout>
+                    <DishesDirectory />
+                  </AppLayout>
+                } 
+              />
+              <Route 
+                path="/app/explore" 
                 element={
                   <AppLayout>
                     <DishesDirectory />

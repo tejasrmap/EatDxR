@@ -9,11 +9,14 @@ import { Star, Bookmark, Heart, Edit3, Map, ChevronLeft, Share2, Info, UtensilsC
 import { useAuth } from "../App";
 import { toast } from "sonner";
 import { LogMealModal } from "./LogMealModal";
+import { useAppUrl } from "../hooks/useAppUrl";
+import { triggerHaptic } from "../services/nativeService";
 
 export const Restaurant: React.FC = () => {
   const { restaurantId } = useParams<{ restaurantId: string }>();
   const navigate = useNavigate();
   const { user, dishdUser, login } = useAuth();
+  const { isAppMode } = useAppUrl();
   const [restaurant, setRestaurant] = useState<RestaurantType | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -156,26 +159,35 @@ export const Restaurant: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-16 elite-motion-safe">
-      {/* Dynamic Header */}
-      <header 
-        className="fixed top-0 left-0 right-0 z-[110] h-20 flex items-center justify-between px-6 transition-all duration-500 bg-background/90 backdrop-blur-xl border-b border-border"
-      >
-        <button 
-          onClick={() => navigate(-1)}
-          className="p-2.5 bg-muted border border-border hover:bg-foreground hover:text-background rounded-full shadow-lg transition-all"
+      {/* Dynamic Header (shown in website mode; AppLayout provides unified header in app mode) */}
+      {!isAppMode && (
+        <header 
+          className="fixed top-0 left-0 right-0 z-[110] h-16 sm:h-20 flex items-center justify-between px-4 sm:px-6 transition-all duration-500 bg-background/90 backdrop-blur-xl border-b border-border"
         >
-          <ChevronLeft size={20} />
-        </button>
-        <h2 
-          className="font-medium tracking-wide uppercase text-xs text-foreground/80 transition-opacity duration-300"
-          style={{ opacity: headerOpacity }}
-        >
-          {restaurant.name}
-        </h2>
-        <button className="p-2.5 bg-muted border border-border hover:bg-foreground hover:text-background rounded-full shadow-lg transition-all">
-          <Share2 size={18} />
-        </button>
-      </header>
+          <button 
+            onClick={() => { triggerHaptic(); navigate(-1); }}
+            className="p-2 sm:p-2.5 bg-muted border border-border hover:bg-foreground hover:text-background rounded-full shadow-lg transition-all active:scale-95 cursor-pointer"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <h2 
+            className="font-medium tracking-wide uppercase text-xs text-foreground/80 transition-opacity duration-300 truncate max-w-[180px] sm:max-w-[260px]"
+            style={{ opacity: headerOpacity }}
+          >
+            {restaurant.name}
+          </h2>
+          <button 
+            onClick={() => {
+              triggerHaptic();
+              navigator.clipboard.writeText(window.location.href);
+              toast.success("Link copied!");
+            }}
+            className="p-2 sm:p-2.5 bg-muted border border-border hover:bg-foreground hover:text-background rounded-full shadow-lg transition-all active:scale-95 cursor-pointer"
+          >
+            <Share2 size={16} />
+          </button>
+        </header>
+      )}
 
       {/* Cinematic Hero */}
       <section className="relative h-[65vh] md:h-[55vh] overflow-hidden">

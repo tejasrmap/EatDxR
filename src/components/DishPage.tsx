@@ -6,11 +6,14 @@ import { motion } from "motion/react";
 import { toast } from "sonner";
 import { LogMealModal } from "./LogMealModal";
 import { useAuth } from "../App";
+import { useAppUrl } from "../hooks/useAppUrl";
+import { triggerHaptic } from "../services/nativeService";
 
 export function DishPage() {
   const { dishId } = useParams<{ dishId: string }>();
   const navigate = useNavigate();
   const { user, login } = useAuth();
+  const { getAppUrl, isAppMode } = useAppUrl();
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
 
   // Find dish by id or normalized name
@@ -20,6 +23,7 @@ export function DishPage() {
   ) || MOCK_DISHES[0];
 
   const handleShare = () => {
+    triggerHaptic();
     navigator.clipboard.writeText(window.location.href);
     toast.success("Dish link copied to clipboard!");
   };
@@ -30,17 +34,19 @@ export function DishPage() {
   );
 
   return (
-    <div className="min-h-screen bg-black text-white py-8 md:py-12">
+    <div className="min-h-screen bg-black text-white py-4 sm:py-8 md:py-12">
       
-      {/* Top Header Bar */}
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        <button 
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-xs uppercase font-bold text-white/60 hover:text-white transition-colors"
-        >
-          <ChevronLeft size={16} />
-          <span>Back</span>
-        </button>
+      {/* Top Header Bar (Compact on mobile / app shell) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 sm:py-4 flex items-center justify-between">
+        {!isAppMode ? (
+          <button 
+            onClick={() => { triggerHaptic(); navigate(-1); }}
+            className="flex items-center gap-1.5 text-xs uppercase font-bold text-white/60 hover:text-white transition-colors active:scale-95"
+          >
+            <ChevronLeft size={16} />
+            <span>Back</span>
+          </button>
+        ) : <div />}
 
         <div className="flex items-center gap-3">
           <button 
@@ -198,8 +204,9 @@ export function DishPage() {
             {currentDish.topRestaurants.map((restaurant, idx) => (
               <Link
                 key={restaurant.id}
-                to={`/restaurant/${restaurant.id}`}
-                className="p-5 rounded-3xl bg-zinc-900/40 hover:bg-zinc-900/90 border border-white/10 hover:border-orange-500/50 transition-all flex items-center justify-between gap-4 group"
+                to={getAppUrl(`/restaurant/${restaurant.id}`)}
+                onClick={() => triggerHaptic()}
+                className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-zinc-900/40 hover:bg-zinc-900/90 border border-white/10 hover:border-orange-500/50 transition-all flex items-center justify-between gap-3 sm:gap-4 group active:scale-[0.98] touch-manipulation"
               >
                 <div className="flex items-center gap-4 min-w-0">
                   <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-base shrink-0 ${

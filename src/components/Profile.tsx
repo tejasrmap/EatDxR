@@ -15,11 +15,14 @@ import { StarRating } from "./StarRating";
 import { RatingGraph } from "./RatingGraph";
 import { TasteDNAView } from "./TasteDNAView";
 import { MOCK_LISTS } from "../data/mockData";
+import { useAppUrl } from "../hooks/useAppUrl";
+import { triggerHaptic } from "../services/nativeService";
 
 export const Profile: React.FC = () => {
   const { userId: identifier } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { user: currentUser, dishdUser } = useAuth();
+  const { getAppUrl } = useAppUrl();
   const [user, setUser] = useState<User | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -304,8 +307,9 @@ export const Profile: React.FC = () => {
               )}
 
               <Link
-                to="/wrapped"
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/10 hover:bg-orange-500 hover:text-black border border-white/15 text-xs font-black uppercase tracking-wider transition-all shadow-md"
+                to={getAppUrl('/wrapped')}
+                onClick={() => triggerHaptic()}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/10 hover:bg-orange-500 hover:text-black border border-white/15 text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 touch-manipulation"
               >
                 <Sparkles size={13} />
                 <span>Year in Food</span>
@@ -554,28 +558,29 @@ export const Profile: React.FC = () => {
                 <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground">Loading Eatlist...</p>
               </div>
             ) : eatlistRestaurants.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {eatlistRestaurants.map(rest => (
                   <Link
                     key={rest.id}
-                    to={`/restaurant/${rest.id}`}
-                    className="group bg-muted/30 border border-border rounded-2xl overflow-hidden hover:border-muted-foreground transition-all p-4 flex gap-4"
+                    to={getAppUrl(`/restaurant/${rest.id}`)}
+                    onClick={() => triggerHaptic()}
+                    className="group bg-muted/30 border border-border rounded-2xl overflow-hidden hover:border-muted-foreground transition-all p-3.5 sm:p-4 flex gap-3.5 sm:gap-4 active:scale-[0.98] touch-manipulation"
                   >
-                    <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-border">
-                      <img loading="lazy" src={rest.image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 border border-border">
+                      <img loading="lazy" decoding="async" src={rest.image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
-                      <h3 className="font-semibold text-foreground group-hover:text-foreground/80 transition-colors truncate">{rest.name}</h3>
-                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">{rest.cuisine}</p>
-                      <p className="text-[10px] text-muted-foreground mt-1 truncate">{rest.location}</p>
+                      <h3 className="font-semibold text-sm sm:text-base text-foreground group-hover:text-foreground/80 transition-colors truncate">{rest.name}</h3>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-0.5 sm:mt-1">{rest.cuisine}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5 sm:mt-1 truncate">{rest.location}</p>
                     </div>
                   </Link>
                 ))}
               </div>
             ) : (
-              <div className="w-full text-center py-20 border border-dashed border-border rounded-2xl">
-                <p className="text-muted-foreground italic serif">Your Eatlist (Watchlist) is currently empty.</p>
-                <Link to="/restaurants" className="inline-block mt-4 text-[10px] uppercase tracking-widest font-bold text-orange-500 hover:text-orange-400">Explore Restaurants</Link>
+              <div className="w-full text-center py-16 sm:py-20 border border-dashed border-border rounded-2xl">
+                <p className="text-muted-foreground italic serif text-xs sm:text-sm">Your Eatlist (Watchlist) is currently empty.</p>
+                <Link to={getAppUrl("/restaurants")} onClick={() => triggerHaptic()} className="inline-block mt-4 text-[10px] uppercase tracking-widest font-bold text-orange-500 hover:text-orange-400">Explore Restaurants</Link>
               </div>
             )}
           </motion.div>
@@ -603,17 +608,18 @@ export const Profile: React.FC = () => {
             transition={{ type: 'spring', stiffness: 500, damping: 45 }}
             className="w-full"
           >
-            <div className="flex items-center justify-between mb-8 pb-4 border-b border-border">
+            <div className="flex items-center justify-between mb-6 sm:mb-8 pb-4 border-b border-border">
               <h3 className="font-bold uppercase tracking-wider text-xs text-muted-foreground">Curated Food Collections</h3>
-              <Link to="/lists" className="text-xs text-orange-400 hover:text-orange-300 font-bold uppercase tracking-wider">Explore Community Lists →</Link>
+              <Link to={getAppUrl("/lists")} onClick={() => triggerHaptic()} className="text-xs text-orange-400 hover:text-orange-300 font-bold uppercase tracking-wider">Explore Community Lists →</Link>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {MOCK_LISTS.slice(0, 2).map((list) => (
                 <Link
                   key={list.id}
-                  to={`/list/${list.id}`}
-                  className="p-5 rounded-3xl bg-muted/30 border border-border hover:border-muted-foreground transition-all flex flex-col justify-between group"
+                  to={getAppUrl(`/list/${list.id}`)}
+                  onClick={() => triggerHaptic()}
+                  className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-muted/30 border border-border hover:border-muted-foreground transition-all flex flex-col justify-between group active:scale-[0.98] touch-manipulation"
                 >
                   <div className="space-y-2">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">Curated List</span>
