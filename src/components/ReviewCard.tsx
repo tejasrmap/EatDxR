@@ -214,11 +214,11 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
   const firstImage = dishesWithImages[0]?.image;
 
   return (
-    <div ref={cardRef} className="group p-6 mb-6 bg-muted/30 border border-border rounded-3xl shadow-xl relative transition-all hover:-translate-y-1 hover:shadow-2xl hover:border-muted-foreground">
-      <div className="flex flex-col sm:flex-row gap-6">
+    <div ref={cardRef} className="group p-4 sm:p-6 md:p-7 mb-4 sm:mb-6 bg-zinc-900/40 hover:bg-zinc-900/80 border border-white/10 hover:border-white/20 rounded-3xl shadow-xl relative transition-all hover:-translate-y-0.5">
+      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 md:gap-7">
         <Link 
           to={`/restaurant/${review.restaurantId}`}
-          className="w-full h-56 sm:w-32 sm:h-44 bg-muted rounded-2xl border border-border relative block group/img overflow-hidden shrink-0"
+          className="w-full h-52 sm:w-44 sm:h-44 md:w-52 md:h-52 bg-zinc-900 rounded-2xl border border-white/10 relative block group/img overflow-hidden shrink-0 shadow-md"
         >
           {firstImage ? (
             <img 

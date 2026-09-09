@@ -8,6 +8,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { toast } from "sonner";
 import { searchRestaurants } from "../services/mapsService";
 import { RestaurantSearchResult, CravingTag } from "../types";
+import { createCraving } from "../services/supabaseService";
 
 const CRAVING_TAGS: CravingTag[] = [
   "First bite reaction",
@@ -182,6 +183,19 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
         ],
         createdAt: serverTimestamp(),
         likes: 0
+      });
+
+      await createCraving({
+        id: reviewRef.id,
+        userId: user.uid,
+        userName: dishdUser?.displayName || user.displayName || "Critic",
+        userPhoto: dishdUser?.photoURL || user.photoURL || "",
+        restaurantName: restaurantName.trim(),
+        attachedDish: dishName.trim(),
+        city: selectedRestaurant?.city || "Hyderabad",
+        videoUrl: finalVideoUrl,
+        content: reviewContent.trim(),
+        cravingTag: cravingTag,
       });
 
       // Update user stats

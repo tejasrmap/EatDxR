@@ -155,7 +155,7 @@ export const Restaurant: React.FC = () => {
   const headerOpacity = Math.min(1, scrollY / 200);
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-40 elite-motion-safe">
+    <div className="min-h-screen bg-background text-foreground pb-16 elite-motion-safe">
       {/* Dynamic Header */}
       <header 
         className="fixed top-0 left-0 right-0 z-[110] h-20 flex items-center justify-between px-6 transition-all duration-500 bg-background/90 backdrop-blur-xl border-b border-border"

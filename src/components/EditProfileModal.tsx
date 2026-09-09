@@ -15,12 +15,12 @@ interface EditProfileModalProps {
 }
 
 export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, user, isOnboarding }) => {
-  const [displayName, setDisplayName] = useState(user.displayName || "");
-  const [username, setUsername] = useState(user.username || "");
-  const [pronouns, setPronouns] = useState(user.pronouns || "");
-  const [photoURL, setPhotoURL] = useState(user.photoURL || "");
-  const [bio, setBio] = useState(user.bio || "");
-  const [cuisines, setCuisines] = useState(user.favoriteCuisines?.join(", ") || "");
+  const [displayName, setDisplayName] = useState(user?.displayName || "");
+  const [username, setUsername] = useState(user?.username || "");
+  const [pronouns, setPronouns] = useState(user?.pronouns || "");
+  const [photoURL, setPhotoURL] = useState(user?.photoURL || "");
+  const [bio, setBio] = useState(user?.bio || "");
+  const [cuisines, setCuisines] = useState(user?.favoriteCuisines?.join(", ") || "");
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);

@@ -11,6 +11,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { toast } from "sonner";
 import { searchRestaurants } from "../services/mapsService";
 import { RestaurantSearchResult, Review } from "../types";
+import { createReview } from "../services/supabaseService";
 
 const logSchema = z.object({
   restaurant: z.string().min(1, "Restaurant is required"),
@@ -353,6 +354,12 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
         };
 
         await setDoc(reviewRef, reviewData);
+        await createReview({ 
+          ...reviewData, 
+          id: reviewRef.id, 
+          type: "review" as const,
+          visitProofType: "receipt" as const 
+        });
         
         const userRef = doc(db, "users", user.uid);
         await updateDoc(userRef, { "stats.reviewsWritten": increment(1) });

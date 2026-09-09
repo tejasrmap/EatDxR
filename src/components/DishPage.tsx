@@ -30,7 +30,7 @@ export function DishPage() {
   );
 
   return (
-    <div className="min-h-screen bg-black text-white pb-36 pt-20">
+    <div className="min-h-screen bg-black text-white py-8 md:py-12">
       
       {/* Top Header Bar */}
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">

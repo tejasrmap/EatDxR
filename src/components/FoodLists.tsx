@@ -109,7 +109,7 @@ export function FoodLists() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white pt-24 pb-36 px-6 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-black text-white py-12 md:py-16 px-6 max-w-7xl mx-auto">
       
       {/* Header */}
       <div className="flex flex-col items-center text-center mb-12">

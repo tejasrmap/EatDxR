@@ -87,7 +87,7 @@ export function Restaurants() {
   }
 
   return (
-    <div className="min-h-screen pt-32 pb-32 px-6 max-w-7xl mx-auto elite-motion-safe">
+    <div className="min-h-screen py-12 md:py-16 px-6 max-w-7xl mx-auto elite-motion-safe">
       <header className="mb-20">
         <motion.h1 
           initial={{ opacity: 0, x: -20 }}

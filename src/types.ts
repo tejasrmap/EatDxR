@@ -26,6 +26,7 @@ export interface User {
   uid: string;
   displayName: string;
   photoURL: string;
+  email?: string;
   username?: string;
   pronouns?: string;
   bio?: string;
@@ -43,6 +44,7 @@ export interface User {
     following: number;
     followingList?: string[];
   };
+  createdAt?: string;
 }
 
 export interface Restaurant {

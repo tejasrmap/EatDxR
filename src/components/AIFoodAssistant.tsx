@@ -20,6 +20,7 @@ interface Message {
 interface AIFoodAssistantProps {
   isOpen: boolean;
   onClose: () => void;
+  initialPrompt?: string;
 }
 
 const QUICK_PROMPTS = [
@@ -29,15 +30,21 @@ const QUICK_PROMPTS = [
   "Romantic date night with great ambience under ₹3,000"
 ];
 
-export function AIFoodAssistant({ isOpen, onClose }: AIFoodAssistantProps) {
+export function AIFoodAssistant({ isOpen, onClose, initialPrompt }: AIFoodAssistantProps) {
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Hello! I am your Madeater Food Concierge. Ask me anything about regional flavors, budget dining, or where to find the absolute best dishes."
+      content: "Hello! I am Chef AI, your personal food guide. Ask me anything about regional flavors, budget dining, or where to find the absolute best dishes."
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (initialPrompt && isOpen) {
+      setQuery(initialPrompt);
+    }
+  }, [initialPrompt, isOpen]);
 
   const handleSend = async (textToSend?: string) => {
     const promptText = (textToSend || query).trim();
@@ -182,10 +189,10 @@ export function AIFoodAssistant({ isOpen, onClose }: AIFoodAssistantProps) {
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-black uppercase tracking-wider text-orange-400">Madeater AI</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 font-bold">Taste Concierge</span>
+                <span className="text-xs font-black uppercase tracking-wider text-orange-400">Madeater</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 font-bold">Chef AI</span>
               </div>
-              <h2 className="text-sm font-bold text-white/80">Autonomous Food Intelligence</h2>
+              <h2 className="text-sm font-bold text-white/80">Your Personal Food Advisor</h2>
             </div>
           </div>
           <button 
