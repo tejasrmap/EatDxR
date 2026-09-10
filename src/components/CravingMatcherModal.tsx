@@ -135,10 +135,11 @@ export function CravingMatcherModal({ isOpen, onClose }: CravingMatcherModalProp
     <AnimatePresence>
       <div className="fixed inset-0 z-[300] flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md overflow-hidden select-none">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          className="relative w-full max-w-sm sm:max-w-md bg-zinc-950 border border-white/15 rounded-3xl p-4 sm:p-5 shadow-2xl flex flex-col h-[85vh] max-h-[700px] justify-between"
+          exit={{ opacity: 0, scale: 0.96 }}
+          transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+          className="relative w-full max-w-sm sm:max-w-md bg-zinc-950 border border-white/15 rounded-3xl p-4 sm:p-5 shadow-2xl flex flex-col h-[85vh] max-h-[700px] justify-between gpu-accelerated"
         >
           {/* Top Bar */}
           <div className="flex items-center justify-between pb-2 border-b border-white/10">

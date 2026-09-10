@@ -74,7 +74,9 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Main Full-Bleed App Content Area */}
       <main className={`flex-1 w-full max-w-4xl mx-auto ${isReelsView ? 'pt-0 pb-0' : 'pb-28'}`}>
-        {children}
+        <div key={routerLocation.pathname} className="page-transition w-full">
+          {children}
+        </div>
       </main>
 
       {/* Persistent App Navigation Dock */}
