@@ -50,7 +50,7 @@ export function YearInFood() {
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
-    toast.success("Year in food link copied!");
+    toast.success("My Food Year link copied!");
   };
 
   return (
@@ -100,7 +100,7 @@ export function YearInFood() {
             <span className="font-black text-lg tracking-tight uppercase text-orange-400">EATER</span>
           </div>
           <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-white/10 text-white/80">
-            {stats.year} Year in Food
+            {stats.year} My Food Year
           </span>
         </div>
 

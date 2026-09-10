@@ -57,7 +57,7 @@ export function AppNavigationDock() {
         <div className="max-w-sm sm:max-w-md mx-auto px-3 sm:px-4 pb-1.5">
           <div className="w-full bg-zinc-950/92 backdrop-blur-2xl border border-white/10 rounded-full shadow-2xl pointer-events-auto p-1.5 flex items-center justify-between relative select-none touch-manipulation">
             
-            {/* 1. Feed / Home */}
+            {/* 1. Food Feed / Home */}
             <Link
               to="/app"
               onClick={() => triggerHaptic()}
@@ -66,7 +66,7 @@ export function AppNavigationDock() {
               }`}
             >
               <LayoutGrid size={19} className={isFeedActive ? 'fill-orange-400/20 stroke-orange-400' : ''} />
-              <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5">Feed</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5">Food Feed</span>
             </Link>
 
             {/* 2. Explore / Radar */}
@@ -93,13 +93,13 @@ export function AppNavigationDock() {
                   setShowActionMenu(!showActionMenu);
                 }}
                 className="w-12 h-12 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 text-black flex items-center justify-center shadow-[0_0_20px_rgba(249,115,22,0.4)] active:scale-90 transition-all hover:scale-105 cursor-pointer"
-                title="Create Log or Reel"
+                title="Log an Eat / Try"
               >
                 <Plus size={24} className={`transition-transform duration-300 stroke-[3] ${showActionMenu ? 'rotate-45' : ''}`} />
               </button>
             </div>
 
-            {/* 4. Lists */}
+            {/* 4. Food Lists */}
             <Link
               to="/app/lists"
               onClick={() => triggerHaptic()}
@@ -108,7 +108,7 @@ export function AppNavigationDock() {
               }`}
             >
               <ListOrdered size={19} className={isListsActive ? 'fill-orange-400/20 stroke-orange-400' : ''} />
-              <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5">Lists</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5">Food Lists</span>
             </Link>
 
             {/* 5. Profile */}
@@ -166,8 +166,8 @@ export function AppNavigationDock() {
                     <Plus size={18} />
                   </div>
                   <div>
-                    <span className="block text-xs font-black uppercase tracking-wider text-white">Log Dining Experience</span>
-                    <span className="text-[10px] text-white/50">Rate dish & spot with Must-Order tags</span>
+                    <span className="block text-xs font-black uppercase tracking-wider text-white">Log an Eat / Try</span>
+                    <span className="text-[10px] text-white/50">Save to your Food Diary with ratings & reviews</span>
                   </div>
                 </button>
 

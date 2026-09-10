@@ -437,7 +437,7 @@ export const Profile: React.FC = () => {
               className="py-1.5 px-3 bg-gradient-to-r from-orange-500/20 to-amber-500/20 hover:from-orange-500/30 border border-orange-500/30 rounded-lg text-xs font-black uppercase tracking-wider text-orange-400 flex items-center justify-center gap-1.5 shrink-0 transition-all active:scale-[0.98]"
             >
               <Sparkles size={13} />
-              <span className="hidden xs:inline">Year in Food</span>
+              <span className="hidden xs:inline">My Food Year</span>
             </Link>
           </>
         ) : (
@@ -486,16 +486,12 @@ export const Profile: React.FC = () => {
 
         {/* Top Rated */}
         <button
-          onClick={() => { triggerHaptic(); setActiveTab("diary"); }}
+          onClick={() => { triggerHaptic(); setActiveTab("profile"); }}
           className="flex flex-col items-center gap-1 shrink-0 group active:scale-95 transition-transform cursor-pointer"
         >
-          <div className={`w-13 h-13 sm:w-14 sm:h-14 rounded-full p-[2px] transition-all ${
-            activeTab === "diary" 
-              ? "bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600" 
-              : "bg-zinc-800 group-hover:bg-amber-500/50"
-          }`}>
-            <div className="w-full h-full rounded-full bg-zinc-950 border border-white/10 flex items-center justify-center text-amber-400">
-              <Star size={19} className="fill-amber-400/20" />
+          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-full p-[2px] bg-zinc-800 group-hover:bg-orange-500/50 transition-all">
+            <div className="w-full h-full rounded-full bg-zinc-950 border border-white/10 flex items-center justify-center text-orange-400">
+              <Star size={19} />
             </div>
           </div>
           <span className="text-[10px] font-semibold text-zinc-300 group-hover:text-white truncate max-w-[62px]">Top Rated</span>
@@ -515,7 +511,7 @@ export const Profile: React.FC = () => {
           <span className="text-[10px] font-semibold text-zinc-300 group-hover:text-white truncate max-w-[62px]">Food Radar</span>
         </Link>
 
-        {/* Lists */}
+        {/* Food Lists */}
         <button
           onClick={() => { triggerHaptic(); setActiveTab("lists"); }}
           className="flex flex-col items-center gap-1 shrink-0 group active:scale-95 transition-transform cursor-pointer"
@@ -529,10 +525,10 @@ export const Profile: React.FC = () => {
               <ListOrdered size={19} />
             </div>
           </div>
-          <span className="text-[10px] font-semibold text-zinc-300 group-hover:text-white truncate max-w-[62px]">Lists</span>
+          <span className="text-[10px] font-semibold text-zinc-300 group-hover:text-white truncate max-w-[62px]">Food Lists</span>
         </button>
 
-        {/* Eatlist */}
+        {/* Want to Try / Cravings */}
         <button
           onClick={() => { triggerHaptic(); setActiveTab("eatlist"); }}
           className="flex flex-col items-center gap-1 shrink-0 group active:scale-95 transition-transform cursor-pointer"
@@ -546,7 +542,7 @@ export const Profile: React.FC = () => {
               <Heart size={19} className="fill-rose-400/20" />
             </div>
           </div>
-          <span className="text-[10px] font-semibold text-zinc-300 group-hover:text-white truncate max-w-[62px]">Want-to-Eat</span>
+          <span className="text-[10px] font-semibold text-zinc-300 group-hover:text-white truncate max-w-[62px]">Want to Try</span>
         </button>
       </div>
 
@@ -554,11 +550,11 @@ export const Profile: React.FC = () => {
       <div className="sticky top-14 z-30 bg-black/95 backdrop-blur-xl border-t border-b border-white/10 -mx-3 sm:-mx-6 px-3 sm:px-6 mb-2.5 select-none">
         <div className="flex items-center justify-around">
           {[
-            { id: "profile", label: "Grid", icon: Grid },
-            { id: "diary", label: "Diary", icon: Clock },
+            { id: "profile", label: "Food History", icon: Grid },
+            { id: "diary", label: "Food Diary", icon: Clock },
             { id: "taste", label: "Taste DNA", icon: Sparkles },
-            { id: "eatlist", label: "Eatlist", icon: Heart },
-            { id: "lists", label: "Lists", icon: ListOrdered },
+            { id: "eatlist", label: "Want to Try", icon: Heart },
+            { id: "lists", label: "Food Lists", icon: ListOrdered },
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             return (

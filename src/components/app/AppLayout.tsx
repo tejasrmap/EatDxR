@@ -45,10 +45,10 @@ export function AppLayout({ children }: AppLayoutProps) {
       }
       return "Profile";
     }
-    if (path.startsWith("/app/critics") || path.startsWith("/critics")) return "Verified Critics";
+    if (path.startsWith("/app/critics") || path.startsWith("/critics")) return "Food Critics";
     if (path.startsWith("/app/map") || path.startsWith("/map")) return "Food Radar";
-    if (path.startsWith("/app/journal") || path.startsWith("/journal")) return "Taste Journal";
-    if (path.startsWith("/app/wrapped") || path.startsWith("/wrapped")) return "Year in Food";
+    if (path.startsWith("/app/journal") || path.startsWith("/journal")) return "Food Diary";
+    if (path.startsWith("/app/wrapped") || path.startsWith("/wrapped")) return "My Food Year";
     return undefined;
   };
 
