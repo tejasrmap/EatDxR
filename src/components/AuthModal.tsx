@@ -48,9 +48,16 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
   // 1. Google Sign-In with mobile/popup fallback
   const handleGoogleSignIn = async () => {
     triggerHaptic();
-    setLoading(true);
     setErrorMessage(null);
 
+    if (isNative) {
+      setErrorMessage(
+        "Google Web OAuth opens external Chrome which gets stuck on a blank screen on Android. Please sign in below with your Email & Password or tap '1-Tap Instant Guest Critic'!"
+      );
+      return;
+    }
+
+    setLoading(true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
 
@@ -62,7 +69,7 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
       const code = error?.code || "";
 
       if (code === "auth/popup-blocked" || code === "auth/operation-not-supported-in-this-environment") {
-        setErrorMessage("Google Sign-In popup is unavailable in this mobile view. Please use Email or 1-Tap Instant Guest Critic below.");
+        setErrorMessage("Google Sign-In popup is unavailable in this view. Please use Email or 1-Tap Instant Guest Critic below.");
       } else if (code === "auth/popup-closed-by-user") {
         // User just closed popup, no error message needed
       } else if (code === "auth/unauthorized-domain") {
@@ -138,33 +145,23 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
     setErrorMessage(null);
 
     try {
-      // Attempt Firebase Anonymous Login
-      const cred = await signInAnonymously(auth);
-      if (cred.user && !cred.user.displayName) {
-        await updateProfile(cred.user, {
-          displayName: "Guest Critic",
-          photoURL: `https://api.dicebear.com/7.x/bottts/svg?seed=${cred.user.uid}`
-        });
-      }
-      handleSuccess("Signed in as Guest Critic!");
-    } catch (error: any) {
-      console.warn("Firebase anonymous auth not enabled or failed:", error);
-      // Fallback: try logging in with a default guest critic credential or show helpful message
+      // Primary: Instant in-app login via verified Critic account
+      await signInWithEmailAndPassword(auth, "guest@madeater.app", "madeaterguest123");
+      handleSuccess("Signed in as Food Critic!");
+    } catch (guestErr) {
+      console.warn("Guest account fallback:", guestErr);
       try {
-        await signInWithEmailAndPassword(auth, "critic.guest@madeater.internal", "madeater2026");
-        handleSuccess("Signed in as Guest Critic!");
-      } catch {
-        // If guest user doesn't exist, create it once
-        try {
-          const newCred = await createUserWithEmailAndPassword(auth, "critic.guest@madeater.internal", "madeater2026");
-          await updateProfile(newCred.user, {
+        // Fallback: anonymous sign-in
+        const cred = await signInAnonymously(auth);
+        if (cred.user && !cred.user.displayName) {
+          await updateProfile(cred.user, {
             displayName: "Guest Critic",
-            photoURL: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
+            photoURL: `https://api.dicebear.com/7.x/bottts/svg?seed=${cred.user.uid}`
           });
-          handleSuccess("Signed in as Guest Critic!");
-        } catch (innerErr: any) {
-          setErrorMessage("Guest login unavailable. Please sign up with any email & password.");
         }
+        handleSuccess("Signed in as Guest Critic!");
+      } catch (err: any) {
+        setErrorMessage("Guest login unavailable. Please sign in or create an account below.");
       }
     } finally {
       setLoading(false);
@@ -221,33 +218,40 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
             </div>
           )}
 
-          {/* 1. Google 1-Tap Button */}
-          <button
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl bg-white text-black font-black text-xs uppercase tracking-wider hover:bg-zinc-200 active:scale-[0.98] transition-all shadow-lg mb-3 disabled:opacity-60 cursor-pointer"
-          >
-            {loading ? (
-              <Loader2 size={16} className="animate-spin text-black" />
-            ) : (
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-              </svg>
-            )}
-            <span>Continue with Google</span>
-          </button>
-
-          {/* 1-Tap Guest Button */}
+          {/* 1-Tap Guest Button (Primary on Mobile) */}
           <button
             onClick={handleGuestLogin}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 text-white/90 hover:text-white font-bold text-xs uppercase tracking-wider active:scale-[0.98] transition-all mb-4 disabled:opacity-60 cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-400 hover:brightness-110 text-black font-black text-xs uppercase tracking-wider active:scale-[0.98] transition-all mb-3 shadow-lg disabled:opacity-60 cursor-pointer"
           >
-            <ShieldCheck size={14} className="text-orange-400" />
-            <span>1-Tap Instant Guest Critic</span>
+            <ShieldCheck size={16} className="text-black" />
+            <span>1-Tap Instant Critic (Direct In-App)</span>
+          </button>
+
+          {/* Google Button */}
+          <button
+            onClick={handleGoogleSignIn}
+            disabled={loading}
+            className="w-full flex items-center justify-between py-2.5 px-4 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 text-white font-bold text-xs uppercase tracking-wider active:scale-[0.98] transition-all mb-3 disabled:opacity-60 cursor-pointer"
+          >
+            <div className="flex items-center gap-2.5">
+              {loading ? (
+                <Loader2 size={15} className="animate-spin text-white" />
+              ) : (
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                </svg>
+              )}
+              <span>Continue with Google</span>
+            </div>
+            {isNative && (
+              <span className="text-[9px] text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20 font-semibold normal-case">
+                Web only
+              </span>
+            )}
           </button>
 
           {/* Divider */}
