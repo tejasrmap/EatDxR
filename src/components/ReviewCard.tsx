@@ -260,23 +260,29 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
         </Link>
         
         <div className="flex-1 min-w-0" onClick={() => setIsDetailedViewOpen(true)}>
-          <div className="flex items-start justify-between mb-2 cursor-pointer">
+          <div className="flex items-start justify-between mb-2 cursor-pointer gap-2">
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-baseline gap-x-2 mb-1">
-                {review.dishes?.map((dish, i) => (
-                  <React.Fragment key={i}>
-                    <h3 className="text-lg sm:text-xl font-semibold text-foreground transition-colors truncate tracking-tight">
-                      {dish.name}
-                    </h3>
-                    {i < review.dishes.length - 1 && <span className="text-muted-foreground font-medium text-lg mx-1">+</span>}
-                  </React.Fragment>
-                ))}
+                {review.dishes && review.dishes.length > 0 && review.dishes.some(d => d.name) ? (
+                  review.dishes.map((dish, i) => (
+                    <React.Fragment key={i}>
+                      <h3 className="text-lg sm:text-xl font-bold text-foreground transition-colors tracking-tight line-clamp-1">
+                        {dish.name || "Special Dish"}
+                      </h3>
+                      {i < review.dishes.length - 1 && <span className="text-muted-foreground font-medium text-lg mx-1">+</span>}
+                    </React.Fragment>
+                  ))
+                ) : (
+                  <h3 className="text-lg sm:text-xl font-bold text-foreground transition-colors tracking-tight">
+                    {review.attachedDish || review.restaurantName || "Culinary Experience"}
+                  </h3>
+                )}
               </div>
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-1.5 text-sm flex-wrap">
                 <span className="text-muted-foreground font-medium text-xs">at</span>
                 <Link 
                   to={getAppUrl(`/restaurant/${review.restaurantId}`)} 
-                  className="text-foreground hover:text-foreground transition-colors underline decoration-border hover:decoration-foreground underline-offset-4 font-medium text-xs sm:text-sm"
+                  className="text-foreground hover:text-orange-400 transition-colors font-semibold text-xs sm:text-sm underline decoration-border hover:decoration-orange-400 underline-offset-4"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {review.restaurantName}
@@ -348,35 +354,35 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                 className="w-6 h-6 rounded-full border border-border shadow-sm group-hover/user:border-foreground transition-all"
                 referrerPolicy="no-referrer"
                 loading="lazy"
+                decoding="async"
               />
-              <span className="text-[11px] font-medium text-muted-foreground group-hover/user:text-foreground transition-colors">{review.userName}</span>
+              <span className="text-xs font-semibold text-muted-foreground group-hover/user:text-foreground transition-colors">
+                {review.userName}
+              </span>
             </Link>
-            {review.city && (
-              <>
-                <span className="text-border text-[10px] font-medium">/</span>
-                <div className="flex items-center gap-1.5 text-muted-foreground font-medium text-[10px]">
-                  <MapPin size={10} className="text-muted-foreground" />
-                  <span>{review.city}</span>
-                </div>
-              </>
-            )}
+            <span className="text-muted-foreground/40 text-xs">•</span>
+            <div className="flex items-center gap-1 text-muted-foreground text-xs">
+              <MapPin size={12} className="text-muted-foreground/60" />
+              <span>{review.city || "Bangalore"}</span>
+            </div>
           </div>
           
-          <p className="text-foreground/80 text-sm line-clamp-3 mb-6 leading-relaxed font-normal">
-            {review.content}
-          </p>
+          {review.content && (
+            <p className="text-muted-foreground text-sm leading-relaxed mb-4 line-clamp-3">
+              {review.content}
+            </p>
+          )}
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 sm:gap-6 pt-2 border-t border-border/40">
             <button 
               onClick={(e) => {
                 e.stopPropagation();
                 handleLike();
               }}
-              disabled={isLikeLoading}
-              className={`flex items-center gap-2 text-muted-foreground hover:text-rose-500 transition-all group/btn ${hasLiked ? 'text-rose-500 scale-110' : ''} ${isLikeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex items-center gap-2 transition-all ${hasLiked ? 'text-rose-500 font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              <Heart size={16} className={hasLiked ? "fill-rose-500" : "group-hover/btn:fill-rose-500 transition-transform group-hover/btn:scale-110"} />
-              <span className="font-medium text-[11px] text-inherit">{totalLikes}</span>
+              <Heart size={16} className={hasLiked ? "fill-rose-500" : ""} />
+              <span className="font-medium text-[11px]">{totalLikes}</span>
             </button>
             <button 
               onClick={(e) => {
@@ -395,9 +401,10 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
                 e.stopPropagation();
                 setIsStoryModalOpen(true);
               }}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-orange-500/10 to-amber-500/10 hover:from-orange-500/20 hover:to-amber-500/20 border border-orange-500/30 text-orange-400 font-bold text-[10px] uppercase tracking-wider transition-all active:scale-95 cursor-pointer shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-orange-500/15 via-pink-500/15 to-amber-500/15 hover:from-orange-500/25 hover:to-amber-500/25 border border-orange-500/40 text-orange-400 font-bold text-[10px] uppercase tracking-wider transition-all active:scale-95 cursor-pointer shadow-sm"
+              title="Open 9:16 Instagram Story Studio"
             >
-              <Sparkles size={11} />
+              <Sparkles size={11} className="text-orange-400" />
               <span>Story Card</span>
             </button>
             <button 

@@ -1,14 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  X, Download, Share2, Copy, Sparkles, Check, 
-  MapPin, Navigation, Utensils, Clock, IndianRupee, ShieldCheck,
-  Instagram, ExternalLink
+  X, Download, Copy, Sparkles, Check, 
+  MapPin, Clock, IndianRupee,
+  Instagram, ExternalLink, Loader2
 } from 'lucide-react';
 import { FoodTrail } from '../types';
-import * as htmlToImage from 'html-to-image';
 import { triggerHaptic } from '../services/nativeService';
 import { toast } from 'sonner';
+import { generateTrailStoryBlob, StoryTheme } from '../utils/storyCanvasGenerator';
 
 interface TrailCardModalProps {
   isOpen: boolean;
@@ -16,314 +16,238 @@ interface TrailCardModalProps {
   trail: FoodTrail;
 }
 
-type CardTheme = 'cinematic' | 'vintage' | 'neon';
-
 export function TrailCardModal({ isOpen, onClose, trail }: TrailCardModalProps) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [theme, setTheme] = useState<CardTheme>('cinematic');
+  const [theme, setTheme] = useState<StoryTheme>('cinematic');
   const [isExporting, setIsExporting] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [base64Cover, setBase64Cover] = useState<string>('');
-
-  useEffect(() => {
-    if (!isOpen || !trail?.coverImage) return;
-    let isMounted = true;
-    const toBase64 = async (url: string) => {
-      try {
-        const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(url)}&output=png`;
-        const res = await fetch(proxyUrl);
-        const blob = await res.blob();
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          if (isMounted) setBase64Cover(reader.result as string);
-        };
-        reader.readAsDataURL(blob);
-      } catch {
-        if (isMounted) setBase64Cover(url);
-      }
-    };
-    toBase64(trail.coverImage);
-    return () => { isMounted = false; };
-  }, [isOpen, trail?.coverImage]);
 
   if (!isOpen || !trail) return null;
 
-  const openInstagramApp = () => {
+  const openInstagramDirect = () => {
+    triggerHaptic();
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     if (isMobile) {
       window.location.href = "instagram://story-camera";
       setTimeout(() => {
-        window.location.href = "instagram://app";
-      }, 500);
+        window.location.href = "https://instagram.com";
+      }, 1000);
     } else {
-      window.open("https://www.instagram.com", "_blank");
-    }
-  };
-
-  const generateCardImage = async (): Promise<string | null> => {
-    if (!cardRef.current) return null;
-    try {
-      setIsExporting(true);
-      const dataUrl = await htmlToImage.toPng(cardRef.current, {
-        quality: 0.98,
-        pixelRatio: 2.5,
-        backgroundColor: '#050505',
-        cacheBust: true,
-      });
-      return dataUrl;
-    } catch (err) {
-      console.error('Failed to capture trail card:', err);
-      toast.error('Failed to generate image');
-      return null;
-    } finally {
-      setIsExporting(false);
+      window.open("https://www.instagram.com", "_blank", "noopener,noreferrer");
     }
   };
 
   const handleDownload = async () => {
     triggerHaptic();
-    const dataUrl = await generateCardImage();
-    if (!dataUrl) return;
-    const link = document.createElement('a');
-    link.download = `Madeater-Trail-${trail.title.replace(/[^a-z0-9]/gi, '_')}.png`;
-    link.href = dataUrl;
-    link.click();
-    toast.success('Food Trail Card downloaded!');
+    setIsExporting(true);
+    try {
+      const blob = await generateTrailStoryBlob(trail, theme);
+      if (!blob) throw new Error('Generation failed');
+
+      const filename = `Madeater-Trail-${trail.title.replace(/[^a-z0-9]/gi, '_')}.png`;
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = URL.createObjectURL(blob);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success('Food Trail Story Card saved to photos!');
+    } catch (err) {
+      toast.error('Failed to export story card');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleShare = async () => {
     triggerHaptic();
-    const dataUrl = await generateCardImage();
-    if (!dataUrl) return;
-
+    setIsExporting(true);
     try {
-      const res = await fetch(dataUrl);
-      const blob = await res.blob();
-      const file = new File([blob], `${trail.title.replace(/[^a-z0-9]/gi, '_')}-Trail.png`, { type: 'image/png' });
+      const blob = await generateTrailStoryBlob(trail, theme);
+      if (!blob) throw new Error('Generation failed');
 
-      // Automatically save first
+      const filename = `Madeater-Trail-${trail.title.replace(/[^a-z0-9]/gi, '_')}.png`;
+      const file = new File([blob], filename, { type: 'image/png' });
+
+      // Trigger download backup
       const link = document.createElement('a');
-      link.download = file.name;
-      link.href = dataUrl;
+      link.download = filename;
+      link.href = URL.createObjectURL(blob);
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: `Madeater Food Trail: ${trail.title}`,
-          text: `Check out this curated food crawl on Madeater: ${trail.title} in ${trail.neighborhood}!`,
+          title: `Food Trail: ${trail.title}`,
+          text: `Check out the ${trail.title} food trail in ${trail.city} on Madeater!`,
         });
         toast.success('Shared! Opening Instagram...');
-        setTimeout(openInstagramApp, 800);
       } else {
-        toast.success('Trail Card saved! Redirecting to Instagram...');
-        setTimeout(openInstagramApp, 500);
+        toast.success('Trail card saved! Opening Instagram...');
+        setTimeout(openInstagramDirect, 400);
       }
-    } catch (e: any) {
-      if (e.name !== 'AbortError') {
-        toast.success('Trail Card downloaded! Redirecting to Instagram...');
-        setTimeout(openInstagramApp, 300);
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        toast.success('Trail card saved! Opening Instagram...');
+        setTimeout(openInstagramDirect, 300);
       }
+    } finally {
+      setIsExporting(false);
     }
   };
 
   const handleCopy = async () => {
     triggerHaptic();
-    const dataUrl = await generateCardImage();
-    if (!dataUrl) return;
-
+    setIsExporting(true);
     try {
-      const res = await fetch(dataUrl);
-      const blob = await res.blob();
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'image/png': blob })
-      ]);
-      setCopied(true);
-      toast.success('Copied to clipboard!');
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      await handleDownload();
+      const blob = await generateTrailStoryBlob(trail, theme);
+      if (!blob) throw new Error('Generation failed');
+
+      if (navigator.clipboard && (window as any).ClipboardItem) {
+        await navigator.clipboard.write([
+          new (window as any).ClipboardItem({ "image/png": blob })
+        ]);
+        setCopied(true);
+        toast.success('Trail story card copied to clipboard!');
+        setTimeout(() => setCopied(false), 2500);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success('Trail link copied to clipboard!');
+      }
+    } catch (err) {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success('Trail link copied to clipboard!');
+    } finally {
+      setIsExporting(false);
     }
   };
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[300] flex items-center justify-center p-3 sm:p-6 overflow-y-auto bg-black/90 backdrop-blur-md">
+      <div className="fixed inset-0 z-[350] flex items-center justify-center p-3 sm:p-6 overflow-y-auto bg-black/90 backdrop-blur-xl">
         <motion.div
-          initial={{ opacity: 0, scale: 0.93, y: 20 }}
+          initial={{ opacity: 0, scale: 0.94, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.93, y: 20 }}
-          className="relative w-full max-w-sm sm:max-w-md bg-zinc-950 border border-white/15 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col my-auto max-h-[95vh] overflow-y-auto"
+          exit={{ opacity: 0, scale: 0.94, y: 20 }}
+          transition={{ type: 'spring', damping: 28, stiffness: 350 }}
+          className="relative w-full max-w-sm sm:max-w-md bg-zinc-950 border border-white/15 rounded-3xl p-4 sm:p-6 shadow-2xl z-10 text-white flex flex-col items-center my-auto max-h-[95vh] overflow-y-auto"
         >
           {/* Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-white/10">
+          <div className="w-full flex items-center justify-between pb-3 border-b border-white/10">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center">
-                <Navigation size={18} />
+                <Sparkles size={16} />
               </div>
               <div>
                 <h3 className="text-sm font-black text-white uppercase tracking-wider">Trail Story Card</h3>
-                <p className="text-[10px] text-white/50">9:16 vertical crawl itinerary</p>
+                <p className="text-[10px] text-white/50">9:16 Instagram Story Format</p>
               </div>
             </div>
+
             <button
-              onClick={() => {
-                triggerHaptic();
-                onClose();
-              }}
+              onClick={() => { triggerHaptic(); onClose(); }}
               className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
             >
               <X size={18} />
             </button>
           </div>
 
-          {/* Theme Selector */}
-          <div className="flex items-center justify-center gap-2 py-3">
-            {(['cinematic', 'vintage', 'neon'] as CardTheme[]).map((t) => (
-              <button
-                key={t}
-                onClick={() => {
-                  triggerHaptic();
-                  setTheme(t);
-                }}
-                className={`px-3 py-1 rounded-full text-xs font-bold capitalize transition-all cursor-pointer ${
-                  theme === t
-                    ? 'bg-orange-500 text-black shadow-lg shadow-orange-500/30'
-                    : 'bg-white/5 text-white/60 hover:text-white border border-white/10'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-
-          {/* PREVIEW CONTAINER (9:16 Aspect Ratio) */}
-          <div className="relative w-full aspect-[9/16] rounded-2xl overflow-hidden shadow-2xl border border-white/15 my-2">
-            <div
-              ref={cardRef}
-              className={`w-full h-full flex flex-col justify-between p-5 select-none relative overflow-hidden ${
-                theme === 'cinematic'
-                  ? 'bg-gradient-to-b from-zinc-950 via-zinc-900 to-black text-white'
-                  : theme === 'vintage'
-                  ? 'bg-gradient-to-b from-amber-950 via-zinc-900 to-black text-amber-100'
-                  : 'bg-gradient-to-b from-purple-950 via-zinc-950 to-black text-cyan-100'
-              }`}
-            >
-              {/* Background ambient accents */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-
-              {/* Top Bar */}
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-1 rounded-full bg-orange-500 text-black text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
-                      <Sparkles size={10} /> Food Crawl
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full bg-white/10 text-white/80 text-[9px] font-semibold">
-                      {trail.city}
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-mono tracking-widest text-white/40">MADEATER</span>
+          {/* 9:16 Preview Card */}
+          <div className="relative w-full aspect-[9/16] max-w-[280px] sm:max-w-[300px] rounded-3xl overflow-hidden shadow-2xl border border-white/20 select-none bg-black my-3">
+            <div className="w-full h-full flex flex-col justify-between p-4 bg-gradient-to-b from-stone-950 via-zinc-900 to-black text-white relative">
+              {/* Header Badge */}
+              <div className="flex items-center justify-between z-10">
+                <div className="px-2 py-0.5 rounded-full bg-orange-500/20 border border-orange-500/40 text-[9px] font-black uppercase tracking-wider text-orange-400">
+                  🗺️ Trail Route
                 </div>
-
-                <h1 className="text-xl font-black leading-tight tracking-tight text-white mb-1">
-                  {trail.title}
-                </h1>
-                <p className="text-xs text-white/70 line-clamp-2 leading-relaxed">
-                  {trail.tagline}
-                </p>
-
-                {/* Quick stats strip */}
-                <div className="flex items-center gap-3 mt-3 pt-2.5 border-t border-white/10 text-[10px] text-white/60">
-                  <span className="flex items-center gap-1">
-                    <MapPin size={11} className="text-orange-400" /> {trail.stops.length} Stops
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock size={11} className="text-amber-400" /> ~{trail.totalDurationHours}h
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <IndianRupee size={11} className="text-emerald-400" /> {trail.estimatedBudget}
-                  </span>
+                <div className="flex items-center gap-1 text-[9px] font-bold text-white/80 bg-black/60 px-2 py-0.5 rounded-full">
+                  <MapPin size={10} className="text-orange-400" />
+                  <span>{trail.city}</span>
                 </div>
               </div>
 
-              {/* Itinerary Steps */}
-              <div className="relative z-10 space-y-2.5 my-auto">
-                {trail.stops.slice(0, 4).map((stop, idx) => (
-                  <div
-                    key={idx}
-                    className="p-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md flex items-start gap-2.5 relative"
-                  >
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 text-black font-black text-xs flex items-center justify-center shrink-0 shadow-md">
-                      {idx + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-bold text-white truncate">{stop.name}</h4>
-                        <span className="text-[9px] text-white/40">{stop.cuisine}</span>
-                      </div>
-                      <div className="mt-1 flex items-center gap-1 text-[10px] text-orange-400 font-semibold">
-                        <Utensils size={10} /> Must-Order: <span className="text-white truncate">{stop.mustOrderDish}</span>
-                      </div>
-                      <p className="text-[9px] text-white/50 italic mt-0.5 line-clamp-1">
-                        "{stop.criticTip}"
-                      </p>
-                    </div>
+              {/* Cover Image & Title */}
+              <div className="my-auto space-y-2 z-10">
+                <div className="w-full h-28 rounded-2xl overflow-hidden border border-white/20 relative shadow-lg">
+                  <img
+                    src={trail.coverImage}
+                    alt={trail.title}
+                    className="w-full h-full object-cover"
+                    crossOrigin="anonymous"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  <div className="absolute bottom-1.5 left-2 right-2 flex items-center justify-between text-[8px] text-white/80">
+                    <span className="flex items-center gap-0.5"><Clock size={9} /> {trail.estimatedTime}</span>
+                    <span className="flex items-center gap-0.5"><IndianRupee size={9} /> {trail.estimatedCost}</span>
                   </div>
-                ))}
+                </div>
+
+                <h2 className="text-sm font-black uppercase tracking-tight text-white line-clamp-1">
+                  {trail.title}
+                </h2>
+
+                {/* Stops */}
+                <div className="space-y-1">
+                  {trail.stops.slice(0, 3).map((stop, i) => (
+                    <div key={stop.id || i} className="p-1.5 rounded-xl bg-white/5 border border-white/10 flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full bg-orange-500 text-black text-[9px] font-black flex items-center justify-center shrink-0">
+                        {i + 1}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-bold text-white line-clamp-1">{stop.restaurantName}</p>
+                        <p className="text-[8px] text-orange-400 italic line-clamp-1 font-serif">"{stop.signatureDish}"</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Footer */}
-              <div className="relative z-10 pt-3 border-t border-white/10 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 text-black font-black text-xs flex items-center justify-center">
-                    {trail.curatorName.charAt(0)}
-                  </div>
-                  <div>
-                    <span className="block text-[10px] font-bold text-white flex items-center gap-1">
-                      Curated by {trail.curatorName}
-                      <ShieldCheck size={10} className="text-amber-400" />
-                    </span>
-                    <span className="text-[8px] text-white/40">Madeater Critic Trail</span>
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <span className="text-[8px] text-white/40 block">Discover on</span>
-                  <span className="text-[10px] font-black tracking-wider text-orange-400">madeater.com</span>
-                </div>
+              <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[8px] text-white/60 z-10">
+                <span className="font-black text-orange-400 tracking-wider">MADEATER</span>
+                <span className="font-mono">{trail.stops.length} Stops Crawl</span>
               </div>
             </div>
           </div>
 
-          {/* Action CTAs */}
-          <div className="w-full space-y-2 pt-3">
+          {/* Actions */}
+          <div className="w-full space-y-2">
             <button
               onClick={handleShare}
               disabled={isExporting}
-              className="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-400 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-pink-500/20 cursor-pointer"
+              className="w-full h-11 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-400 hover:brightness-110 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-pink-500/20 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
             >
-              <Instagram size={16} />
+              {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Instagram size={16} />}
               <span>Share to Instagram Story</span>
             </button>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={handleDownload}
                 disabled={isExporting}
-                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-white font-bold text-xs active:scale-95 transition-all cursor-pointer"
+                className="h-10 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 text-white font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
               >
-                <Download size={15} />
-                <span>Save</span>
+                <Download size={13} />
+                <span>Save HD</span>
               </button>
 
               <button
-                onClick={openInstagramApp}
-                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-orange-400 font-bold text-xs active:scale-95 transition-all cursor-pointer"
+                onClick={handleCopy}
+                disabled={isExporting}
+                className="h-10 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 text-white font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
               >
-                <ExternalLink size={15} />
-                <span>Open App</span>
+                {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                <span>{copied ? "Copied" : "Copy"}</span>
+              </button>
+
+              <button
+                onClick={openInstagramDirect}
+                className="h-10 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 text-orange-400 font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 active:scale-[0.98] transition-all cursor-pointer"
+              >
+                <ExternalLink size={13} />
+                <span>Instagram</span>
               </button>
             </div>
           </div>

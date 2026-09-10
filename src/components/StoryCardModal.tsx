@@ -1,9 +1,8 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { Review } from "../types";
 import { 
   X, 
   Download, 
-  Share2, 
   Copy, 
   Sparkles, 
   Star, 
@@ -14,14 +13,15 @@ import {
   Flame, 
   Award, 
   ExternalLink,
-  Instagram
+  Instagram,
+  Share2
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import * as htmlToImage from "html-to-image";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { parseFirebaseDate } from "../lib/utils";
 import { triggerHaptic } from "../services/nativeService";
+import { generateReviewStoryBlob, StoryTheme } from "../utils/storyCanvasGenerator";
 
 interface StoryCardModalProps {
   isOpen: boolean;
@@ -29,179 +29,119 @@ interface StoryCardModalProps {
   review: Review;
 }
 
-type StoryTheme = "cinematic" | "editorial" | "neon";
-
 export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose, review }) => {
   const [theme, setTheme] = useState<StoryTheme>("cinematic");
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [base64Hero, setBase64Hero] = useState<string>("");
-  const [base64Avatar, setBase64Avatar] = useState<string>("");
-  const cardRef = useRef<HTMLDivElement>(null);
+
+  if (!isOpen || !review) return null;
 
   const images = review?.dishes?.filter(d => d.image).map(d => d.image) || [];
-  const rawHeroImage = images[0] || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80";
-  const rawAvatar = review?.userPhoto || `https://api.dicebear.com/7.x/bottts/svg?seed=${review?.userId || 'critic'}`;
+  const heroImage = images[0] || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80";
+  const avatar = review?.userPhoto || `https://api.dicebear.com/7.x/bottts/svg?seed=${review?.userId || 'critic'}`;
   const primaryDish = review?.dishes?.[0];
   const date = parseFirebaseDate(review?.createdAt);
   const formattedDate = format(date, "MMM dd, yyyy");
   const ratingScore = review ? (review.rating <= 5 ? (review.rating * 2).toFixed(1) : review.rating.toFixed(1)) : "9.0";
 
-  // Pre-load and convert images to Base64 in state to prevent canvas CORS tainting & UI glitches
-  useEffect(() => {
-    if (!isOpen) return;
-
-    let isMounted = true;
-
-    const toBase64 = async (url: string): Promise<string> => {
-      if (!url) return "";
-      if (url.startsWith("data:")) return url;
-      try {
-        const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(url)}&output=png`;
-        const res = await fetch(proxyUrl, { mode: 'cors' });
-        const blob = await res.blob();
-        return new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = () => resolve(url);
-          reader.readAsDataURL(blob);
-        });
-      } catch (e) {
-        return url;
-      }
-    };
-
-    toBase64(rawHeroImage).then((b64) => {
-      if (isMounted) setBase64Hero(b64);
-    });
-
-    toBase64(rawAvatar).then((b64) => {
-      if (isMounted) setBase64Avatar(b64);
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isOpen, rawHeroImage, rawAvatar]);
-
-  if (!isOpen || !review) return null;
-
-  const getCardBlob = async (): Promise<Blob | null> => {
-    if (!cardRef.current) return null;
-
-    try {
-      const dataUrl = await htmlToImage.toPng(cardRef.current, {
-        pixelRatio: 2.5,
-        backgroundColor: "#050505",
-        cacheBust: true,
-      });
-      const res = await fetch(dataUrl);
-      return await res.blob();
-    } catch (err) {
-      console.error("Story card capture error:", err);
-      // Fallback capture
-      try {
-        const fallbackDataUrl = await htmlToImage.toPng(cardRef.current, {
-          pixelRatio: 1.5,
-        });
-        const res = await fetch(fallbackDataUrl);
-        return await res.blob();
-      } catch {
-        return null;
-      }
-    }
-  };
-
-  const openInstagramApp = () => {
-    // Attempt mobile Instagram deep-links
+  const openInstagramDirect = () => {
+    triggerHaptic();
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     if (isMobile) {
-      // Instagram Stories camera deep link
+      // Direct Instagram story camera deep link
       window.location.href = "instagram://story-camera";
       setTimeout(() => {
-        window.location.href = "instagram://app";
-      }, 500);
+        window.location.href = "https://instagram.com";
+      }, 1000);
     } else {
-      window.open("https://www.instagram.com", "_blank");
+      window.open("https://www.instagram.com", "_blank", "noopener,noreferrer");
     }
   };
 
-  // 1. Download to device
+  // 1. Download to device (Instant & Glitch-free)
   const handleDownload = async () => {
     triggerHaptic();
     setIsGenerating(true);
     try {
-      const blob = await getCardBlob();
-      if (!blob) throw new Error("Could not capture card");
+      const blob = await generateReviewStoryBlob(review, theme);
+      if (!blob) throw new Error("Could not generate image");
 
+      const filename = `Madeater-Story-${(review.restaurantName || "Review").replace(/[^a-z0-9]/gi, "_")}.png`;
       const link = document.createElement("a");
-      link.download = `Madeater-Story-${review.restaurantName.replace(/[^a-z0-9]/gi, "_")}.png`;
+      link.download = filename;
       link.href = URL.createObjectURL(blob);
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
+
       toast.success("Story card saved to your photos!");
     } catch (err) {
-      toast.error("Failed to generate image. Please try again.");
+      console.error("Story download error:", err);
+      toast.error("Failed to generate Story image. Please try again.");
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // 2. Share to Instagram Stories (Native Share + Direct Deep Link Fallback)
+  // 2. Share to Instagram Stories (Native Share Sheet + File Download + Instagram App Launch)
   const handleInstagramShare = async () => {
     triggerHaptic();
     setIsGenerating(true);
     try {
-      const blob = await getCardBlob();
-      if (!blob) throw new Error("Capture failed");
+      const blob = await generateReviewStoryBlob(review, theme);
+      if (!blob) throw new Error("Generation failed");
 
-      const file = new File([blob], `Madeater-${review.restaurantName.replace(/[^a-z0-9]/gi, '_')}.png`, { type: "image/png" });
+      const filename = `Madeater-Story-${(review.restaurantName || "Review").replace(/[^a-z0-9]/gi, "_")}.png`;
+      const file = new File([blob], filename, { type: "image/png" });
 
-      // Automatically download first as a reliable backup
+      // Automatically trigger download so user always has the image ready
       const link = document.createElement("a");
-      link.download = file.name;
+      link.download = filename;
       link.href = URL.createObjectURL(blob);
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
 
-      // Check if navigator.share with files is supported
+      // Check if native Web Share API with files is supported (Mobile Chrome, Safari iOS, Android Webview)
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: `Madeater Review: ${review.restaurantName}`,
+          title: `Madeater Critic: ${review.restaurantName}`,
           text: `Rated ${ratingScore}/10 on Madeater! Check out my food review.`,
         });
         toast.success("Shared! Opening Instagram...");
-        setTimeout(openInstagramApp, 800);
       } else {
-        toast.success("Card saved! Redirecting to Instagram...");
-        setTimeout(openInstagramApp, 500);
+        toast.success("Story card saved! Redirecting to Instagram...");
+        setTimeout(openInstagramDirect, 400);
       }
     } catch (err: any) {
       if (err.name !== "AbortError") {
-        toast.success("Card downloaded! Redirecting to Instagram...");
-        setTimeout(openInstagramApp, 300);
+        console.warn("Share fallback:", err);
+        toast.success("Story card saved! Opening Instagram...");
+        setTimeout(openInstagramDirect, 300);
       }
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // 3. Copy to Clipboard
+  // 3. Copy Story Card Image to Clipboard
   const handleCopy = async () => {
     triggerHaptic();
     setIsGenerating(true);
     try {
-      const blob = await getCardBlob();
-      if (!blob) throw new Error("Capture failed");
+      const blob = await generateReviewStoryBlob(review, theme);
+      if (!blob) throw new Error("Generation failed");
 
       if (navigator.clipboard && (window as any).ClipboardItem) {
         await navigator.clipboard.write([
           new (window as any).ClipboardItem({ "image/png": blob })
         ]);
         setCopied(true);
-        toast.success("Story card copied to clipboard!");
+        toast.success("9:16 Story card copied to clipboard! Paste into Instagram.");
         setTimeout(() => setCopied(false), 2500);
       } else {
-        navigator.clipboard.writeText(window.location.href);
+        await navigator.clipboard.writeText(window.location.href);
         toast.success("Review link copied to clipboard!");
       }
     } catch (err) {
@@ -211,9 +151,6 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
       setIsGenerating(false);
     }
   };
-
-  const displayHero = base64Hero || rawHeroImage;
-  const displayAvatar = base64Avatar || rawAvatar;
 
   return (
     <AnimatePresence>
@@ -234,7 +171,7 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
               </div>
               <div>
                 <h3 className="text-sm font-black uppercase tracking-wider text-white">Story Studio</h3>
-                <p className="text-[10px] text-white/50">9:16 Instagram & Social Story Card</p>
+                <p className="text-[10px] text-white/50">9:16 Instagram Story & Reel Card</p>
               </div>
             </div>
 
@@ -276,9 +213,7 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
 
           {/* Story Card Preview Stage (9:16 Responsive Frame) */}
           <div className="relative w-full aspect-[9/16] max-w-[280px] sm:max-w-[300px] rounded-3xl overflow-hidden shadow-2xl border border-white/20 select-none bg-black my-1">
-            {/* The Actual Rendered Card */}
             <div
-              ref={cardRef}
               className={`w-full h-full flex flex-col justify-between p-4 relative text-white ${
                 theme === "cinematic"
                   ? "bg-gradient-to-b from-[#0a0a0c] via-[#111116] to-[#0a0a0c]"
@@ -304,7 +239,7 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
               </div>
 
               {/* CARD CENTER: Hero Photo + Dish + Rating */}
-              <div className="relative z-10 my-auto flex flex-col items-center text-center space-y-2.5">
+              <div className="relative z-10 my-auto flex flex-col items-center text-center space-y-2">
                 {/* Photo Frame */}
                 <div className={`relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl ${
                   theme === "cinematic"
@@ -314,9 +249,10 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
                     : "border-2 border-orange-500/50 shadow-orange-500/20"
                 }`}>
                   <img
-                    src={displayHero}
+                    src={heroImage}
                     alt={review.restaurantName}
                     className="w-full h-full object-cover"
+                    crossOrigin="anonymous"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                   
@@ -341,7 +277,7 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
                   <h2 className="text-base font-black uppercase tracking-tight text-white line-clamp-1">
                     {review.restaurantName}
                   </h2>
-                  {primaryDish && (
+                  {primaryDish?.name && (
                     <p className="text-xs font-serif italic text-orange-400 font-bold line-clamp-1 mt-0.5">
                       "{primaryDish.name}"
                     </p>
@@ -360,12 +296,13 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
               </div>
 
               {/* CARD BOTTOM: Critic Signature & Madeater Watermark */}
-              <div className="relative z-10 pt-2.5 border-t border-white/10 flex items-center justify-between">
+              <div className="relative z-10 pt-2 border-t border-white/10 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <img
-                    src={displayAvatar}
+                    src={avatar}
                     alt={review.userName}
                     className="w-6 h-6 rounded-full border border-white/20 object-cover"
+                    crossOrigin="anonymous"
                   />
                   <div className="text-left">
                     <p className="text-[9px] font-black text-white leading-none line-clamp-1">
@@ -390,7 +327,7 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
           </div>
 
           {/* Action CTAs */}
-          <div className="w-full space-y-2 mt-4">
+          <div className="w-full space-y-2 mt-3">
             {/* 1-Tap Share to Instagram Story */}
             <button
               onClick={handleInstagramShare}
@@ -408,22 +345,31 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
             </button>
 
             {/* Secondary Actions Grid */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={handleDownload}
                 disabled={isGenerating}
-                className="h-11 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+                className="h-10 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 text-white font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
               >
-                <Download size={14} />
-                <span>Save Photo</span>
+                <Download size={13} />
+                <span>Save HD</span>
               </button>
 
               <button
-                onClick={openInstagramApp}
-                className="h-11 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 text-orange-400 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all cursor-pointer"
+                onClick={handleCopy}
+                disabled={isGenerating}
+                className="h-10 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 text-white font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
               >
-                <ExternalLink size={14} />
-                <span>Open Instagram</span>
+                {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                <span>{copied ? "Copied" : "Copy"}</span>
+              </button>
+
+              <button
+                onClick={openInstagramDirect}
+                className="h-10 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 text-orange-400 font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 active:scale-[0.98] transition-all cursor-pointer"
+              >
+                <ExternalLink size={13} />
+                <span>Instagram</span>
               </button>
             </div>
           </div>
