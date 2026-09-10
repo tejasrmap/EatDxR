@@ -368,7 +368,14 @@ export const Profile: React.FC = () => {
           <h1 className="text-sm sm:text-base font-black text-white tracking-tight">
             {user.displayName}
           </h1>
-          <ShieldCheck size={14} className="text-orange-400 fill-orange-400/20 shrink-0" />
+          {currentUser?.uid === user.uid && currentUser.emailVerified ? (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold" title="Email Verified">
+              <CheckCircle2 size={11} className="text-emerald-400" />
+              <span>Verified</span>
+            </span>
+          ) : (
+            <ShieldCheck size={14} className="text-orange-400 fill-orange-400/20 shrink-0" />
+          )}
           {user.pronouns && (
             <span className="text-[11px] text-zinc-500 font-normal">({user.pronouns})</span>
           )}

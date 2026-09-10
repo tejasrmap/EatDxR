@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { WebNavbar } from "./WebNavbar";
 import { WebFooter } from "./WebFooter";
+import { EmailVerificationBanner } from "../EmailVerificationBanner";
 
 interface WebsiteLayoutProps {
   children: ReactNode;
@@ -16,9 +17,12 @@ export function WebsiteLayout({ children }: WebsiteLayoutProps) {
 
       {/* Public Marketing Header */}
       <WebNavbar />
+      <div className="pt-16">
+        <EmailVerificationBanner />
+      </div>
 
       {/* Main Website Content */}
-      <main className="pt-16 flex-grow">
+      <main className="flex-grow">
         {children}
       </main>
 

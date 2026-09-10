@@ -1,6 +1,7 @@
 import { ReactNode, useState, useEffect } from "react";
 import { AppHeader } from "./AppHeader";
 import { AppNavigationDock } from "./AppNavigationDock";
+import { EmailVerificationBanner } from "../EmailVerificationBanner";
 import { useLocation as useRouterLocation } from "react-router-dom";
 import { useLocation } from "../../hooks/useLocation";
 import { getCurrentCity } from "../../services/mapsService";
@@ -64,12 +65,15 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* App Header (hidden on full-screen reels) */}
       {!isReelsView && (
-        <AppHeader 
-          currentCity={currentCity} 
-          onCityChange={(city) => setCurrentCity(city)} 
-          showBack={showBack}
-          title={pageTitle}
-        />
+        <>
+          <AppHeader 
+            currentCity={currentCity} 
+            onCityChange={(city) => setCurrentCity(city)} 
+            showBack={showBack}
+            title={pageTitle}
+          />
+          <EmailVerificationBanner />
+        </>
       )}
 
       {/* Main Full-Bleed App Content Area */}
