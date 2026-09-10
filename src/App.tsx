@@ -37,6 +37,7 @@ import { Restaurant } from "./components/Restaurant";
 import { Restaurants } from "./components/Restaurants";
 import { Critics } from "./components/Critics";
 import { Journal } from "./components/Journal";
+import { FoodTrails } from "./components/FoodTrails";
 import { ApecERPPrivacy } from "./pages/ApecERPPrivacy";
 
 // --- Error Boundary ---
@@ -495,6 +496,22 @@ export function App() {
                 element={
                   <AppLayout>
                     <Critics />
+                  </AppLayout>
+                } 
+              />
+              <Route 
+                path="/app/trails" 
+                element={
+                  <AppLayout>
+                    <FoodTrails />
+                  </AppLayout>
+                } 
+              />
+              <Route 
+                path="/trails" 
+                element={
+                  <AppLayout>
+                    <FoodTrails />
                   </AppLayout>
                 } 
               />

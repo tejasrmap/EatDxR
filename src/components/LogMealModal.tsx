@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { searchRestaurants } from "../services/mapsService";
 import { RestaurantSearchResult, Review } from "../types";
 import { createReview } from "../services/supabaseService";
+import { offlineSyncService } from "../services/offlineSyncService";
 
 const logSchema = z.object({
   restaurant: z.string().min(1, "Restaurant is required"),
@@ -379,7 +380,24 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
       onClose();
     } catch (error) {
       console.error("Submit Error:", error);
-      toast.error("Narrative failed to launch. Try again.");
+      // Fallback: Queue offline
+      try {
+        offlineSyncService.enqueue({
+          restaurantName: data.restaurant,
+          restaurantLocation: manualLocation,
+          dishes: data.dishes,
+          rating: data.rating,
+          content: data.review || "",
+          userId: user.uid,
+          userName: dishdUser?.displayName || user.displayName || "Critic",
+          createdAt: new Date().toISOString(),
+        });
+        toast.success("💾 Saved offline! Will sync automatically when connected.");
+        reset();
+        onClose();
+      } catch {
+        toast.error("Narrative failed to launch. Try again.");
+      }
     } finally {
       setIsSubmitting(false);
       setIsUploading(false);

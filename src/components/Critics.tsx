@@ -4,14 +4,16 @@ import { db, handleFirestoreError, OperationType } from "../firebase";
 import { User } from "../types";
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
-import { Medal, Star, Users, Loader2, Award, TrendingUp, Search } from "lucide-react";
+import { Medal, Star, Users, Loader2, Award, TrendingUp, Search, Trophy, Sparkles } from "lucide-react";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic } from "../services/nativeService";
+import { CriticQuestsModal } from "./CriticQuestsModal";
 
 export function Critics() {
   const { getAppUrl } = useAppUrl();
   const [critics, setCritics] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isQuestsOpen, setIsQuestsOpen] = useState(false);
 
   useEffect(() => {
     const q = query(
@@ -89,10 +91,28 @@ export function Critics() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 1 }}
-          className="text-white/40 max-w-xl mx-auto text-lg leading-relaxed mb-12 font-serif italic"
+          className="text-white/40 max-w-xl mx-auto text-lg leading-relaxed mb-8 font-serif italic"
         >
           The most prolific and trusted voices in the culinary community. Ranked by their total gastronomic contributions.
         </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.8 }}
+          className="mb-10 flex items-center justify-center gap-3"
+        >
+          <button
+            onClick={() => {
+              triggerHaptic();
+              setIsQuestsOpen(true);
+            }}
+            className="flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-orange-500 to-amber-400 text-black font-black text-xs uppercase tracking-wider shadow-lg shadow-orange-500/20 active:scale-95 transition-all cursor-pointer"
+          >
+            <Trophy size={16} />
+            <span>Critic Quests & City Leaderboard</span>
+          </button>
+        </motion.div>
 
         {/* Search Trigger */}
         <motion.div 
@@ -226,6 +246,8 @@ export function Critics() {
           </p>
         </div>
       )}
+
+      <CriticQuestsModal isOpen={isQuestsOpen} onClose={() => setIsQuestsOpen(false)} />
     </div>
   );
 }

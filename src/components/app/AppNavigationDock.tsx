@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutGrid, Compass, Plus, ListOrdered, User, Flame, Sparkles } from 'lucide-react';
+import { LayoutGrid, Compass, Plus, ListOrdered, User, Flame, Sparkles, Navigation, Dna, Trophy } from 'lucide-react';
 import { useAuth } from '../../App';
 import { LogMealModal } from '../LogMealModal';
 import { CravingUploadModal } from '../CravingUploadModal';
+import { CravingMatcherModal } from '../CravingMatcherModal';
+import { TasteQuizModal } from '../TasteQuizModal';
+import { CriticQuestsModal } from '../CriticQuestsModal';
+import { QuickActionDrawer } from '../QuickActionDrawer';
 import { motion, AnimatePresence } from 'motion/react';
 import { triggerHaptic } from '../../services/nativeService';
 
@@ -13,6 +17,9 @@ export function AppNavigationDock() {
   const { user, dishdUser, login } = useAuth();
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [isCravingModalOpen, setIsCravingModalOpen] = useState(false);
+  const [isMatcherOpen, setIsMatcherOpen] = useState(false);
+  const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [isQuestsOpen, setIsQuestsOpen] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(false);
 
   const isExploreActive = 
@@ -22,6 +29,7 @@ export function AppNavigationDock() {
     location.pathname.startsWith('/app/restaurant') || 
     location.pathname.startsWith('/app/dish') || 
     location.pathname.startsWith('/app/map') ||
+    location.pathname.startsWith('/app/trails') ||
     location.pathname.startsWith('/dishes') ||
     location.pathname.startsWith('/restaurants') ||
     location.pathname.startsWith('/map');
@@ -145,55 +153,89 @@ export function AppNavigationDock() {
             >
               <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
               
-              <div className="space-y-2.5">
-                <button
-                  onClick={() => {
-                    triggerHaptic();
-                    setIsCravingModalOpen(true);
-                    setShowActionMenu(false);
-                  }}
-                  className="w-full flex items-center gap-3.5 p-3.5 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 active:scale-98 transition-all text-left group"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center">
-                    <Flame size={20} />
-                  </div>
-                  <div>
-                    <span className="block text-xs font-black uppercase tracking-wider text-white">Post a Craving</span>
-                    <span className="text-[10px] text-white/50">Short-form food video reel</span>
-                  </div>
-                </button>
-
+              <div className="space-y-2">
                 <button
                   onClick={() => {
                     triggerHaptic();
                     setIsLogModalOpen(true);
                     setShowActionMenu(false);
                   }}
-                  className="w-full flex items-center gap-3.5 p-3.5 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 active:scale-98 transition-all text-left group"
+                  className="w-full flex items-center gap-3.5 p-3 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 active:scale-98 transition-all text-left group"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
-                    <Plus size={20} />
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                    <Plus size={18} />
                   </div>
                   <div>
                     <span className="block text-xs font-black uppercase tracking-wider text-white">Log Dining Experience</span>
-                    <span className="text-[10px] text-white/50">Rate dish & spot with taste tags</span>
+                    <span className="text-[10px] text-white/50">Rate dish & spot with Must-Order tags</span>
                   </div>
                 </button>
 
                 <button
                   onClick={() => {
                     triggerHaptic();
-                    navigate('/app/lists');
+                    setIsMatcherOpen(true);
                     setShowActionMenu(false);
                   }}
-                  className="w-full flex items-center gap-3.5 p-3.5 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 active:scale-98 transition-all text-left group"
+                  className="w-full flex items-center gap-3.5 p-3 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 active:scale-98 transition-all text-left group"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                    <ListOrdered size={20} />
+                  <div className="w-9 h-9 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center">
+                    <Flame size={18} />
                   </div>
                   <div>
-                    <span className="block text-xs font-black uppercase tracking-wider text-white">Curate Food List</span>
-                    <span className="text-[10px] text-white/50">Build shared foodie guides</span>
+                    <span className="block text-xs font-black uppercase tracking-wider text-white">Group Craving Matcher</span>
+                    <span className="text-[10px] text-white/50">Swipe dishes solo or with friends</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    triggerHaptic();
+                    navigate('/app/trails');
+                    setShowActionMenu(false);
+                  }}
+                  className="w-full flex items-center gap-3.5 p-3 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 active:scale-98 transition-all text-left group"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center">
+                    <Navigation size={18} />
+                  </div>
+                  <div>
+                    <span className="block text-xs font-black uppercase tracking-wider text-white">Food Crawls & Trails</span>
+                    <span className="text-[10px] text-white/50">Explore multi-stop food itineraries</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    triggerHaptic();
+                    setIsQuizOpen(true);
+                    setShowActionMenu(false);
+                  }}
+                  className="w-full flex items-center gap-3.5 p-3 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 active:scale-98 transition-all text-left group"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
+                    <Dna size={18} />
+                  </div>
+                  <div>
+                    <span className="block text-xs font-black uppercase tracking-wider text-white">Taste DNA Quiz</span>
+                    <span className="text-[10px] text-white/50">Calculate your flavor fingerprint</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    triggerHaptic();
+                    setIsQuestsOpen(true);
+                    setShowActionMenu(false);
+                  }}
+                  className="w-full flex items-center gap-3.5 p-3 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 active:scale-98 transition-all text-left group"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                    <Trophy size={18} />
+                  </div>
+                  <div>
+                    <span className="block text-xs font-black uppercase tracking-wider text-white">Critic Quests & Ranks</span>
+                    <span className="text-[10px] text-white/50">City Top 10 & prestige badges</span>
                   </div>
                 </button>
               </div>
@@ -202,9 +244,22 @@ export function AppNavigationDock() {
         )}
       </AnimatePresence>
 
-      {/* Modals for creating content */}
+      {/* Quick Action Drawer & Floating Shortcuts */}
+      <QuickActionDrawer
+        onOpenLogMeal={() => setIsLogModalOpen(true)}
+        onOpenCravingMatcher={() => setIsMatcherOpen(true)}
+        onOpenTrails={() => navigate('/app/trails')}
+        onOpenTasteQuiz={() => setIsQuizOpen(true)}
+        onOpenQuests={() => setIsQuestsOpen(true)}
+      />
+
+      {/* Modals for creating and discovering content */}
       <LogMealModal isOpen={isLogModalOpen} onClose={() => setIsLogModalOpen(false)} />
       <CravingUploadModal isOpen={isCravingModalOpen} onClose={() => setIsCravingModalOpen(false)} />
+      <CravingMatcherModal isOpen={isMatcherOpen} onClose={() => setIsMatcherOpen(false)} />
+      <TasteQuizModal isOpen={isQuizOpen} onClose={() => setIsQuizOpen(false)} />
+      <CriticQuestsModal isOpen={isQuestsOpen} onClose={() => setIsQuestsOpen(false)} />
     </>
   );
 }
+

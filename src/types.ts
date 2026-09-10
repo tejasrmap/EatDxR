@@ -227,3 +227,98 @@ export interface AppNotification {
   read: boolean;
   createdAt: any;
 }
+
+// ==========================================
+// 1. Food Crawl & Trail Itinerary Types
+// ==========================================
+export interface TrailStop {
+  order: number;
+  restaurantId?: string;
+  name: string;
+  cuisine: string;
+  location: string;
+  mapsUrl?: string;
+  mustOrderDish: string;
+  dishPrice?: string;
+  dishImage?: string;
+  criticTip: string;
+  recommendedDurationMins?: number;
+}
+
+export interface FoodTrail {
+  id: string;
+  title: string;
+  tagline: string;
+  description: string;
+  city: string;
+  neighborhood: string;
+  curatorName: string;
+  curatorPhoto?: string;
+  curatorCriticLevel?: CriticLevel;
+  coverImage: string;
+  stops: TrailStop[];
+  totalDistanceKm: number;
+  totalDurationHours: number;
+  estimatedBudget: string;
+  tags: string[];
+  likesCount: number;
+  savesCount: number;
+  isOfficial?: boolean;
+}
+
+// ==========================================
+// 2. Critic Quests & Leaderboard Types
+// ==========================================
+export interface CriticQuestBadge {
+  id: string;
+  title: string;
+  icon: string; // Emoji or Lucide icon key
+  description: string;
+  category: "taste" | "explorer" | "expert" | "social";
+  unlockedAt?: string;
+  progressCurrent: number;
+  progressTarget: number;
+  isUnlocked: boolean;
+  rarity: "Common" | "Rare" | "Epic" | "Legendary";
+}
+
+export interface CriticLeaderboardRank {
+  rank: number;
+  userId: string;
+  displayName: string;
+  username: string;
+  photoURL: string;
+  criticLevel: CriticLevel;
+  credibilityScore: number;
+  reviewsCount: number;
+  mustOrdersDiscovered: number;
+  badgesCount: number;
+  city: string;
+  topCuisine: string;
+}
+
+// ==========================================
+// 3. Taste DNA & Flavor Fingerprint Types
+// ==========================================
+export interface FlavorFingerprint {
+  spiceTolerance: number; // 0-100
+  umamiRichness: number;  // 0-100
+  sweetTooth: number;     // 0-100
+  crunchTexture: number;  // 0-100
+  streetVsFine: number;   // 0 (pure street) - 100 (pure fine dining)
+  adventureScale: number; // 0 (traditional comfort) - 100 (bold exotic)
+  personaTitle: string;
+  tagline: string;
+}
+
+// ==========================================
+// 4. Offline Sync Types
+// ==========================================
+export interface OfflineQueuedLog {
+  id: string;
+  timestamp: number;
+  payload: any;
+  status: "pending" | "synced" | "failed";
+  retryCount: number;
+}
+
