@@ -55,16 +55,6 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
     provider.setCustomParameters({ prompt: "select_account" });
 
     try {
-      if (isNative) {
-        // Native Capacitor WebView: popup is often blocked, try redirect or fallback
-        try {
-          await signInWithRedirect(auth, provider);
-          return;
-        } catch (redirErr) {
-          console.warn("Native redirect failed, trying popup fallback:", redirErr);
-        }
-      }
-
       await signInWithPopup(auth, provider);
       handleSuccess("Welcome to Madeater!");
     } catch (error: any) {
@@ -72,7 +62,7 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
       const code = error?.code || "";
 
       if (code === "auth/popup-blocked" || code === "auth/operation-not-supported-in-this-environment") {
-        setErrorMessage("Popup blocked on this device. Please sign in with Email or continue as Guest.");
+        setErrorMessage("Google Sign-In popup is unavailable in this mobile view. Please use Email or 1-Tap Instant Guest Critic below.");
       } else if (code === "auth/popup-closed-by-user") {
         // User just closed popup, no error message needed
       } else if (code === "auth/unauthorized-domain") {
