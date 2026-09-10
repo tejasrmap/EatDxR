@@ -170,7 +170,7 @@ export function WebNavbar() {
               </div>
             ) : (
               <button
-                onClick={login}
+                onClick={() => login()}
                 className="px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
               >
                 Sign In

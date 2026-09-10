@@ -36,6 +36,8 @@ export interface User {
   criticLevel?: CriticLevel;
   credibilityScore?: number; // 0-100
   isVerifiedCritic?: boolean;
+  location?: string;
+  city?: string;
   tasteDNA?: TasteDNA;
   stats: {
     mealsLogged: number;
@@ -232,13 +234,16 @@ export interface AppNotification {
 // 1. Food Crawl & Trail Itinerary Types
 // ==========================================
 export interface TrailStop {
+  id?: string;
   order: number;
   restaurantId?: string;
   name: string;
+  restaurantName?: string;
   cuisine: string;
   location: string;
   mapsUrl?: string;
   mustOrderDish: string;
+  signatureDish?: string;
   dishPrice?: string;
   dishImage?: string;
   criticTip: string;
@@ -260,6 +265,8 @@ export interface FoodTrail {
   totalDistanceKm: number;
   totalDurationHours: number;
   estimatedBudget: string;
+  estimatedTime?: string;
+  estimatedCost?: string;
   tags: string[];
   likesCount: number;
   savesCount: number;

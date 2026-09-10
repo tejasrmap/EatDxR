@@ -255,13 +255,13 @@ export const Profile: React.FC = () => {
   }
 
   const primaryCity = (() => {
-    if (reviews.length === 0) return user.location || null;
+    if (reviews.length === 0) return user.location || user.city || null;
     const cities = reviews.map(r => {
       if (r.city) return r.city.trim();
       const parts = r.restaurantLocation?.split(',') || [];
       return parts[parts.length - 1]?.trim() || null;
     }).filter(Boolean);
-    if (cities.length === 0) return user.location || null;
+    if (cities.length === 0) return user.location || user.city || null;
     const counts: Record<string, number> = {};
     cities.forEach(c => {
       if (c) counts[c] = (counts[c] || 0) + 1;

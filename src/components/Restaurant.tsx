@@ -5,7 +5,7 @@ import { collection, query, where, onSnapshot, doc, getDoc, updateDoc, arrayUnio
 import { db } from "../firebase";
 import { Review, Restaurant as RestaurantType } from "../types";
 import { ReviewCard } from "./ReviewCard";
-import { Star, Bookmark, Heart, Edit3, Map, ChevronLeft, Share2, Info, UtensilsCrossed, Trophy, Flame } from "lucide-react";
+import { Star, Bookmark, Heart, Edit3, Map as MapIcon, ChevronLeft, Share2, Info, UtensilsCrossed, Trophy, Flame, MapPin } from "lucide-react";
 import { useAuth } from "../App";
 import { toast } from "sonner";
 import { LogMealModal } from "./LogMealModal";
@@ -30,19 +30,20 @@ export const Restaurant: React.FC = () => {
 
   // Calculate dynamic Must-Order Dish Rankings from critic logs
   const rankedDishes = React.useMemo(() => {
-    const dishMap = new Map<string, {
+    interface DishAggregate {
       name: string;
       totalScore: number;
       count: number;
       mustOrderVotes: number;
       image?: string;
-    }>();
+    }
+    const dishMap = new Map<string, DishAggregate>();
 
     reviews.forEach(review => {
       review.dishes?.forEach(dish => {
         if (!dish.name?.trim()) return;
         const key = dish.name.trim().toLowerCase();
-        const existing = dishMap.get(key) || {
+        const existing: DishAggregate = dishMap.get(key) || {
           name: dish.name.trim(),
           totalScore: 0,
           count: 0,
@@ -85,7 +86,8 @@ export const Restaurant: React.FC = () => {
       });
     }
 
-    return Array.from(dishMap.values())
+    const aggregates: DishAggregate[] = Array.from(dishMap.values());
+    return aggregates
       .map(d => ({
         name: d.name,
         score: Number((d.totalScore / d.count).toFixed(1)),
@@ -452,7 +454,7 @@ export const Restaurant: React.FC = () => {
                       src={`https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=400&q=80`} 
                       className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 opacity-50"
                     />
-                    <Map className="text-foreground/80 group-hover:text-foreground transition-colors relative z-10" size={48} />
+                    <MapPin className="text-foreground/80 group-hover:text-foreground transition-colors relative z-10" size={48} />
                  </div>
                  {restaurant.lat && restaurant.lng && (
                     <a 
@@ -487,7 +489,7 @@ export const Restaurant: React.FC = () => {
                 rel="noopener noreferrer"
                 className="bg-background/50 backdrop-blur-xl text-foreground w-14 h-14 rounded-full border border-border flex items-center justify-center transition-all hover:bg-muted shadow-lg md:hidden"
               >
-                <Map size={20} />
+                <MapPin size={20} />
               </a>
             )}
           </div>

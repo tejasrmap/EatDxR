@@ -285,7 +285,7 @@ export function Navbar() {
               </div>
             ) : (
               <button 
-                onClick={login}
+                onClick={() => login()}
                 className="bg-foreground text-background text-xs font-black uppercase tracking-wider px-5 py-2 rounded-full hover:scale-105 shadow-lg transition-all"
               >
                 Sign In

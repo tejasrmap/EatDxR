@@ -139,7 +139,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
           userId: currentUser.uid,
           userName: currentUser.displayName,
           userPhoto: currentUser.photoURL,
-          type: "LIKE"
+          type: "LIKE",
+          createdAt: new Date()
         }
       ]);
     } else {

@@ -9,6 +9,7 @@ import { getDistanceKM, formatDistance } from "../lib/distance";
 import { motion, AnimatePresence } from "motion/react";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic } from "../services/nativeService";
+import { toast } from "sonner";
 
 export function Restaurants() {
   const { getAppUrl } = useAppUrl();
@@ -177,6 +178,7 @@ export function Restaurants() {
 }
 
 function RestaurantCard({ restaurant, index, isSmall = false }: { restaurant: any, index: number, isSmall?: boolean }) {
+  const { getAppUrl } = useAppUrl();
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${restaurant.lat},${restaurant.lng}`;
 
   return (
