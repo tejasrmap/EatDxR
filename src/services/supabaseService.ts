@@ -380,50 +380,61 @@ export async function uploadMedia(
 ): Promise<string | null> {
   if (!isSupabaseConfigured) return null;
 
-  try {
-    let extension = 'jpg';
-    if (file instanceof File && file.name) {
-      const parts = file.name.split('.');
-      if (parts.length > 1) extension = parts.pop() || 'jpg';
-    } else if (file.type) {
-      if (file.type.includes('mp4') || file.type.includes('video')) extension = 'mp4';
-      else if (file.type.includes('png')) extension = 'png';
-      else if (file.type.includes('webp')) extension = 'webp';
-    }
+  const timeoutPromise = new Promise<null>((resolve) => {
+    setTimeout(() => {
+      console.warn('[Supabase Storage] Upload timed out after 8 seconds');
+      resolve(null);
+    }, 8000);
+  });
 
-    const filePath = customPath || `${Date.now()}_${Math.random().toString(36).substr(2, 8)}.${extension}`;
-    
-    // Attempt upload to primary bucket
-    let uploadRes = await supabase.storage.from(bucket).upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: true,
-      contentType: file.type || undefined
-    });
+  const uploadPromise = (async (): Promise<string | null> => {
+    try {
+      let extension = 'jpg';
+      if (file instanceof File && file.name) {
+        const parts = file.name.split('.');
+        if (parts.length > 1) extension = parts.pop() || 'jpg';
+      } else if (file.type) {
+        if (file.type.includes('mp4') || file.type.includes('video')) extension = 'mp4';
+        else if (file.type.includes('png')) extension = 'png';
+        else if (file.type.includes('webp')) extension = 'webp';
+      }
 
-    // If bucket doesn't exist or failed, attempt general bucket 'dish-media' as fallback
-    if (uploadRes.error && bucket !== 'dish-media') {
-      console.warn(`[Supabase Storage] Bucket "${bucket}" upload error:`, uploadRes.error.message, 'Trying fallback bucket "dish-media"...');
-      uploadRes = await supabase.storage.from('dish-media').upload(filePath, file, {
+      const filePath = customPath || `${Date.now()}_${Math.random().toString(36).substr(2, 8)}.${extension}`;
+      
+      // Attempt upload to primary bucket
+      let uploadRes = await supabase.storage.from(bucket).upload(filePath, file, {
         cacheControl: '3600',
         upsert: true,
         contentType: file.type || undefined
       });
-      if (!uploadRes.error) {
-        const { data: publicUrlData } = supabase.storage.from('dish-media').getPublicUrl(uploadRes.data.path);
-        return publicUrlData.publicUrl;
-      }
-    }
 
-    if (uploadRes.error) {
-      console.warn('[Supabase Storage] Upload error:', uploadRes.error.message);
+      // If bucket doesn't exist or failed, attempt general bucket 'dish-media' as fallback
+      if (uploadRes.error && bucket !== 'dish-media') {
+        console.warn(`[Supabase Storage] Bucket "${bucket}" upload error:`, uploadRes.error.message, 'Trying fallback bucket "dish-media"...');
+        uploadRes = await supabase.storage.from('dish-media').upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true,
+          contentType: file.type || undefined
+        });
+        if (!uploadRes.error) {
+          const { data: publicUrlData } = supabase.storage.from('dish-media').getPublicUrl(uploadRes.data.path);
+          return publicUrlData.publicUrl;
+        }
+      }
+
+      if (uploadRes.error) {
+        console.warn('[Supabase Storage] Upload error:', uploadRes.error.message);
+        return null;
+      }
+
+      const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(uploadRes.data.path);
+      return publicUrlData.publicUrl;
+    } catch (err) {
+      console.warn('[Supabase Storage] Media upload caught exception:', err);
       return null;
     }
+  })();
 
-    const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(uploadRes.data.path);
-    return publicUrlData.publicUrl;
-  } catch (err) {
-    console.warn('[Supabase Storage] Media upload caught exception:', err);
-    return null;
-  }
+  return Promise.race([uploadPromise, timeoutPromise]);
 }
 

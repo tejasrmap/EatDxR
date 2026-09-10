@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { searchRestaurants } from "../services/mapsService";
 import { RestaurantSearchResult, CravingTag } from "../types";
 import { createCraving, uploadMedia } from "../services/supabaseService";
+import { triggerHaptic } from "../services/nativeService";
 
 const CRAVING_TAGS: CravingTag[] = [
   "First bite reaction",
@@ -123,6 +124,12 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
     }
 
     setIsUploading(true);
+    setUploadProgress(20);
+
+    // Progress interval for smooth UX
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => (prev < 90 ? prev + 15 : prev));
+    }, 400);
 
     try {
       let finalVideoUrl = "https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-pizza-being-cut-with-a-slicer-44171-large.mp4";
@@ -131,25 +138,28 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
         try {
           const videoPath = `cravings/${user.uid}_${Date.now()}.mp4`;
           
-          // 1. Primary: Supabase Storage bucket 'cravings'
-          const supabaseUrl = await uploadMedia(videoFile, 'cravings', videoPath);
+          // Race Supabase upload with a 6-second timeout
+          const uploadTaskPromise = uploadMedia(videoFile, 'cravings', videoPath);
+          const timeoutPromise = new Promise<string | null>((resolve) => {
+            setTimeout(() => resolve(null), 6000);
+          });
+
+          const supabaseUrl = await Promise.race([uploadTaskPromise, timeoutPromise]);
           if (supabaseUrl) {
             finalVideoUrl = supabaseUrl;
-            setUploadProgress(100);
           } else if (storage) {
-            // 2. Secondary: Firebase Storage
+            // Quick fallback attempt
             const videoRef = ref(storage, videoPath);
             const uploadTask = uploadBytesResumable(videoRef, videoFile);
-
-            await new Promise<void>((resolve, reject) => {
-              const timer = setTimeout(() => resolve(), 12000); // 12s fallback
+            await new Promise<void>((resolve) => {
+              const timer = setTimeout(() => resolve(), 5000);
               uploadTask.on(
                 "state_changed",
-                (snap) => setUploadProgress(Math.round((snap.bytesTransferred / (snap.totalBytes || 1)) * 100)),
-                (err) => { clearTimeout(timer); reject(err); },
+                () => {},
+                () => { clearTimeout(timer); resolve(); },
                 async () => {
                   clearTimeout(timer);
-                  finalVideoUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                  finalVideoUrl = await getDownloadURL(uploadTask.snapshot.ref).catch(() => finalVideoUrl);
                   resolve();
                 }
               );
@@ -160,8 +170,11 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
         }
       }
 
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+
       const reviewRef = doc(collection(db, "reviews"));
-      await setDoc(reviewRef, {
+      const cravingDoc = {
         id: reviewRef.id,
         userId: user.uid,
         userName: dishdUser?.displayName || user.displayName || "Critic",
@@ -192,8 +205,12 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
         ],
         createdAt: serverTimestamp(),
         likes: 0
-      });
+      };
 
+      // Write to Firestore
+      await setDoc(reviewRef, cravingDoc);
+
+      // Write to Supabase table
       await createCraving({
         id: reviewRef.id,
         userId: user.uid,
@@ -205,15 +222,17 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
         videoUrl: finalVideoUrl,
         content: reviewContent.trim(),
         cravingTag: cravingTag,
-      });
+      }).catch(err => console.warn("Supabase craving insert notice:", err));
 
       // Update user stats
       const userRef = doc(db, "users", user.uid);
       await updateDoc(userRef, { "stats.mealsLogged": increment(1) }).catch(() => {});
 
+      triggerHaptic();
       toast.success("Craving posted live!");
       onClose();
-      // Reset
+
+      // Reset form
       setStep("media");
       setVideoFile(null);
       setVideoPreview(null);
@@ -224,63 +243,65 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
       console.error("Failed to post craving:", error);
       toast.error("Failed to publish craving. Please try again.");
     } finally {
+      clearInterval(progressInterval);
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center p-3 md:p-6">
+    <div className="fixed inset-0 z-[500] flex items-center justify-center p-3 sm:p-4">
       {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="fixed inset-0 bg-black/90 backdrop-blur-2xl"
+        className="fixed inset-0 bg-black/85 backdrop-blur-xl"
       />
 
       {/* Modal Container */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        initial={{ opacity: 0, scale: 0.96, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full max-w-xl max-h-[92vh] bg-zinc-950 border border-white/10 rounded-3xl md:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col z-10 text-white"
+        exit={{ opacity: 0, scale: 0.96, y: 12 }}
+        className="relative w-full max-w-lg max-h-[88vh] bg-zinc-950 border border-white/10 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col z-10 text-white"
       >
         {/* Header */}
-        <div className="px-6 py-5 border-b border-white/10 flex items-center justify-between bg-zinc-900/50 backdrop-blur-md">
-          <div className="flex items-center gap-3">
+        <div className="px-5 py-3.5 border-b border-white/10 flex items-center justify-between bg-zinc-900/60 backdrop-blur-md">
+          <div className="flex items-center gap-2.5">
             {step === "details" && (
               <button 
                 onClick={() => setStep("media")}
-                className="p-1.5 hover:bg-white/10 rounded-full transition-colors text-white/60 hover:text-white"
+                className="p-1 hover:bg-white/10 rounded-full transition-colors text-white/60 hover:text-white active:scale-95"
               >
-                <ArrowLeft size={18} />
+                <ArrowLeft size={16} />
               </button>
             )}
             <div>
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-400 flex items-center gap-1">
-                <Flame size={12} className="text-orange-500 fill-orange-500" />
+              <span className="text-[9px] font-black uppercase tracking-[0.25em] text-orange-400 flex items-center gap-1">
+                <Flame size={11} className="text-orange-500 fill-orange-500" />
                 Madeater Cravings
               </span>
-              <h2 className="text-lg font-black uppercase tracking-tight">
+              <h2 className="text-sm sm:text-base font-black uppercase tracking-tight">
                 {step === "media" ? "Upload Food Video" : "Food Database Attachment"}
               </h2>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="w-9 h-9 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full transition-colors"
+            className="w-8 h-8 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full transition-colors active:scale-95"
           >
-            <X size={18} className="text-white/60" />
+            <X size={16} className="text-white/60" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto p-6 scrollbar-hide space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 scrollbar-hide space-y-4">
           {step === "media" ? (
-            <div className="space-y-6 text-center">
+            <div className="space-y-4 text-center">
               <input 
                 ref={videoInputRef}
                 type="file"
@@ -291,45 +312,45 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
               
               <div 
                 onClick={() => videoInputRef.current?.click()}
-                className="aspect-[9/14] max-w-xs mx-auto border-2 border-dashed border-white/20 hover:border-orange-500 rounded-3xl bg-zinc-900/50 flex flex-col items-center justify-center p-8 cursor-pointer group transition-all"
+                className="aspect-[9/13] max-w-[240px] mx-auto border-2 border-dashed border-white/20 hover:border-orange-500 rounded-2xl bg-zinc-900/40 flex flex-col items-center justify-center p-6 cursor-pointer group transition-all"
               >
-                <div className="w-16 h-16 rounded-3xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Video size={28} className="text-orange-400" />
+                <div className="w-14 h-14 rounded-2xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                  <Video size={24} className="text-orange-400" />
                 </div>
-                <h3 className="text-sm font-black uppercase tracking-wider mb-1">Select Video Clip</h3>
-                <p className="text-xs text-white/40 mb-4">Vertical 9:16 format recommended (under 90s)</p>
-                <span className="px-4 py-2 rounded-full bg-white text-black text-xs font-bold uppercase tracking-wider hover:bg-orange-400 transition-colors">
+                <h3 className="text-xs font-black uppercase tracking-wider mb-1">Select Video Clip</h3>
+                <p className="text-[11px] text-white/40 mb-3">Vertical 9:16 format (under 90s)</p>
+                <span className="px-3.5 py-1.5 rounded-full bg-white text-black text-[11px] font-bold uppercase tracking-wider group-hover:bg-orange-400 transition-colors">
                   Browse Files
                 </span>
               </div>
 
-              <div className="text-center">
+              <div className="text-center pt-1">
                 <button
                   type="button"
                   onClick={() => {
                     setVideoPreview("https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-pizza-being-cut-with-a-slicer-44171-large.mp4");
                     setStep("details");
                   }}
-                  className="text-xs text-white/40 hover:text-orange-400 underline underline-offset-4 transition-colors"
+                  className="text-[11px] text-white/50 hover:text-orange-400 underline underline-offset-4 transition-colors"
                 >
                   Or continue with a curated food sample video →
                 </button>
               </div>
             </div>
           ) : (
-            <div className="space-y-5">
+            <div className="space-y-3.5">
               {/* Media Preview Thumbnail Row */}
               {videoPreview && (
-                <div className="flex items-center gap-4 p-3 bg-zinc-900/80 rounded-2xl border border-white/10">
-                  <div className="w-14 h-20 bg-black rounded-xl overflow-hidden shrink-0 border border-white/15">
+                <div className="flex items-center gap-3 p-2.5 bg-zinc-900/60 rounded-xl border border-white/10">
+                  <div className="w-12 h-16 bg-black rounded-lg overflow-hidden shrink-0 border border-white/15">
                     <video src={videoPreview} className="w-full h-full object-cover" muted autoPlay loop />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="text-[10px] uppercase tracking-wider text-orange-400 font-bold">Attached Media</span>
+                    <span className="text-[9px] uppercase tracking-wider text-orange-400 font-bold">Attached Media</span>
                     <p className="text-xs font-bold truncate text-white">Food Reel Ready for Publishing</p>
                     <button 
                       onClick={() => setStep("media")}
-                      className="text-[10px] text-white/40 hover:text-white underline mt-1"
+                      className="text-[10px] text-white/40 hover:text-white underline mt-0.5"
                     >
                       Change video
                     </button>
@@ -337,21 +358,21 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
                 </div>
               )}
 
-              {/* Craving Category Tag Selector */}
+              {/* Craving Category Tag Selector - Streamlined Horizontal Scroll */}
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-white/50 mb-2">
+                <label className="block text-[9px] font-black uppercase tracking-widest text-white/50 mb-1.5">
                   Craving Category
                 </label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-1">
                   {CRAVING_TAGS.map((tag) => (
                     <button
                       key={tag}
                       type="button"
-                      onClick={() => setCravingTag(tag)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-bold tracking-tight transition-all border ${
+                      onClick={() => { triggerHaptic(); setCravingTag(tag); }}
+                      className={`px-3 py-1 rounded-full text-[11px] font-bold tracking-tight transition-all border shrink-0 active:scale-95 ${
                         cravingTag === tag
-                          ? "bg-orange-500 text-black border-orange-500 shadow-md shadow-orange-500/20"
-                          : "bg-white/5 text-white/70 border-white/10 hover:border-white/30"
+                          ? "bg-orange-500 text-black border-orange-500 shadow-md font-black"
+                          : "bg-zinc-900/70 text-white/70 border-white/10 hover:border-white/30"
                       }`}
                     >
                       {tag}
@@ -360,47 +381,47 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
                 </div>
               </div>
 
-              {/* Attached Dish Name (Critical Madeater Differentiator) */}
+              {/* Attached Dish Name */}
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-white/50 mb-2">
+                <label className="block text-[9px] font-black uppercase tracking-widest text-white/50 mb-1">
                   What Dish is this Craving For? *
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., Hyderabadi Chicken Dum Biryani, Filter Coffee, Haleem..."
+                  placeholder="e.g., Hyderabadi Chicken Dum Biryani, Filter Coffee..."
                   value={dishName}
                   onChange={(e) => setDishName(e.target.value)}
-                  className="w-full bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500 transition-colors"
+                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-orange-500 transition-colors"
                 />
               </div>
 
               {/* Restaurant & Location Tagging */}
               <div className="relative">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-white/50 mb-2">
+                <label className="block text-[9px] font-black uppercase tracking-widest text-white/50 mb-1">
                   Restaurant / Location *
                 </label>
                 <div className="relative">
-                  <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+                  <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
                   <input
                     type="text"
                     placeholder="Search restaurant or enter location..."
                     value={searchQuery || restaurantName}
                     onChange={handleSearchChange}
-                    className="w-full bg-zinc-900 border border-white/10 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500 transition-colors"
+                    className="w-full bg-zinc-900 border border-white/10 rounded-xl pl-9 pr-3.5 py-2.5 text-xs sm:text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-orange-500 transition-colors"
                   />
                   {isSearching && (
-                    <Loader2 size={16} className="absolute right-4 top-1/2 -translate-y-1/2 animate-spin text-orange-400" />
+                    <Loader2 size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 animate-spin text-orange-400" />
                   )}
                 </div>
 
                 {/* Autocomplete Dropdown */}
                 {showDropdown && searchResults.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl max-h-48 overflow-y-auto z-50 divide-y divide-white/5">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl max-h-40 overflow-y-auto z-50 divide-y divide-white/5">
                     {searchResults.map((res, i) => (
                       <div
                         key={i}
                         onClick={() => handleSelectRestaurant(res)}
-                        className="p-3 hover:bg-white/10 cursor-pointer transition-colors"
+                        className="p-2.5 hover:bg-white/10 cursor-pointer transition-colors"
                       >
                         <p className="text-xs font-bold text-white">{res.name}</p>
                         <p className="text-[10px] text-white/40">{res.location} • {res.cuisine}</p>
@@ -410,13 +431,13 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
                 )}
               </div>
 
-              {/* Madeater Rating Slider (1.0 to 10.0) */}
-              <div className="p-4 bg-zinc-900/60 rounded-2xl border border-white/10 space-y-2">
+              {/* Madeater Rating Slider */}
+              <div className="p-3 bg-zinc-900/50 rounded-xl border border-white/10 space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-white/50">Madeater Score</span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-white/50">Madeater Score</span>
                   <div className="flex items-center gap-1">
-                    <Star size={14} className="text-amber-400 fill-amber-400" />
-                    <span className="text-base font-black text-white">{Number(rating).toFixed(1)} / 10</span>
+                    <Star size={12} className="text-amber-400 fill-amber-400" />
+                    <span className="text-sm font-black text-white">{Number(rating).toFixed(1)} / 10</span>
                   </div>
                 </div>
                 <input 
@@ -426,13 +447,13 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
                   step="0.1"
                   value={rating}
                   onChange={(e) => setRating(parseFloat(e.target.value))}
-                  className="w-full accent-orange-500 cursor-pointer"
+                  className="w-full accent-orange-500 cursor-pointer h-1.5 bg-zinc-800 rounded-lg"
                 />
               </div>
 
-              {/* Review Thoughts */}
+              {/* Review Commentary */}
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-white/50 mb-2">
+                <label className="block text-[9px] font-black uppercase tracking-widest text-white/50 mb-1">
                   Tasting Commentary / Hot Take
                 </label>
                 <textarea
@@ -440,24 +461,24 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
                   placeholder="The crunch was unbelievable, perfectly balanced heat and rich ghee aroma..."
                   value={reviewContent}
                   onChange={(e) => setReviewContent(e.target.value)}
-                  className="w-full bg-zinc-900 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500 transition-colors resize-none"
+                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white placeholder:text-white/25 focus:outline-none focus:border-orange-500 transition-colors resize-none"
                 />
               </div>
 
               {/* Verified Visit Toggle */}
-              <div className="flex items-center justify-between p-3.5 bg-zinc-900/40 rounded-2xl border border-white/10">
-                <div className="flex items-center gap-2.5">
-                  <ShieldCheck size={18} className={isVerifiedVisit ? "text-emerald-400" : "text-white/30"} />
+              <div className="flex items-center justify-between p-2.5 bg-zinc-900/30 rounded-xl border border-white/10">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck size={16} className={isVerifiedVisit ? "text-emerald-400" : "text-white/30"} />
                   <div>
                     <p className="text-xs font-bold text-white">Mark as Verified Visit</p>
-                    <p className="text-[10px] text-white/40">Verified via receipt or dining reservation</p>
+                    <p className="text-[9px] text-white/40">Verified dining experience</p>
                   </div>
                 </div>
                 <input 
                   type="checkbox"
                   checked={isVerifiedVisit}
                   onChange={(e) => setIsVerifiedVisit(e.target.checked)}
-                  className="w-5 h-5 accent-emerald-500 rounded cursor-pointer"
+                  className="w-4 h-4 accent-emerald-500 rounded cursor-pointer"
                 />
               </div>
             </div>
@@ -466,26 +487,26 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
 
         {/* Footer Actions */}
         {step === "details" && (
-          <div className="p-5 border-t border-white/10 bg-zinc-900/50 backdrop-blur-md flex items-center justify-between">
+          <div className="p-3.5 sm:p-4 border-t border-white/10 bg-zinc-900/50 backdrop-blur-md flex items-center justify-between">
             <button
               onClick={() => setStep("media")}
-              className="px-5 py-2.5 rounded-full text-xs font-bold text-white/60 hover:text-white transition-colors"
+              className="px-4 py-2 rounded-full text-xs font-bold text-white/60 hover:text-white transition-colors"
             >
               Back
             </button>
             <button
               disabled={isUploading || !dishName.trim() || !restaurantName.trim()}
               onClick={handlePublish}
-              className="px-8 py-3 rounded-full bg-orange-500 text-black font-black uppercase tracking-wider text-xs hover:bg-orange-400 disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-orange-500/20 active:scale-95"
+              className="px-6 py-2.5 rounded-full bg-orange-500 text-black font-black uppercase tracking-wider text-xs hover:bg-orange-400 disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-orange-500/20 active:scale-95"
             >
               {isUploading ? (
                 <>
-                  <Loader2 size={16} className="animate-spin" />
+                  <Loader2 size={14} className="animate-spin" />
                   <span>Publishing {uploadProgress > 0 ? `${uploadProgress}%` : ""}...</span>
                 </>
               ) : (
                 <>
-                  <Flame size={15} className="fill-black" />
+                  <Flame size={14} className="fill-black" />
                   <span>Post Craving</span>
                 </>
               )}

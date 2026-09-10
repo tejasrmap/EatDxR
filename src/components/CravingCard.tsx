@@ -17,7 +17,7 @@ interface CravingCardProps {
 }
 
 export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = true }) => {
-  const { dishdUser: currentUser, login } = useAuth();
+  const { dishdUser: currentUser } = useAuth();
   const { getAppUrl } = useAppUrl();
   const [likes, setLikes] = useState<Interaction[]>([]);
   const [comments, setComments] = useState<Interaction[]>([]);
@@ -54,7 +54,7 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
       setLikes(interactions.filter(i => i.type === "LIKE"));
       setComments(interactions.filter(i => i.type === "COMMENT"));
     }, (error) => {
-      console.warn("Craving interactions error:", error.message);
+      console.warn("Craving interactions notice:", error.message);
     });
 
     return unsubscribe;
@@ -75,6 +75,7 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
   const firstImage = review.dishes?.find(d => d.image)?.image;
 
   const handleLike = async () => {
+    triggerHaptic();
     if (!currentUser) {
       toast.error("Sign in to like this craving");
       return;
@@ -104,6 +105,7 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
   };
 
   const handleToggleFollow = async () => {
+    triggerHaptic();
     if (!currentUser) return toast.error("Sign in to follow critics");
     if (currentUser.uid === review.userId) return;
     
@@ -147,10 +149,10 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
   const cravingScore = review.attachedScore || review.rating;
 
   return (
-    <div className="snap-child relative w-full h-[88vh] md:h-[90vh] bg-black overflow-hidden flex items-center justify-center p-2 md:p-4">
+    <div className="snap-child relative w-full h-[calc(100dvh-135px)] md:h-[calc(100vh-110px)] bg-black overflow-hidden flex items-center justify-center p-2 sm:p-3">
       
       {/* Media Viewport */}
-      <div className="relative w-full h-full max-w-md bg-zinc-950 rounded-3xl md:rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/10 group flex flex-col justify-between">
+      <div className="relative w-full h-full max-w-md bg-zinc-950 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-white/10 group flex flex-col justify-between">
         
         {/* Video / Background Media */}
         {review.videoUrl ? (
@@ -176,19 +178,19 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
         )}
 
         {/* Ambient Dark Gradient Overlays */}
-        <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-black/80 via-black/30 to-transparent pointer-events-none z-10" />
-        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none z-10" />
+        <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/80 via-black/30 to-transparent pointer-events-none z-10" />
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/95 via-black/70 to-transparent pointer-events-none z-10" />
 
         {/* TOP BAR: Tag Pill & Sound Control */}
-        <div className="relative z-20 p-5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-black/60 backdrop-blur-md border border-white/20 text-orange-400 shadow-lg">
-              <Flame size={12} className="text-orange-500 fill-orange-500 animate-pulse" />
+        <div className="relative z-20 p-3 sm:p-4 flex items-center justify-between">
+          <div className="flex items-center gap-1.5 flex-wrap max-w-[80%]">
+            <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-black/70 backdrop-blur-md border border-white/20 text-orange-400 shadow-lg">
+              <Flame size={11} className="text-orange-500 fill-orange-500 animate-pulse" />
               {review.cravingTag || "Food Craving"}
             </span>
             {review.isVerifiedVisit && (
-              <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-950/80 backdrop-blur-md border border-emerald-500/40 text-emerald-400">
-                <ShieldCheck size={11} className="text-emerald-400" />
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-emerald-950/80 backdrop-blur-md border border-emerald-500/40 text-emerald-400">
+                <ShieldCheck size={10} className="text-emerald-400" />
                 Verified Visit
               </span>
             )}
@@ -196,32 +198,35 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
 
           {review.videoUrl && (
             <button
-              onClick={() => setIsMuted(!isMuted)}
-              className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/80 hover:text-white transition-all active:scale-95 shadow-lg"
+              onClick={() => {
+                triggerHaptic();
+                setIsMuted(!isMuted);
+              }}
+              className="w-8 h-8 rounded-full bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/80 hover:text-white transition-all active:scale-90 shadow-lg"
               title={isMuted ? "Unmute" : "Mute"}
             >
-              {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+              {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
             </button>
           )}
         </div>
 
         {/* BOTTOM CONTENT AREA */}
-        <div className="relative z-20 p-6 space-y-4">
+        <div className="relative z-20 p-3.5 sm:p-4 space-y-2.5 max-w-[82%]">
           
-          {/* FOOD DATABASE ANCHOR BADGE (The Madeater Differentiator) */}
+          {/* Dish & Restaurant Capsule */}
           {(attachedDish || review.restaurantName) && (
-            <div className="p-3 bg-white/10 hover:bg-white/15 backdrop-blur-xl border border-white/15 rounded-2xl transition-all group/badge shadow-2xl">
+            <div className="p-2.5 bg-black/60 backdrop-blur-xl border border-white/15 rounded-xl transition-all group/badge shadow-xl">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center shrink-0">
-                    <Utensils size={16} className="text-orange-400" />
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-7 h-7 rounded-lg bg-orange-500/20 border border-orange-500/40 flex items-center justify-center shrink-0">
+                    <Utensils size={13} className="text-orange-400" />
                   </div>
                   <div className="min-w-0">
                     {attachedDish && (
                       <Link 
-                        to={getAppUrl(`/dish/${review.attachedDish ? encodeURIComponent(review.attachedDish) : 'biryani'}`)}
+                        to={getAppUrl(`/dish/${encodeURIComponent(attachedDish)}`)}
                         onClick={() => triggerHaptic()}
-                        className="text-xs font-black uppercase tracking-tight text-white group-hover/badge:text-orange-400 transition-colors block truncate active:scale-95"
+                        className="text-xs font-black uppercase tracking-tight text-white hover:text-orange-400 transition-colors block truncate"
                       >
                         {attachedDish}
                       </Link>
@@ -229,45 +234,43 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
                     <Link
                       to={getAppUrl(`/restaurant/${review.restaurantId}`)}
                       onClick={() => triggerHaptic()}
-                      className="text-[11px] font-medium text-white/70 hover:text-white transition-colors flex items-center gap-1 truncate active:scale-95"
+                      className="text-[10px] font-medium text-white/70 hover:text-white transition-colors flex items-center gap-1 truncate"
                     >
-                      <MapPin size={10} className="text-orange-400 shrink-0" />
+                      <MapPin size={9} className="text-orange-400 shrink-0" />
                       <span>{review.restaurantName}</span>
                       {review.city && <span className="text-white/40">• {review.city}</span>}
                     </Link>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 bg-black/60 px-2.5 py-1.5 rounded-xl border border-white/10 shrink-0">
-                  <Star size={12} className="text-amber-400 fill-amber-400" />
-                  <span className="text-xs font-black text-white">{cravingScore ? cravingScore.toFixed(1) : "9.0"}</span>
+                <div className="flex items-center gap-0.5 bg-black/80 px-2 py-1 rounded-lg border border-white/15 shrink-0">
+                  <Star size={10} className="text-amber-400 fill-amber-400" />
+                  <span className="text-[11px] font-black text-white">{cravingScore ? cravingScore.toFixed(1) : "9.0"}</span>
                 </div>
               </div>
             </div>
           )}
 
           {/* Author & Follow Row */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               <Link 
                 to={getAppUrl(`/profile/${review.userId}`)} 
                 onClick={() => triggerHaptic()} 
-                className="flex items-center gap-2.5 group/user active:scale-95"
+                className="flex items-center gap-2 group/user active:scale-95 shrink-0"
               >
                 <img 
                   src={review.userPhoto || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80"} 
-                  className="w-9 h-9 rounded-full border border-white/30 object-cover" 
+                  className="w-7 h-7 rounded-full border border-white/30 object-cover" 
                   alt={review.userName} 
                 />
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-white group-hover/user:text-orange-400 transition-colors">{review.userName}</span>
-                    {review.userCriticLevel && (
-                      <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                        {review.userCriticLevel.replace("Madeater ", "")}
-                      </span>
-                    )}
-                  </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs font-bold text-white group-hover/user:text-orange-400 transition-colors truncate max-w-[110px]">{review.userName}</span>
+                  {review.userCriticLevel && (
+                    <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                      {review.userCriticLevel.replace("Madeater ", "")}
+                    </span>
+                  )}
                 </div>
               </Link>
 
@@ -275,7 +278,7 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
                 <button 
                   onClick={handleToggleFollow}
                   disabled={isUpdatingFollow}
-                  className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full transition-all border ${
+                  className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full transition-all border shrink-0 ${
                     isFollowing 
                       ? 'border-white/20 text-white/50 hover:border-white/40' 
                       : 'border-orange-500 bg-orange-500 text-black hover:bg-orange-400 active:scale-95'
@@ -287,82 +290,55 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
             </div>
           </div>
 
-          {/* Content / Hot Take */}
+          {/* Commentary */}
           {review.content && (
-            <p className="text-sm font-normal text-white/90 leading-snug line-clamp-2 italic font-serif">
+            <p className="text-xs font-normal text-white/85 leading-snug line-clamp-2 italic font-serif">
               "{review.content}"
             </p>
-          )}
-
-          {/* Detailed Critic Attribute Meters */}
-          {review.ratingsDetail && (
-            <div className="flex flex-wrap gap-2 pt-1">
-              {review.ratingsDetail.taste && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white/10 border border-white/10 text-white/80">
-                  Taste <span className="text-orange-400 font-black">{review.ratingsDetail.taste.toFixed(1)}</span>
-                </span>
-              )}
-              {review.ratingsDetail.spice !== undefined && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white/10 border border-white/10 text-white/80">
-                  Spice <span className="text-rose-400 font-black">{review.ratingsDetail.spice.toFixed(1)}</span>
-                </span>
-              )}
-              {review.ratingsDetail.value && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white/10 border border-white/10 text-white/80">
-                  Value <span className="text-emerald-400 font-black">{review.ratingsDetail.value.toFixed(1)}</span>
-                </span>
-              )}
-            </div>
           )}
         </div>
 
         {/* Floating Side Action Stack */}
-        <div className="absolute right-4 bottom-28 flex flex-col items-center gap-5 z-30 pointer-events-auto">
+        <div className="absolute right-2.5 bottom-10 flex flex-col items-center gap-3.5 z-30 pointer-events-auto">
           {/* Like */}
-          <div className="flex flex-col items-center gap-1 group/btn">
+          <div className="flex flex-col items-center gap-0.5">
             <button 
               onClick={handleLike}
-              className={`w-11 h-11 rounded-full bg-black/60 backdrop-blur-xl border border-white/15 flex items-center justify-center transition-all active:scale-90 ${
-                hasLiked ? 'text-rose-500 shadow-lg shadow-rose-500/20' : 'text-white/70 hover:text-white hover:bg-white/10'
+              className={`w-10 h-10 rounded-full bg-black/70 backdrop-blur-xl border border-white/15 flex items-center justify-center transition-all active:scale-90 ${
+                hasLiked ? 'text-rose-500 shadow-lg shadow-rose-500/20' : 'text-white/80 hover:text-white hover:bg-white/10'
               }`}
             >
-              <Heart size={20} className={hasLiked ? "fill-rose-500" : ""} />
+              <Heart size={18} className={hasLiked ? "fill-rose-500" : ""} />
             </button>
-            <span className="text-[10px] font-black text-white">{totalLikes}</span>
+            <span className="text-[9px] font-black text-white">{totalLikes}</span>
           </div>
 
           {/* Comment */}
-          <div className="flex flex-col items-center gap-1 group/btn">
+          <div className="flex flex-col items-center gap-0.5">
             <button 
-              onClick={() => setIsCommentModalOpen(true)}
-              className="w-11 h-11 rounded-full bg-black/60 backdrop-blur-xl border border-white/15 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-all active:scale-90"
+              onClick={() => {
+                triggerHaptic();
+                setIsCommentModalOpen(true);
+              }}
+              className="w-10 h-10 rounded-full bg-black/70 backdrop-blur-xl border border-white/15 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-all active:scale-90"
             >
-              <MessageSquare size={19} />
+              <MessageSquare size={17} />
             </button>
-            <span className="text-[10px] font-black text-white">{comments.length}</span>
+            <span className="text-[9px] font-black text-white">{comments.length}</span>
           </div>
 
           {/* Share */}
-          <div className="flex flex-col items-center gap-1 group/btn">
+          <div className="flex flex-col items-center gap-0.5">
             <button 
-              onClick={() => setIsShareMenuOpen(true)}
-              className="w-11 h-11 rounded-full bg-black/60 backdrop-blur-xl border border-white/15 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-all active:scale-90"
+              onClick={() => {
+                triggerHaptic();
+                setIsShareMenuOpen(true);
+              }}
+              className="w-10 h-10 rounded-full bg-black/70 backdrop-blur-xl border border-white/15 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-all active:scale-90"
             >
-              <Share2 size={19} />
+              <Share2 size={17} />
             </button>
-            <span className="text-[10px] font-bold text-white/50">Share</span>
-          </div>
-
-          {/* Restaurant Page Direct Jump */}
-          <div className="flex flex-col items-center gap-1 group/btn">
-            <Link 
-              to={`/restaurant/${review.restaurantId}`}
-              className="w-11 h-11 rounded-full bg-orange-500 text-black flex items-center justify-center shadow-lg shadow-orange-500/30 active:scale-90 transition-all hover:bg-orange-400"
-              title="Visit Restaurant Page"
-            >
-              <Navigation size={18} className="fill-black" />
-            </Link>
-            <span className="text-[10px] font-black text-orange-400 uppercase tracking-wider">Spot</span>
+            <span className="text-[8px] font-bold text-white/50">Share</span>
           </div>
         </div>
       </div>
