@@ -164,7 +164,7 @@ export function AIFoodAssistant({ isOpen, onClose, initialPrompt }: AIFoodAssist
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[700] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[700] flex items-center justify-center p-2 sm:p-4">
       {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -176,44 +176,44 @@ export function AIFoodAssistant({ isOpen, onClose, initialPrompt }: AIFoodAssist
 
       {/* Concierge Panel */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        initial={{ opacity: 0, scale: 0.96, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full max-w-2xl h-[85vh] bg-zinc-950 border border-white/10 rounded-3xl md:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col z-10 text-white"
+        exit={{ opacity: 0, scale: 0.96, y: 15 }}
+        className="relative w-full max-w-xl h-[88vh] sm:h-[80vh] bg-zinc-950 border border-white/10 rounded-2xl sm:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col z-10 text-white"
       >
         {/* Header */}
-        <div className="px-6 py-5 border-b border-white/10 flex items-center justify-between bg-zinc-900/50 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-black shadow-lg shadow-orange-500/20">
-              <Sparkles size={18} />
+        <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-white/10 flex items-center justify-between bg-zinc-900/60 backdrop-blur-md">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-black shadow-md shadow-orange-500/20">
+              <Sparkles size={15} />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-black uppercase tracking-wider text-orange-400">Madeater</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 font-bold">Chef AI</span>
+                <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-orange-400">Madeater</span>
+                <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-orange-500/20 text-orange-300 font-bold">Chef AI</span>
               </div>
-              <h2 className="text-sm font-bold text-white/80">Your Personal Food Advisor</h2>
+              <h2 className="text-xs sm:text-sm font-bold text-white/80">Your Personal Food Advisor</h2>
             </div>
           </div>
           <button 
             onClick={onClose} 
-            className="w-9 h-9 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full transition-colors"
+            className="w-8 h-8 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full transition-colors cursor-pointer"
           >
-            <X size={18} className="text-white/60" />
+            <X size={15} className="text-white/60" />
           </button>
         </div>
 
         {/* Chat Feed */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto p-3.5 sm:p-5 space-y-3.5 scrollbar-hide">
           {messages.map((m, i) => (
             <div
               key={i}
               className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
             >
               <div
-                className={`max-w-[85%] rounded-3xl p-4 text-sm leading-relaxed ${
+                className={`max-w-[88%] rounded-2xl p-3 sm:p-3.5 text-xs sm:text-sm leading-relaxed ${
                   m.role === "user"
-                    ? "bg-orange-500 text-black font-semibold rounded-tr-none shadow-lg shadow-orange-500/10"
+                    ? "bg-orange-500 text-black font-semibold rounded-tr-none shadow-md shadow-orange-500/10"
                     : "bg-zinc-900 border border-white/10 text-white/90 rounded-tl-none font-serif"
                 }`}
               >
@@ -222,39 +222,39 @@ export function AIFoodAssistant({ isOpen, onClose, initialPrompt }: AIFoodAssist
 
               {/* Structured Recommendation Cards */}
               {m.recommendations && m.recommendations.length > 0 && (
-                <div className="w-full mt-4 space-y-2.5">
+                <div className="w-full mt-2.5 space-y-2">
                   {m.recommendations.map((rec, rIdx) => (
                     <Link
                       key={rIdx}
                       to={rec.type === "dish" ? `/dish/${rec.id}` : `/restaurant/${rec.id}`}
                       onClick={onClose}
-                      className="p-4 rounded-2xl bg-zinc-900/80 hover:bg-zinc-900 border border-white/10 hover:border-orange-500/50 flex items-center justify-between gap-4 transition-all group block"
+                      className="p-3 rounded-xl bg-zinc-900/80 hover:bg-zinc-900 border border-white/10 hover:border-orange-500/50 flex items-center justify-between gap-3 transition-all group block"
                     >
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="px-2 py-0.5 rounded bg-white/10 text-[9px] font-black uppercase text-orange-400">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className="px-1.5 py-0.2 rounded bg-white/10 text-[8px] font-black uppercase text-orange-400">
                             {rec.type}
                           </span>
-                          <h4 className="text-sm font-bold text-white group-hover:text-orange-400 transition-colors truncate">
+                          <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-orange-400 transition-colors truncate">
                             {rec.name}
                           </h4>
                         </div>
-                        <p className="text-xs text-white/50 flex items-center gap-1">
-                          <MapPin size={11} className="text-orange-400 shrink-0" />
-                          {rec.location}
+                        <p className="text-[11px] text-white/50 flex items-center gap-1 truncate">
+                          <MapPin size={10} className="text-orange-400 shrink-0" />
+                          <span className="truncate">{rec.location}</span>
                         </p>
-                        <p className="text-xs text-white/70 italic font-serif mt-1">
+                        <p className="text-[11px] text-white/70 italic font-serif mt-0.5 line-clamp-2">
                           "{rec.note}"
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-black/60 border border-white/10">
-                          <Star size={12} className="text-amber-400 fill-amber-400" />
-                          <span className="text-xs font-black text-white">{rec.score.toFixed(1)}</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/60 border border-white/10">
+                          <Star size={10} className="text-amber-400 fill-amber-400" />
+                          <span className="text-[11px] font-black text-white">{rec.score.toFixed(1)}</span>
                         </div>
-                        <div className="w-7 h-7 rounded-full bg-white/5 group-hover:bg-orange-500 group-hover:text-black flex items-center justify-center transition-colors">
-                          <ArrowRight size={13} />
+                        <div className="w-6 h-6 rounded-full bg-white/5 group-hover:bg-orange-500 group-hover:text-black flex items-center justify-center transition-colors">
+                          <ArrowRight size={11} />
                         </div>
                       </div>
                     </Link>
@@ -265,20 +265,20 @@ export function AIFoodAssistant({ isOpen, onClose, initialPrompt }: AIFoodAssist
           ))}
 
           {isLoading && (
-            <div className="flex items-center gap-2 p-3 text-xs text-white/40">
-              <Loader2 size={14} className="animate-spin text-orange-400" />
+            <div className="flex items-center gap-2 p-2.5 text-xs text-white/40">
+              <Loader2 size={13} className="animate-spin text-orange-400" />
               <span>Analyzing Taste Graph & verified critic ratings...</span>
             </div>
           )}
         </div>
 
         {/* Quick Prompt Chips */}
-        <div className="px-6 py-2 border-t border-white/5 flex gap-2 overflow-x-auto scrollbar-hide">
+        <div className="px-3.5 sm:px-5 py-2 border-t border-white/5 flex gap-1.5 overflow-x-auto scrollbar-hide">
           {QUICK_PROMPTS.map((qp, idx) => (
             <button
               key={idx}
               onClick={() => handleSend(qp)}
-              className="px-3 py-1.5 rounded-full bg-zinc-900 border border-white/10 text-[11px] text-white/60 hover:text-white hover:border-orange-500 whitespace-nowrap transition-colors shrink-0"
+              className="px-2.5 py-1 rounded-full bg-zinc-900 border border-white/10 text-[10px] sm:text-[11px] text-white/60 hover:text-white hover:border-orange-500 whitespace-nowrap transition-colors shrink-0 cursor-pointer"
             >
               {qp}
             </button>
@@ -286,21 +286,21 @@ export function AIFoodAssistant({ isOpen, onClose, initialPrompt }: AIFoodAssist
         </div>
 
         {/* Input Bar */}
-        <div className="p-4 border-t border-white/10 bg-zinc-900/50 flex items-center gap-3">
+        <div className="p-2.5 sm:p-3.5 border-t border-white/10 bg-zinc-900/60 flex items-center gap-2">
           <input
             type="text"
-            placeholder="Ask anything (e.g. Best Biryani in Hyderabad under ₹500)..."
+            placeholder="Ask anything (e.g. Best Biryani in Hyderabad)..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            className="flex-1 bg-zinc-900 border border-white/10 rounded-full px-5 py-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-orange-500 transition-colors"
+            className="flex-1 bg-zinc-900 border border-white/10 rounded-full px-3.5 sm:px-4 py-2 text-xs sm:text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-orange-500 transition-colors"
           />
           <button
             onClick={() => handleSend()}
             disabled={!query.trim() || isLoading}
-            className="w-11 h-11 rounded-full bg-orange-500 text-black flex items-center justify-center hover:bg-orange-400 disabled:opacity-40 transition-colors shadow-lg shadow-orange-500/20 shrink-0"
+            className="w-9 h-9 rounded-full bg-orange-500 text-black flex items-center justify-center hover:bg-orange-400 disabled:opacity-40 transition-colors shadow-md shadow-orange-500/20 shrink-0 cursor-pointer"
           >
-            <Send size={16} />
+            <Send size={14} />
           </button>
         </div>
       </motion.div>

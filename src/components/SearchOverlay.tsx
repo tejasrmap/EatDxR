@@ -147,7 +147,7 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[400] flex items-start justify-center pt-20 px-4">
+        <div className="fixed inset-0 z-[400] flex items-start justify-center pt-[calc(env(safe-area-inset-top,0px)+12px)] sm:pt-20 px-2.5 sm:px-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -157,68 +157,78 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
           />
           
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -20 }}
+            initial={{ opacity: 0, scale: 0.96, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -20 }}
-            className="relative w-full max-w-2xl bg-background border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[70vh]"
+            exit={{ opacity: 0, scale: 0.96, y: -10 }}
+            className="relative w-full max-w-lg bg-background border border-border rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[82vh] sm:max-h-[72vh]"
           >
             {/* Search Input Area */}
-            <div className="p-6 border-b border-border relative">
-              <Search className="absolute left-10 top-1/2 -translate-y-1/2 text-muted-foreground" size={24} />
+            <div className="p-2.5 sm:p-3.5 border-b border-border relative flex items-center">
+              <Search className="absolute left-5 sm:left-6 text-muted-foreground" size={15} />
               <input
                 ref={searchInputRef}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search database for foodies, cafes, or cuisines..."
-                className="w-full bg-muted border border-border rounded-xl pl-14 pr-12 py-4 text-xl font-medium focus:outline-none focus:ring-2 ring-orange-500/50 transition-all text-foreground placeholder:text-muted-foreground"
+                placeholder="Search foodies, cafes, dishes, or cuisines..."
+                className="w-full bg-muted/80 border border-border/80 rounded-xl pl-8 sm:pl-9 pr-8 py-2 sm:py-2.5 text-xs sm:text-sm font-medium focus:outline-none focus:ring-1.5 focus:ring-orange-500/50 transition-all text-foreground placeholder:text-muted-foreground"
               />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-10 sm:right-11 p-1 hover:bg-muted rounded-full text-muted-foreground"
+                >
+                  <X size={13} />
+                </button>
+              )}
               <button 
                 onClick={onClose}
-                className="absolute right-10 top-1/2 -translate-y-1/2 p-2 hover:bg-muted/80 rounded-full transition-colors text-muted-foreground hover:text-foreground"
+                className="ml-2 p-1.5 hover:bg-muted/80 rounded-full transition-colors text-muted-foreground hover:text-foreground shrink-0"
               >
-                <X size={20} />
+                <X size={16} />
               </button>
             </div>
 
             {/* Results Area */}
             <div className="overflow-y-auto flex-1 custom-scrollbar">
               {!searchQuery && (
-                <div className="p-12 text-center">
-                  <p className="text-muted-foreground text-sm uppercase tracking-[0.2em] font-bold">Try searching for "Pizza", "Ramen", or "Teja"</p>
+                <div className="py-8 px-4 text-center">
+                  <p className="text-muted-foreground text-[10px] sm:text-xs uppercase tracking-[0.15em] font-bold">
+                    Try searching for "Biryani", "Ramen", or "Pizza"
+                  </p>
                 </div>
               )}
 
               {isSearching && (
-                <div className="p-12 flex flex-col items-center justify-center gap-4">
+                <div className="py-8 px-4 flex flex-col items-center justify-center gap-2.5">
                   <div className="relative">
-                    <Loader2 className="animate-spin text-orange-500" size={32} />
+                    <Loader2 className="animate-spin text-orange-500" size={24} />
                     <motion.div 
                       animate={{ opacity: [0, 1, 0] }}
                       transition={{ duration: 2, repeat: Infinity }}
-                      className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full"
+                      className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-blue-500 rounded-full"
                     />
                   </div>
-                  <p className="text-muted-foreground italic flex items-center gap-2">
-                    Discovering hidden gems via AI...
+                  <p className="text-muted-foreground text-xs italic flex items-center gap-1.5">
+                    Discovering culinary destinations...
                   </p>
                 </div>
               )}
 
               {!isSearching && searchQuery && userResults.length === 0 && restaurantResults.length === 0 && (
-                <div className="p-12 text-center text-muted-foreground">
-                  <p className="serif italic">No matches found across the platform.</p>
+                <div className="py-8 px-4 text-center text-muted-foreground">
+                  <p className="text-xs italic">No matches found across the platform.</p>
                 </div>
               )}
 
               {(userResults.length > 0 || restaurantResults.length > 0) && (
-                <div className="p-4 space-y-8 pb-8">
+                <div className="p-2 sm:p-3 space-y-4 pb-4">
                   {/* Restaurant Results */}
                   {restaurantResults.length > 0 && (
                     <section>
-                      <h3 className="px-4 text-[10px] uppercase tracking-[0.2em] font-black text-muted-foreground mb-3 ml-1 flex justify-between items-center">
+                      <h3 className="px-2.5 text-[9px] sm:text-[10px] uppercase tracking-[0.15em] font-black text-muted-foreground mb-1.5 flex justify-between items-center">
                         Establishments
                         {restaurantResults.some(r => (r as any).isAiGenerated) && (
-                          <span className="text-blue-500 flex items-center gap-1 normal-case tracking-normal font-medium">
+                          <span className="text-blue-500 flex items-center gap-1 normal-case tracking-normal font-medium text-[9px]">
                             AI Backfilled
                           </span>
                         )}
@@ -229,31 +239,31 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
                             key={rest.id} 
                             to={`/restaurant/${rest.id}`}
                             onClick={handleResultClick}
-                            className="flex items-center gap-4 p-4 hover:bg-muted rounded-xl transition-all group"
+                            className="flex items-center gap-2.5 p-2 sm:p-2.5 hover:bg-muted/80 rounded-xl transition-all group"
                           >
-                            <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center border border-orange-500/20 text-orange-500 shrink-0 relative">
-                              <UtensilsCrossed size={18} />
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-orange-500/10 flex items-center justify-center border border-orange-500/20 text-orange-500 shrink-0 relative">
+                              <UtensilsCrossed size={15} />
                               {(rest as any).isAiGenerated && (
-                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-background" />
+                                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-500 rounded-full border border-background" />
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-bold text-lg text-foreground group-hover:text-orange-500 transition-colors truncate">{rest.name}</h4>
+                              <div className="flex items-center gap-1.5">
+                                <h4 className="font-bold text-xs sm:text-sm text-foreground group-hover:text-orange-500 transition-colors truncate">{rest.name}</h4>
                                 {(rest as any).isAiGenerated && (
-                                  <span className="px-1.5 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-[8px] text-blue-400 font-bold uppercase tracking-wider">AI</span>
+                                  <span className="px-1 py-0.2 bg-blue-500/10 border border-blue-500/20 rounded text-[7px] text-blue-400 font-bold uppercase tracking-wider">AI</span>
                                 )}
                               </div>
-                              <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                                <span className="uppercase tracking-widest">{rest.cuisine}</span>
+                              <div className="flex items-center gap-1.5 text-muted-foreground text-[10px] sm:text-[11px] mt-0.5">
+                                <span className="uppercase tracking-wider font-semibold text-orange-400/90">{rest.cuisine}</span>
                                 <span>•</span>
-                                <div className="flex items-center gap-1">
-                                  <MapPin size={10} />
-                                  <span>{rest.location}</span>
+                                <div className="flex items-center gap-0.5 truncate">
+                                  <MapPin size={9} className="shrink-0" />
+                                  <span className="truncate">{rest.location}</span>
                                 </div>
                               </div>
                             </div>
-                            <ArrowRight size={16} className="text-foreground/0 group-hover:text-muted-foreground transition-all -translate-x-4 group-hover:translate-x-0" />
+                            <ArrowRight size={13} className="text-foreground/0 group-hover:text-muted-foreground transition-all -translate-x-2 group-hover:translate-x-0 shrink-0" />
                           </Link>
                         ))}
                       </div>
@@ -263,31 +273,30 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
                   {/* User Results */}
                   {userResults.length > 0 && (
                     <section>
-                      <h3 className="px-4 text-[10px] uppercase tracking-[0.2em] font-black text-muted-foreground mb-3 ml-1">Food Critics</h3>
+                      <h3 className="px-2.5 text-[9px] sm:text-[10px] uppercase tracking-[0.15em] font-black text-muted-foreground mb-1.5">Food Critics</h3>
                       <div className="space-y-1">
                         {userResults.map(user => (
                           <Link 
                             key={user.uid} 
                             to={`/profile/${user.username || user.uid}`}
                             onClick={handleResultClick}
-                            className="flex items-center gap-4 p-4 hover:bg-muted rounded-xl transition-all group"
+                            className="flex items-center gap-2.5 p-2 sm:p-2.5 hover:bg-muted/80 rounded-xl transition-all group"
                           >
                             <div className="relative shrink-0">
                               <img 
                                 src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`}
                                 alt={user.displayName}
-                                className="w-12 h-12 rounded-full object-cover border border-border"
+                                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border border-border"
                                 referrerPolicy="no-referrer"
                               />
-                              <div className="absolute inset-0 rounded-full bg-orange-500/0 group-hover:bg-orange-500/10 transition-colors" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-lg text-foreground group-hover:text-orange-500 transition-colors truncate">{user.displayName}</h4>
-                              <p className="text-muted-foreground text-xs uppercase tracking-widest mt-0.5">
+                              <h4 className="font-bold text-xs sm:text-sm text-foreground group-hover:text-orange-500 transition-colors truncate">{user.displayName}</h4>
+                              <p className="text-muted-foreground text-[10px] sm:text-[11px] uppercase tracking-wider mt-0.5">
                                 @{user.username || 'critic'} • {user.stats?.reviewsWritten || 0} reviews
                               </p>
                             </div>
-                            <ArrowRight size={16} className="text-foreground/0 group-hover:text-muted-foreground transition-all -translate-x-4 group-hover:translate-x-0" />
+                            <ArrowRight size={13} className="text-foreground/0 group-hover:text-muted-foreground transition-all -translate-x-2 group-hover:translate-x-0 shrink-0" />
                           </Link>
                         ))}
                       </div>
@@ -298,11 +307,11 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
             </div>
 
             {/* Footer / Hint */}
-            <div className="px-6 py-3 border-t border-border bg-muted/30 text-[10px] text-muted-foreground uppercase tracking-widest font-bold flex justify-between">
-              <span>Universal Platform Search</span>
-              <span className="flex items-center gap-2">
-                <span className="px-1.5 py-0.5 bg-muted rounded border border-border">ESC</span> to Close
-              </span>
+            <div className="px-3.5 py-2 border-t border-border bg-muted/20 text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider font-bold flex justify-between items-center">
+              <span>Universal Food Search</span>
+              <button onClick={onClose} className="text-orange-400 hover:underline">
+                Close
+              </button>
             </div>
           </motion.div>
         </div>
