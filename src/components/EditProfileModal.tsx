@@ -87,14 +87,18 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     
     setIsSaving(true);
     try {
-      let finalPhotoURL = photoURL;
-      
-      // Professional Storage Upload for the Profile Photo
+      // Storage Upload with Automatic Base64 Fallback
       if (photoFile) {
         setIsUploading(true);
-        const fileName = `profiles/${user.uid}_${Date.now()}.jpg`;
-        finalPhotoURL = await uploadFileWithProgress(photoFile, fileName);
-        setIsUploading(false);
+        try {
+          const fileName = `profiles/${user.uid}_${Date.now()}.jpg`;
+          finalPhotoURL = await uploadFileWithProgress(photoFile, fileName);
+        } catch (storageErr) {
+          console.warn("Storage upload failed, falling back to base64:", storageErr);
+          finalPhotoURL = photoURL; // Fallback to base64
+        } finally {
+          setIsUploading(false);
+        }
       }
 
       const favoriteCuisines = cuisines

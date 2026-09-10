@@ -206,31 +206,38 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
 
   const uploadFileWithProgress = (file: File, path: string, onProgress?: (bytes: number) => void): Promise<string> => {
     return new Promise((resolve, reject) => {
+      if (!storage) {
+        reject(new Error("Storage not initialized"));
+        return;
+      }
       const fileRef = ref(storage, path);
       const uploadTask = uploadBytesResumable(fileRef, file);
 
-      // --- Resilience Engine: 15-second HMR/Network Timeout ---
+      // 30-second Network Timeout with safe fallback
       const timeout = setTimeout(() => {
-        uploadTask.cancel();
-        reject(new Error("Upload timed out after 15s. Please check your CORS configuration."));
-      }, 15000);
+        try { uploadTask.cancel(); } catch {}
+        reject(new Error("Upload timed out"));
+      }, 30000);
 
       uploadTask.on('state_changed', 
         (snapshot) => {
-          if (onProgress) onProgress(snapshot.bytesTransferred);
+          if (onProgress && snapshot.totalBytes > 0) {
+            onProgress(snapshot.bytesTransferred);
+          }
         }, 
         (error: any) => {
            clearTimeout(timeout);
-           console.error("Upload failed", error);
-           toast.error(`Upload Failed: ${error.code || error.message}`);
-           setIsUploading(false);
-           setUploadProgress(0);
+           console.warn("Firebase storage upload notice (falling back):", error?.code || error?.message);
            reject(error);
         }, 
         async () => {
           clearTimeout(timeout);
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          resolve(downloadURL);
+          try {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            resolve(downloadURL);
+          } catch (e) {
+            reject(e);
+          }
         }
       );
     });
@@ -250,7 +257,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
       fields.forEach((field, i) => {
         const dishFile = dishFiles.get(field.id);
         if (dishFile) {
-          const ext = dishFile.name.split('.').pop();
+          const ext = dishFile.name.split('.').pop() || 'jpg';
           filesToUpload.push({ file: dishFile, path: `dishes/${user.uid}_${Date.now()}_${i}.${ext}`, fieldIndex: i });
         }
       });
@@ -267,17 +274,23 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
 
       const uploadedDishes = data.dishes.map(d => ({ 
         ...d, 
-        image: (d.image && d.image.startsWith('data:')) ? "" : (d.image || "") // 'Source-Clean' Reset
+        image: d.image || "" 
       }));
 
-      // --- Universal Parallel Upload Engine ---
+      // --- Universal Parallel Upload Engine with Automatic Fallback ---
       if (filesToUpload.length > 0) {
         const uploadPromises = filesToUpload.map(async (task) => {
-          const downloadUrl = await uploadFileWithProgress(task.file, task.path, (bytes) => {
-            transferredMap.set(task.path, bytes);
-            updateOmniProgress();
-          });
-          uploadedDishes[task.fieldIndex].image = downloadUrl;
+          try {
+            const downloadUrl = await uploadFileWithProgress(task.file, task.path, (bytes) => {
+              transferredMap.set(task.path, bytes);
+              updateOmniProgress();
+            });
+            uploadedDishes[task.fieldIndex].image = downloadUrl;
+          } catch (uploadErr) {
+            console.warn(`Storage upload fallback to base64 for dish ${task.fieldIndex}:`, uploadErr);
+            // Seamlessly keep the base64 preview so photo is preserved
+            uploadedDishes[task.fieldIndex].image = data.dishes[task.fieldIndex]?.image || "";
+          }
         });
 
         await Promise.all(uploadPromises);
