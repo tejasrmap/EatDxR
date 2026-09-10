@@ -17,6 +17,7 @@ import { TasteDNAView } from "./TasteDNAView";
 import { MOCK_LISTS, MOCK_CRAVINGS } from "../data/mockData";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic } from "../services/nativeService";
+import { uploadMedia, upsertProfile } from "../services/supabaseService";
 
 export const Profile: React.FC = () => {
   const { userId: identifier } = useParams<{ userId: string }>();
@@ -87,14 +88,21 @@ export const Profile: React.FC = () => {
 
     setIsUpdatingPhoto(true);
     try {
+      // 1. Upload to Supabase Storage bucket 'profiles'
+      const filePath = `profiles/${user.uid}_${Date.now()}.jpg`;
+      const supabaseUrl = await uploadMedia(file, 'profiles', filePath);
+
       const reader = new FileReader();
       reader.onloadend = async () => {
         try {
-          const base64String = reader.result as string;
+          const finalUrl = supabaseUrl || (reader.result as string);
           // Optimistically update local state for instant feedback
-          setUser(prev => prev ? ({ ...prev, photoURL: base64String }) : null);
+          setUser(prev => prev ? ({ ...prev, photoURL: finalUrl }) : null);
 
-          await updateDoc(doc(db, "users", user.uid), { photoURL: base64String });
+          await updateDoc(doc(db, "users", user.uid), { photoURL: finalUrl });
+          if (user) {
+            upsertProfile({ ...user, photoURL: finalUrl });
+          }
           toast.success("Profile photo updated!");
         } catch (err) {
           console.error("Firestore update error:", err);
