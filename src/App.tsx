@@ -185,7 +185,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error("Error fetching user profile from Firebase Firestore:", error);
         }
       } else {
-        // Auth state signed out
+        // Not logged in: Automatically open login directly on first launch so user signs in once and stays logged in forever
+        const prompted = sessionStorage.getItem("madeater_initial_login_prompted");
+        if (!prompted) {
+          sessionStorage.setItem("madeater_initial_login_prompted", "true");
+          setTimeout(() => {
+            setIsAuthModalOpen(true);
+          }, 400);
+        }
       }
       setLoading(false);
     });
