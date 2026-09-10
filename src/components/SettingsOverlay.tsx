@@ -12,9 +12,14 @@ import {
   AtSign,
   Heart,
   HelpCircle,
-  Info
+  Info,
+  Sun,
+  Moon,
+  Monitor
 } from "lucide-react";
 import { useAuth } from "../App";
+import { useTheme } from "./ThemeProvider";
+import { triggerHaptic } from "../services/nativeService";
 
 interface SettingsOverlayProps {
   isOpen: boolean;
@@ -28,10 +33,31 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
   onEditProfile
 }) => {
   const { logout } = useAuth();
+  const { theme, setTheme } = useTheme();
 
   if (!isOpen) return null;
 
   const sections = [
+    {
+      title: "Appearance & Theme",
+      items: [
+        { 
+          label: `Dark Mode ${theme === 'dark' ? '✓ (Active)' : ''}`, 
+          icon: <Moon size={20} className={theme === 'dark' ? 'text-amber-400' : 'text-muted-foreground'} />, 
+          action: () => { triggerHaptic(); setTheme('dark'); } 
+        },
+        { 
+          label: `Light Mode ${theme === 'light' ? '✓ (Active)' : ''}`, 
+          icon: <Sun size={20} className={theme === 'light' ? 'text-orange-500' : 'text-muted-foreground'} />, 
+          action: () => { triggerHaptic(); setTheme('light'); } 
+        },
+        { 
+          label: `System Default ${theme === 'system' ? '✓ (Active)' : ''}`, 
+          icon: <Monitor size={20} className={theme === 'system' ? 'text-blue-400' : 'text-muted-foreground'} />, 
+          action: () => { triggerHaptic(); setTheme('system'); } 
+        },
+      ]
+    },
     {
       title: "How you use Madeater",
       items: [

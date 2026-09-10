@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Plus, Flame, Navigation, Dna, Trophy, Wifi, WifiOff, 
-  Sparkles, RefreshCw, X, ChevronUp, ChevronRight
+  Sparkles, RefreshCw, X, ChevronUp, ChevronRight, Sun, Moon
 } from 'lucide-react';
 import { offlineSyncService } from '../services/offlineSyncService';
 import { triggerHaptic } from '../services/nativeService';
+import { useTheme } from './ThemeProvider';
 import { toast } from 'sonner';
 
 interface QuickActionDrawerProps {
@@ -23,6 +24,7 @@ export function QuickActionDrawer({
   onOpenTasteQuiz,
   onOpenQuests,
 }: QuickActionDrawerProps) {
+  const { theme, setTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(offlineSyncService.getOnlineStatus());
   const [pendingCount, setPendingCount] = useState(offlineSyncService.getQueue().length);
@@ -236,6 +238,28 @@ export function QuickActionDrawer({
                     <p className="text-[10px] text-white/50">Unlock prestige badges and see top critics</p>
                   </div>
                   <ChevronRight size={16} className="text-white/30 group-hover:text-white" />
+                </button>
+
+                {/* Theme Mode Switcher */}
+                <button
+                  onClick={() => {
+                    triggerHaptic();
+                    const next = theme === 'dark' ? 'light' : 'dark';
+                    setTheme(next);
+                    toast.success(next === 'dark' ? '🌙 Switched to Dark Mode' : '☀️ Switched to Light Mode');
+                  }}
+                  className="w-full p-3 rounded-2xl bg-zinc-900/60 hover:bg-zinc-850 border border-white/10 flex items-center gap-3 active:scale-98 transition-all text-left group"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-amber-400/20 text-amber-400 flex items-center justify-center">
+                    {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-xs font-bold text-white group-hover:text-amber-400 transition-colors">
+                      Appearance: {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                    </h4>
+                    <p className="text-[10px] text-white/50">Tap to toggle between dark and light themes</p>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-1 rounded-lg bg-white/10 text-white/80">Toggle</span>
                 </button>
               </div>
             </motion.div>

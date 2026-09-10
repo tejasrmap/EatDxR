@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Bell, User, LogOut, Settings, Plus, Flame, Sparkles, Map, ListOrdered, Utensils } from "lucide-react";
+import { Search, Bell, User, LogOut, Settings, Plus, Flame, Sparkles, Map, ListOrdered, Utensils, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { LogMealModal } from "./LogMealModal";
 import { CravingUploadModal } from "./CravingUploadModal";
@@ -14,10 +14,12 @@ import { SettingsOverlay } from "./SettingsOverlay";
 import { EditProfileModal } from "./EditProfileModal";
 import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "./ThemeProvider";
+import { triggerHaptic } from "../services/nativeService";
+import { toast } from "sonner";
 
 export function Navbar() {
   const { user, dishdUser, login, logout } = useAuth();
-  const { theme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -131,10 +133,24 @@ export function Navbar() {
             {/* Global Search */}
             <button 
               onClick={() => setIsSearchOpen(true)}
-              className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-muted" 
+              className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-muted cursor-pointer" 
               title="Search (⌘K)"
             >
               <Search size={18} />
+            </button>
+
+            {/* Dark / Light Theme Toggle */}
+            <button
+              onClick={() => {
+                triggerHaptic();
+                const next = theme === 'dark' ? 'light' : 'dark';
+                setTheme(next);
+                toast.success(next === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode');
+              }}
+              className="p-2 text-muted-foreground hover:text-amber-400 transition-colors rounded-full hover:bg-muted cursor-pointer"
+              title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {theme === 'dark' ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
             </button>
 
             {user ? (

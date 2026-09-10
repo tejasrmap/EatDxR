@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Sparkles, MapPin, Bell, Globe, ChevronDown, User, LogOut, ArrowLeft } from "lucide-react";
+import { Search, Sparkles, MapPin, Bell, Globe, ChevronDown, User, LogOut, ArrowLeft, Sun, Moon } from "lucide-react";
 import { useAuth } from "../../App";
+import { useTheme } from "../ThemeProvider";
 import { SearchOverlay } from "../SearchOverlay";
 import { AIFoodAssistant } from "../AIFoodAssistant";
 import { triggerHaptic } from "../../services/nativeService";
+import { toast } from "sonner";
 
 interface AppHeaderProps {
   currentCity?: string;
@@ -17,11 +19,21 @@ const CITIES = ["Hyderabad", "Mumbai", "Delhi", "Bangalore", "Chennai", "Kolkata
 
 export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = false, title }: AppHeaderProps) {
   const { user, dishdUser, login, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [showCityMenu, setShowCityMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const navigate = useNavigate();
+
+  const isDarkMode = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+  const toggleTheme = () => {
+    triggerHaptic();
+    const nextTheme = isDarkMode ? 'light' : 'dark';
+    setTheme(nextTheme);
+    toast.success(nextTheme === 'dark' ? '🌙 Dark Mode activated' : '☀️ Light Mode activated');
+  };
 
   return (
     <>
@@ -105,16 +117,25 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
             {/* Quick Search */}
             <button
               onClick={() => { triggerHaptic(); setIsSearchOpen(true)} }
-              className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/70 hover:text-white active:scale-95 transition-all shrink-0"
+              className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/70 hover:text-white active:scale-95 transition-all shrink-0 cursor-pointer"
               title="Search"
             >
               <Search size={14} />
             </button>
 
+            {/* Dark / Light Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-amber-400/40 flex items-center justify-center text-amber-400 active:scale-95 transition-all shrink-0 cursor-pointer"
+              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDarkMode ? <Sun size={14} className="text-amber-400" /> : <Moon size={14} className="text-zinc-700" />}
+            </button>
+
             {/* Chef AI */}
             <button
               onClick={() => { triggerHaptic(); setIsAIOpen(true); }}
-              className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-orange-500/50 flex items-center justify-center text-orange-400 active:scale-95 transition-all shrink-0"
+              className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-orange-500/50 flex items-center justify-center text-orange-400 active:scale-95 transition-all shrink-0 cursor-pointer"
               title="Ask Chef AI"
             >
               <Sparkles size={13} />
