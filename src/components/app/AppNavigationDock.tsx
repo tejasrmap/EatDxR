@@ -108,7 +108,7 @@ export function AppNavigationDock() {
               onClick={() => {
                 triggerHaptic();
                 if (!user) {
-                  login();
+                  login('/app/profile');
                 } else {
                   navigate(profilePath);
                 }

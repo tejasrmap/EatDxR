@@ -14,7 +14,7 @@ import { DiaryEntryModal } from "./DiaryEntryModal";
 import { StarRating } from "./StarRating";
 import { RatingGraph } from "./RatingGraph";
 import { TasteDNAView } from "./TasteDNAView";
-import { MOCK_LISTS } from "../data/mockData";
+import { MOCK_LISTS, MOCK_CRAVINGS } from "../data/mockData";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic } from "../services/nativeService";
 
@@ -154,7 +154,9 @@ export const Profile: React.FC = () => {
           if (docSnap.exists()) {
             resolvedUser = docSnap.data() as User;
             if (resolvedUser?.username) {
-              navigate(`/profile/${resolvedUser.username}`, { replace: true });
+              const isAppRoute = window.location.pathname.startsWith('/app');
+              const targetPath = isAppRoute ? `/app/profile/${resolvedUser.username}` : `/profile/${resolvedUser.username}`;
+              navigate(targetPath, { replace: true });
               return;
             }
           }
@@ -174,7 +176,12 @@ export const Profile: React.FC = () => {
               id: doc.id,
               createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
             })) as Review[];
-            setReviews(reviewsData);
+
+            if (reviewsData.length === 0 && (resolvedUser?.username === "guest_critic" || resolvedUser?.displayName === "Guest Critic")) {
+              setReviews(MOCK_CRAVINGS.slice(0, 4));
+            } else {
+              setReviews(reviewsData);
+            }
             setLoading(false);
           });
 

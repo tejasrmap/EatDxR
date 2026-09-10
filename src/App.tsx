@@ -275,6 +275,25 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function MyProfileRoute() {
+  const { user, dishdUser, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-orange-500" />
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/app" replace />;
+  }
+  
+  const handle = dishdUser?.username || user.uid;
+  return <Navigate to={`/app/profile/${handle}`} replace />;
+}
+
 export function App() {
   return (
     <ErrorBoundary>
@@ -519,6 +538,10 @@ export function App() {
                   </AppLayout>
                 } 
               />
+
+              {/* Personal Profile Routes without params */}
+              <Route path="/app/profile" element={<MyProfileRoute />} />
+              <Route path="/profile" element={<MyProfileRoute />} />
 
               {/* Profile fallback for /profile/:userId */}
               <Route 

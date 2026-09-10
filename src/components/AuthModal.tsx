@@ -38,8 +38,8 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
     if (redirectUrl) {
       navigate(redirectUrl);
       onRedirectDone?.();
-    } else if (location.pathname === "/" || isNative) {
-      navigate("/app");
+    } else {
+      navigate("/app/profile");
     }
   };
 

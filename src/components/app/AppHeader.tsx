@@ -168,7 +168,7 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
               </div>
             ) : (
               <button
-                onClick={() => { triggerHaptic(); login("/app"); }}
+                onClick={() => { triggerHaptic(); login("/app/profile"); }}
                 className="h-8 px-3 rounded-full bg-gradient-to-r from-orange-500 to-amber-400 text-black font-black text-[11px] uppercase tracking-wider active:scale-95 transition-all shadow-sm shrink-0 flex items-center justify-center cursor-pointer"
               >
                 Log In
