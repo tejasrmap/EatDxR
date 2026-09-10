@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, Download, Share2, Copy, Sparkles, Check, 
-  MapPin, Navigation, Utensils, Clock, IndianRupee, ShieldCheck
+  MapPin, Navigation, Utensils, Clock, IndianRupee, ShieldCheck,
+  Instagram, ExternalLink
 } from 'lucide-react';
 import { FoodTrail } from '../types';
 import * as htmlToImage from 'html-to-image';
@@ -22,8 +23,42 @@ export function TrailCardModal({ isOpen, onClose, trail }: TrailCardModalProps) 
   const [theme, setTheme] = useState<CardTheme>('cinematic');
   const [isExporting, setIsExporting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [base64Cover, setBase64Cover] = useState<string>('');
+
+  useEffect(() => {
+    if (!isOpen || !trail?.coverImage) return;
+    let isMounted = true;
+    const toBase64 = async (url: string) => {
+      try {
+        const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(url)}&output=png`;
+        const res = await fetch(proxyUrl);
+        const blob = await res.blob();
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (isMounted) setBase64Cover(reader.result as string);
+        };
+        reader.readAsDataURL(blob);
+      } catch {
+        if (isMounted) setBase64Cover(url);
+      }
+    };
+    toBase64(trail.coverImage);
+    return () => { isMounted = false; };
+  }, [isOpen, trail?.coverImage]);
 
   if (!isOpen || !trail) return null;
+
+  const openInstagramApp = () => {
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobile) {
+      window.location.href = "instagram://story-camera";
+      setTimeout(() => {
+        window.location.href = "instagram://app";
+      }, 500);
+    } else {
+      window.open("https://www.instagram.com", "_blank");
+    }
+  };
 
   const generateCardImage = async (): Promise<string | null> => {
     if (!cardRef.current) return null;
@@ -32,6 +67,7 @@ export function TrailCardModal({ isOpen, onClose, trail }: TrailCardModalProps) 
       const dataUrl = await htmlToImage.toPng(cardRef.current, {
         quality: 0.98,
         pixelRatio: 2.5,
+        backgroundColor: '#050505',
         cacheBust: true,
       });
       return dataUrl;
@@ -63,7 +99,13 @@ export function TrailCardModal({ isOpen, onClose, trail }: TrailCardModalProps) 
     try {
       const res = await fetch(dataUrl);
       const blob = await res.blob();
-      const file = new File([blob], `${trail.title}-Trail.png`, { type: 'image/png' });
+      const file = new File([blob], `${trail.title.replace(/[^a-z0-9]/gi, '_')}-Trail.png`, { type: 'image/png' });
+
+      // Automatically save first
+      const link = document.createElement('a');
+      link.download = file.name;
+      link.href = dataUrl;
+      link.click();
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
@@ -71,20 +113,16 @@ export function TrailCardModal({ isOpen, onClose, trail }: TrailCardModalProps) 
           title: `Madeater Food Trail: ${trail.title}`,
           text: `Check out this curated food crawl on Madeater: ${trail.title} in ${trail.neighborhood}!`,
         });
-        toast.success('Shared successfully!');
-      } else if (navigator.share) {
-        await navigator.share({
-          title: trail.title,
-          text: `Explore "${trail.title}" in ${trail.neighborhood} on Madeater!`,
-          url: window.location.href,
-        });
+        toast.success('Shared! Opening Instagram...');
+        setTimeout(openInstagramApp, 800);
       } else {
-        await handleDownload();
+        toast.success('Trail Card saved! Redirecting to Instagram...');
+        setTimeout(openInstagramApp, 500);
       }
     } catch (e: any) {
       if (e.name !== 'AbortError') {
-        toast.error('Sharing failed, downloading instead.');
-        await handleDownload();
+        toast.success('Trail Card downloaded! Redirecting to Instagram...');
+        setTimeout(openInstagramApp, 300);
       }
     }
   };
@@ -133,7 +171,7 @@ export function TrailCardModal({ isOpen, onClose, trail }: TrailCardModalProps) 
                 triggerHaptic();
                 onClose();
               }}
-              className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+              className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
             >
               <X size={18} />
             </button>
@@ -148,7 +186,7 @@ export function TrailCardModal({ isOpen, onClose, trail }: TrailCardModalProps) 
                   triggerHaptic();
                   setTheme(t);
                 }}
-                className={`px-3 py-1 rounded-full text-xs font-bold capitalize transition-all ${
+                className={`px-3 py-1 rounded-full text-xs font-bold capitalize transition-all cursor-pointer ${
                   theme === t
                     ? 'bg-orange-500 text-black shadow-lg shadow-orange-500/30'
                     : 'bg-white/5 text-white/60 hover:text-white border border-white/10'
@@ -260,33 +298,34 @@ export function TrailCardModal({ isOpen, onClose, trail }: TrailCardModalProps) 
           </div>
 
           {/* Action CTAs */}
-          <div className="grid grid-cols-3 gap-2 pt-3">
+          <div className="w-full space-y-2 pt-3">
             <button
               onClick={handleShare}
               disabled={isExporting}
-              className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-400 text-black font-black text-xs uppercase tracking-wider active:scale-95 transition-all shadow-lg shadow-orange-500/20 cursor-pointer"
+              className="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-400 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-pink-500/20 cursor-pointer"
             >
-              <Share2 size={15} />
-              <span>Share</span>
+              <Instagram size={16} />
+              <span>Share to Instagram Story</span>
             </button>
 
-            <button
-              onClick={handleDownload}
-              disabled={isExporting}
-              className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-white font-bold text-xs active:scale-95 transition-all cursor-pointer"
-            >
-              <Download size={15} />
-              <span>Save</span>
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={handleDownload}
+                disabled={isExporting}
+                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-white font-bold text-xs active:scale-95 transition-all cursor-pointer"
+              >
+                <Download size={15} />
+                <span>Save</span>
+              </button>
 
-            <button
-              onClick={handleCopy}
-              disabled={isExporting}
-              className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-white font-bold text-xs active:scale-95 transition-all cursor-pointer"
-            >
-              {copied ? <Check size={15} className="text-emerald-400" /> : <Copy size={15} />}
-              <span>{copied ? 'Copied' : 'Copy'}</span>
-            </button>
+              <button
+                onClick={openInstagramApp}
+                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-orange-400 font-bold text-xs active:scale-95 transition-all cursor-pointer"
+              >
+                <ExternalLink size={15} />
+                <span>Open App</span>
+              </button>
+            </div>
           </div>
         </motion.div>
       </div>
