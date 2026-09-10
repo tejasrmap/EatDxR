@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Sparkles, MapPin, ChevronDown, User, LogOut, ArrowLeft, Sun, Moon, Settings, Dna, Trophy } from "lucide-react";
+import { Search, Sparkles, MapPin, ChevronDown, User, LogOut, ArrowLeft, Sun, Moon, Settings, Dna, Trophy, Navigation } from "lucide-react";
 import { useAuth } from "../../App";
 import { useTheme } from "../ThemeProvider";
 import { SearchOverlay } from "../SearchOverlay";
@@ -15,7 +15,9 @@ interface AppHeaderProps {
   title?: string;
 }
 
-const CITIES = ["Hyderabad", "Mumbai", "Delhi", "Bangalore", "Chennai", "Kolkata", "Goa", "Pune"];
+import { GLOBAL_CITIES } from "../../data/globalRestaurants";
+import { getCurrentCity } from "../../services/mapsService";
+import { Geolocation } from "@capacitor/geolocation";
 
 export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = false, title }: AppHeaderProps) {
   const { user, dishdUser, login, logout } = useAuth();
@@ -24,6 +26,8 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [showCityMenu, setShowCityMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [cityFilter, setCityFilter] = useState("");
+  const [isLocating, setIsLocating] = useState(false);
   const navigate = useNavigate();
 
   const isDarkMode = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -34,6 +38,45 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
     setTheme(nextTheme);
     toast.success(nextTheme === 'dark' ? '🌙 Dark Mode activated' : '☀️ Light Mode activated');
   };
+
+  const detectLocation = async () => {
+    triggerHaptic();
+    setIsLocating(true);
+    try {
+      let lat: number, lng: number;
+      try {
+        const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 6000 });
+        lat = pos.coords.latitude;
+        lng = pos.coords.longitude;
+      } catch {
+        const webPos = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 6000 });
+        });
+        lat = webPos.coords.latitude;
+        lng = webPos.coords.longitude;
+      }
+
+      const detected = await getCurrentCity(lat, lng);
+      if (detected) {
+        onCityChange?.(detected);
+        toast.success(`📍 Location set to ${detected}`);
+      } else {
+        onCityChange?.("Nearby");
+        toast.success("📍 Nearest restaurants activated");
+      }
+      setShowCityMenu(false);
+    } catch (e) {
+      console.warn("Location detection failed", e);
+      toast.error("Could not fetch GPS. Please select a city manually.");
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
+  const filteredGlobalCities = GLOBAL_CITIES.filter(c => 
+    c.name.toLowerCase().includes(cityFilter.toLowerCase()) || 
+    c.country.toLowerCase().includes(cityFilter.toLowerCase())
+  );
 
   return (
     <>
@@ -85,23 +128,52 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
                   </button>
 
                   {showCityMenu && (
-                    <div className="absolute left-0 mt-2 w-36 rounded-2xl bg-zinc-950 border border-white/15 shadow-2xl py-1 z-50 animate-in fade-in zoom-in-95 duration-150">
-                      <div className="px-3 py-1 text-[9px] font-black uppercase tracking-widest text-white/40 border-b border-white/10">
-                        Select City
-                      </div>
-                      {CITIES.map((city) => (
+                    <div className="absolute left-0 mt-2 w-52 max-h-80 overflow-y-auto rounded-2xl bg-zinc-950 border border-white/15 shadow-2xl py-1 z-50 animate-in fade-in zoom-in-95 duration-150">
+                      
+                      {/* GPS Auto-Detect Button */}
+                      <div className="p-1.5 border-b border-white/10">
                         <button
-                          key={city}
+                          onClick={detectLocation}
+                          disabled={isLocating}
+                          className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs font-bold transition-all cursor-pointer"
+                        >
+                          <span className="flex items-center gap-1.5">
+                            <Navigation size={12} className={isLocating ? "animate-spin" : "animate-pulse"} />
+                            {isLocating ? "Locating..." : "Use Current GPS"}
+                          </span>
+                          <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300">Live</span>
+                        </button>
+                      </div>
+
+                      {/* City Search Bar */}
+                      <div className="p-1.5 border-b border-white/10">
+                        <input
+                          type="text"
+                          value={cityFilter}
+                          onChange={e => setCityFilter(e.target.value)}
+                          placeholder="Search city or country..."
+                          className="w-full px-2.5 py-1 bg-white/5 border border-white/10 rounded-lg text-[11px] text-white placeholder:text-white/40 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="px-3 py-1 text-[9px] font-black uppercase tracking-widest text-white/40">
+                        Global Food Capitals
+                      </div>
+
+                      {filteredGlobalCities.map((city) => (
+                        <button
+                          key={city.name}
                           onClick={() => {
                             triggerHaptic();
-                            onCityChange?.(city);
+                            onCityChange?.(city.name);
                             setShowCityMenu(false);
                           }}
-                          className={`w-full text-left px-3 py-2 text-xs font-bold transition-colors ${
-                            currentCity === city ? "text-orange-400 bg-orange-500/10" : "text-white/80 hover:bg-white/5"
+                          className={`w-full text-left px-3 py-1.5 text-xs font-bold transition-colors flex items-center justify-between ${
+                            currentCity === city.name ? "text-orange-400 bg-orange-500/10" : "text-white/80 hover:bg-white/5"
                           }`}
                         >
-                          {city}
+                          <span>{city.name}</span>
+                          <span className="text-[10px] text-white/30 font-medium">{city.country}</span>
                         </button>
                       ))}
                     </div>

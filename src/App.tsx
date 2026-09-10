@@ -19,6 +19,7 @@ import { getProfile, upsertProfile } from "./services/supabaseService";
 // Website Components
 import { WebsiteLayout } from "./components/website/WebsiteLayout";
 import { WebsiteHome } from "./pages/WebsiteHome";
+import { MadeaterSplashIntro } from "./components/MadeaterSplashIntro";
 
 // Custom App Components
 import { AppLayout } from "./components/app/AppLayout";
@@ -308,6 +309,7 @@ export function App() {
       <ThemeProvider defaultTheme="dark" storageKey="eatdxr-theme">
         <Router>
           <AuthProvider>
+            <MadeaterSplashIntro />
             <Routes>
               {/* 1. PUBLIC WEBSITE ROUTES (Wrapped in WebsiteLayout on web, AppLayout on Native APK) */}
               <Route 

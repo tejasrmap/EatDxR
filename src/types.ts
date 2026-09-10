@@ -64,8 +64,9 @@ export interface Restaurant {
   name: string;
   cuisine: string;
   location: string;
-  rating: number;
-  reviewCount: number;
+  city?: string;
+  rating?: number;
+  reviewCount?: number;
   image?: string;
   likesCount?: number;
   menuItems?: string[];
@@ -73,9 +74,13 @@ export interface Restaurant {
   lat?: number;
   lng?: number;
   distance?: number;
-  priceLevel?: "₹" | "₹₹" | "₹₹₹" | "₹₹₹₹";
+  priceLevel?: string;
   hours?: string;
   signatureDish?: string;
+  signatureDishes?: string[];
+  tags?: string[];
+  phone?: string;
+  website?: string;
 }
 
 export interface ReviewDish {
@@ -205,6 +210,9 @@ export interface RestaurantSearchResult {
   image?: string;
   mapsUrl?: string;
   menuItems?: string[];
+  lat?: number;
+  lng?: number;
+  priceLevel?: string;
 }
 
 export interface Interaction {

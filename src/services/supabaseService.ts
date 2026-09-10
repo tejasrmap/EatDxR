@@ -1,29 +1,9 @@
 import { supabase, isSupabaseConfigured } from '../supabase';
 import { User, Review, Restaurant, DishEntity, FoodList } from '../types';
 import { MOCK_CRAVINGS, MOCK_DISHES, MOCK_LISTS } from '../data/mockData';
+import { GLOBAL_RESTAURANTS } from '../data/globalRestaurants';
 
-const DEFAULT_FALLBACK_RESTAURANTS: Restaurant[] = [
-  {
-    id: "rest-1",
-    name: "Bawarchi Restaurant",
-    cuisine: "Hyderabadi Biryani",
-    location: "RTC Cross Roads, Hyderabad",
-    rating: 4.9,
-    reviewCount: 1420,
-    image: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=800&q=80",
-    priceLevel: "₹₹"
-  },
-  {
-    id: "rest-2",
-    name: "Chutneys",
-    cuisine: "South Indian Deluxe",
-    location: "Banjara Hills, Hyderabad",
-    rating: 4.8,
-    reviewCount: 890,
-    image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=80",
-    priceLevel: "₹₹"
-  }
-];
+const DEFAULT_FALLBACK_RESTAURANTS: Restaurant[] = GLOBAL_RESTAURANTS;
 
 // ----------------------------------------------------------------------------
 // 1. PROFILES / USERS
