@@ -11,7 +11,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { toast } from "sonner";
 import { searchRestaurants } from "../services/mapsService";
 import { RestaurantSearchResult, Review } from "../types";
-import { createReview } from "../services/supabaseService";
+import { createReview, uploadMedia } from "../services/supabaseService";
 import { offlineSyncService } from "../services/offlineSyncService";
 
 const logSchema = z.object({
@@ -277,10 +277,20 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
         image: d.image || "" 
       }));
 
-      // --- Universal Parallel Upload Engine with Automatic Fallback ---
+      // --- Universal Parallel Upload Engine: Supabase Storage -> Firebase Storage -> Base64 Fallback ---
       if (filesToUpload.length > 0) {
         const uploadPromises = filesToUpload.map(async (task) => {
           try {
+            // 1. Primary: Supabase Storage bucket 'dishes'
+            const supabaseUrl = await uploadMedia(task.file, 'dishes', task.path);
+            if (supabaseUrl) {
+              uploadedDishes[task.fieldIndex].image = supabaseUrl;
+              transferredMap.set(task.path, task.file.size);
+              updateOmniProgress();
+              return;
+            }
+
+            // 2. Secondary: Firebase Storage
             const downloadUrl = await uploadFileWithProgress(task.file, task.path, (bytes) => {
               transferredMap.set(task.path, bytes);
               updateOmniProgress();
@@ -288,7 +298,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
             uploadedDishes[task.fieldIndex].image = downloadUrl;
           } catch (uploadErr) {
             console.warn(`Storage upload fallback to base64 for dish ${task.fieldIndex}:`, uploadErr);
-            // Seamlessly keep the base64 preview so photo is preserved
+            // 3. Fallback: Base64 data URL
             uploadedDishes[task.fieldIndex].image = data.dishes[task.fieldIndex]?.image || "";
           }
         });

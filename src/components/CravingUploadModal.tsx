@@ -8,7 +8,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { toast } from "sonner";
 import { searchRestaurants } from "../services/mapsService";
 import { RestaurantSearchResult, CravingTag } from "../types";
-import { createCraving } from "../services/supabaseService";
+import { createCraving, uploadMedia } from "../services/supabaseService";
 
 const CRAVING_TAGS: CravingTag[] = [
   "First bite reaction",
@@ -127,25 +127,34 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
     try {
       let finalVideoUrl = "https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-pizza-being-cut-with-a-slicer-44171-large.mp4";
 
-      if (videoFile && storage) {
+      if (videoFile) {
         try {
           const videoPath = `cravings/${user.uid}_${Date.now()}.mp4`;
-          const videoRef = ref(storage, videoPath);
-          const uploadTask = uploadBytesResumable(videoRef, videoFile);
+          
+          // 1. Primary: Supabase Storage bucket 'cravings'
+          const supabaseUrl = await uploadMedia(videoFile, 'cravings', videoPath);
+          if (supabaseUrl) {
+            finalVideoUrl = supabaseUrl;
+            setUploadProgress(100);
+          } else if (storage) {
+            // 2. Secondary: Firebase Storage
+            const videoRef = ref(storage, videoPath);
+            const uploadTask = uploadBytesResumable(videoRef, videoFile);
 
-          await new Promise<void>((resolve, reject) => {
-            const timer = setTimeout(() => resolve(), 12000); // 12s fallback
-            uploadTask.on(
-              "state_changed",
-              (snap) => setUploadProgress(Math.round((snap.bytesTransferred / (snap.totalBytes || 1)) * 100)),
-              (err) => { clearTimeout(timer); reject(err); },
-              async () => {
-                clearTimeout(timer);
-                finalVideoUrl = await getDownloadURL(uploadTask.snapshot.ref);
-                resolve();
-              }
-            );
-          });
+            await new Promise<void>((resolve, reject) => {
+              const timer = setTimeout(() => resolve(), 12000); // 12s fallback
+              uploadTask.on(
+                "state_changed",
+                (snap) => setUploadProgress(Math.round((snap.bytesTransferred / (snap.totalBytes || 1)) * 100)),
+                (err) => { clearTimeout(timer); reject(err); },
+                async () => {
+                  clearTimeout(timer);
+                  finalVideoUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                  resolve();
+                }
+              );
+            });
+          }
         } catch (storageErr) {
           console.warn("Storage fallback triggered:", storageErr);
         }

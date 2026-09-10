@@ -5,7 +5,7 @@ import { doc, setDoc, updateDoc, collection, query, where, getDocs, writeBatch }
 import { updateProfile } from "firebase/auth";
 import { db, auth, storage } from "../firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { upsertProfile } from "../services/supabaseService";
+import { upsertProfile, uploadMedia } from "../services/supabaseService";
 import { toast } from "sonner";
 
 interface EditProfileModalProps {
@@ -87,12 +87,21 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     
     setIsSaving(true);
     try {
-      // Storage Upload with Automatic Base64 Fallback
+      // Storage Upload: Supabase Storage -> Firebase Storage -> Base64 Fallback
       if (photoFile) {
         setIsUploading(true);
         try {
           const fileName = `profiles/${user.uid}_${Date.now()}.jpg`;
-          finalPhotoURL = await uploadFileWithProgress(photoFile, fileName);
+          
+          // 1. Primary: Supabase Storage bucket 'profiles'
+          const supabaseUrl = await uploadMedia(photoFile, 'profiles', fileName);
+          if (supabaseUrl) {
+            finalPhotoURL = supabaseUrl;
+            setUploadProgress(100);
+          } else {
+            // 2. Secondary: Firebase Storage
+            finalPhotoURL = await uploadFileWithProgress(photoFile, fileName);
+          }
         } catch (storageErr) {
           console.warn("Storage upload failed, falling back to base64:", storageErr);
           finalPhotoURL = photoURL; // Fallback to base64

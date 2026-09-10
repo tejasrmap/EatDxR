@@ -11,6 +11,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { toast } from "sonner";
 import { searchRestaurants } from "../services/mapsService";
 import { RestaurantSearchResult } from "../types";
+import { uploadMedia } from "../services/supabaseService";
 
 const reelSchema = z.object({
   restaurant: z.string().min(1, "Restaurant is required"),
@@ -99,13 +100,19 @@ export function ReelUploadModal({ isOpen, onClose }: ReelUploadModalProps) {
 
     setIsUploading(true);
     try {
-      const videoPath = `reels/${user.uid}_${Date.now()}.mp4`;
-      const videoRef = ref(storage, videoPath);
-      const uploadTask = uploadBytesResumable(videoRef, videoFile);
-
+      const videoPath = `cravings/${user.uid}_${Date.now()}.mp4`;
       let videoUrl = "https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-pizza-being-cut-with-a-slicer-44171-large.mp4";
 
-      if (storage) {
+      // 1. Primary: Supabase Storage bucket 'cravings'
+      const supabaseUrl = await uploadMedia(videoFile, 'cravings', videoPath);
+      if (supabaseUrl) {
+        videoUrl = supabaseUrl;
+        setUploadProgress(100);
+      } else if (storage) {
+        // 2. Secondary: Firebase Storage
+        const videoRef = ref(storage, videoPath);
+        const uploadTask = uploadBytesResumable(videoRef, videoFile);
+
         await new Promise<void>((resolve) => {
           const timeout = setTimeout(() => {
             try { uploadTask.cancel(); } catch {}

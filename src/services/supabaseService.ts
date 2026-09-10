@@ -370,22 +370,60 @@ export async function toggleLike(targetId: string, targetType: string, userId: s
 }
 
 // ----------------------------------------------------------------------------
-// 7. MEDIA STORAGE UPLOAD
+// 7. MEDIA STORAGE UPLOAD (SUPABASE STORAGE)
 // ----------------------------------------------------------------------------
 
-export async function uploadMedia(file: File | Blob, bucket: string = 'dish-media'): Promise<string | null> {
+export async function uploadMedia(
+  file: File | Blob, 
+  bucket: 'dishes' | 'cravings' | 'profiles' | 'dish-media' | string = 'dishes',
+  customPath?: string
+): Promise<string | null> {
   if (!isSupabaseConfigured) return null;
 
   try {
-    const filename = `${Date.now()}-${Math.random().toString(36).substr(2, 8)}`;
-    const { data, error } = await supabase.storage.from(bucket).upload(filename, file);
+    let extension = 'jpg';
+    if (file instanceof File && file.name) {
+      const parts = file.name.split('.');
+      if (parts.length > 1) extension = parts.pop() || 'jpg';
+    } else if (file.type) {
+      if (file.type.includes('mp4') || file.type.includes('video')) extension = 'mp4';
+      else if (file.type.includes('png')) extension = 'png';
+      else if (file.type.includes('webp')) extension = 'webp';
+    }
 
-    if (error) throw error;
+    const filePath = customPath || `${Date.now()}_${Math.random().toString(36).substr(2, 8)}.${extension}`;
+    
+    // Attempt upload to primary bucket
+    let uploadRes = await supabase.storage.from(bucket).upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: true,
+      contentType: file.type || undefined
+    });
 
-    const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
+    // If bucket doesn't exist or failed, attempt general bucket 'dish-media' as fallback
+    if (uploadRes.error && bucket !== 'dish-media') {
+      console.warn(`[Supabase Storage] Bucket "${bucket}" upload error:`, uploadRes.error.message, 'Trying fallback bucket "dish-media"...');
+      uploadRes = await supabase.storage.from('dish-media').upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: file.type || undefined
+      });
+      if (!uploadRes.error) {
+        const { data: publicUrlData } = supabase.storage.from('dish-media').getPublicUrl(uploadRes.data.path);
+        return publicUrlData.publicUrl;
+      }
+    }
+
+    if (uploadRes.error) {
+      console.warn('[Supabase Storage] Upload error:', uploadRes.error.message);
+      return null;
+    }
+
+    const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(uploadRes.data.path);
     return publicUrlData.publicUrl;
   } catch (err) {
-    console.warn('[Supabase] Storage upload failed:', err);
+    console.warn('[Supabase Storage] Media upload caught exception:', err);
     return null;
   }
 }
+
