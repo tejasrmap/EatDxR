@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { 
   signInWithPopup, 
-  signInWithRedirect,
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  signInAnonymously,
+  sendPasswordResetEmail,
   updateProfile, 
   GoogleAuthProvider 
 } from "firebase/auth";
@@ -12,8 +11,8 @@ import { auth } from "../firebase";
 import { triggerHaptic, isNative } from "../services/nativeService";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
-import { useNavigate, useLocation } from "react-router-dom";
-import { X, Sparkles, Mail, Lock, User, ArrowRight, Loader2, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { X, Sparkles, Mail, Lock, User, ArrowRight, Loader2, KeyRound } from "lucide-react";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -30,7 +29,6 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleSuccess = (msg: string) => {
     toast.success(msg);
@@ -45,14 +43,14 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
 
   if (!isOpen) return null;
 
-  // 1. Google Sign-In with mobile/popup fallback
+  // Google Sign-In (available on Web)
   const handleGoogleSignIn = async () => {
     triggerHaptic();
     setErrorMessage(null);
 
     if (isNative) {
       setErrorMessage(
-        "Google Web OAuth opens external Chrome which gets stuck on a blank screen on Android. Please sign in below with your Email & Password or tap '1-Tap Instant Guest Critic'!"
+        "Google Sign-In via browser is unavailable inside the mobile app. Please sign in below using your Email & Password."
       );
       return;
     }
@@ -69,20 +67,20 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
       const code = error?.code || "";
 
       if (code === "auth/popup-blocked" || code === "auth/operation-not-supported-in-this-environment") {
-        setErrorMessage("Google Sign-In popup is unavailable in this view. Please use Email or 1-Tap Instant Guest Critic below.");
+        setErrorMessage("Google Sign-In popup is unavailable. Please sign in with your email below.");
       } else if (code === "auth/popup-closed-by-user") {
-        // User just closed popup, no error message needed
+        // User just closed popup
       } else if (code === "auth/unauthorized-domain") {
-        setErrorMessage("Domain not authorized in Firebase. Use Email or 1-Tap Guest Critic below.");
+        setErrorMessage("Domain not authorized in Firebase. Please sign in with your email below.");
       } else {
-        setErrorMessage(error?.message || "Google Sign-In could not complete. Try Email or Guest Critic.");
+        setErrorMessage(error?.message || "Google Sign-In could not complete. Try Email.");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // 2. Email & Password Sign In / Sign Up
+  // Email & Password Sign In / Sign Up
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     triggerHaptic();
@@ -93,7 +91,7 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
     }
 
     if (authMode === "signup" && !displayName.trim()) {
-      setErrorMessage("Please enter your display name.");
+      setErrorMessage("Please enter your full name.");
       return;
     }
 
@@ -124,9 +122,9 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
       const code = error?.code || "";
 
       if (code === "auth/user-not-found" || code === "auth/wrong-password" || code === "auth/invalid-credential") {
-        setErrorMessage("Invalid email or password. Please check your credentials.");
+        setErrorMessage("Invalid email or password. Please check your credentials or create an account.");
       } else if (code === "auth/email-already-in-use") {
-        setErrorMessage("An account already exists with this email. Try signing in.");
+        setErrorMessage("An account already exists with this email. Please sign in.");
         setAuthMode("signin");
       } else if (code === "auth/weak-password") {
         setErrorMessage("Password is too weak. Please use at least 6 characters.");
@@ -138,31 +136,18 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
     }
   };
 
-  // 3. Instant 1-Tap Guest Critic
-  const handleGuestLogin = async () => {
-    triggerHaptic();
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setErrorMessage("Please enter your email address above to receive a password reset link.");
+      return;
+    }
     setLoading(true);
-    setErrorMessage(null);
-
     try {
-      // Primary: Instant in-app login via verified Critic account
-      await signInWithEmailAndPassword(auth, "guest@madeater.app", "madeaterguest123");
-      handleSuccess("Signed in as Food Critic!");
-    } catch (guestErr) {
-      console.warn("Guest account fallback:", guestErr);
-      try {
-        // Fallback: anonymous sign-in
-        const cred = await signInAnonymously(auth);
-        if (cred.user && !cred.user.displayName) {
-          await updateProfile(cred.user, {
-            displayName: "Guest Critic",
-            photoURL: `https://api.dicebear.com/7.x/bottts/svg?seed=${cred.user.uid}`
-          });
-        }
-        handleSuccess("Signed in as Guest Critic!");
-      } catch (err: any) {
-        setErrorMessage("Guest login unavailable. Please sign in or create an account below.");
-      }
+      await sendPasswordResetEmail(auth, email.trim());
+      toast.success("Password reset email sent! Please check your inbox.");
+      setErrorMessage(null);
+    } catch (err: any) {
+      setErrorMessage(err?.message || "Failed to send password reset email.");
     } finally {
       setLoading(false);
     }
@@ -197,17 +182,45 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
           </button>
 
           {/* Header Brand */}
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/25 text-orange-400 text-[10px] font-black uppercase tracking-widest mb-3">
+          <div className="text-center mb-5">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/25 text-orange-400 text-[10px] font-black uppercase tracking-widest mb-2.5">
               <Sparkles size={11} />
               <span>Madeater Critic Pass</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white">
-              {authMode === "signin" ? "Welcome Back" : "Join as Critic"}
+              {authMode === "signin" ? "Welcome Back" : "Create Account"}
             </h2>
             <p className="text-xs text-white/50 mt-1 font-serif italic">
-              Rate dishes, post cravings, and curate verified food lists.
+              {authMode === "signin" 
+                ? "Sign in to access your gastronomic profile and reviews." 
+                : "Join the verified community of food critics and connoisseurs."}
             </p>
+          </div>
+
+          {/* Segmented Mode Switcher */}
+          <div className="grid grid-cols-2 p-1 bg-zinc-900 rounded-2xl border border-white/10 mb-5">
+            <button
+              type="button"
+              onClick={() => { triggerHaptic(); setAuthMode("signin"); setErrorMessage(null); }}
+              className={`py-2 text-xs font-black uppercase tracking-wider rounded-xl transition-all ${
+                authMode === "signin"
+                  ? "bg-white text-black shadow-md"
+                  : "text-white/50 hover:text-white"
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => { triggerHaptic(); setAuthMode("signup"); setErrorMessage(null); }}
+              className={`py-2 text-xs font-black uppercase tracking-wider rounded-xl transition-all ${
+                authMode === "signup"
+                  ? "bg-white text-black shadow-md"
+                  : "text-white/50 hover:text-white"
+              }`}
+            >
+              Create Account
+            </button>
           </div>
 
           {/* Error Banner */}
@@ -217,49 +230,6 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
               <span>{errorMessage}</span>
             </div>
           )}
-
-          {/* 1-Tap Guest Button (Primary on Mobile) */}
-          <button
-            onClick={handleGuestLogin}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-400 hover:brightness-110 text-black font-black text-xs uppercase tracking-wider active:scale-[0.98] transition-all mb-3 shadow-lg disabled:opacity-60 cursor-pointer"
-          >
-            <ShieldCheck size={16} className="text-black" />
-            <span>1-Tap Instant Critic (Direct In-App)</span>
-          </button>
-
-          {/* Google Button */}
-          <button
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-            className="w-full flex items-center justify-between py-2.5 px-4 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 text-white font-bold text-xs uppercase tracking-wider active:scale-[0.98] transition-all mb-3 disabled:opacity-60 cursor-pointer"
-          >
-            <div className="flex items-center gap-2.5">
-              {loading ? (
-                <Loader2 size={15} className="animate-spin text-white" />
-              ) : (
-                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                </svg>
-              )}
-              <span>Continue with Google</span>
-            </div>
-            {isNative && (
-              <span className="text-[9px] text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20 font-semibold normal-case">
-                Web only
-              </span>
-            )}
-          </button>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-4">
-            <div className="flex-1 h-px bg-white/10" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-white/40">or with email</span>
-            <div className="flex-1 h-px bg-white/10" />
-          </div>
 
           {/* Email / Password Form */}
           <form onSubmit={handleEmailAuth} className="space-y-3">
@@ -291,18 +261,32 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
                 <input
                   type="email"
                   required
-                  placeholder="foodie@domain.com"
+                  placeholder="yourname@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-zinc-900 border border-white/10 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-orange-500 transition-colors"
                 />
               </div>
+              <p className="text-[10px] text-white/40 mt-1 px-1">
+                Use your Gmail or any personal email.
+              </p>
             </div>
 
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-white/50 mb-1">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[10px] font-black uppercase tracking-wider text-white/50">
+                  Password
+                </label>
+                {authMode === "signin" && (
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    className="text-[10px] text-orange-400/80 hover:text-orange-400 hover:underline"
+                  >
+                    Forgot?
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <Lock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
                 <input
@@ -319,7 +303,7 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-orange-500 hover:bg-orange-400 text-black font-black text-xs uppercase tracking-wider active:scale-[0.98] transition-all shadow-lg shadow-orange-500/20 disabled:opacity-50 cursor-pointer mt-2"
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-orange-500 hover:bg-orange-400 text-black font-black text-xs uppercase tracking-wider active:scale-[0.98] transition-all shadow-lg shadow-orange-500/20 disabled:opacity-50 cursor-pointer mt-3"
             >
               {loading ? (
                 <Loader2 size={16} className="animate-spin text-black" />
@@ -332,17 +316,46 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
             </button>
           </form>
 
-          {/* Toggle Signin / Signup */}
-          <div className="mt-5 text-center pt-4 border-t border-white/10">
+          {/* Web-only Google Sign-In */}
+          {!isNative && (
+            <>
+              <div className="flex items-center gap-3 my-4">
+                <div className="flex-1 h-px bg-white/10" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/40">or</span>
+                <div className="flex-1 h-px bg-white/10" />
+              </div>
+
+              <button
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 text-white font-bold text-xs uppercase tracking-wider active:scale-[0.98] transition-all disabled:opacity-60 cursor-pointer"
+              >
+                {loading ? (
+                  <Loader2 size={15} className="animate-spin text-white" />
+                ) : (
+                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                  </svg>
+                )}
+                <span>Continue with Google</span>
+              </button>
+            </>
+          )}
+
+          {/* Switch Prompt Footer */}
+          <div className="mt-5 text-center pt-3 border-t border-white/10">
             {authMode === "signin" ? (
               <p className="text-xs text-white/50">
-                Don't have an account?{" "}
+                New critic?{" "}
                 <button
                   type="button"
                   onClick={() => { triggerHaptic(); setAuthMode("signup"); setErrorMessage(null); }}
                   className="text-orange-400 font-bold hover:underline ml-1"
                 >
-                  Create one now
+                  Create account
                 </button>
               </p>
             ) : (
@@ -353,7 +366,7 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
                   onClick={() => { triggerHaptic(); setAuthMode("signin"); setErrorMessage(null); }}
                   className="text-orange-400 font-bold hover:underline ml-1"
                 >
-                  Sign in here
+                  Sign in
                 </button>
               </p>
             )}
