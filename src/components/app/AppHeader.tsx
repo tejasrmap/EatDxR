@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Sparkles, MapPin, Bell, Globe, ChevronDown, User, LogOut, ArrowLeft, Sun, Moon } from "lucide-react";
+import { Search, Sparkles, MapPin, ChevronDown, User, LogOut, ArrowLeft, Sun, Moon, Settings, Dna, Trophy } from "lucide-react";
 import { useAuth } from "../../App";
 import { useTheme } from "../ThemeProvider";
 import { SearchOverlay } from "../SearchOverlay";
@@ -37,11 +37,11 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
 
   return (
     <>
-      <header className="sticky top-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-2xl border-b border-white/10 pt-[env(safe-area-inset-top,0px)]">
-        <div className="max-w-4xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-1.5 sm:gap-2">
+      <header className="sticky top-0 left-0 right-0 z-40 bg-zinc-950/95 border-b border-white/10 pt-[env(safe-area-inset-top,0px)]">
+        <div className="max-w-4xl mx-auto px-3.5 sm:px-4 h-13 sm:h-14 flex items-center justify-between gap-2">
           
           {/* Left: Back button OR App Brand + City selector */}
-          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
             {showBack ? (
               <button
                 onClick={() => { 
@@ -60,28 +60,28 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
             ) : null}
 
             {title ? (
-              <h1 className="text-xs sm:text-base font-black uppercase tracking-tight text-white truncate max-w-[140px] sm:max-w-[240px]">{title}</h1>
+              <h1 className="text-sm sm:text-base font-black uppercase tracking-tight text-white truncate max-w-[180px] sm:max-w-[280px]">{title}</h1>
             ) : (
-              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
                 <Link 
                   to="/app" 
                   onClick={() => triggerHaptic()} 
                   className="flex items-baseline tracking-tighter shrink-0"
                 >
-                  <span className="font-black text-white text-sm sm:text-base tracking-tight uppercase">MAD</span>
-                  <span className="font-black text-orange-500 text-sm sm:text-base tracking-tight uppercase">EATER</span>
-                  <span className="w-1 h-1 rounded-full bg-orange-500 ml-0.5" />
+                  <span className="font-black text-white text-base tracking-tight uppercase">MAD</span>
+                  <span className="font-black text-orange-500 text-base tracking-tight uppercase">EATER</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500 ml-0.5" />
                 </Link>
 
-                {/* Ultra-Compact City Selector */}
+                {/* Clean City Selector */}
                 <div className="relative shrink-0">
                   <button
                     onClick={() => { triggerHaptic(); setShowCityMenu(!showCityMenu); }}
-                    className="flex items-center gap-1 px-2 py-1 rounded-full bg-zinc-900 border border-white/10 text-[10px] font-semibold text-white/80 hover:text-white transition-all active:scale-95"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-white/80 hover:text-white transition-all active:scale-95"
                   >
-                    <MapPin size={9} className="text-orange-500 shrink-0" />
-                    <span className="truncate max-w-[50px] sm:max-w-[80px]">{currentCity}</span>
-                    <ChevronDown size={8} className="text-white/40 shrink-0" />
+                    <MapPin size={10} className="text-orange-500 shrink-0" />
+                    <span className="truncate max-w-[70px] sm:max-w-[100px]">{currentCity}</span>
+                    <ChevronDown size={9} className="text-white/40 shrink-0" />
                   </button>
 
                   {showCityMenu && (
@@ -111,100 +111,107 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
             )}
           </div>
 
-          {/* Right Action Icons (Strictly Sized & Zero Overflow) */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          {/* Right Action Icons (Clean & Minimalist: Search + Profile Dropdown) */}
+          <div className="flex items-center gap-2 shrink-0">
             
             {/* Quick Search */}
             <button
-              onClick={() => { triggerHaptic(); setIsSearchOpen(true)} }
-              className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/70 hover:text-white active:scale-95 transition-all shrink-0 cursor-pointer"
+              onClick={() => { triggerHaptic(); setIsSearchOpen(true); }}
+              className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/80 hover:text-white active:scale-95 transition-all shrink-0 cursor-pointer"
               title="Search"
             >
-              <Search size={14} />
+              <Search size={15} />
             </button>
 
-            {/* Dark / Light Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-amber-400/40 flex items-center justify-center text-amber-400 active:scale-95 transition-all shrink-0 cursor-pointer"
-              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            >
-              {isDarkMode ? <Sun size={14} className="text-amber-400" /> : <Moon size={14} className="text-zinc-700" />}
-            </button>
+            {/* User Profile Avatar & Dropdown Menu */}
+            <div className="relative shrink-0">
+              <button
+                onClick={() => { 
+                  triggerHaptic(); 
+                  if (!user) {
+                    login();
+                  } else {
+                    setShowUserMenu(!showUserMenu);
+                  }
+                }}
+                className="w-8 h-8 rounded-full border border-orange-500/60 overflow-hidden hover:border-orange-400 active:scale-95 transition-all shrink-0 cursor-pointer shadow-sm flex items-center justify-center bg-zinc-900"
+                title={user ? "Account & Menu" : "Sign In"}
+              >
+                {user?.photoURL ? (
+                  <img src={user.photoURL} alt={user.displayName || "User"} className="w-full h-full object-cover" />
+                ) : (
+                  <User size={15} className="text-orange-400" />
+                )}
+              </button>
 
-            {/* Chef AI */}
-            <button
-              onClick={() => { triggerHaptic(); setIsAIOpen(true); }}
-              className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-orange-500/50 flex items-center justify-center text-orange-400 active:scale-95 transition-all shrink-0 cursor-pointer"
-              title="Ask Chef AI"
-            >
-              <Sparkles size={13} />
-            </button>
+              {showUserMenu && user && (
+                <div className="absolute right-0 mt-2 w-52 rounded-2xl bg-zinc-950 border border-white/15 shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 text-white">
+                  <div className="px-3.5 py-2 border-b border-white/10">
+                    <p className="text-xs font-bold truncate text-white">{user.displayName || "Food Critic"}</p>
+                    <p className="text-[10px] text-white/50 truncate">@{dishdUser?.username || "critic"}</p>
+                  </div>
 
-            {/* User Profile Avatar / Login */}
-            {user ? (
-              <div className="relative shrink-0">
-                <button
-                  onClick={() => { triggerHaptic(); setShowUserMenu(!showUserMenu); }}
-                  className="w-8 h-8 rounded-full border-2 border-orange-500/60 overflow-hidden hover:border-orange-400 active:scale-95 transition-all shrink-0 cursor-pointer shadow-sm"
-                >
-                  <img
-                    src={dishdUser?.photoURL || user.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.uid}`}
-                    alt="User"
-                    className="w-full h-full object-cover"
-                  />
-                </button>
+                  {/* 1-Tap Theme Switch */}
+                  <button
+                    onClick={() => { toggleTheme(); }}
+                    className="w-full text-left px-3.5 py-2 text-xs font-semibold text-white/80 hover:text-white hover:bg-white/5 flex items-center justify-between transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      {isDarkMode ? <Sun size={13} className="text-amber-400" /> : <Moon size={13} className="text-zinc-400" />}
+                      Theme Mode
+                    </span>
+                    <span className="text-[10px] uppercase font-bold text-orange-400">
+                      {isDarkMode ? "Dark" : "Light"}
+                    </span>
+                  </button>
 
-                {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-44 rounded-2xl bg-zinc-950 border border-white/15 shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
-                    <div className="px-3.5 py-2 border-b border-white/10">
-                      <p className="text-xs font-bold text-white truncate">{dishdUser?.displayName || "Foodie"}</p>
-                      <p className="text-[10px] text-white/40 truncate">@{dishdUser?.username || "critic"}</p>
-                    </div>
-                    <Link
-                      to={`/app/profile/${dishdUser?.username || user.uid}`}
-                      onClick={() => setShowUserMenu(false)}
-                      className="flex items-center gap-2 px-3.5 py-2 text-xs text-white/80 hover:bg-white/5 transition-colors"
-                    >
-                      <User size={14} />
-                      <span>Profile</span>
-                    </Link>
-                    <Link
-                      to="/"
-                      onClick={() => setShowUserMenu(false)}
-                      className="flex items-center gap-2 px-3.5 py-2 text-xs text-white/60 hover:bg-white/5 transition-colors"
-                    >
-                      <Globe size={14} />
-                      <span>Back to Website</span>
-                    </Link>
+                  {/* Ask Chef AI */}
+                  <button
+                    onClick={() => {
+                      triggerHaptic();
+                      setShowUserMenu(false);
+                      setIsAIOpen(true);
+                    }}
+                    className="w-full text-left px-3.5 py-2 text-xs font-semibold text-white/80 hover:text-white hover:bg-white/5 flex items-center gap-2 transition-colors"
+                  >
+                    <Sparkles size={13} className="text-orange-400" />
+                    Ask Chef AI Assistant
+                  </button>
+
+                  {/* View Profile */}
+                  <Link
+                    to={`/app/profile/${dishdUser?.username || user.uid}`}
+                    onClick={() => { triggerHaptic(); setShowUserMenu(false); }}
+                    className="w-full text-left px-3.5 py-2 text-xs font-semibold text-white/80 hover:text-white hover:bg-white/5 flex items-center gap-2 transition-colors"
+                  >
+                    <User size={13} className="text-white/60" />
+                    My Critic Profile
+                  </Link>
+
+                  {/* Sign Out */}
+                  <div className="pt-1 border-t border-white/10 mt-1">
                     <button
-                      onClick={() => { setShowUserMenu(false); logout(); }}
-                      className="w-full flex items-center gap-2 px-3.5 py-2 text-xs text-red-400 hover:bg-red-500/10 transition-colors text-left"
+                      onClick={() => {
+                        triggerHaptic();
+                        setShowUserMenu(false);
+                        logout();
+                      }}
+                      className="w-full text-left px-3.5 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 flex items-center gap-2 transition-colors"
                     >
-                      <LogOut size={14} />
-                      <span>Sign Out</span>
+                      <LogOut size={13} />
+                      Sign Out
                     </button>
                   </div>
-                )}
-              </div>
-            ) : (
-              <button
-                onClick={() => { triggerHaptic(); login("/app/profile"); }}
-                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/70 hover:text-white active:scale-95 transition-all shrink-0 cursor-pointer"
-                title="Sign In / Profile"
-              >
-                <User size={14} />
-              </button>
-            )}
+                </div>
+              )}
+            </div>
+
           </div>
 
         </div>
       </header>
 
-      {/* Global Search Dialog */}
       <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
-
-      {/* AI Assistant Modal */}
       <AIFoodAssistant isOpen={isAIOpen} onClose={() => setIsAIOpen(false)} />
     </>
   );

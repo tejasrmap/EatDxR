@@ -61,14 +61,14 @@ export function CustomAppHome() {
       <AppStoriesBar onLogClick={() => setIsCravingModalOpen(true)} />
 
       {/* 2. STICKY FEED SEGMENTED PILLS */}
-      <div className="sticky top-14 z-30 bg-black/90 backdrop-blur-xl border-b border-white/10 px-3 sm:px-4 py-2">
-        <div className="flex items-center justify-between gap-1 max-w-md mx-auto bg-zinc-900/90 p-1 rounded-full border border-white/10">
+      <div className="sticky top-13 sm:top-14 z-30 bg-zinc-950/95 border-b border-white/10 px-3 py-2">
+        <div className="flex items-center justify-between gap-1 max-w-sm mx-auto bg-white/5 p-1 rounded-full border border-white/10">
           
           <button
             onClick={() => { triggerHaptic(); setFeedTab("for-you"); }}
-            className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 sm:px-3 rounded-full text-[11px] sm:text-xs font-bold transition-all active:scale-95 ${
+            className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-full text-[11px] font-bold transition-all active:scale-95 cursor-pointer ${
               feedTab === "for-you"
-                ? "bg-white text-black shadow-sm font-black"
+                ? "bg-white text-black font-black shadow-sm"
                 : "text-white/50 hover:text-white"
             }`}
           >
@@ -78,9 +78,9 @@ export function CustomAppHome() {
 
           <button
             onClick={() => { triggerHaptic(); setFeedTab("following"); }}
-            className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 sm:px-3 rounded-full text-[11px] sm:text-xs font-bold transition-all active:scale-95 ${
+            className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-full text-[11px] font-bold transition-all active:scale-95 cursor-pointer ${
               feedTab === "following"
-                ? "bg-white text-black shadow-sm font-black"
+                ? "bg-white text-black font-black shadow-sm"
                 : "text-white/50 hover:text-white"
             }`}
           >
@@ -90,9 +90,9 @@ export function CustomAppHome() {
 
           <button
             onClick={() => { triggerHaptic(); setFeedTab("trending"); }}
-            className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 sm:px-3 rounded-full text-[11px] sm:text-xs font-bold transition-all active:scale-95 ${
+            className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-full text-[11px] font-bold transition-all active:scale-95 cursor-pointer ${
               feedTab === "trending"
-                ? "bg-white text-black shadow-sm font-black"
+                ? "bg-white text-black font-black shadow-sm"
                 : "text-white/50 hover:text-white"
             }`}
           >
@@ -102,9 +102,9 @@ export function CustomAppHome() {
 
           <button
             onClick={() => { triggerHaptic(); setFeedTab("nearby"); }}
-            className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 sm:px-3 rounded-full text-[11px] sm:text-xs font-bold transition-all active:scale-95 ${
+            className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-full text-[11px] font-bold transition-all active:scale-95 cursor-pointer ${
               feedTab === "nearby"
-                ? "bg-white text-black shadow-sm font-black"
+                ? "bg-white text-black font-black shadow-sm"
                 : "text-white/50 hover:text-white"
             }`}
           >

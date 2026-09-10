@@ -92,18 +92,6 @@ export function QuickActionDrawer({
         </div>
       )}
 
-      {/* Floating Action Button (Top Right / Bottom Dock Access) */}
-      <button
-        onClick={() => {
-          triggerHaptic();
-          setIsOpen(!isOpen);
-        }}
-        className="fixed bottom-20 right-4 z-40 w-11 h-11 rounded-full bg-zinc-900/90 border border-white/20 text-orange-400 backdrop-blur-xl shadow-xl flex items-center justify-center active:scale-90 hover:scale-105 transition-all cursor-pointer"
-        title="Quick Foodie Hub"
-      >
-        <Sparkles size={18} />
-      </button>
-
       {/* Full Modal Drawer */}
       <AnimatePresence>
         {isOpen && (
