@@ -38,7 +38,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: AuthModalProps) {
-  const [authMode, setAuthMode] = useState<"signin" | "signup" | "verify-email">("signin");
+  const [authMode, setAuthMode] = useState<"signin" | "signup" | "verify-email" | "forgot-password">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -49,6 +49,7 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
   const [resendCooldown, setResendCooldown] = useState(0);
   const [isResending, setIsResending] = useState(false);
   const [isCheckingVerification, setIsCheckingVerification] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
   const navigate = useNavigate();
 
   // Handle countdown for resend verification email
@@ -222,18 +223,28 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
     }
   };
 
-  const handleForgotPassword = async () => {
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!email) {
       setErrorMessage("Please enter your email address to receive a password reset link.");
       return;
     }
     setLoading(true);
+    setErrorMessage(null);
     try {
       await sendPasswordResetEmail(auth, email.trim());
+      setResetEmailSent(true);
       toast.success("Password reset link sent! Check your email inbox.");
-      setErrorMessage(null);
     } catch (err: any) {
-      setErrorMessage(err?.message || "Failed to send password reset email.");
+      console.error("Password reset error:", err);
+      const code = err?.code || "";
+      if (code === "auth/user-not-found") {
+        setErrorMessage("No account found with this email. Please check your spelling or create an account.");
+      } else if (code === "auth/invalid-email") {
+        setErrorMessage("Please enter a valid email address.");
+      } else {
+        setErrorMessage(err?.message || "Failed to send password reset email.");
+      }
     } finally {
       setLoading(false);
     }
@@ -281,7 +292,7 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
             </button>
           </div>
 
-          {/* Verification Screen Step */}
+          {/* 1. Verification Screen Step */}
           {authMode === "verify-email" ? (
             <div className="py-2 text-center">
               <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-br from-orange-500/20 to-amber-500/20 border border-orange-500/30 flex items-center justify-center text-orange-400 mb-4 shadow-xl shadow-orange-500/10">
@@ -353,6 +364,93 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
                   Continue to App now →
                 </button>
               </div>
+            </div>
+          ) : authMode === "forgot-password" ? (
+            /* 2. Forgot / Reset Password Screen */
+            <div className="py-2 text-center">
+              <div className="w-16 h-16 mx-auto rounded-3xl bg-gradient-to-br from-orange-500/20 to-amber-500/20 border border-orange-500/30 flex items-center justify-center text-orange-400 mb-4 shadow-xl shadow-orange-500/10">
+                <Lock size={30} />
+              </div>
+
+              <h2 className="text-2xl font-black uppercase tracking-tight text-white mb-2">
+                Reset Password
+              </h2>
+
+              <p className="text-xs text-white/60 mb-5 leading-relaxed">
+                Enter your registered email address and we'll send you a password reset link.
+              </p>
+
+              {errorMessage && (
+                <div className="mb-4 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs text-left leading-relaxed">
+                  <span>⚠️ {errorMessage}</span>
+                </div>
+              )}
+
+              {resetEmailSent ? (
+                <div className="space-y-4">
+                  <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-left space-y-2">
+                    <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
+                      <CheckCircle2 size={15} />
+                      <span>Password Reset Email Sent!</span>
+                    </div>
+                    <p className="text-[11px] text-white/70 leading-relaxed">
+                      We've dispatched a password reset link to <strong>{email}</strong>. Please check your inbox and spam folder.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => { triggerHaptic(); setAuthMode("signin"); setResetEmailSent(false); }}
+                    className="w-full h-12 rounded-2xl bg-white text-black font-black text-xs uppercase tracking-wider hover:bg-white/90 active:scale-[0.98] transition-all cursor-pointer"
+                  >
+                    Back to Sign In
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleForgotPasswordSubmit} className="space-y-4 text-left">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-white/70 mb-1.5">
+                      Email Address
+                    </label>
+                    <div className="relative flex items-center h-13 rounded-2xl bg-zinc-900/90 border border-white/10 hover:border-white/20 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all">
+                      <Mail size={18} className="absolute left-4 text-white/40 pointer-events-none" />
+                      <input
+                        type="email"
+                        required
+                        placeholder="yourname@gmail.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full h-full bg-transparent pl-12 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full h-13 rounded-2xl bg-gradient-to-r from-orange-500 via-orange-500 to-amber-500 hover:brightness-110 text-black font-black text-xs uppercase tracking-wider shadow-lg shadow-orange-500/25 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {loading ? (
+                      <Loader2 size={18} className="animate-spin text-black" />
+                    ) : (
+                      <>
+                        <span>Send Password Reset Link</span>
+                        <ArrowRight size={16} />
+                      </>
+                    )}
+                  </button>
+
+                  <div className="text-center pt-2">
+                    <button
+                      type="button"
+                      onClick={() => { triggerHaptic(); setAuthMode("signin"); setErrorMessage(null); }}
+                      className="text-xs text-white/50 hover:text-white transition-colors cursor-pointer"
+                    >
+                      ← Back to Sign In
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           ) : (
             <>
@@ -464,7 +562,12 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
                     {authMode === "signin" && (
                       <button
                         type="button"
-                        onClick={handleForgotPassword}
+                        onClick={() => { 
+                          triggerHaptic(); 
+                          setAuthMode("forgot-password"); 
+                          setErrorMessage(null); 
+                          setResetEmailSent(false); 
+                        }}
                         className="text-xs text-orange-400 hover:text-orange-300 font-semibold cursor-pointer"
                       >
                         Forgot password?

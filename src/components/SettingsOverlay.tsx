@@ -20,6 +20,9 @@ import {
 import { useAuth } from "../App";
 import { useTheme } from "./ThemeProvider";
 import { triggerHaptic } from "../services/nativeService";
+import { auth } from "../firebase";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { toast } from "sonner";
 
 interface SettingsOverlayProps {
   isOpen: boolean;
@@ -32,7 +35,7 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
   onClose,
   onEditProfile
 }) => {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
 
   if (!isOpen) return null;
@@ -77,14 +80,26 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
       title: "Privacy and Safety",
       items: [
         { 
-          label: "Privacy", 
+          label: "Privacy Policy", 
           icon: <Shield size={20} className="text-muted-foreground" />, 
-          action: () => {} 
+          action: () => { window.open("/privacy", "_blank"); } 
         },
         { 
-          label: "Password and Security", 
-          icon: <Lock size={20} className="text-muted-foreground" />, 
-          action: () => {} 
+          label: "Reset Password via Email", 
+          icon: <Lock size={20} className="text-orange-400" />, 
+          action: async () => { 
+            triggerHaptic();
+            if (!user?.email) {
+              toast.error("Please sign in to reset your password.");
+              return;
+            }
+            try {
+              await sendPasswordResetEmail(auth, user.email);
+              toast.success(`Password reset email sent to ${user.email}!`);
+            } catch (err: any) {
+              toast.error(err?.message || "Failed to send password reset email.");
+            }
+          } 
         }
       ]
     },

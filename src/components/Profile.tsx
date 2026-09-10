@@ -5,7 +5,7 @@ import { collection, query, where, onSnapshot, orderBy, doc, getDoc, getDocs, up
 import { db } from "../firebase";
 import { Review, User, Restaurant } from "../types";
 import { useAuth } from "../App";
-import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus, Edit3, Share2, UtensilsCrossed, Sparkles, ListOrdered, ShieldCheck, Award, Layers, Camera } from "lucide-react";
+import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus, Edit3, Share2, UtensilsCrossed, Sparkles, ListOrdered, ShieldCheck, Award, Layers, Camera, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { DiaryTable } from "./DiaryTable";
 import { FollowListModal } from "./FollowListModal";
