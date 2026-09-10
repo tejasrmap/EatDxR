@@ -12,7 +12,20 @@ import { triggerHaptic, isNative } from "../services/nativeService";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { X, Sparkles, Mail, Lock, User, ArrowRight, Loader2, KeyRound } from "lucide-react";
+import { 
+  X, 
+  Sparkles, 
+  Mail, 
+  Lock, 
+  User, 
+  ArrowRight, 
+  Loader2, 
+  Eye, 
+  EyeOff, 
+  Utensils, 
+  Bookmark, 
+  CheckCircle2 
+} from "lucide-react";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -26,6 +39,7 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -43,15 +57,13 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
 
   if (!isOpen) return null;
 
-  // Google Sign-In (available on Web)
+  // Google Sign-In (available on Web browser)
   const handleGoogleSignIn = async () => {
     triggerHaptic();
     setErrorMessage(null);
 
     if (isNative) {
-      setErrorMessage(
-        "Google Sign-In via browser is unavailable inside the mobile app. Please sign in below using your Email & Password."
-      );
+      setErrorMessage("Please use your Email and Password below to sign in inside the app.");
       return;
     }
 
@@ -67,20 +79,20 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
       const code = error?.code || "";
 
       if (code === "auth/popup-blocked" || code === "auth/operation-not-supported-in-this-environment") {
-        setErrorMessage("Google Sign-In popup is unavailable. Please sign in with your email below.");
+        setErrorMessage("Google Sign-In popup is unavailable in this browser. Please sign in with your email below.");
       } else if (code === "auth/popup-closed-by-user") {
         // User just closed popup
       } else if (code === "auth/unauthorized-domain") {
-        setErrorMessage("Domain not authorized in Firebase. Please sign in with your email below.");
+        setErrorMessage("Domain not authorized in Firebase. Please use your email below.");
       } else {
-        setErrorMessage(error?.message || "Google Sign-In could not complete. Try Email.");
+        setErrorMessage(error?.message || "Google Sign-In could not complete. Please use your email.");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // Email & Password Sign In / Sign Up
+  // Email & Password Auth
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     triggerHaptic();
@@ -122,14 +134,14 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
       const code = error?.code || "";
 
       if (code === "auth/user-not-found" || code === "auth/wrong-password" || code === "auth/invalid-credential") {
-        setErrorMessage("Invalid email or password. Please check your credentials or create an account.");
+        setErrorMessage("Invalid email or password. Please verify your details or switch to Create Account.");
       } else if (code === "auth/email-already-in-use") {
         setErrorMessage("An account already exists with this email. Please sign in.");
         setAuthMode("signin");
       } else if (code === "auth/weak-password") {
         setErrorMessage("Password is too weak. Please use at least 6 characters.");
       } else {
-        setErrorMessage(error?.message || "Failed to sign in. Please try again.");
+        setErrorMessage(error?.message || "Authentication failed. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -138,13 +150,13 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
 
   const handleForgotPassword = async () => {
     if (!email) {
-      setErrorMessage("Please enter your email address above to receive a password reset link.");
+      setErrorMessage("Please enter your email address to receive a password reset link.");
       return;
     }
     setLoading(true);
     try {
       await sendPasswordResetEmail(auth, email.trim());
-      toast.success("Password reset email sent! Please check your inbox.");
+      toast.success("Password reset link sent! Check your email inbox.");
       setErrorMessage(null);
     } catch (err: any) {
       setErrorMessage(err?.message || "Failed to send password reset email.");
@@ -155,54 +167,80 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center sm:p-4">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/80 backdrop-blur-md"
+          className="fixed inset-0 bg-black/85 backdrop-blur-md"
         />
 
-        {/* Modal Window */}
+        {/* Modal / Bottom Sheet Window */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          transition={{ type: "spring", damping: 25, stiffness: 350 }}
-          className="relative w-full max-w-sm sm:max-w-md bg-zinc-950 border border-white/15 rounded-3xl p-6 sm:p-7 shadow-2xl z-10 text-white overflow-hidden"
+          initial={{ opacity: 0, y: 50, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 50, scale: 0.98 }}
+          transition={{ type: "spring", damping: 30, stiffness: 380 }}
+          className="relative w-full max-w-md bg-[#0f0f13] border-t sm:border border-white/15 rounded-t-[32px] sm:rounded-3xl px-6 pt-3 pb-8 sm:p-8 shadow-2xl z-10 text-white overflow-hidden max-h-[92vh] overflow-y-auto"
         >
-          {/* Close button */}
-          <button
-            onClick={() => { triggerHaptic(); onClose(); }}
-            className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all active:scale-90"
-          >
-            <X size={16} />
-          </button>
+          {/* Subtle ambient top glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-20 bg-gradient-to-b from-orange-500/15 via-orange-500/5 to-transparent blur-2xl pointer-events-none" />
 
-          {/* Header Brand */}
-          <div className="text-center mb-5">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/25 text-orange-400 text-[10px] font-black uppercase tracking-widest mb-2.5">
+          {/* Drag handle for mobile sheet */}
+          <div className="w-12 h-1.5 rounded-full bg-white/20 mx-auto mt-1 mb-5 sm:hidden" />
+
+          {/* Top Bar with Badge & Close Button */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/25 text-orange-400 text-[10px] font-black uppercase tracking-widest">
               <Sparkles size={11} />
               <span>Madeater Critic Pass</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-white">
-              {authMode === "signin" ? "Welcome Back" : "Create Account"}
+
+            <button
+              onClick={() => { triggerHaptic(); onClose(); }}
+              aria-label="Close"
+              className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-all active:scale-90 cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Header Typography */}
+          <div className="mb-4">
+            <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white">
+              {authMode === "signin" ? "Welcome Back" : "Join the Critics"}
             </h2>
-            <p className="text-xs text-white/50 mt-1 font-serif italic">
+            <p className="text-xs text-white/50 mt-1 leading-relaxed">
               {authMode === "signin" 
-                ? "Sign in to access your gastronomic profile and reviews." 
-                : "Join the verified community of food critics and connoisseurs."}
+                ? "Sign in to access your gastronomic profile, reviews, and taste DNA." 
+                : "Create your personal critic account to review dishes and curate food lists."}
             </p>
           </div>
 
-          {/* Segmented Mode Switcher */}
-          <div className="grid grid-cols-2 p-1 bg-zinc-900 rounded-2xl border border-white/10 mb-5">
+          {/* Exclusive Value Strip (Useful Critic Perks) */}
+          <div className="grid grid-cols-3 gap-2 py-2.5 px-3 my-4 rounded-2xl bg-white/[0.03] border border-white/5 text-[11px] text-white/70 text-center">
+            <div className="flex flex-col items-center gap-1">
+              <Utensils size={14} className="text-orange-400" />
+              <span className="font-semibold text-[10px]">Dish Reviews</span>
+            </div>
+            <div className="flex flex-col items-center gap-1 border-x border-white/5">
+              <Sparkles size={14} className="text-amber-400" />
+              <span className="font-semibold text-[10px]">Taste DNA</span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <Bookmark size={14} className="text-orange-400" />
+              <span className="font-semibold text-[10px]">Wishlists</span>
+            </div>
+          </div>
+
+          {/* Modern Segmented Tab Switcher */}
+          <div className="grid grid-cols-2 p-1.5 bg-zinc-900/90 rounded-2xl border border-white/10 mb-5">
             <button
               type="button"
               onClick={() => { triggerHaptic(); setAuthMode("signin"); setErrorMessage(null); }}
-              className={`py-2 text-xs font-black uppercase tracking-wider rounded-xl transition-all ${
+              className={`py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
                 authMode === "signin"
                   ? "bg-white text-black shadow-md"
                   : "text-white/50 hover:text-white"
@@ -213,7 +251,7 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
             <button
               type="button"
               onClick={() => { triggerHaptic(); setAuthMode("signup"); setErrorMessage(null); }}
-              className={`py-2 text-xs font-black uppercase tracking-wider rounded-xl transition-all ${
+              className={`py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
                 authMode === "signup"
                   ? "bg-white text-black shadow-md"
                   : "text-white/50 hover:text-white"
@@ -225,113 +263,119 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
 
           {/* Error Banner */}
           {errorMessage && (
-            <div className="mb-4 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2">
+            <div className="mb-5 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5 leading-relaxed">
               <span className="shrink-0 font-bold mt-0.5">⚠️</span>
               <span>{errorMessage}</span>
             </div>
           )}
 
-          {/* Email / Password Form */}
-          <form onSubmit={handleEmailAuth} className="space-y-3">
+          {/* Auth Form with Generous Touch Targets */}
+          <form onSubmit={handleEmailAuth} className="space-y-4">
             {authMode === "signup" && (
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-white/50 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-white/70 mb-1.5">
                   Full Name
                 </label>
-                <div className="relative">
-                  <User size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
+                <div className="relative flex items-center h-13 rounded-2xl bg-zinc-900/90 border border-white/10 hover:border-white/20 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all">
+                  <User size={18} className="absolute left-4 text-white/40 pointer-events-none" />
                   <input
                     type="text"
                     required
                     placeholder="e.g. Teja Sharma"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    className="w-full bg-zinc-900 border border-white/10 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-orange-500 transition-colors"
+                    className="w-full h-full bg-transparent pl-12 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none font-medium"
                   />
                 </div>
               </div>
             )}
 
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-white/50 mb-1">
+              <label className="block text-xs font-bold uppercase tracking-wider text-white/70 mb-1.5">
                 Email Address
               </label>
-              <div className="relative">
-                <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
+              <div className="relative flex items-center h-13 rounded-2xl bg-zinc-900/90 border border-white/10 hover:border-white/20 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all">
+                <Mail size={18} className="absolute left-4 text-white/40 pointer-events-none" />
                 <input
                   type="email"
                   required
                   placeholder="yourname@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-zinc-900 border border-white/10 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-orange-500 transition-colors"
+                  className="w-full h-full bg-transparent pl-12 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none font-medium"
                 />
               </div>
-              <p className="text-[10px] text-white/40 mt-1 px-1">
-                Use your Gmail or any personal email.
-              </p>
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-[10px] font-black uppercase tracking-wider text-white/50">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-white/70">
                   Password
                 </label>
                 {authMode === "signin" && (
                   <button
                     type="button"
                     onClick={handleForgotPassword}
-                    className="text-[10px] text-orange-400/80 hover:text-orange-400 hover:underline"
+                    className="text-xs text-orange-400 hover:text-orange-300 font-semibold cursor-pointer"
                   >
-                    Forgot?
+                    Forgot password?
                   </button>
                 )}
               </div>
-              <div className="relative">
-                <Lock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
+              <div className="relative flex items-center h-13 rounded-2xl bg-zinc-900/90 border border-white/10 hover:border-white/20 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all">
+                <Lock size={18} className="absolute left-4 text-white/40 pointer-events-none" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   placeholder="At least 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-zinc-900 border border-white/10 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-orange-500 transition-colors"
+                  className="w-full h-full bg-transparent pl-12 pr-12 text-sm text-white placeholder:text-white/30 focus:outline-none font-medium"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-4 text-white/40 hover:text-white transition-colors p-1 cursor-pointer"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </div>
 
+            {/* Primary Action Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-orange-500 hover:bg-orange-400 text-black font-black text-xs uppercase tracking-wider active:scale-[0.98] transition-all shadow-lg shadow-orange-500/20 disabled:opacity-50 cursor-pointer mt-3"
+              className="w-full h-13 rounded-2xl bg-gradient-to-r from-orange-500 via-orange-500 to-amber-500 hover:brightness-110 text-black font-black text-xs uppercase tracking-wider shadow-lg shadow-orange-500/25 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
             >
               {loading ? (
-                <Loader2 size={16} className="animate-spin text-black" />
+                <Loader2 size={18} className="animate-spin text-black" />
               ) : (
                 <>
                   <span>{authMode === "signin" ? "Sign In to Madeater" : "Create Critic Account"}</span>
-                  <ArrowRight size={14} />
+                  <ArrowRight size={16} />
                 </>
               )}
             </button>
           </form>
 
-          {/* Web-only Google Sign-In */}
+          {/* Web Browser Google Sign-In */}
           {!isNative && (
             <>
-              <div className="flex items-center gap-3 my-4">
+              <div className="flex items-center gap-3 my-5">
                 <div className="flex-1 h-px bg-white/10" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/40">or</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/40">or continue with</span>
                 <div className="flex-1 h-px bg-white/10" />
               </div>
 
               <button
                 onClick={handleGoogleSignIn}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-white/10 text-white font-bold text-xs uppercase tracking-wider active:scale-[0.98] transition-all disabled:opacity-60 cursor-pointer"
+                className="w-full h-12 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-white/10 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
               >
                 {loading ? (
-                  <Loader2 size={15} className="animate-spin text-white" />
+                  <Loader2 size={16} className="animate-spin text-white" />
                 ) : (
                   <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -340,31 +384,31 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                   </svg>
                 )}
-                <span>Continue with Google</span>
+                <span>Google</span>
               </button>
             </>
           )}
 
-          {/* Switch Prompt Footer */}
-          <div className="mt-5 text-center pt-3 border-t border-white/10">
+          {/* Footer Prompt */}
+          <div className="mt-6 pt-4 border-t border-white/10 text-center">
             {authMode === "signin" ? (
               <p className="text-xs text-white/50">
-                New critic?{" "}
+                New to Madeater?{" "}
                 <button
                   type="button"
                   onClick={() => { triggerHaptic(); setAuthMode("signup"); setErrorMessage(null); }}
-                  className="text-orange-400 font-bold hover:underline ml-1"
+                  className="text-orange-400 font-bold hover:underline ml-1 cursor-pointer"
                 >
-                  Create account
+                  Create an account
                 </button>
               </p>
             ) : (
               <p className="text-xs text-white/50">
-                Already have an account?{" "}
+                Already a critic?{" "}
                 <button
                   type="button"
                   onClick={() => { triggerHaptic(); setAuthMode("signin"); setErrorMessage(null); }}
-                  className="text-orange-400 font-bold hover:underline ml-1"
+                  className="text-orange-400 font-bold hover:underline ml-1 cursor-pointer"
                 >
                   Sign in
                 </button>
