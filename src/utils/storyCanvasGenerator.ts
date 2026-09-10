@@ -194,7 +194,10 @@ export async function generateReviewStoryBlob(
   ctx.restore();
 
   // 4. Rating Pill Overlay (Bottom-Right of Image)
-  const score = review.rating <= 5 ? (review.rating * 2).toFixed(1) : review.rating.toFixed(1);
+  const rawRating = typeof review.rating === "number" ? review.rating : Number(review.rating);
+  const score = !isNaN(rawRating) && rawRating > 0
+    ? (rawRating <= 5 ? (rawRating * 2).toFixed(1) : rawRating.toFixed(1))
+    : "9.0";
   const pillW = 210;
   const pillH = 80;
   const pillX = heroX + heroW - pillW - 30;

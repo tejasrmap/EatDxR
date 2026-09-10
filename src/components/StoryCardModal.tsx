@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Review } from "../types";
 import { 
   X, 
@@ -13,20 +13,18 @@ import {
   Flame, 
   Award, 
   ExternalLink,
-  Instagram,
-  Share2
+  Instagram
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
-import { format } from "date-fns";
-import { parseFirebaseDate } from "../lib/utils";
+import { safeFormatDate } from "../lib/utils";
 import { triggerHaptic } from "../services/nativeService";
 import { generateReviewStoryBlob, StoryTheme } from "../utils/storyCanvasGenerator";
 
 interface StoryCardModalProps {
   isOpen: boolean;
   onClose: () => void;
-  review: Review;
+  review?: Review | null;
 }
 
 export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose, review }) => {
@@ -34,21 +32,39 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Close on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !review) return null;
 
-  const images = review?.dishes?.filter(d => d.image).map(d => d.image) || [];
+  const images = (review.dishes || []).filter(d => d && d.image).map(d => d.image) || [];
   const heroImage = images[0] || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80";
-  const avatar = review?.userPhoto || `https://api.dicebear.com/7.x/bottts/svg?seed=${review?.userId || 'critic'}`;
-  const primaryDish = review?.dishes?.[0];
-  const date = parseFirebaseDate(review?.createdAt);
-  const formattedDate = format(date, "MMM dd, yyyy");
-  const ratingScore = review ? (review.rating <= 5 ? (review.rating * 2).toFixed(1) : review.rating.toFixed(1)) : "9.0";
+  const avatar = review.userPhoto || `https://api.dicebear.com/7.x/bottts/svg?seed=${review.userId || 'critic'}`;
+  const primaryDish = review.dishes?.[0] || (review.attachedDish ? { name: review.attachedDish, rating: 5, isMustOrder: false } : undefined);
+  const formattedDate = safeFormatDate(review.createdAt, "MMM dd, yyyy");
+  
+  const rawRating = typeof review.rating === "number" ? review.rating : Number(review.rating);
+  const ratingScore = !isNaN(rawRating) && rawRating > 0
+    ? (rawRating <= 5 ? (rawRating * 2).toFixed(1) : rawRating.toFixed(1))
+    : "9.0";
+
+  const restaurantName = review.restaurantName || "Specialty Dining";
+  const userName = review.userName || "Verified Critic";
+  const city = review.city || "Bangalore";
 
   const openInstagramDirect = () => {
     triggerHaptic();
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     if (isMobile) {
-      // Direct Instagram story camera deep link
       window.location.href = "instagram://story-camera";
       setTimeout(() => {
         window.location.href = "https://instagram.com";
@@ -58,7 +74,7 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
     }
   };
 
-  // 1. Download to device (Instant & Glitch-free)
+  // 1. Download to device
   const handleDownload = async () => {
     triggerHaptic();
     setIsGenerating(true);
@@ -66,7 +82,7 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
       const blob = await generateReviewStoryBlob(review, theme);
       if (!blob) throw new Error("Could not generate image");
 
-      const filename = `Madeater-Story-${(review.restaurantName || "Review").replace(/[^a-z0-9]/gi, "_")}.png`;
+      const filename = `Madeater-Story-${restaurantName.replace(/[^a-z0-9]/gi, "_")}.png`;
       const link = document.createElement("a");
       link.download = filename;
       link.href = URL.createObjectURL(blob);
@@ -83,7 +99,7 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
     }
   };
 
-  // 2. Share to Instagram Stories (Native Share Sheet + File Download + Instagram App Launch)
+  // 2. Share to Instagram Stories
   const handleInstagramShare = async () => {
     triggerHaptic();
     setIsGenerating(true);
@@ -91,10 +107,10 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
       const blob = await generateReviewStoryBlob(review, theme);
       if (!blob) throw new Error("Generation failed");
 
-      const filename = `Madeater-Story-${(review.restaurantName || "Review").replace(/[^a-z0-9]/gi, "_")}.png`;
+      const filename = `Madeater-Story-${restaurantName.replace(/[^a-z0-9]/gi, "_")}.png`;
       const file = new File([blob], filename, { type: "image/png" });
 
-      // Automatically trigger download so user always has the image ready
+      // Trigger download backup
       const link = document.createElement("a");
       link.download = filename;
       link.href = URL.createObjectURL(blob);
@@ -102,11 +118,10 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
       link.click();
       document.body.removeChild(link);
 
-      // Check if native Web Share API with files is supported (Mobile Chrome, Safari iOS, Android Webview)
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: `Madeater Critic: ${review.restaurantName}`,
+          title: `Madeater Critic: ${restaurantName}`,
           text: `Rated ${ratingScore}/10 on Madeater! Check out my food review.`,
         });
         toast.success("Shared! Opening Instagram...");
@@ -116,7 +131,6 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
       }
     } catch (err: any) {
       if (err.name !== "AbortError") {
-        console.warn("Share fallback:", err);
         toast.success("Story card saved! Opening Instagram...");
         setTimeout(openInstagramDirect, 300);
       }
@@ -154,7 +168,15 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[350] flex items-center justify-center p-3 sm:p-6 overflow-y-auto bg-black/90 backdrop-blur-xl">
+      <div 
+        className="fixed inset-0 z-[350] flex items-center justify-center p-3 sm:p-6 overflow-y-auto bg-black/90 backdrop-blur-xl select-none"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            triggerHaptic();
+            onClose();
+          }
+        }}
+      >
         {/* Studio Window */}
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 12 }}
@@ -162,6 +184,7 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
           exit={{ opacity: 0, scale: 0.96, y: 12 }}
           transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
           className="relative w-full max-w-sm sm:max-w-md bg-zinc-950 border border-white/15 rounded-3xl p-4 sm:p-6 shadow-2xl z-10 text-white flex flex-col items-center my-auto max-h-[95vh] overflow-y-auto gpu-accelerated"
+          onClick={(e) => e.stopPropagation()}
         >
           {/* Studio Header */}
           <div className="w-full flex items-center justify-between pb-3 border-b border-white/10">
@@ -178,6 +201,7 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
             <button
               onClick={() => { triggerHaptic(); onClose(); }}
               className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+              title="Close Story Studio"
             >
               <X size={18} />
             </button>
@@ -234,7 +258,7 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
                 </div>
                 <div className="flex items-center gap-1 text-[9px] font-bold text-white/80 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10">
                   <MapPin size={10} className="text-orange-400" />
-                  <span>{review.city || "Verified Spot"}</span>
+                  <span>{city}</span>
                 </div>
               </div>
 
@@ -250,9 +274,12 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
                 }`}>
                   <img
                     src={heroImage}
-                    alt={review.restaurantName}
+                    alt={restaurantName}
                     className="w-full h-full object-cover"
                     crossOrigin="anonymous"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80";
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                   
@@ -275,7 +302,7 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
                 {/* Restaurant & Dish Title */}
                 <div>
                   <h2 className="text-base font-black uppercase tracking-tight text-white line-clamp-1">
-                    {review.restaurantName}
+                    {restaurantName}
                   </h2>
                   {primaryDish?.name && (
                     <p className="text-xs font-serif italic text-orange-400 font-bold line-clamp-1 mt-0.5">
@@ -300,13 +327,16 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
                 <div className="flex items-center gap-2">
                   <img
                     src={avatar}
-                    alt={review.userName}
+                    alt={userName}
                     className="w-6 h-6 rounded-full border border-white/20 object-cover"
                     crossOrigin="anonymous"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "https://api.dicebear.com/7.x/bottts/svg?seed=critic";
+                    }}
                   />
                   <div className="text-left">
                     <p className="text-[9px] font-black text-white leading-none line-clamp-1">
-                      {review.userName}
+                      {userName}
                     </p>
                     <p className="text-[7px] text-white/40 font-mono mt-0.5">
                       {formattedDate}
