@@ -26,10 +26,10 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
   return (
     <>
       <header className="sticky top-0 left-0 right-0 z-40 bg-black/90 backdrop-blur-2xl border-b border-white/10 pt-[env(safe-area-inset-top,0px)]">
-        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between gap-2">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-1.5 sm:gap-2">
           
           {/* Left: Back button OR App Brand + City selector */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
             {showBack ? (
               <button
                 onClick={() => { 
@@ -40,36 +40,36 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
                     navigate('/app');
                   }
                 }}
-                className="w-9 h-9 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-white hover:bg-white/20 active:scale-90 transition-all cursor-pointer shrink-0"
+                className="w-8 h-8 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-white hover:bg-white/20 active:scale-90 transition-all cursor-pointer shrink-0"
                 title="Go Back"
               >
-                <ArrowLeft size={18} />
+                <ArrowLeft size={16} />
               </button>
             ) : null}
 
             {title ? (
-              <h1 className="text-sm sm:text-base font-black uppercase tracking-tight text-white truncate max-w-[170px] sm:max-w-[240px]">{title}</h1>
+              <h1 className="text-xs sm:text-base font-black uppercase tracking-tight text-white truncate max-w-[140px] sm:max-w-[240px]">{title}</h1>
             ) : (
-              <div className="flex items-center gap-2 min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                 <Link 
                   to="/app" 
                   onClick={() => triggerHaptic()} 
                   className="flex items-baseline tracking-tighter shrink-0"
                 >
-                  <span className="font-black text-white text-base sm:text-lg tracking-tight uppercase">MAD</span>
-                  <span className="font-black text-orange-500 text-base sm:text-lg tracking-tight uppercase">EATER</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500 ml-0.5" />
+                  <span className="font-black text-white text-sm sm:text-base tracking-tight uppercase">MAD</span>
+                  <span className="font-black text-orange-500 text-sm sm:text-base tracking-tight uppercase">EATER</span>
+                  <span className="w-1 h-1 rounded-full bg-orange-500 ml-0.5" />
                 </Link>
 
-                {/* Compact City Selector */}
-                <div className="relative">
+                {/* Ultra-Compact City Selector */}
+                <div className="relative shrink-0">
                   <button
                     onClick={() => { triggerHaptic(); setShowCityMenu(!showCityMenu); }}
-                    className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-900/90 border border-white/10 text-[10px] sm:text-[11px] font-semibold text-white/80 hover:text-white transition-all active:scale-95"
+                    className="flex items-center gap-1 px-2 py-1 rounded-full bg-zinc-900 border border-white/10 text-[10px] font-semibold text-white/80 hover:text-white transition-all active:scale-95"
                   >
-                    <MapPin size={10} className="text-orange-500 shrink-0" />
-                    <span className="truncate max-w-[65px] sm:max-w-[90px]">{currentCity}</span>
-                    <ChevronDown size={10} className="text-white/40 shrink-0" />
+                    <MapPin size={9} className="text-orange-500 shrink-0" />
+                    <span className="truncate max-w-[50px] sm:max-w-[80px]">{currentCity}</span>
+                    <ChevronDown size={8} className="text-white/40 shrink-0" />
                   </button>
 
                   {showCityMenu && (
@@ -99,13 +99,13 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
             )}
           </div>
 
-          {/* Right Action Icons (Compact & Clean) */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Right Action Icons (Strictly Sized & Zero Overflow) */}
+          <div className="flex items-center gap-1.5 shrink-0">
             
             {/* Quick Search */}
             <button
               onClick={() => { triggerHaptic(); setIsSearchOpen(true)} }
-              className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/70 hover:text-white active:scale-95 transition-all"
+              className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/70 hover:text-white active:scale-95 transition-all shrink-0"
               title="Search"
             >
               <Search size={14} />
@@ -114,19 +114,18 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
             {/* Chef AI */}
             <button
               onClick={() => { triggerHaptic(); setIsAIOpen(true); }}
-              className="h-8 px-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-orange-500/50 flex items-center gap-1 text-white/80 hover:text-orange-400 active:scale-95 transition-all text-xs font-semibold"
+              className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-orange-500/50 flex items-center justify-center text-orange-400 active:scale-95 transition-all shrink-0"
               title="Ask Chef AI"
             >
-              <Sparkles size={13} className="text-orange-400" />
-              <span className="hidden xs:inline text-[11px]">AI</span>
+              <Sparkles size={13} />
             </button>
 
             {/* User Profile Avatar / Login */}
             {user ? (
-              <div className="relative">
+              <div className="relative shrink-0">
                 <button
                   onClick={() => { triggerHaptic(); setShowUserMenu(!showUserMenu); }}
-                  className="w-8 h-8 rounded-full border border-white/20 overflow-hidden hover:border-white active:scale-95 transition-all"
+                  className="w-8 h-8 rounded-full border-2 border-orange-500/60 overflow-hidden hover:border-orange-400 active:scale-95 transition-all shrink-0 cursor-pointer shadow-sm"
                 >
                   <img
                     src={dishdUser?.photoURL || user.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.uid}`}
@@ -169,8 +168,8 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
               </div>
             ) : (
               <button
-                onClick={() => { triggerHaptic(); login(); }}
-                className="px-3 py-1.5 rounded-full bg-orange-500 text-black font-black text-xs uppercase tracking-wider active:scale-95 transition-all"
+                onClick={() => { triggerHaptic(); login("/app"); }}
+                className="h-8 px-3 rounded-full bg-gradient-to-r from-orange-500 to-amber-400 text-black font-black text-[11px] uppercase tracking-wider active:scale-95 transition-all shadow-sm shrink-0 flex items-center justify-center cursor-pointer"
               >
                 Log In
               </button>

@@ -37,7 +37,14 @@ export function AppLayout({ children }: AppLayoutProps) {
     if (path.startsWith("/app/restaurant") || path.startsWith("/restaurant/")) return "Restaurant";
     if (path.startsWith("/app/lists") || path.startsWith("/lists")) return "Food Lists";
     if (path.startsWith("/app/list") || path.startsWith("/list/")) return "Curated Guide";
-    if (path.startsWith("/app/profile") || path.startsWith("/profile/")) return "Critic Profile";
+    if (path.startsWith("/app/profile") || path.startsWith("/profile")) {
+      const parts = path.split("/").filter(Boolean);
+      const identifier = parts[parts.length - 1];
+      if (identifier && identifier !== "profile" && identifier !== "app") {
+        return `@${identifier.toLowerCase()}`;
+      }
+      return "Profile";
+    }
     if (path.startsWith("/app/critics") || path.startsWith("/critics")) return "Verified Critics";
     if (path.startsWith("/app/map") || path.startsWith("/map")) return "Food Radar";
     if (path.startsWith("/app/journal") || path.startsWith("/journal")) return "Taste Journal";

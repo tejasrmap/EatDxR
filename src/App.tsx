@@ -90,10 +90,10 @@ interface AuthContextType {
   user: FirebaseUser | null;
   dishdUser: DishdUser | null;
   loading: boolean;
-  login: () => void;
+  login: (redirectUrl?: string) => void;
   logout: () => Promise<void>;
   isAuthModalOpen: boolean;
-  openAuthModal: () => void;
+  openAuthModal: (redirectUrl?: string) => void;
   closeAuthModal: () => void;
   updateDishdUser: (updated: Partial<DishdUser>) => void;
 }
@@ -192,9 +192,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const login = () => {
-    setIsAuthModalOpen(true);
-  };
 
   const logout = async () => {
     try {
@@ -219,6 +216,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
+
+  const login = (targetUrl?: string) => {
+    if (targetUrl) setRedirectUrl(targetUrl);
+    setIsAuthModalOpen(true);
+  };
+
+  const openAuthModal = (targetUrl?: string) => {
+    if (targetUrl) setRedirectUrl(targetUrl);
+    setIsAuthModalOpen(true);
+  };
+
   const isOnboarding = !onboardingDismissed && !!user && !!dishdUser && (!dishdUser.username || dishdUser.username === "");
 
   return (
@@ -230,13 +239,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login, 
         logout, 
         isAuthModalOpen, 
-        openAuthModal: () => setIsAuthModalOpen(true), 
-        closeAuthModal: () => setIsAuthModalOpen(false),
+        openAuthModal, 
+        closeAuthModal: () => { setIsAuthModalOpen(false); setRedirectUrl(null); },
         updateDishdUser
       }}
     >
       {children}
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => { setIsAuthModalOpen(false); setRedirectUrl(null); }} 
+        redirectUrl={redirectUrl}
+        onRedirectDone={() => setRedirectUrl(null)}
+      />
       {isOnboarding && (
         <EditProfileModal 
           isOpen={true} 
@@ -265,8 +279,8 @@ export function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark" storageKey="eatdxr-theme">
-        <AuthProvider>
-          <Router>
+        <Router>
+          <AuthProvider>
             <Routes>
               {/* 1. PUBLIC WEBSITE ROUTES (Wrapped in WebsiteLayout on web, AppLayout on Native APK) */}
               <Route 
@@ -536,8 +550,8 @@ export function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             <Toaster position="bottom-right" />
-          </Router>
-        </AuthProvider>
+          </AuthProvider>
+        </Router>
       </ThemeProvider>
     </ErrorBoundary>
   );

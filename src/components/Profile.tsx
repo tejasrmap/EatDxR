@@ -5,7 +5,7 @@ import { collection, query, where, onSnapshot, orderBy, doc, getDoc, getDocs, up
 import { db } from "../firebase";
 import { Review, User, Restaurant } from "../types";
 import { useAuth } from "../App";
-import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus, Edit3, Share2, UtensilsCrossed, Sparkles, ListOrdered, ShieldCheck, Award } from "lucide-react";
+import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus, Edit3, Share2, UtensilsCrossed, Sparkles, ListOrdered, ShieldCheck, Award, Layers, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { DiaryTable } from "./DiaryTable";
 import { FollowListModal } from "./FollowListModal";
@@ -111,8 +111,21 @@ export const Profile: React.FC = () => {
     }
   };
 
-  const shareProfile = () => {
+  const shareProfile = async () => {
+    triggerHaptic();
     const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${user?.displayName || "Critic"} on Madeater`,
+          text: `Check out ${user?.displayName || "Critic"}'s gastronomic profile on Madeater!`,
+          url,
+        });
+        return;
+      } catch {
+        // User cancelled or share failed, fallback
+      }
+    }
     navigator.clipboard.writeText(url);
     toast.success("Profile link copied!");
   };
@@ -234,20 +247,39 @@ export const Profile: React.FC = () => {
     );
   }
 
+  const primaryCity = (() => {
+    if (reviews.length === 0) return user.location || null;
+    const cities = reviews.map(r => {
+      if (r.city) return r.city.trim();
+      const parts = r.restaurantLocation?.split(',') || [];
+      return parts[parts.length - 1]?.trim() || null;
+    }).filter(Boolean);
+    if (cities.length === 0) return user.location || null;
+    const counts: Record<string, number> = {};
+    cities.forEach(c => {
+      if (c) counts[c] = (counts[c] || 0) + 1;
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+  })();
+
   return (
-    <div className="max-w-6xl mx-auto px-6 py-20 elite-motion-safe">
-      {/* Letterboxd-Elite Profile Header */}
-      <div className="flex flex-col md:flex-row items-center md:items-start gap-10 md:gap-16 mb-20">
-        <div className="relative group shrink-0">
-          <div className="absolute -inset-4 bg-gradient-to-br from-orange-500/20 to-rose-500/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000 rounded-full will-change-transform" />
-          <img
-            src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`}
-            alt={user.displayName}
-            className="w-40 h-40 md:w-48 md:h-48 rounded-full border border-border shadow-2xl object-cover cursor-pointer hover:scale-105 hover:border-muted-foreground transition-all duration-300 relative z-10"
-            referrerPolicy="no-referrer"
-            loading="lazy"
-            onClick={() => currentUser?.uid === user.uid && profileFileInputRef.current?.click()}
-          />
+    <div className="max-w-2xl mx-auto px-3 sm:px-6 pt-2 sm:pt-4 pb-28 elite-motion-safe">
+      {/* 1. Instagram Profile Header Row (Avatar + 4 Stats) */}
+      <div className="flex items-center gap-4 sm:gap-7 mb-3">
+        {/* Left: Avatar with Instagram gradient ring */}
+        <div className="relative shrink-0 select-none">
+          <div className="p-[2.5px] bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 rounded-full shadow-lg">
+            <div className="p-0.5 bg-black rounded-full">
+              <img
+                src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`}
+                alt={user.displayName}
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                referrerPolicy="no-referrer"
+                loading="lazy"
+                onClick={() => currentUser?.uid === user.uid && profileFileInputRef.current?.click()}
+              />
+            </div>
+          </div>
           <input
             type="file"
             ref={profileFileInputRef}
@@ -255,273 +287,394 @@ export const Profile: React.FC = () => {
             accept="image/*"
             onChange={handleProfilePicChange}
           />
+          {currentUser?.uid === user.uid && (
+            <button
+              onClick={() => profileFileInputRef.current?.click()}
+              className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-orange-500 text-black border-2 border-black flex items-center justify-center shadow-md active:scale-90 transition-transform cursor-pointer"
+              title="Change avatar"
+            >
+              <Plus size={13} strokeWidth={3} />
+            </button>
+          )}
           {isUpdatingPhoto && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/60 rounded-full z-20">
-              <Loader2 className="animate-spin text-muted-foreground" />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/75 rounded-full z-20">
+              <Loader2 className="animate-spin text-orange-400 w-6 h-6" />
             </div>
           )}
         </div>
 
-        <div className="flex-1 w-full flex flex-col items-center md:items-start text-center md:text-left">
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            {user.username && (
-              <span className="font-medium text-xs text-foreground/80 bg-muted/50 backdrop-blur-md px-4 py-1.5 rounded-full border border-border">
-                @{user.username}
-              </span>
-            )}
-            <span className="flex items-center gap-1.5 font-black text-xs uppercase tracking-wider text-orange-400 bg-orange-500/10 border border-orange-500/30 px-3.5 py-1.5 rounded-full shadow-sm">
-              <Award size={13} className="text-orange-400" />
-              <span>{user.criticLevel || "Food Critic"}</span>
-              <span className="text-white/40">• {user.credibilityScore || 94}/100 Credibility</span>
+        {/* Right: Instagram 4-Column Stats */}
+        <div className="flex-1 grid grid-cols-4 gap-1 text-center py-1 select-none">
+          <div 
+            onClick={() => { triggerHaptic(); setActiveTab("profile"); }} 
+            className="cursor-pointer active:scale-95 transition-transform"
+          >
+            <span className="text-base sm:text-lg font-black text-white tracking-tight block leading-tight">
+              {reviews.length}
+            </span>
+            <span className="text-[10px] sm:text-[11px] text-zinc-400 font-medium tracking-tight block mt-0.5">
+              Logs
             </span>
           </div>
 
-          <div className="flex flex-col md:flex-row items-center md:items-baseline gap-6 mb-8">
-            <div className="flex flex-wrap items-baseline gap-4 justify-center md:justify-start">
-                <h1 className="text-4xl md:text-5xl font-semibold text-foreground tracking-tight leading-none">{user.displayName}</h1>
-                {user.pronouns && (
-                    <span className="font-medium text-[11px] text-muted-foreground border border-border px-2.5 py-1 rounded-full bg-muted/30">{user.pronouns}</span>
-                )}
-            </div>
-            
-            <div className="flex items-center gap-3">
-              {currentUser?.uid !== user.uid ? (
-                <button
-                  onClick={toggleFollow}
-                  disabled={isUpdatingFollow}
-                  className={`px-8 py-2.5 font-medium text-sm rounded-full transition-all shadow-lg hover:scale-105 ${isFollowing
-                      ? "bg-muted text-foreground border border-border"
-                      : "bg-foreground text-background border border-foreground"
-                    }`}
-                >
-                  {isFollowing ? "Following" : "Follow Critic"}
-                </button>
-              ) : (
-                <button
-                  onClick={() => setIsEditModalOpen(true)}
-                  className="p-2.5 rounded-full glass-panel border border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground transition-all"
-                  title="Edit Profile"
-                >
-                  <Edit3 size={18} />
-                </button>
-              )}
-
-              <Link
-                to={getAppUrl('/wrapped')}
-                onClick={() => triggerHaptic()}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/10 hover:bg-orange-500 hover:text-black border border-white/15 text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 touch-manipulation"
-              >
-                <Sparkles size={13} />
-                <span>Year in Food</span>
-              </Link>
-            </div>
+          <div 
+            onClick={() => { triggerHaptic(); setFollowModalType("followers"); }} 
+            className="cursor-pointer active:scale-95 transition-transform group/stat"
+          >
+            <span className="text-base sm:text-lg font-black text-white group-hover/stat:text-orange-400 tracking-tight block leading-tight transition-colors">
+              {followerCount}
+            </span>
+            <span className="text-[10px] sm:text-[11px] text-zinc-400 font-medium tracking-tight block mt-0.5">
+              Followers
+            </span>
           </div>
 
-          <div className="flex items-center justify-center md:justify-start gap-12 md:gap-16 border-t border-border pt-8 w-full">
-            <div className="text-center md:text-left">
-              <span className="text-4xl font-semibold text-foreground tracking-tight">{reviews.length}</span>
-              <p className="font-medium tracking-wide text-[11px] text-muted-foreground mt-2">Logs recorded</p>
-            </div>
-            <div
-              className="text-center md:text-left cursor-pointer group/stat"
-              onClick={() => setFollowModalType("followers")}
-            >
-              <span className="text-4xl font-semibold text-foreground tracking-tight group-hover/stat:text-foreground/80 transition-colors">{followerCount}</span>
-              <p className="font-medium tracking-wide text-[11px] text-muted-foreground group-hover/stat:text-foreground transition-colors mt-2">Followers</p>
-            </div>
-            <div
-              className="text-center md:text-left cursor-pointer group/stat"
-              onClick={() => setFollowModalType("following")}
-            >
-              <span className="text-4xl font-semibold text-foreground tracking-tight group-hover/stat:text-foreground/80 transition-colors">
-                {user.stats?.followingList?.length || user.stats?.following || 0}
-              </span>
-              <p className="font-medium tracking-wide text-[11px] text-muted-foreground group-hover/stat:text-foreground transition-colors mt-2">Following</p>
-            </div>
-            <div className="text-center md:text-left">
-              <span className="text-4xl font-semibold text-foreground tracking-tight">
-                 {reviews.length > 0 
-                  ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
-                  : "0.0"}
-              </span>
-              <p className="font-medium tracking-wide text-[11px] text-muted-foreground mt-2">Avg Rating</p>
-            </div>
+          <div 
+            onClick={() => { triggerHaptic(); setFollowModalType("following"); }} 
+            className="cursor-pointer active:scale-95 transition-transform group/stat"
+          >
+            <span className="text-base sm:text-lg font-black text-white group-hover/stat:text-orange-400 tracking-tight block leading-tight transition-colors">
+              {user.stats?.followingList?.length || user.stats?.following || 0}
+            </span>
+            <span className="text-[10px] sm:text-[11px] text-zinc-400 font-medium tracking-tight block mt-0.5">
+              Following
+            </span>
+          </div>
+
+          <div className="active:scale-95 transition-transform">
+            <span className="text-base sm:text-lg font-black text-orange-400 tracking-tight block leading-tight">
+              {reviews.length > 0 
+                ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
+                : "0.0"}
+            </span>
+            <span className="text-[10px] sm:text-[11px] text-zinc-400 font-medium tracking-tight block mt-0.5">
+              Avg Rating
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center justify-center md:justify-start gap-8 md:gap-10 border-b border-border mb-12 overflow-x-auto scrollbar-hide">
-        {[
-          { id: "profile", label: "Overview", icon: Grid },
-          { id: "diary", label: "Diary", icon: Clock },
-          { id: "taste", label: "Taste DNA", icon: Sparkles },
-          { id: "lists", label: "Lists", icon: ListOrdered },
-          { id: "eatlist", label: "Want-to-Eat", icon: Heart },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 pb-5 font-medium text-sm tracking-wide relative whitespace-nowrap transition-all ${activeTab === tab.id ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            <tab.icon size={16} className={activeTab === tab.id ? "text-foreground" : "text-inherit"} />
-            {tab.label}
-            {activeTab === tab.id && (
-              <motion.div 
-                layoutId="profileTab"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground"
-              />
-            )}
-          </button>
-        ))}
+      {/* 2. Identity & Bio Section */}
+      <div className="space-y-1.5 mb-3 text-left">
+        {/* Full Name & Verification */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <h1 className="text-sm sm:text-base font-black text-white tracking-tight">
+            {user.displayName}
+          </h1>
+          <ShieldCheck size={14} className="text-orange-400 fill-orange-400/20 shrink-0" />
+          {user.pronouns && (
+            <span className="text-[11px] text-zinc-500 font-normal">({user.pronouns})</span>
+          )}
+        </div>
+
+        {/* Critic Credibility Badge */}
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/30 text-[10px] font-black uppercase tracking-wider text-orange-400">
+          <Award size={11} className="text-orange-400" />
+          <span>{user.criticLevel || "Food Critic"}</span>
+          <span className="text-white/40">•</span>
+          <span className="text-white/90">{user.credibilityScore || 94}/100 Credibility</span>
+        </div>
+
+        {/* Bio */}
+        {user.bio ? (
+          <p className="text-xs sm:text-sm text-zinc-300 font-normal leading-relaxed whitespace-pre-line pt-0.5">
+            {user.bio}
+          </p>
+        ) : (
+          <p className="text-xs text-zinc-500 font-normal italic pt-0.5">
+            Culinary critic & taste explorer documenting noteworthy dishes 🍷
+          </p>
+        )}
+
+        {/* Territory & Favorite Cuisines */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          {primaryCity && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-zinc-300 bg-zinc-900 border border-white/10 px-2.5 py-0.5 rounded-full">
+              <MapPin size={9} className="text-orange-400" />
+              <span>{primaryCity}</span>
+            </span>
+          )}
+          {user.favoriteCuisines && user.favoriteCuisines.length > 0 && (
+            user.favoriteCuisines.map((cuisine, idx) => (
+              <span key={idx} className="text-[10px] font-semibold text-zinc-400 bg-zinc-900 border border-white/10 px-2 py-0.5 rounded-full">
+                #{cuisine}
+              </span>
+            ))
+          )}
+        </div>
       </div>
 
+      {/* 3. Instagram Action Buttons Row */}
+      <div className="flex items-center gap-2 mb-3.5">
+        {currentUser?.uid === user.uid ? (
+          <>
+            <button
+              onClick={() => { triggerHaptic(); setIsEditModalOpen(true); }}
+              className="flex-1 py-1.5 px-3 bg-zinc-900 hover:bg-zinc-800 active:scale-[0.98] border border-white/15 rounded-lg text-xs font-bold text-white text-center transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <Edit3 size={13} />
+              <span>Edit Profile</span>
+            </button>
+
+            <button
+              onClick={shareProfile}
+              className="flex-1 py-1.5 px-3 bg-zinc-900 hover:bg-zinc-800 active:scale-[0.98] border border-white/15 rounded-lg text-xs font-bold text-white text-center transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <Share2 size={13} />
+              <span>Share Profile</span>
+            </button>
+
+            <Link
+              to={getAppUrl('/wrapped')}
+              onClick={() => triggerHaptic()}
+              className="py-1.5 px-3 bg-gradient-to-r from-orange-500/20 to-amber-500/20 hover:from-orange-500/30 border border-orange-500/30 rounded-lg text-xs font-black uppercase tracking-wider text-orange-400 flex items-center justify-center gap-1.5 shrink-0 transition-all active:scale-[0.98]"
+            >
+              <Sparkles size={13} />
+              <span className="hidden xs:inline">Year in Food</span>
+            </Link>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => { triggerHaptic(); toggleFollow(); }}
+              disabled={isUpdatingFollow}
+              className={`flex-1 py-1.5 px-4 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-[0.98] cursor-pointer ${
+                isFollowing
+                  ? "bg-zinc-900 text-white border border-white/15 hover:bg-zinc-800"
+                  : "bg-gradient-to-r from-orange-500 to-amber-400 hover:brightness-110 text-black font-black shadow-md"
+              }`}
+            >
+              {isFollowing ? "Following" : "Follow"}
+            </button>
+
+            <button
+              onClick={shareProfile}
+              className="py-1.5 px-4 bg-zinc-900 hover:bg-zinc-800 active:scale-[0.98] border border-white/15 rounded-lg text-xs font-bold text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <Share2 size={13} />
+              <span>Share</span>
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* 4. Instagram Story Highlights Tray */}
+      <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto pb-2.5 mb-2 scrollbar-hide pt-0.5 select-none">
+        {/* Taste DNA */}
+        <button
+          onClick={() => { triggerHaptic(); setActiveTab("taste"); }}
+          className="flex flex-col items-center gap-1 shrink-0 group active:scale-95 transition-transform cursor-pointer"
+        >
+          <div className={`w-13 h-13 sm:w-14 sm:h-14 rounded-full p-[2px] transition-all ${
+            activeTab === "taste" 
+              ? "bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600" 
+              : "bg-zinc-800 group-hover:bg-amber-500/50"
+          }`}>
+            <div className="w-full h-full rounded-full bg-zinc-950 border border-white/10 flex items-center justify-center text-orange-400 group-hover:text-white transition-colors">
+              <Sparkles size={19} />
+            </div>
+          </div>
+          <span className="text-[10px] font-semibold text-zinc-300 group-hover:text-white truncate max-w-[62px]">Taste DNA</span>
+        </button>
+
+        {/* Top Rated */}
+        <button
+          onClick={() => { triggerHaptic(); setActiveTab("diary"); }}
+          className="flex flex-col items-center gap-1 shrink-0 group active:scale-95 transition-transform cursor-pointer"
+        >
+          <div className={`w-13 h-13 sm:w-14 sm:h-14 rounded-full p-[2px] transition-all ${
+            activeTab === "diary" 
+              ? "bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600" 
+              : "bg-zinc-800 group-hover:bg-amber-500/50"
+          }`}>
+            <div className="w-full h-full rounded-full bg-zinc-950 border border-white/10 flex items-center justify-center text-amber-400">
+              <Star size={19} className="fill-amber-400/20" />
+            </div>
+          </div>
+          <span className="text-[10px] font-semibold text-zinc-300 group-hover:text-white truncate max-w-[62px]">Top Rated</span>
+        </button>
+
+        {/* Radar Map */}
+        <Link
+          to={getAppUrl("/map")}
+          onClick={() => triggerHaptic()}
+          className="flex flex-col items-center gap-1 shrink-0 group active:scale-95 transition-transform cursor-pointer"
+        >
+          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-full p-[2px] bg-zinc-800 group-hover:bg-emerald-500/50 transition-all">
+            <div className="w-full h-full rounded-full bg-zinc-950 border border-white/10 flex items-center justify-center text-emerald-400">
+              <MapPin size={19} />
+            </div>
+          </div>
+          <span className="text-[10px] font-semibold text-zinc-300 group-hover:text-white truncate max-w-[62px]">Food Radar</span>
+        </Link>
+
+        {/* Lists */}
+        <button
+          onClick={() => { triggerHaptic(); setActiveTab("lists"); }}
+          className="flex flex-col items-center gap-1 shrink-0 group active:scale-95 transition-transform cursor-pointer"
+        >
+          <div className={`w-13 h-13 sm:w-14 sm:h-14 rounded-full p-[2px] transition-all ${
+            activeTab === "lists" 
+              ? "bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600" 
+              : "bg-zinc-800 group-hover:bg-blue-500/50"
+          }`}>
+            <div className="w-full h-full rounded-full bg-zinc-950 border border-white/10 flex items-center justify-center text-blue-400">
+              <ListOrdered size={19} />
+            </div>
+          </div>
+          <span className="text-[10px] font-semibold text-zinc-300 group-hover:text-white truncate max-w-[62px]">Lists</span>
+        </button>
+
+        {/* Eatlist */}
+        <button
+          onClick={() => { triggerHaptic(); setActiveTab("eatlist"); }}
+          className="flex flex-col items-center gap-1 shrink-0 group active:scale-95 transition-transform cursor-pointer"
+        >
+          <div className={`w-13 h-13 sm:w-14 sm:h-14 rounded-full p-[2px] transition-all ${
+            activeTab === "eatlist" 
+              ? "bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600" 
+              : "bg-zinc-800 group-hover:bg-rose-500/50"
+          }`}>
+            <div className="w-full h-full rounded-full bg-zinc-950 border border-white/10 flex items-center justify-center text-rose-400">
+              <Heart size={19} className="fill-rose-400/20" />
+            </div>
+          </div>
+          <span className="text-[10px] font-semibold text-zinc-300 group-hover:text-white truncate max-w-[62px]">Want-to-Eat</span>
+        </button>
+      </div>
+
+      {/* 5. Instagram Sticky Tab Bar */}
+      <div className="sticky top-14 z-30 bg-black/95 backdrop-blur-xl border-t border-b border-white/10 -mx-3 sm:-mx-6 px-3 sm:px-6 mb-2.5 select-none">
+        <div className="flex items-center justify-around">
+          {[
+            { id: "profile", label: "Grid", icon: Grid },
+            { id: "diary", label: "Diary", icon: Clock },
+            { id: "taste", label: "Taste DNA", icon: Sparkles },
+            { id: "eatlist", label: "Eatlist", icon: Heart },
+            { id: "lists", label: "Lists", icon: ListOrdered },
+          ].map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => { triggerHaptic(); setActiveTab(tab.id as any); }}
+                className={`flex-1 py-2.5 flex flex-col items-center justify-center relative transition-colors cursor-pointer ${
+                  isActive ? "text-white" : "text-zinc-500 hover:text-zinc-300"
+                }`}
+                title={tab.label}
+              >
+                <tab.icon size={19} className={isActive ? "stroke-[2.3]" : "stroke-[1.6]"} />
+                {isActive && (
+                  <motion.div
+                    layoutId="instagramActiveTab"
+                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-white shadow-[0_0_8px_rgba(255,255,255,0.6)]"
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 6. Tab Contents */}
       <AnimatePresence mode="wait">
+        {/* TAB 1: INSTAGRAM 3-COLUMN SQUARE PHOTO GRID */}
         {activeTab === "profile" && (
           <motion.div
             key="profile"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
-            className="grid grid-cols-1 lg:grid-cols-3 gap-20 w-full"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="w-full"
           >
-            <div className="lg:col-span-2">
-              <div className="flex items-center justify-between mb-8 border-b border-border pb-4">
-                <div className="flex items-center gap-3">
-                  <h2 className="font-medium text-lg text-foreground/80">The Gastronomic Stream</h2>
-                </div>
-                <span className="font-medium text-xs text-muted-foreground bg-muted/30 border border-border rounded-full px-3 py-1">{reviews.length} Experiences</span>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-12">
+            {reviews.length > 0 ? (
+              <div className="grid grid-cols-3 gap-0.5 sm:gap-1">
                 {reviews.map((review, i) => {
                   const allImages = review.dishes?.filter(d => d.image).map(d => d.image) || [];
                   const firstImage = allImages[0];
                   return (
                     <motion.div
                       key={review.id}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: i * 0.05 }}
-                      onClick={() => setSelectedReview(review)}
-                      className="aspect-[3/4] bg-muted/30 rounded-2xl overflow-hidden border border-border group relative shadow-lg hover:border-muted-foreground transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-2xl"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: Math.min(i * 0.02, 0.2) }}
+                      onClick={() => { triggerHaptic(); setSelectedReview(review); }}
+                      className="aspect-square bg-zinc-900 relative group overflow-hidden cursor-pointer active:scale-[0.98] transition-transform select-none rounded-none sm:rounded-md"
                     >
                       {firstImage ? (
                         <img
                           src={firstImage}
                           alt={review.restaurantName}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           referrerPolicy="no-referrer"
                           loading="lazy"
                         />
                       ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-muted">
-                           <UtensilsCrossed size={20} className="text-muted-foreground mb-3" />
-                           <span className="font-medium text-xs text-muted-foreground">{review.restaurantName}</span>
+                        <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center bg-zinc-900">
+                          <UtensilsCrossed size={18} className="text-zinc-600 mb-1" />
+                          <span className="text-[10px] font-bold text-zinc-400 line-clamp-2 px-1 leading-tight">
+                            {review.restaurantName}
+                          </span>
                         </div>
                       )}
 
+                      {/* Rating Badge in Corner */}
+                      <div className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 px-1.5 py-0.5 rounded-md bg-black/75 backdrop-blur-md border border-white/10 text-[9px] sm:text-[10px] font-black text-amber-400 flex items-center gap-0.5 shadow-sm">
+                        <Star size={9} className="fill-amber-400 text-amber-400" />
+                        <span>{review.rating.toFixed(1)}</span>
+                      </div>
+
+                      {/* Multiple Photos Indicator if > 1 */}
                       {allImages.length > 1 && (
-                        <div className="absolute top-4 right-4 p-1.5 bg-background/50 backdrop-blur-md border border-border rounded-full z-10">
-                          <Plus size={14} className="text-foreground" />
+                        <div className="absolute top-1 left-1 sm:top-1.5 sm:left-1.5 p-1 rounded-md bg-black/60 backdrop-blur-md text-white/80">
+                          <Layers size={11} />
                         </div>
                       )}
 
-                      <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/40 to-transparent opacity-0 group-hover:opacity-100 flex flex-col items-center justify-end p-6 transition-all duration-500">
-                        <StarRating rating={review.rating} size={14} className="flex items-center gap-0.5 text-foreground mb-2" />
-                        <p className="font-medium text-sm text-foreground truncate w-full text-center mb-3">{review.restaurantName}</p>
-                        <div className="flex items-center gap-4 text-muted-foreground">
-                          <div className="flex items-center gap-1.5">
-                            <Heart size={14} className={review.likes ? "fill-rose-500 text-rose-500" : ""} />
-                            <span className="text-xs font-medium">{review.likes || 0}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <MessageSquare size={14} />
-                            <span className="text-xs font-medium">4</span>
-                          </div>
+                      {/* Hover / Tap overlay showing restaurant name & stats */}
+                      <div className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center p-2 text-center transition-opacity duration-200">
+                        <p className="text-[11px] font-bold text-white line-clamp-2 leading-tight mb-1.5">
+                          {review.restaurantName}
+                        </p>
+                        <div className="flex items-center gap-3 text-white/90 text-[10px] font-bold">
+                          <span className="flex items-center gap-1">
+                            <Heart size={11} className="fill-white text-white" />
+                            {review.likes || 0}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MessageSquare size={11} className="fill-white text-white" />
+                            4
+                          </span>
                         </div>
                       </div>
                     </motion.div>
                   );
                 })}
               </div>
-
-              {reviews.length === 0 && (
-                <div className="py-32 text-center bg-muted/30 border border-dashed border-border rounded-3xl p-12">
-                  <p className="text-sm font-medium text-muted-foreground">Empty stream.</p>
+            ) : (
+              /* Instagram-Style Empty State */
+              <div className="py-14 px-4 text-center flex flex-col items-center justify-center border border-dashed border-zinc-800 rounded-2xl bg-zinc-950/40 my-3">
+                <div className="w-13 h-13 rounded-full border border-white/15 flex items-center justify-center text-zinc-400 mb-2.5 bg-zinc-900">
+                  <Camera size={24} />
                 </div>
-              )}
-            </div>
-
-            {/* Sidebar Section */}
-            <div className="space-y-16">
-              {/* BIO Section */}
-              <section>
-                <h3 className="font-medium uppercase tracking-wider text-[11px] text-muted-foreground mb-6 pb-4 border-b border-border">Biography</h3>
-                {user.bio ? (
-                   <p className="text-base text-foreground/80 leading-relaxed font-normal">
-                      "{user.bio}"
-                   </p>
-                ) : (
-                   <p className="text-sm text-muted-foreground font-normal">A mysterious critic with no bio captured yet...</p>
-                )}
-              </section>
-
-              {/* CUISINES Section */}
-              <section>
-                <h3 className="font-medium uppercase tracking-wider text-[11px] text-muted-foreground mb-6 pb-4 border-b border-border">Expertise</h3>
-                <div className="flex flex-wrap gap-3">
-                  {(user.favoriteCuisines && user.favoriteCuisines.length > 0) ? (
-                     user.favoriteCuisines.map((cuisine, idx) => (
-                      <span key={idx} className="bg-muted/30 border border-border text-foreground rounded-full px-4 py-1.5 font-medium text-xs hover:bg-muted/50 transition-all cursor-default">
-                          {cuisine}
-                      </span>
-                     ))
-                  ) : (
-                     <span className="text-[11px] font-medium text-muted-foreground">None added</span>
-                  )}
-                </div>
-              </section>
-
-              {/* STATS Section */}
-              <section>
-                <h3 className="font-medium uppercase tracking-wider text-[11px] text-muted-foreground mb-6 pb-4 border-b border-border">Analytics</h3>
-                <div className="space-y-6">
-                   <div className="flex justify-between items-end">
-                      <span className="font-medium tracking-wide text-xs text-muted-foreground">Mean Rating</span>
-                      <span className="text-2xl font-semibold text-foreground tracking-tight">
-                          {reviews.length > 0 
-                             ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
-                             : "0.0"}
-                      </span>
-                   </div>
-                   <div className="flex justify-between items-end">
-                      <span className="font-medium tracking-wide text-xs text-muted-foreground">Primary Territory</span>
-                      <span className="text-xl font-medium text-foreground/80 tracking-tight">
-                          {(() => {
-                             if (reviews.length === 0) return "N/A";
-                             const cities = reviews.map(r => {
-                               if (r.city) return r.city.trim();
-                               const parts = r.restaurantLocation?.split(',') || [];
-                               return parts[parts.length - 1]?.trim() || null;
-                             }).filter(Boolean);
-                             
-                             if (cities.length === 0) return "Global";
-                             const counts: Record<string, number> = {};
-                             cities.forEach(c => {
-                               if (c) counts[c] = (counts[c] || 0) + 1;
-                             });
-                             return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
-                          })()}
-                      </span>
-                   </div>
-                </div>
-              </section>
-            </div>
+                <h3 className="text-sm font-bold text-white mb-1">No Food Logs Yet</h3>
+                <p className="text-xs text-zinc-400 max-w-xs mb-3.5">
+                  When you critique dining experiences and snap dish photos, they will appear here on your profile grid.
+                </p>
+                <Link
+                  to={getAppUrl("/app")}
+                  onClick={() => triggerHaptic()}
+                  className="px-4 py-2 rounded-full bg-gradient-to-r from-orange-500 to-amber-400 text-black text-xs font-black uppercase tracking-wider shadow-lg active:scale-95 transition-transform"
+                >
+                  Record Food Critique
+                </Link>
+              </div>
+            )}
           </motion.div>
         )}
 
+        {/* TAB 2: DIARY TABLE & RATINGS DISTRIBUTION */}
         {activeTab === "diary" && (
           <motion.div
             key="diary"
@@ -529,63 +682,21 @@ export const Profile: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ type: 'spring', stiffness: 500, damping: 45 }}
-            className="w-full flex flex-col pb-16"
+            className="w-full flex flex-col pb-8 pt-1"
           >
             <DiaryTable reviews={reviews} showUser={false} />
             {reviews.length > 0 && (
-               <div className="mt-16 pt-8 border-t border-white/5 max-w-2xl mx-auto w-full px-4">
-                  <div className="text-center mb-6">
-                     <h3 className="text-xs md:text-sm font-medium tracking-widest uppercase text-white/60">Ratings Distribution</h3>
-                  </div>
-                  <RatingGraph reviews={reviews} />
-               </div>
-            )}
-          </motion.div>
-        )}
-
-        {activeTab === "eatlist" && (
-          <motion.div
-            key="eatlist"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 45 }}
-            className="w-full"
-          >
-            {loadingEatlist ? (
-              <div className="py-20 flex flex-col items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground mb-4" />
-                <p className="text-xs uppercase tracking-widest font-bold text-muted-foreground">Loading Eatlist...</p>
-              </div>
-            ) : eatlistRestaurants.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {eatlistRestaurants.map(rest => (
-                  <Link
-                    key={rest.id}
-                    to={getAppUrl(`/restaurant/${rest.id}`)}
-                    onClick={() => triggerHaptic()}
-                    className="group bg-muted/30 border border-border rounded-2xl overflow-hidden hover:border-muted-foreground transition-all p-3.5 sm:p-4 flex gap-3.5 sm:gap-4 active:scale-[0.98] touch-manipulation"
-                  >
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 border border-border">
-                      <img loading="lazy" decoding="async" src={rest.image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                    </div>
-                    <div className="flex-1 min-w-0 flex flex-col justify-center">
-                      <h3 className="font-semibold text-sm sm:text-base text-foreground group-hover:text-foreground/80 transition-colors truncate">{rest.name}</h3>
-                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-0.5 sm:mt-1">{rest.cuisine}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5 sm:mt-1 truncate">{rest.location}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="w-full text-center py-16 sm:py-20 border border-dashed border-border rounded-2xl">
-                <p className="text-muted-foreground italic serif text-xs sm:text-sm">Your Eatlist (Watchlist) is currently empty.</p>
-                <Link to={getAppUrl("/restaurants")} onClick={() => triggerHaptic()} className="inline-block mt-4 text-[10px] uppercase tracking-widest font-bold text-orange-500 hover:text-orange-400">Explore Restaurants</Link>
+              <div className="mt-8 pt-6 border-t border-white/10 max-w-2xl mx-auto w-full px-2">
+                <div className="text-center mb-4">
+                  <h3 className="text-xs font-bold tracking-widest uppercase text-white/60">Ratings Distribution</h3>
+                </div>
+                <RatingGraph reviews={reviews} />
               </div>
             )}
           </motion.div>
         )}
 
+        {/* TAB 3: TASTE DNA */}
         {activeTab === "taste" && (
           <motion.div
             key="taste"
@@ -593,12 +704,58 @@ export const Profile: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ type: 'spring', stiffness: 500, damping: 45 }}
-            className="w-full"
+            className="w-full pt-1"
           >
             <TasteDNAView user={user} />
           </motion.div>
         )}
 
+        {/* TAB 4: WANT-TO-EAT (EATLIST) */}
+        {activeTab === "eatlist" && (
+          <motion.div
+            key="eatlist"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 45 }}
+            className="w-full pt-1"
+          >
+            {loadingEatlist ? (
+              <div className="py-20 flex flex-col items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-orange-400 mb-3" />
+                <p className="text-xs uppercase tracking-widest font-bold text-zinc-400">Loading Want-to-Eat...</p>
+              </div>
+            ) : eatlistRestaurants.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {eatlistRestaurants.map(rest => (
+                  <Link
+                    key={rest.id}
+                    to={getAppUrl(`/restaurant/${rest.id}`)}
+                    onClick={() => triggerHaptic()}
+                    className="group bg-zinc-900/60 border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all p-3 flex gap-3 active:scale-[0.98] touch-manipulation"
+                  >
+                    <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-white/10">
+                      <img loading="lazy" decoding="async" src={rest.image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=200&q=80`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    </div>
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      <h3 className="font-bold text-sm text-white group-hover:text-orange-400 transition-colors truncate">{rest.name}</h3>
+                      <p className="text-[10px] uppercase tracking-wider text-orange-400/90 mt-0.5">{rest.cuisine}</p>
+                      <p className="text-[10px] text-zinc-400 mt-0.5 truncate">{rest.location}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="w-full text-center py-14 border border-dashed border-zinc-800 rounded-2xl my-2">
+                <Heart size={22} className="mx-auto text-zinc-600 mb-2" />
+                <p className="text-zinc-400 text-xs sm:text-sm">Your Want-to-Eat list is currently empty.</p>
+                <Link to={getAppUrl("/restaurants")} onClick={() => triggerHaptic()} className="inline-block mt-3 text-[10px] uppercase tracking-widest font-black text-orange-400 hover:text-orange-300">Explore Restaurants →</Link>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* TAB 5: CURATED LISTS */}
         {activeTab === "lists" && (
           <motion.div
             key="lists"
@@ -606,29 +763,29 @@ export const Profile: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ type: 'spring', stiffness: 500, damping: 45 }}
-            className="w-full"
+            className="w-full pt-1"
           >
-            <div className="flex items-center justify-between mb-6 sm:mb-8 pb-4 border-b border-border">
-              <h3 className="font-bold uppercase tracking-wider text-xs text-muted-foreground">Curated Food Collections</h3>
+            <div className="flex items-center justify-between mb-3.5 pb-2 border-b border-white/10">
+              <h3 className="font-bold uppercase tracking-wider text-xs text-zinc-400">Curated Food Collections</h3>
               <Link to={getAppUrl("/lists")} onClick={() => triggerHaptic()} className="text-xs text-orange-400 hover:text-orange-300 font-bold uppercase tracking-wider">Explore Community Lists →</Link>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               {MOCK_LISTS.slice(0, 2).map((list) => (
                 <Link
                   key={list.id}
                   to={getAppUrl(`/list/${list.id}`)}
                   onClick={() => triggerHaptic()}
-                  className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-muted/30 border border-border hover:border-muted-foreground transition-all flex flex-col justify-between group active:scale-[0.98] touch-manipulation"
+                  className="p-4 rounded-2xl bg-zinc-900/60 border border-white/10 hover:border-white/20 transition-all flex flex-col justify-between group active:scale-[0.98] touch-manipulation"
                 >
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">Curated List</span>
-                    <h4 className="text-base font-bold text-foreground group-hover:text-orange-400 transition-colors">{list.title}</h4>
-                    <p className="text-xs text-muted-foreground line-clamp-2 font-serif italic">"{list.description}"</p>
+                    <h4 className="text-sm font-bold text-white group-hover:text-orange-400 transition-colors">{list.title}</h4>
+                    <p className="text-xs text-zinc-400 line-clamp-2 italic">"{list.description}"</p>
                   </div>
-                  <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-xs text-zinc-400">
                     <span>{list.items?.length || 4} Entries</span>
-                    <span className="text-foreground font-bold group-hover:text-orange-400">View →</span>
+                    <span className="text-white font-bold group-hover:text-orange-400">View →</span>
                   </div>
                 </Link>
               ))}

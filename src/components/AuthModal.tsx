@@ -12,20 +12,36 @@ import { auth } from "../firebase";
 import { triggerHaptic, isNative } from "../services/nativeService";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
+import { useNavigate, useLocation } from "react-router-dom";
 import { X, Sparkles, Mail, Lock, User, ArrowRight, Loader2, ShieldCheck, CheckCircle2 } from "lucide-react";
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
+  redirectUrl?: string | null;
+  onRedirectDone?: () => void;
 }
 
-export function AuthModal({ isOpen, onClose }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: AuthModalProps) {
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleSuccess = (msg: string) => {
+    toast.success(msg);
+    onClose();
+    if (redirectUrl) {
+      navigate(redirectUrl);
+      onRedirectDone?.();
+    } else if (location.pathname === "/" || isNative) {
+      navigate("/app");
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -50,8 +66,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       }
 
       await signInWithPopup(auth, provider);
-      toast.success("Welcome to Madeater!");
-      onClose();
+      handleSuccess("Welcome to Madeater!");
     } catch (error: any) {
       console.error("Google sign in error:", error);
       const code = error?.code || "";
@@ -102,12 +117,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             photoURL: `https://api.dicebear.com/7.x/bottts/svg?seed=${userCred.user.uid}`
           });
         }
-        toast.success("Account created! Welcome to Madeater.");
+        handleSuccess("Account created! Welcome to Madeater.");
       } else {
         await signInWithEmailAndPassword(auth, email.trim(), password);
-        toast.success("Welcome back to Madeater!");
+        handleSuccess("Welcome back to Madeater!");
       }
-      onClose();
     } catch (error: any) {
       console.error("Email auth error:", error);
       const code = error?.code || "";
@@ -142,15 +156,13 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           photoURL: `https://api.dicebear.com/7.x/bottts/svg?seed=${cred.user.uid}`
         });
       }
-      toast.success("Signed in as Guest Critic!");
-      onClose();
+      handleSuccess("Signed in as Guest Critic!");
     } catch (error: any) {
       console.warn("Firebase anonymous auth not enabled or failed:", error);
       // Fallback: try logging in with a default guest critic credential or show helpful message
       try {
         await signInWithEmailAndPassword(auth, "critic.guest@madeater.internal", "madeater2026");
-        toast.success("Signed in as Guest Critic!");
-        onClose();
+        handleSuccess("Signed in as Guest Critic!");
       } catch {
         // If guest user doesn't exist, create it once
         try {
@@ -159,8 +171,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             displayName: "Guest Critic",
             photoURL: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
           });
-          toast.success("Signed in as Guest Critic!");
-          onClose();
+          handleSuccess("Signed in as Guest Critic!");
         } catch (innerErr: any) {
           setErrorMessage("Guest login unavailable. Please sign up with any email & password.");
         }
