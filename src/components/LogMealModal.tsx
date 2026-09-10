@@ -1,7 +1,7 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { X, Star, Upload, Image as ImageIcon, Search, MapPin, Loader2, Plus, Trash2, Zap } from "lucide-react";
+import { X, Star, Upload, Image as ImageIcon, Search, MapPin, Loader2, Plus, Trash2, Zap, Flame } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../App";
@@ -18,7 +18,9 @@ const logSchema = z.object({
   dishes: z.array(z.object({
     name: z.string().min(1, "Dish name is required"),
     image: z.string().optional(),
-    rating: z.number().min(1).max(5)
+    rating: z.number().min(1).max(5),
+    isMustOrder: z.boolean().optional(),
+    flavorTags: z.array(z.string()).optional()
   })).min(1, "At least one dish is required"),
   rating: z.number().min(1).max(5),
   review: z.string().optional()
@@ -550,24 +552,39 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                                 placeholder="Highlight Title..."
                                 className="w-full bg-transparent border-b border-border pb-1.5 text-xs font-bold text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-orange-500/50 transition-all"
                               />
-                              <div className="flex items-center gap-2.5">
-                                <span className="text-[8px] uppercase font-black text-muted-foreground">Highlight Rating</span>
-                                <div className="flex gap-1">
-                                  {[1,2,3,4,5].map(star => (
-                                    <button
-                                      key={star}
-                                      type="button"
-                                      className="transition-transform active:scale-90"
-                                      onClick={() => setValue(`dishes.${index}.rating`, star)}
-                                    >
-                                      <Star 
-                                        size={12} 
-                                        fill={star <= (watchDishes[index]?.rating || 0) ? "currentColor" : "none"} 
-                                        className={star <= (watchDishes[index]?.rating || 0) ? "text-orange-500" : "text-muted-foreground/50"}
-                                      />
-                                    </button>
-                                  ))}
+                              <div className="flex items-center justify-between gap-2 flex-wrap pt-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[8px] uppercase font-black text-muted-foreground">Dish Score</span>
+                                  <div className="flex gap-1">
+                                    {[1,2,3,4,5].map(star => (
+                                      <button
+                                        key={star}
+                                        type="button"
+                                        className="transition-transform active:scale-90 cursor-pointer"
+                                        onClick={() => setValue(`dishes.${index}.rating`, star)}
+                                      >
+                                        <Star 
+                                          size={13} 
+                                          fill={star <= (watchDishes[index]?.rating || 0) ? "currentColor" : "none"} 
+                                          className={star <= (watchDishes[index]?.rating || 0) ? "text-amber-400" : "text-muted-foreground/30"}
+                                        />
+                                      </button>
+                                    ))}
+                                  </div>
                                 </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => setValue(`dishes.${index}.isMustOrder`, !watchDishes[index]?.isMustOrder)}
+                                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                    watchDishes[index]?.isMustOrder
+                                      ? "bg-amber-400 text-black shadow-sm font-black"
+                                      : "bg-muted text-muted-foreground hover:text-foreground border border-border"
+                                  }`}
+                                >
+                                  <Flame size={10} className={watchDishes[index]?.isMustOrder ? "text-black" : "text-amber-400"} />
+                                  <span>Must-Order</span>
+                                </button>
                               </div>
                             </div>
                             

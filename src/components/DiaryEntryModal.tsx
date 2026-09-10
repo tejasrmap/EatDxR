@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Review, Interaction } from "../types";
-import { X, Star, Heart, MessageSquare, Send, MapPin, Calendar, Clock, Share2, Loader2, ChevronLeft, ChevronRight, User } from "lucide-react";
+import { X, Star, Heart, MessageSquare, Send, MapPin, Calendar, Clock, Share2, Loader2, ChevronLeft, ChevronRight, User, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { formatDistanceToNow, format } from "date-fns";
 import { parseFirebaseDate } from "../lib/utils";
@@ -10,6 +10,7 @@ import { db } from "../firebase";
 import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp, updateDoc, increment, getDocs } from "firebase/firestore";
 import { toast } from "sonner";
 import { ShareMenu } from "./ShareMenu";
+import { StoryCardModal } from "./StoryCardModal";
 import { StarRating } from "./StarRating";
 
 interface DiaryEntryModalProps {
@@ -27,6 +28,7 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
   const [isCommentLoading, setIsCommentLoading] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
+  const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
 
   useEffect(() => {
     if (!review) return;
@@ -356,8 +358,15 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">{totalLikes} Hearts</span>
                         </button>
                         <button 
+                           onClick={() => setIsStoryModalOpen(true)}
+                           className="h-12 px-5 flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/30 text-orange-400 font-black text-[11px] uppercase tracking-wider hover:from-orange-500/20 hover:to-amber-500/20 transition-all active:scale-95 cursor-pointer shadow-sm"
+                        >
+                           <Sparkles size={16} />
+                           <span>Story Card</span>
+                        </button>
+                        <button 
                            onClick={shareReview}
-                           className="w-12 h-12 flex items-center justify-center bg-muted border border-border rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all active:scale-90"
+                           className="w-12 h-12 flex items-center justify-center bg-muted border border-border rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all active:scale-90 cursor-pointer"
                         >
                            <Share2 size={18} />
                         </button>
@@ -427,6 +436,14 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
             onClose={() => setIsShareMenuOpen(false)} 
             review={review} 
           />
+
+          {isStoryModalOpen && (
+            <StoryCardModal
+              isOpen={isStoryModalOpen}
+              onClose={() => setIsStoryModalOpen(false)}
+              review={review}
+            />
+          )}
         </div>
       )}
     </AnimatePresence>

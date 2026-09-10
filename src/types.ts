@@ -47,6 +47,16 @@ export interface User {
   createdAt?: string;
 }
 
+export interface RankedDishSummary {
+  name: string;
+  score: number; // e.g. 9.4 out of 10
+  votes: number;
+  image?: string;
+  isMustOrder?: boolean;
+  flavorTags?: string[];
+  recommendationRate?: number; // e.g. 96%
+}
+
 export interface Restaurant {
   id: string;
   name: string;
@@ -57,6 +67,7 @@ export interface Restaurant {
   image?: string;
   likesCount?: number;
   menuItems?: string[];
+  mustOrderDishes?: RankedDishSummary[];
   lat?: number;
   lng?: number;
   distance?: number;
@@ -68,7 +79,10 @@ export interface Restaurant {
 export interface ReviewDish {
   name: string;
   image?: string;
-  rating?: number; // Per-dish rating
+  rating?: number; // Per-dish rating (1-10 or 1-5)
+  isMustOrder?: boolean;
+  flavorTags?: string[];
+  comment?: string;
 }
 
 export interface DetailedRatings {

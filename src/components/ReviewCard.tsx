@@ -1,4 +1,4 @@
-import { Star, Heart, MessageSquare, MapPin, Send, Loader2, MoreVertical, Edit2, Trash2, Share2 } from "lucide-react";
+import { Star, Heart, MessageSquare, MapPin, Send, Loader2, MoreVertical, Edit2, Trash2, Share2, Sparkles } from "lucide-react";
 import { Review, Interaction } from "../types";
 import { formatDistanceToNow } from "date-fns";
 import { parseFirebaseDate } from "../lib/utils";
@@ -12,6 +12,7 @@ import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTim
 import { LogMealModal } from "./LogMealModal";
 import { DiaryEntryModal } from "./DiaryEntryModal";
 import { ShareMenu } from "./ShareMenu";
+import { StoryCardModal } from "./StoryCardModal";
 import { StarRating } from "./StarRating";
 import { optimizeImage } from "../lib/imageOptimization";
 import { useAppUrl } from "../hooks/useAppUrl";
@@ -37,6 +38,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isDetailedViewOpen, setIsDetailedViewOpen] = useState(false);
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
+  const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
   const optionsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -391,11 +393,21 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
             <button 
               onClick={(e) => {
                 e.stopPropagation();
+                setIsStoryModalOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-orange-500/10 to-amber-500/10 hover:from-orange-500/20 hover:to-amber-500/20 border border-orange-500/30 text-orange-400 font-bold text-[10px] uppercase tracking-wider transition-all active:scale-95 cursor-pointer shadow-sm"
+            >
+              <Sparkles size={11} />
+              <span>Story Card</span>
+            </button>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
                 setIsShareMenuOpen(true);
               }}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-all group/share"
+              className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-all group/share cursor-pointer"
             >
-              <Share2 size={16} className="group-hover/share:-rotate-12 transition-transform" />
+              <Share2 size={15} className="group-hover/share:-rotate-12 transition-transform" />
               <span className="font-medium text-[11px]">Share</span>
             </button>
           </div>
@@ -486,6 +498,14 @@ export const ReviewCard: React.FC<ReviewCardProps> = memo(({ review }) => {
           isOpen={isShareMenuOpen} 
           onClose={() => setIsShareMenuOpen(false)} 
           review={review} 
+        />
+      )}
+
+      {isStoryModalOpen && (
+        <StoryCardModal
+          isOpen={isStoryModalOpen}
+          onClose={() => setIsStoryModalOpen(false)}
+          review={review}
         />
       )}
     </div>

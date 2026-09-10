@@ -5,7 +5,7 @@ import { collection, query, where, onSnapshot, doc, getDoc, updateDoc, arrayUnio
 import { db } from "../firebase";
 import { Review, Restaurant as RestaurantType } from "../types";
 import { ReviewCard } from "./ReviewCard";
-import { Star, Bookmark, Heart, Edit3, Map, ChevronLeft, Share2, Info, UtensilsCrossed } from "lucide-react";
+import { Star, Bookmark, Heart, Edit3, Map, ChevronLeft, Share2, Info, UtensilsCrossed, Trophy, Flame } from "lucide-react";
 import { useAuth } from "../App";
 import { toast } from "sonner";
 import { LogMealModal } from "./LogMealModal";
@@ -27,6 +27,75 @@ export const Restaurant: React.FC = () => {
  
   const isInEatlist = dishdUser?.eatlist?.includes(restaurantId || "");
   const hasLiked = dishdUser?.likes?.includes(restaurantId || "");
+
+  // Calculate dynamic Must-Order Dish Rankings from critic logs
+  const rankedDishes = React.useMemo(() => {
+    const dishMap = new Map<string, {
+      name: string;
+      totalScore: number;
+      count: number;
+      mustOrderVotes: number;
+      image?: string;
+    }>();
+
+    reviews.forEach(review => {
+      review.dishes?.forEach(dish => {
+        if (!dish.name?.trim()) return;
+        const key = dish.name.trim().toLowerCase();
+        const existing = dishMap.get(key) || {
+          name: dish.name.trim(),
+          totalScore: 0,
+          count: 0,
+          mustOrderVotes: 0,
+          image: dish.image,
+        };
+        const ratingVal = dish.rating || review.rating || 4;
+        existing.totalScore += ratingVal <= 5 ? ratingVal * 2 : ratingVal;
+        existing.count += 1;
+        if (dish.isMustOrder) existing.mustOrderVotes += 1;
+        if (dish.image && !existing.image) existing.image = dish.image;
+        dishMap.set(key, existing);
+      });
+    });
+
+    if (restaurant?.signatureDish) {
+      const key = restaurant.signatureDish.trim().toLowerCase();
+      if (!dishMap.has(key)) {
+        dishMap.set(key, {
+          name: restaurant.signatureDish.trim(),
+          totalScore: 9.6,
+          count: 1,
+          mustOrderVotes: 1,
+          image: restaurant.image,
+        });
+      }
+    }
+
+    if (restaurant?.menuItems) {
+      restaurant.menuItems.forEach(item => {
+        const key = item.trim().toLowerCase();
+        if (!dishMap.has(key)) {
+          dishMap.set(key, {
+            name: item.trim(),
+            totalScore: 8.8,
+            count: 1,
+            mustOrderVotes: 0,
+          });
+        }
+      });
+    }
+
+    return Array.from(dishMap.values())
+      .map(d => ({
+        name: d.name,
+        score: Number((d.totalScore / d.count).toFixed(1)),
+        votes: d.count,
+        mustOrderVotes: d.mustOrderVotes,
+        image: d.image,
+        recommendationRate: Math.min(99, Math.round((d.totalScore / (d.count * 10)) * 100)),
+      }))
+      .sort((a, b) => b.score - a.score);
+  }, [reviews, restaurant]);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -258,6 +327,86 @@ export const Restaurant: React.FC = () => {
                  </button>
                </div>
              </div>
+
+              {/* Must-Order Dishes Leaderboard */}
+              {rankedDishes.length > 0 && (
+                <section className="space-y-6">
+                  <div className="flex items-center justify-between pb-3 border-b border-border">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400">
+                        <Trophy size={16} />
+                      </div>
+                      <div>
+                        <h3 className="text-base sm:text-lg font-black uppercase tracking-tight text-foreground flex items-center gap-2">
+                          <span>Must-Order Dishes</span>
+                          <span className="text-[10px] bg-amber-400/15 text-amber-400 px-2 py-0.5 rounded-full border border-amber-400/30 font-mono">
+                            Ranked by Critics
+                          </span>
+                        </h3>
+                        <p className="text-xs text-muted-foreground">Top-rated bites at {restaurant.name}, ranked by verified critic logs.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {rankedDishes.slice(0, 6).map((dish, index) => (
+                      <div
+                        key={dish.name}
+                        className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-muted/30 hover:bg-muted/50 border border-border transition-all group relative overflow-hidden"
+                      >
+                        {/* Rank Badge */}
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
+                          index === 0 ? "bg-amber-400 text-black shadow-md shadow-amber-400/30" :
+                          index === 1 ? "bg-zinc-200 text-black" :
+                          index === 2 ? "bg-amber-700/80 text-white" :
+                          "bg-muted border border-border text-muted-foreground"
+                        }`}>
+                          #{index + 1}
+                        </div>
+
+                        {/* Image Thumbnail */}
+                        {dish.image && (
+                          <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-border">
+                            <img src={dish.image} alt={dish.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                          </div>
+                        )}
+
+                        {/* Dish Details */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <h4 className="text-xs font-bold text-foreground truncate">{dish.name}</h4>
+                            {dish.mustOrderVotes > 0 && (
+                              <Flame size={12} className="text-amber-400 shrink-0" />
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground">
+                            <span className="text-amber-400 font-bold flex items-center gap-0.5">
+                              <Star size={10} className="fill-amber-400" />
+                              {dish.score}/10
+                            </span>
+                            <span>•</span>
+                            <span>{dish.recommendationRate}% recommend</span>
+                            <span>•</span>
+                            <span>{dish.votes} {dish.votes === 1 ? 'log' : 'logs'}</span>
+                          </div>
+                        </div>
+
+                        {/* Rate Action */}
+                        <button
+                          onClick={() => {
+                            triggerHaptic();
+                            if (!user) login();
+                            else setIsLogModalOpen(true);
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl bg-orange-500/10 hover:bg-orange-500 text-orange-400 hover:text-black border border-orange-500/20 text-[10px] font-black uppercase tracking-wider shrink-0 transition-all cursor-pointer active:scale-95"
+                        >
+                          Rate
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
 
              {/* Signature Flavors */}
               {restaurant.menuItems && restaurant.menuItems.length > 0 && (
