@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { X, Star, Upload, Search, MapPin, Loader2, Plus, Flame, ShieldCheck, ArrowLeft, Video, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../App";
@@ -251,15 +252,15 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center p-3 sm:p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2.5 sm:p-4 pt-[calc(env(safe-area-inset-top,0px)+0.5rem)] pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]">
       {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="fixed inset-0 bg-black/85 backdrop-blur-xl"
+        className="fixed inset-0 bg-black/90 backdrop-blur-2xl"
       />
 
       {/* Modal Container */}
@@ -267,15 +268,15 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
         initial={{ opacity: 0, scale: 0.96, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 12 }}
-        className="relative w-full max-w-lg max-h-[88vh] bg-zinc-950 border border-white/10 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col z-10 text-white"
+        className="relative w-full max-w-lg max-h-[92vh] bg-zinc-950 border border-white/15 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col z-10 text-white"
       >
         {/* Header */}
-        <div className="px-5 py-3.5 border-b border-white/10 flex items-center justify-between bg-zinc-900/60 backdrop-blur-md">
+        <div className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-white/10 flex items-center justify-between bg-zinc-900/90 backdrop-blur-md shrink-0">
           <div className="flex items-center gap-2.5">
             {step === "details" && (
               <button 
                 onClick={() => setStep("media")}
-                className="p-1 hover:bg-white/10 rounded-full transition-colors text-white/60 hover:text-white active:scale-95"
+                className="p-1 hover:bg-white/10 rounded-full transition-colors text-white/60 hover:text-white active:scale-95 cursor-pointer"
               >
                 <ArrowLeft size={16} />
               </button>
@@ -285,16 +286,17 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
                 <Flame size={11} className="text-orange-500 fill-orange-500" />
                 Madeater Cravings
               </span>
-              <h2 className="text-sm sm:text-base font-black uppercase tracking-tight">
+              <h2 className="text-xs sm:text-base font-black uppercase tracking-tight text-white">
                 {step === "media" ? "Upload Food Video" : "Food Database Attachment"}
               </h2>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-full transition-colors active:scale-95"
+            className="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-full transition-colors active:scale-95 cursor-pointer text-white"
+            title="Close"
           >
-            <X size={16} className="text-white/60" />
+            <X size={16} />
           </button>
         </div>
 
@@ -529,6 +531,7 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
           </div>
         )}
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 }

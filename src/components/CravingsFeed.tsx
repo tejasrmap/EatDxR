@@ -64,24 +64,14 @@ export function CravingsFeed() {
   });
 
   return (
-    <div className="min-h-screen bg-black text-white relative flex flex-col items-center justify-start overflow-hidden pt-0 pb-[calc(env(safe-area-inset-bottom,0px)+4rem)]">
+    <div className="h-[100dvh] w-full bg-black text-white relative flex flex-col items-center justify-start overflow-hidden select-none">
       
       {/* Top Sleek Control Bar (Floating right below notch) */}
       <div className="fixed top-[calc(env(safe-area-inset-top,0px)+0.5rem)] left-0 right-0 z-40 max-w-xl mx-auto px-3 flex flex-col items-center gap-2 pointer-events-none">
-        <div className="w-full flex items-center justify-between pointer-events-auto bg-black/80 backdrop-blur-2xl border border-white/10 px-3 py-1.5 rounded-full shadow-2xl">
+        <div className="w-full flex items-center justify-between pointer-events-auto bg-black/75 backdrop-blur-2xl border border-white/10 px-3.5 py-1.5 rounded-full shadow-2xl">
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                triggerHaptic();
-                navigate(-1);
-              }}
-              className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 active:scale-90 transition-all cursor-pointer mr-0.5"
-              title="Back"
-            >
-              <ArrowLeft size={14} />
-            </button>
             <Flame size={16} className="text-orange-500 fill-orange-500 animate-pulse" />
-            <span className="text-[11px] font-black uppercase tracking-widest text-white">Cravings</span>
+            <span className="text-xs font-black uppercase tracking-widest text-white">Cravings</span>
           </div>
 
           <button
@@ -124,7 +114,7 @@ export function CravingsFeed() {
           <p className="text-xs uppercase tracking-widest font-black text-white/40">Loading Cravings...</p>
         </div>
       ) : filteredCravings.length > 0 ? (
-        <div className="w-full h-[100dvh] snap-y-container no-scrollbar pt-[calc(env(safe-area-inset-top,0px)+3.75rem)]">
+        <div className="w-full h-[100dvh] snap-y snap-mandatory overflow-y-scroll no-scrollbar select-none">
           {filteredCravings.map((craving) => (
             <CravingCard 
               key={craving.id} 

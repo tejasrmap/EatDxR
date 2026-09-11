@@ -192,106 +192,97 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
   const cravingScore = review.attachedScore || review.rating;
 
   return (
-    <div ref={containerRef} className="snap-child relative w-full h-[calc(100dvh-125px)] md:h-[calc(100vh-100px)] bg-black overflow-hidden flex items-center justify-center p-1.5 sm:p-3 select-none">
-      
-      {/* Media Viewport */}
-      <div 
-        onClick={handleMediaTap}
-        onDoubleClick={(e) => {
-          e.stopPropagation();
-          triggerHaptic();
-          if (!hasLiked) handleLike();
-          setShowHeartBurst(true);
-          setTimeout(() => setShowHeartBurst(false), 800);
-        }}
-        className="relative w-full h-full max-w-md bg-zinc-950 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-white/10 group flex flex-col justify-between cursor-pointer"
-      >
-        
-        {/* Video / Background Media */}
-        {review.videoUrl ? (
-          <>
-            <video
-              ref={videoRef}
-              src={review.videoUrl}
-              className="absolute inset-0 w-full h-full object-cover"
-              loop
-              playsInline
-              muted={isMuted}
-            />
-            {!isPlaying && (
-              <div 
-                className="absolute inset-0 flex items-center justify-center bg-black/40 z-15 pointer-events-none"
-              >
-                <div className="w-16 h-16 rounded-full bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-2xl">
-                  <Play size={28} className="fill-white translate-x-0.5" />
-                </div>
-              </div>
-            )}
-          </>
-        ) : firstImage ? (
-          <img 
-            src={firstImage} 
-            alt={review.restaurantName}
+    <div 
+      ref={containerRef} 
+      onClick={handleMediaTap}
+      className="snap-start snap-always w-full h-[100dvh] bg-black relative flex flex-col justify-between overflow-hidden select-none cursor-pointer"
+    >
+      {/* Video / Background Media */}
+      {review.videoUrl ? (
+        <>
+          <video
+            ref={videoRef}
+            src={review.videoUrl}
             className="absolute inset-0 w-full h-full object-cover"
-            referrerPolicy="no-referrer"
-            loading="lazy"
+            loop
+            playsInline
+            muted={isMuted}
           />
-        ) : (
-          <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-zinc-900 via-black to-zinc-950" />
-        )}
-
-        {/* Ambient Dark Gradient Overlays */}
-        <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/80 via-black/30 to-transparent pointer-events-none z-10" />
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/95 via-black/70 to-transparent pointer-events-none z-10" />
-
-        {/* Double-Tap Heart Burst Animation */}
-        <AnimatePresence>
-          {showHeartBurst && (
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: [0, 1.25, 1], opacity: [0, 1, 1] }}
-              exit={{ scale: 1.4, opacity: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="absolute inset-0 flex items-center justify-center pointer-events-none z-40"
+          {!isPlaying && (
+            <div 
+              className="absolute inset-0 flex items-center justify-center bg-black/40 z-15 pointer-events-none"
             >
-              <div className="p-5 rounded-full bg-black/50 backdrop-blur-md border border-white/20 shadow-[0_0_50px_rgba(244,63,94,0.7)]">
-                <Heart size={68} className="text-rose-500 fill-rose-500 drop-shadow-[0_0_20px_rgba(244,63,94,0.9)]" />
+              <div className="w-16 h-16 rounded-full bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-2xl">
+                <Play size={28} className="fill-white translate-x-0.5" />
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+        </>
+      ) : firstImage ? (
+        <img 
+          src={firstImage} 
+          alt={review.restaurantName}
+          className="absolute inset-0 w-full h-full object-cover"
+          referrerPolicy="no-referrer"
+          loading="lazy"
+        />
+      ) : (
+        <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-zinc-900 via-black to-zinc-950" />
+      )}
 
-        {/* TOP BAR: Tag Pill & Sound Control */}
-        <div className="relative z-20 p-3 sm:p-4 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 flex-wrap max-w-[80%]">
-            <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-black/70 backdrop-blur-md border border-white/20 text-orange-400 shadow-lg">
-              <Flame size={11} className="text-orange-500 fill-orange-500 animate-pulse" />
-              {review.cravingTag || "Food Craving"}
+      {/* Ambient Dark Gradient Overlays */}
+      <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-black/85 via-black/40 to-transparent pointer-events-none z-10" />
+      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/95 via-black/75 to-transparent pointer-events-none z-10" />
+
+      {/* Double-Tap Heart Burst Animation */}
+      <AnimatePresence>
+        {showHeartBurst && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: [0, 1.25, 1], opacity: [0, 1, 1] }}
+            exit={{ scale: 1.4, opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="absolute inset-0 flex items-center justify-center pointer-events-none z-40"
+          >
+            <div className="p-5 rounded-full bg-black/50 backdrop-blur-md border border-white/20 shadow-[0_0_50px_rgba(244,63,94,0.7)]">
+              <Heart size={68} className="text-rose-500 fill-rose-500 drop-shadow-[0_0_20px_rgba(244,63,94,0.9)]" />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* TOP BAR: Tag Pill & Sound Control (padded below notch & top category pills) */}
+      <div className="relative z-20 pt-[calc(env(safe-area-inset-top,0px)+6.25rem)] px-4 flex items-center justify-between pointer-events-none">
+        <div className="flex items-center gap-1.5 flex-wrap max-w-[80%] pointer-events-auto">
+          <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-black/75 backdrop-blur-md border border-white/20 text-orange-400 shadow-lg">
+            <Flame size={11} className="text-orange-500 fill-orange-500 animate-pulse" />
+            {review.cravingTag || "Food Craving"}
+          </span>
+          {review.isVerifiedVisit && (
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-emerald-950/80 backdrop-blur-md border border-emerald-500/40 text-emerald-400 shadow-lg">
+              <ShieldCheck size={10} className="text-emerald-400" />
+              Verified Visit
             </span>
-            {review.isVerifiedVisit && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-emerald-950/80 backdrop-blur-md border border-emerald-500/40 text-emerald-400">
-                <ShieldCheck size={10} className="text-emerald-400" />
-                Verified Visit
-              </span>
-            )}
-          </div>
-
-          {review.videoUrl && (
-            <button
-              onClick={() => {
-                triggerHaptic();
-                setIsMuted(!isMuted);
-              }}
-              className="w-8 h-8 rounded-full bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/80 hover:text-white transition-all active:scale-90 shadow-lg"
-              title={isMuted ? "Unmute" : "Mute"}
-            >
-              {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-            </button>
           )}
         </div>
 
-        {/* BOTTOM CONTENT AREA */}
-        <div className="relative z-20 p-3.5 sm:p-4 space-y-2.5 max-w-[82%]">
+        {review.videoUrl && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              triggerHaptic();
+              setIsMuted(!isMuted);
+            }}
+            className="w-8 h-8 rounded-full bg-black/75 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/80 hover:text-white transition-all active:scale-90 shadow-lg pointer-events-auto cursor-pointer"
+            title={isMuted ? "Unmute" : "Mute"}
+          >
+            {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+          </button>
+        )}
+      </div>
+
+      {/* BOTTOM CONTENT AREA (padded safely above the floating navigation dock) */}
+      <div className="relative z-20 pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] px-4 space-y-2 max-w-[80%] pointer-events-auto">
           
           {/* Dish & Restaurant Capsule */}
           {(attachedDish || review.restaurantName) && (
@@ -378,48 +369,52 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
           )}
         </div>
 
-        {/* Floating Side Action Stack */}
-        <div className="absolute right-2.5 bottom-10 flex flex-col items-center gap-3.5 z-30 pointer-events-auto">
-          {/* Like */}
-          <div className="flex flex-col items-center gap-0.5">
-            <button 
-              onClick={handleLike}
-              className={`w-10 h-10 rounded-full bg-black/70 backdrop-blur-xl border border-white/15 flex items-center justify-center transition-all active:scale-90 ${
-                hasLiked ? 'text-rose-500 shadow-lg shadow-rose-500/20' : 'text-white/80 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <Heart size={18} className={hasLiked ? "fill-rose-500" : ""} />
-            </button>
-            <span className="text-[9px] font-black text-white">{totalLikes}</span>
-          </div>
+      {/* Floating Side Action Stack (padded above bottom navigation dock) */}
+      <div className="absolute right-3.5 bottom-[calc(env(safe-area-inset-bottom,0px)+5.75rem)] flex flex-col items-center gap-3.5 z-30 pointer-events-auto">
+        {/* Like */}
+        <div className="flex flex-col items-center gap-0.5">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleLike();
+            }}
+            className={`w-10 h-10 rounded-full bg-black/75 backdrop-blur-xl border border-white/15 flex items-center justify-center transition-all active:scale-90 cursor-pointer ${
+              hasLiked ? 'text-rose-500 shadow-lg shadow-rose-500/20' : 'text-white/80 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <Heart size={18} className={hasLiked ? "fill-rose-500" : ""} />
+          </button>
+          <span className="text-[9px] font-black text-white">{totalLikes}</span>
+        </div>
 
-          {/* Comment */}
-          <div className="flex flex-col items-center gap-0.5">
-            <button 
-              onClick={() => {
-                triggerHaptic();
-                setIsCommentModalOpen(true);
-              }}
-              className="w-10 h-10 rounded-full bg-black/70 backdrop-blur-xl border border-white/15 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-all active:scale-90"
-            >
-              <MessageSquare size={17} />
-            </button>
-            <span className="text-[9px] font-black text-white">{comments.length}</span>
-          </div>
+        {/* Comment */}
+        <div className="flex flex-col items-center gap-0.5">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              triggerHaptic();
+              setIsCommentModalOpen(true);
+            }}
+            className="w-10 h-10 rounded-full bg-black/75 backdrop-blur-xl border border-white/15 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-all active:scale-90 cursor-pointer"
+          >
+            <MessageSquare size={17} />
+          </button>
+          <span className="text-[9px] font-black text-white">{comments.length}</span>
+        </div>
 
-          {/* Share */}
-          <div className="flex flex-col items-center gap-0.5">
-            <button 
-              onClick={() => {
-                triggerHaptic();
-                setIsShareMenuOpen(true);
-              }}
-              className="w-10 h-10 rounded-full bg-black/70 backdrop-blur-xl border border-white/15 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-all active:scale-90"
-            >
-              <Share2 size={17} />
-            </button>
-            <span className="text-[8px] font-bold text-white/50">Share</span>
-          </div>
+        {/* Share */}
+        <div className="flex flex-col items-center gap-0.5">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              triggerHaptic();
+              setIsShareMenuOpen(true);
+            }}
+            className="w-10 h-10 rounded-full bg-black/75 backdrop-blur-xl border border-white/15 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-all active:scale-90 cursor-pointer"
+          >
+            <Share2 size={17} />
+          </button>
+          <span className="text-[8px] font-bold text-white/50">Share</span>
         </div>
       </div>
 

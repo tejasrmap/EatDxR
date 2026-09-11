@@ -272,17 +272,20 @@ export function FoodMap() {
   return (
     <div className={`min-h-screen bg-black text-white ${isAppMode ? "pt-3 sm:pt-4" : "pt-20 sm:pt-24"} pb-24 md:pb-12 px-3 sm:px-6 max-w-7xl mx-auto flex flex-col`}>
       
-      {/* Top Header & Geospatial Bar */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-5">
-        <div>
-          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.25em] text-orange-400 mb-1">
-            <Compass size={14} className="animate-spin [animation-duration:30s]" />
-            <span>Interactive Real-World Map</span>
+      {/* Top Header & Geospatial Bar (Only for Web view; hidden in native App mode to maximize map canvas) */}
+      {!isAppMode && (
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-5">
+          <div>
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.25em] text-orange-400 mb-1">
+              <Compass size={14} className="animate-spin [animation-duration:30s]" />
+              <span>Interactive Real-World Map</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black uppercase tracking-tight">
+              Madeater Food Map
+            </h1>
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black uppercase tracking-tight">
-            Madeater Food Map
-          </h1>
         </div>
+      )}
 
         {/* Global Action Bar: Search, Locate Me, Quick Actions */}
         <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
@@ -320,7 +323,6 @@ export function FoodMap() {
             <span>{isLocating ? "Locating..." : userCoords ? "GPS Active" : "Locate Me"}</span>
           </button>
         </div>
-      </div>
 
       {/* Filter Chips Bar */}
       <div className="flex items-center justify-between gap-3 mb-4 overflow-x-auto scrollbar-hide pb-1">
@@ -372,7 +374,7 @@ export function FoodMap() {
       </div>
 
       {/* Main Map + Inspection Card Container */}
-      <div className="relative flex-1 min-h-[68vh] rounded-[2rem] bg-zinc-950 border border-white/10 overflow-hidden shadow-2xl flex flex-col lg:flex-row">
+      <div className={`relative flex-1 ${isAppMode ? "h-[calc(100dvh-170px)] min-h-[60vh]" : "min-h-[68vh]"} rounded-2xl sm:rounded-[2rem] bg-zinc-950 border border-white/10 overflow-hidden shadow-2xl flex flex-col lg:flex-row`}>
         
         {/* Leaflet Real Interactive Map Canvas */}
         <div className="relative flex-1 w-full min-h-[48vh] lg:min-h-[68vh] z-0">

@@ -191,19 +191,14 @@ button, a, input, [role="button"] {
 /* Silky smooth GPU-accelerated page transitions (120ms snap) */
 .page-transition {
   animation: pageFadeIn 0.12s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: opacity, transform;
-  transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
 }
 
 @keyframes pageFadeIn {
   0% {
-    opacity: 0.88;
-    transform: translate3d(0, 4px, 0);
+    opacity: 0.92;
   }
   100% {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
   }
 }
 

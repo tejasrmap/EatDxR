@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Send, MessageSquare, Loader2, User as UserIcon } from "lucide-react";
 import { collection, query, where, orderBy, onSnapshot, doc, setDoc, serverTimestamp } from "firebase/firestore";
@@ -111,9 +112,9 @@ export const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, rev
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <AnimatePresence mode="wait">
-      <div className="fixed inset-0 z-[500] flex items-end md:items-center justify-center p-0 md:p-6 overflow-hidden">
+      <div className="fixed inset-0 z-[9999] flex items-end md:items-center justify-center p-0 md:p-6 overflow-hidden">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -234,6 +235,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, rev
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };

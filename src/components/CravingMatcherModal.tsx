@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'motion/react';
 import { 
   X, Heart, Flame, Sparkles, MapPin, Navigation, 
@@ -131,9 +132,9 @@ export function CravingMatcherModal({ isOpen, onClose }: CravingMatcherModalProp
     setMatchedCard(null);
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[300] flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md overflow-hidden select-none">
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md overflow-hidden select-none">
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -370,6 +371,7 @@ export function CravingMatcherModal({ isOpen, onClose }: CravingMatcherModalProp
           )}
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

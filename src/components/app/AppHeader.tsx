@@ -204,10 +204,10 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
               <span className="ml-auto text-[9px] font-mono bg-white/10 px-1.5 py-0.5 rounded text-white/40">⌘K</span>
             </button>
 
-            {/* Mobile & Tablet AI Food Assistant Button */}
+            {/* AI Food Assistant Button (Shown on tablets and desktop; mobile accesses via Search / Profile) */}
             <button
               onClick={() => { triggerHaptic(); setIsAIOpen(true); }}
-              className="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-500/15 via-amber-400/15 to-rose-500/15 hover:from-orange-500/25 hover:to-amber-400/25 border border-orange-500/35 flex items-center justify-center text-orange-400 active:scale-90 transition-all shrink-0 cursor-pointer shadow-sm"
+              className="hidden sm:flex w-8 h-8 rounded-full bg-gradient-to-tr from-orange-500/15 via-amber-400/15 to-rose-500/15 hover:from-orange-500/25 hover:to-amber-400/25 border border-orange-500/35 items-center justify-center text-orange-400 active:scale-90 transition-all shrink-0 cursor-pointer shadow-sm"
               title="AI Food Assistant"
             >
               <Sparkles size={14} className="text-orange-400" />

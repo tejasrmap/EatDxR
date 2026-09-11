@@ -1,6 +1,7 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { createPortal } from "react-dom";
 import { X, Star, Upload, Image as ImageIcon, Search, MapPin, Loader2, Plus, Trash2, Zap, Flame } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useRef, useEffect } from "react";
@@ -432,10 +433,10 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
     setValue("rating", val);
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-0 md:p-12 overflow-hidden">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 md:p-12 overflow-hidden">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -805,6 +806,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

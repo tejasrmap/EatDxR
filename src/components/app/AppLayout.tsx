@@ -31,14 +31,22 @@ export function AppLayout({ children }: AppLayoutProps) {
   const isAppHome = routerLocation.pathname === "/app" || routerLocation.pathname === "/app/";
   const isReelsView = routerLocation.pathname === "/app/cravings" || routerLocation.pathname === "/cravings";
 
+  // Check if current page is a deep detail sub-page (e.g. restaurant detail, dish graph, list detail)
+  const isDetailPage = 
+    routerLocation.pathname.startsWith("/app/dish/") ||
+    routerLocation.pathname.startsWith("/dish/") ||
+    routerLocation.pathname.startsWith("/app/restaurant/") ||
+    routerLocation.pathname.startsWith("/restaurant/") ||
+    routerLocation.pathname.startsWith("/app/list/") ||
+    routerLocation.pathname.startsWith("/list/") ||
+    (routerLocation.pathname.startsWith("/app/profile/") && routerLocation.pathname !== "/app/profile") ||
+    (routerLocation.pathname.startsWith("/profile/") && routerLocation.pathname !== "/profile");
+
   const getSubPageTitle = (path: string): string | undefined => {
-    if (path.startsWith("/app/dishes") || path.startsWith("/app/explore") || path.startsWith("/dishes")) return "Signature Dishes";
     if (path.startsWith("/app/dish") || path.startsWith("/dish/")) return "Dish Graph";
-    if (path.startsWith("/app/restaurants") || path.startsWith("/restaurants")) return "Top Restaurants";
     if (path.startsWith("/app/restaurant") || path.startsWith("/restaurant/")) return "Restaurant";
-    if (path.startsWith("/app/lists") || path.startsWith("/lists")) return "Food Lists";
     if (path.startsWith("/app/list") || path.startsWith("/list/")) return "Curated Guide";
-    if (path.startsWith("/app/profile") || path.startsWith("/profile")) {
+    if (path.startsWith("/app/profile/") || path.startsWith("/profile/")) {
       const parts = path.split("/").filter(Boolean);
       const identifier = parts[parts.length - 1];
       if (identifier && identifier !== "profile" && identifier !== "app") {
@@ -46,15 +54,14 @@ export function AppLayout({ children }: AppLayoutProps) {
       }
       return "Profile";
     }
-    if (path.startsWith("/app/critics") || path.startsWith("/critics")) return "Food Critics";
-    if (path.startsWith("/app/map") || path.startsWith("/map")) return undefined;
     if (path.startsWith("/app/journal") || path.startsWith("/journal")) return "Food Diary";
     if (path.startsWith("/app/wrapped") || path.startsWith("/wrapped")) return "My Food Year";
     return undefined;
   };
 
-  const showBack = !isAppHome && !isReelsView;
-  const pageTitle = getSubPageTitle(routerLocation.pathname);
+  // Only show back button on deep detail pages; ALL root tabs have clean brand header
+  const showBack = isDetailPage;
+  const pageTitle = isDetailPage ? getSubPageTitle(routerLocation.pathname) : undefined;
 
   return (
     <div className="min-h-screen bg-black text-white relative z-0 flex flex-col justify-between selection:bg-orange-500 selection:text-black overscroll-contain">
