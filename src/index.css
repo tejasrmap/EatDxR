@@ -482,3 +482,9 @@ input[type="range"].slider-green::-moz-range-progress {
   background: transparent !important;
   border: none !important;
 }
+
+/* High-Performance Dark Cartographic Filter for Clean Watermark-Free OSM Tiles */
+.dark-map-tiles .leaflet-tile,
+.dark-map-tiles img {
+  filter: brightness(0.62) invert(1) contrast(2.6) hue-rotate(200deg) saturate(0.25) !important;
+}

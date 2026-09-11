@@ -123,7 +123,7 @@ export function WebNavbar() {
                       <p className="text-[10px] text-white/40 truncate">@{dishdUser?.username || "critic"}</p>
                     </div>
                     <Link
-                      to={`/app/profile/${dishdUser?.username || user.uid}`}
+                      to={`/profile/${dishdUser?.username || user.uid}`}
                       onClick={() => setShowUserMenu(false)}
                       className="flex items-center gap-2 px-4 py-2.5 text-xs text-white/80 hover:text-white hover:bg-white/5 transition-colors"
                     >

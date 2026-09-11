@@ -16,7 +16,7 @@ import { RatingGraph } from "./RatingGraph";
 import { TasteDNAView } from "./TasteDNAView";
 import { MOCK_LISTS, MOCK_CRAVINGS } from "../data/mockData";
 import { useAppUrl } from "../hooks/useAppUrl";
-import { triggerHaptic } from "../services/nativeService";
+import { triggerHaptic, isNative } from "../services/nativeService";
 import { uploadMedia, upsertProfile } from "../services/supabaseService";
 
 export const Profile: React.FC = () => {
@@ -162,7 +162,7 @@ export const Profile: React.FC = () => {
           if (docSnap.exists()) {
             resolvedUser = docSnap.data() as User;
             if (resolvedUser?.username) {
-              const isAppRoute = window.location.pathname.startsWith('/app');
+              const isAppRoute = isNative && window.location.pathname.startsWith('/app');
               const targetPath = isAppRoute ? `/app/profile/${resolvedUser.username}` : `/profile/${resolvedUser.username}`;
               navigate(targetPath, { replace: true });
               return;

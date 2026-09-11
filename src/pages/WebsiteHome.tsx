@@ -309,7 +309,7 @@ export function WebsiteHome() {
               {MOCK_CRITICS_DATA.map((critic, i) => (
                 <Link
                   key={critic.uid}
-                  to={`/app/profile/${critic.username || critic.uid}`}
+                  to={`/profile/${critic.username || critic.uid}`}
                   className="flex items-center justify-between p-4 rounded-2xl bg-zinc-950 border border-white/10 hover:border-white/30 transition-all group"
                 >
                   <div className="flex items-center gap-3.5">

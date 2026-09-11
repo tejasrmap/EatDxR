@@ -25,7 +25,7 @@ export function WebFooter() {
 
           <div className="flex flex-wrap items-center gap-3 z-10">
             <Link
-              to="/app"
+              to="/cravings"
               className="flex items-center gap-3 px-6 py-3.5 rounded-2xl bg-orange-500 hover:bg-orange-400 text-black font-black text-xs uppercase tracking-wider transition-all shadow-[0_0_25px_rgba(249,115,22,0.4)]"
             >
               <Smartphone size={18} />
@@ -83,7 +83,7 @@ export function WebFooter() {
             <ul className="space-y-2 text-xs font-medium text-white/70">
               <li><Link to="/lists" className="hover:text-orange-400 transition-colors">Community Food Lists</Link></li>
               <li><Link to="/journal" className="hover:text-orange-400 transition-colors">Editorial Food Journal</Link></li>
-              <li><Link to="/app/cravings" className="hover:text-orange-400 transition-colors">Trending Cravings Reels</Link></li>
+              <li><Link to="/cravings" className="hover:text-orange-400 transition-colors">Trending Cravings Reels</Link></li>
               <li><Link to="/wrapped" className="hover:text-orange-400 transition-colors">Year in Food Wrapped</Link></li>
             </ul>
           </div>
@@ -91,7 +91,7 @@ export function WebFooter() {
           <div>
             <h4 className="text-xs font-black uppercase tracking-widest text-white/40 mb-4">Platform</h4>
             <ul className="space-y-2 text-xs font-medium text-white/70">
-              <li><Link to="/app" className="text-orange-400 font-bold hover:underline">Custom Mobile App Shell</Link></li>
+              <li><Link to="/cravings" className="text-orange-400 font-bold hover:underline">Short-form Cravings Feed</Link></li>
               <li><span className="text-white/40">Native Android (Capacitor)</span></li>
               <li><span className="text-white/40">Firebase Live Real-Time DB</span></li>
               <li><span className="text-white/40">Chef AI Assistant (Gemini)</span></li>

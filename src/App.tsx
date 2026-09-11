@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState, createContext, useContext, ReactNode, ErrorInfo, Component } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { AdminSeed } from "./components/AdminSeed";
 import { Toaster, toast } from "sonner";
@@ -298,11 +298,19 @@ function MyProfileRoute() {
   }
   
   if (!user) {
-    return <Navigate to="/app" replace />;
+    return <Navigate to={isNative ? "/app" : "/"} replace />;
   }
   
   const handle = dishdUser?.username || user.uid;
-  return <Navigate to={`/app/profile/${handle}`} replace />;
+  const target = isNative ? `/app/profile/${handle}` : `/profile/${handle}`;
+  return <Navigate to={target} replace />;
+}
+
+// Redirects legacy /app/* routes to clean canonical web routes on laptop/desktop
+function WebRedirect() {
+  const loc = useLocation();
+  const cleanPath = loc.pathname.replace(/^\/app/, "") || "/";
+  return <Navigate to={cleanPath + loc.search} replace />;
 }
 
 export function App() {
@@ -447,147 +455,99 @@ export function App() {
                 } 
               />
 
-              {/* 2. CUSTOM MOBILE APP ROUTES (Wrapped in AppLayout with AppHeader & Bottom Dock) */}
+              {/* 2. CANONICAL APP & MOBILE ROUTES */}
+              {/* On Web (!isNative): Seamlessly canonicalize /app/* into clean desktop routes */}
+              {/* On Native APK (isNative): Run within AppLayout */}
               <Route 
                 path="/app" 
                 element={
-                  <AppLayout>
-                    <CustomAppHome />
-                  </AppLayout>
+                  isNative ? (
+                    <AppLayout><CustomAppHome /></AppLayout>
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
                 } 
               />
               <Route 
                 path="/app/cravings" 
-                element={
-                  <AppLayout>
-                    <CravingsFeed />
-                  </AppLayout>
-                } 
+                element={isNative ? <AppLayout><CravingsFeed /></AppLayout> : <Navigate to="/cravings" replace />} 
               />
               <Route 
                 path="/app/dishes" 
-                element={
-                  <AppLayout>
-                    <DishesDirectory />
-                  </AppLayout>
-                } 
+                element={isNative ? <AppLayout><DishesDirectory /></AppLayout> : <Navigate to="/dishes" replace />} 
               />
               <Route 
                 path="/app/explore" 
-                element={
-                  <AppLayout>
-                    <DishesDirectory />
-                  </AppLayout>
-                } 
+                element={isNative ? <AppLayout><DishesDirectory /></AppLayout> : <Navigate to="/explore" replace />} 
               />
               <Route 
                 path="/app/dish/:dishId" 
-                element={
-                  <AppLayout>
-                    <DishPage />
-                  </AppLayout>
-                } 
+                element={isNative ? <AppLayout><DishPage /></AppLayout> : <WebRedirect />} 
               />
               <Route 
                 path="/app/restaurants" 
-                element={
-                  <AppLayout>
-                    <Restaurants />
-                  </AppLayout>
-                } 
+                element={isNative ? <AppLayout><Restaurants /></AppLayout> : <Navigate to="/restaurants" replace />} 
               />
               <Route 
                 path="/app/restaurant/:restaurantId" 
-                element={
-                  <AppLayout>
-                    <Restaurant />
-                  </AppLayout>
-                } 
+                element={isNative ? <AppLayout><Restaurant /></AppLayout> : <WebRedirect />} 
               />
               <Route 
                 path="/app/map" 
-                element={
-                  <AppLayout>
-                    <FoodMap />
-                  </AppLayout>
-                } 
+                element={isNative ? <AppLayout><FoodMap /></AppLayout> : <Navigate to="/map" replace />} 
               />
               <Route 
                 path="/app/critics" 
-                element={
-                  <AppLayout>
-                    <Critics />
-                  </AppLayout>
-                } 
+                element={isNative ? <AppLayout><Critics /></AppLayout> : <Navigate to="/critics" replace />} 
               />
               <Route 
                 path="/app/trails" 
-                element={
-                  <AppLayout>
-                    <FoodTrails />
-                  </AppLayout>
-                } 
+                element={isNative ? <AppLayout><FoodTrails /></AppLayout> : <Navigate to="/trails" replace />} 
               />
               <Route 
                 path="/trails" 
                 element={
-                  <AppLayout>
-                    <FoodTrails />
-                  </AppLayout>
+                  isNative ? (
+                    <AppLayout><FoodTrails /></AppLayout>
+                  ) : (
+                    <WebsiteLayout><FoodTrails /></WebsiteLayout>
+                  )
                 } 
               />
               <Route 
                 path="/app/lists" 
-                element={
-                  <AppLayout>
-                    <FoodLists />
-                  </AppLayout>
-                } 
+                element={isNative ? <AppLayout><FoodLists /></AppLayout> : <Navigate to="/lists" replace />} 
               />
               <Route 
                 path="/app/list/:listId" 
-                element={
-                  <AppLayout>
-                    <ListDetail />
-                  </AppLayout>
-                } 
+                element={isNative ? <AppLayout><ListDetail /></AppLayout> : <WebRedirect />} 
               />
               <Route 
                 path="/app/profile/:userId" 
-                element={
-                  <AppLayout>
-                    <Profile />
-                  </AppLayout>
-                } 
+                element={isNative ? <AppLayout><Profile /></AppLayout> : <WebRedirect />} 
               />
               <Route 
                 path="/app/journal" 
-                element={
-                  <AppLayout>
-                    <Journal />
-                  </AppLayout>
-                } 
+                element={isNative ? <AppLayout><Journal /></AppLayout> : <Navigate to="/journal" replace />} 
               />
               <Route 
                 path="/app/wrapped" 
-                element={
-                  <AppLayout>
-                    <YearInFood />
-                  </AppLayout>
-                } 
+                element={isNative ? <AppLayout><YearInFood /></AppLayout> : <Navigate to="/wrapped" replace />} 
               />
 
-              {/* Personal Profile Routes without params */}
+              {/* Personal Profile Routes */}
               <Route path="/app/profile" element={<MyProfileRoute />} />
               <Route path="/profile" element={<MyProfileRoute />} />
 
-              {/* Profile fallback for /profile/:userId */}
+              {/* Profile Route for /profile/:userId */}
               <Route 
                 path="/profile/:userId" 
                 element={
-                  <AppLayout>
-                    <Profile />
-                  </AppLayout>
+                  isNative ? (
+                    <AppLayout><Profile /></AppLayout>
+                  ) : (
+                    <WebsiteLayout><Profile /></WebsiteLayout>
+                  )
                 } 
               />
 
