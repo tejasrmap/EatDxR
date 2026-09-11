@@ -288,12 +288,21 @@ export function FoodLists() {
                   <p className="text-xs font-bold text-white">Ranked List</p>
                   <p className="text-[10px] text-white/40">Numbered #1, #2, #3 based on preference</p>
                 </div>
-                <input 
-                  type="checkbox"
-                  checked={isRanked}
-                  onChange={(e) => setIsRanked(e.target.checked)}
-                  className="w-5 h-5 accent-orange-500 rounded cursor-pointer"
-                />
+                <button 
+                  type="button"
+                  role="switch"
+                  aria-checked={isRanked}
+                  onClick={() => setIsRanked(!isRanked)}
+                  className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
+                    isRanked ? "bg-orange-500 shadow-md shadow-orange-500/30" : "bg-white/15"
+                  }`}
+                >
+                  <div 
+                    className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow-md ${
+                      isRanked ? "translate-x-5.5" : "translate-x-0.5"
+                    }`}
+                  />
+                </button>
               </div>
 
               {/* Add Items */}

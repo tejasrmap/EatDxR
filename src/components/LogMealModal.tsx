@@ -478,7 +478,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
               </button>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-6 space-y-8">
+            <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto scrollbar-hide px-6 py-6 space-y-8">
               {/* Identity & Context */}
               <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2.5 relative group">
@@ -719,7 +719,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                         <div key={dim.label} className="space-y-1">
                           <div className="flex justify-between text-[11px]">
                             <span className="text-muted-foreground font-medium">{dim.label}</span>
-                            <span className="font-bold text-foreground">{dim.val.toFixed(1)}</span>
+                            <span className="font-bold text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-md text-[11px]">{dim.val.toFixed(1)}</span>
                           </div>
                           <input 
                             type="range"
@@ -728,7 +728,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                             step="0.1"
                             value={dim.val}
                             onChange={(e) => dim.set(parseFloat(e.target.value))}
-                            className="w-full accent-orange-500 cursor-pointer h-1.5"
+                            className="w-full cursor-pointer"
                           />
                         </div>
                       ))}
@@ -737,19 +737,28 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
 
                   {/* Verified Visit Toggle */}
                   <div className="flex items-center justify-between p-3.5 bg-muted/30 rounded-2xl border border-border">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
                       <div>
                         <p className="text-xs font-bold text-foreground">Verified Dining Visit</p>
                         <p className="text-[10px] text-muted-foreground">Receipt / QR check-in attached</p>
                       </div>
                     </div>
-                    <input 
-                      type="checkbox"
-                      checked={isVerifiedVisit}
-                      onChange={(e) => setIsVerifiedVisit(e.target.checked)}
-                      className="w-5 h-5 accent-emerald-500 rounded cursor-pointer"
-                    />
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isVerifiedVisit}
+                      onClick={() => setIsVerifiedVisit(!isVerifiedVisit)}
+                      className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
+                        isVerifiedVisit ? "bg-emerald-500 shadow-md shadow-emerald-500/30" : "bg-muted border border-border"
+                      }`}
+                    >
+                      <div
+                        className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow-md ${
+                          isVerifiedVisit ? "translate-x-5.5" : "translate-x-0.5"
+                        }`}
+                      />
+                    </button>
                   </div>
 
                   <div className="space-y-2.5">

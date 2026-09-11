@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { 
   signInWithPopup, 
   signInWithEmailAndPassword, 
@@ -74,7 +75,17 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
     }
   };
 
-  if (!isOpen) return null;
+  // Lock background scroll when modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen]);
+
+  if (!isOpen || typeof document === "undefined") return null;
 
   // Google Sign-In (available on Web browser)
   const handleGoogleSignIn = async () => {
@@ -250,16 +261,16 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
     }
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center sm:p-4">
+      <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center sm:p-4 pointer-events-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/85 backdrop-blur-md"
+          className="fixed inset-0 bg-black/85 backdrop-blur-md cursor-pointer"
         />
 
         {/* Modal / Bottom Sheet Window */}
@@ -268,7 +279,7 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 50, scale: 0.98 }}
           transition={{ type: "spring", damping: 30, stiffness: 380 }}
-          className="relative w-full max-w-md bg-[#0f0f13] border-t sm:border border-white/15 rounded-t-[32px] sm:rounded-3xl px-6 pt-3 pb-8 sm:p-8 shadow-2xl z-10 text-white overflow-hidden max-h-[92vh] overflow-y-auto"
+          className="relative w-full max-w-md bg-[#0f0f13] border-t sm:border border-white/15 rounded-t-[32px] sm:rounded-3xl px-6 pt-3 pb-8 sm:p-8 shadow-2xl z-10 text-white overflow-hidden max-h-[92vh] overflow-y-auto scrollbar-hide pointer-events-auto"
         >
           {/* Subtle ambient top glow */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-20 bg-gradient-to-b from-orange-500/15 via-orange-500/5 to-transparent blur-2xl pointer-events-none" />
@@ -671,7 +682,8 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
           )}
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
 

@@ -290,9 +290,19 @@ export const AdminSeed: React.FC = () => {
                 </div>
                 <button onClick={() => setUsePinpoint(!usePinpoint)} className={`w-12 h-6 rounded-full transition-all relative ${usePinpoint ? 'bg-[#00e054]' : 'bg-white/10'}`}><div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${usePinpoint ? 'left-7' : 'left-1'}`} /></button>
              </div>
-             <div className="space-y-4">
-                <div className="flex justify-between items-center px-2"><label className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/30">Discovery Radius</label><span className="text-xs font-black text-[#00e054]">{radiusKm} KM</span></div>
-                <input type="range" min="1" max="50" value={radiusKm} onChange={(e) => setRadiusKm(parseInt(e.target.value))} className="w-full h-2 bg-black/40 rounded-lg appearance-none cursor-pointer accent-[#00e054]" />
+             <div className="space-y-3 p-4 bg-zinc-900/60 rounded-2xl border border-white/10">
+                <div className="flex justify-between items-center px-1">
+                  <label className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/40">Discovery Radius</label>
+                  <span className="text-xs font-black text-[#00e054] px-2.5 py-0.5 bg-[#00e054]/10 rounded-lg border border-[#00e054]/20">{radiusKm} KM</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="1" 
+                  max="50" 
+                  value={radiusKm} 
+                  onChange={(e) => setRadiusKm(parseInt(e.target.value))} 
+                  className="w-full cursor-pointer accent-[#00e054]" 
+                />
              </div>
              <button onClick={handleSeed} disabled={!selectedLocation} className="w-full bg-[#00e054] text-black px-8 py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-[#00c044] transition-all hover:-translate-y-1 shadow-2xl shadow-[#00e054]/20 flex items-center justify-center gap-3 group disabled:opacity-50 disabled:grayscale disabled:transform-none">
                <Zap className="fill-black group-hover:scale-110 transition-transform" size={20} /> Inject Region Data

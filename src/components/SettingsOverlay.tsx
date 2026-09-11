@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { 
   X, 
   User, 
@@ -39,7 +40,24 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen || typeof document === "undefined") return null;
 
   const sections = [
     {
@@ -160,51 +178,73 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
     }
   ];
 
-  return (
-    <div className="fixed inset-0 z-[600] flex items-center justify-center">
+  return createPortal(
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 overflow-hidden pointer-events-auto">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-background/80 backdrop-blur-xl transition-opacity animate-in fade-in"
-        onClick={onClose}
+        className="fixed inset-0 bg-black/85 backdrop-blur-xl transition-opacity animate-in fade-in cursor-pointer"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          triggerHaptic();
+          onClose();
+        }}
       />
       
       {/* Settings Panel */}
-      <div className="relative w-full h-full md:h-[80vh] md:max-w-xl md:rounded-3xl bg-background border border-border shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 duration-300">
+      <div 
+        className="relative w-full h-full md:h-[80vh] md:max-w-xl md:rounded-3xl bg-background border border-border shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 duration-300 pointer-events-auto z-10"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-background/50 backdrop-blur-md px-6 py-6 border-b border-border flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md px-6 py-5 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-4">
-             <button onClick={onClose} className="p-1 hover:bg-muted rounded-full transition-colors">
-                <X size={24} className="text-muted-foreground" />
+             <button 
+               type="button"
+               onClick={(e) => {
+                 e.preventDefault();
+                 e.stopPropagation();
+                 triggerHaptic();
+                 onClose();
+               }} 
+               className="p-2 hover:bg-muted rounded-full transition-colors active:scale-90 cursor-pointer"
+               title="Close Settings"
+             >
+                <X size={22} className="text-muted-foreground hover:text-foreground" />
              </button>
-             <h2 className="text-xl font-black tracking-tighter text-foreground">Settings and Privacy</h2>
+             <h2 className="text-lg sm:text-xl font-black tracking-tighter text-foreground">Settings and Privacy</h2>
           </div>
         </div>
 
         {/* Scrollable List */}
-        <div className="flex-1 overflow-y-auto px-2 py-4 space-y-8 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 space-y-8 custom-scrollbar">
           {sections.map((section, sidx) => (
             <div key={sidx} className="space-y-2">
-               <h3 className="px-4 text-[10px] uppercase tracking-[0.2em] font-black text-muted-foreground mb-4">
+               <h3 className="px-4 text-[10px] uppercase tracking-[0.2em] font-black text-muted-foreground mb-3">
                   {section.title}
                </h3>
                <div className="space-y-1">
                   {section.items.map((item, iidx) => (
                     <button
                       key={iidx}
-                      onClick={item.action}
-                      className="w-full flex items-center justify-between px-4 py-4 rounded-2xl hover:bg-muted transition-all group active:scale-[0.98]"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        item.action();
+                      }}
+                      className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl hover:bg-muted transition-all group active:scale-[0.98] cursor-pointer"
                     >
                       <div className="flex items-center gap-4">
-                         <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-muted/30 border border-border group-hover:border-muted-foreground/50 transition-colors">
+                         <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-muted/30 border border-border group-hover:border-muted-foreground/50 transition-colors shrink-0">
                             {item.icon}
                          </div>
-                         <span className={`text-sm font-bold tracking-tight ${item.isDestructive ? 'text-rose-500/80' : 'text-foreground/80'} group-hover:text-foreground transition-colors`}>
+                         <span className={`text-sm font-bold tracking-tight ${item.isDestructive ? 'text-rose-500/80' : 'text-foreground/80'} group-hover:text-foreground transition-colors text-left`}>
                             {item.label}
                          </span>
                       </div>
                       {!item.isDestructive && (
-                         <ChevronRight size={16} className="text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
+                         <ChevronRight size={16} className="text-muted-foreground/30 group-hover:text-muted-foreground transition-colors shrink-0" />
                       )}
                     </button>
                   ))}
@@ -213,12 +253,13 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
           ))}
 
           {/* Version Info */}
-          <div className="pt-8 pb-12 text-center space-y-1">
+          <div className="pt-6 pb-8 text-center space-y-1">
              <p className="text-[10px] uppercase tracking-[0.4em] font-black text-muted-foreground">Madeater v1.0.4</p>
              <p className="text-[9px] font-medium italic serif text-muted-foreground/30">Designed for the Culinary Elite</p>
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

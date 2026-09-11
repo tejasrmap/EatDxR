@@ -432,12 +432,12 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
               </div>
 
               {/* Madeater Rating Slider */}
-              <div className="p-3 bg-zinc-900/50 rounded-xl border border-white/10 space-y-1.5">
+              <div className="p-3.5 bg-zinc-900/60 rounded-2xl border border-white/10 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[9px] font-black uppercase tracking-widest text-white/50">Madeater Score</span>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-orange-500/10 border border-orange-500/25 rounded-lg">
                     <Star size={12} className="text-amber-400 fill-amber-400" />
-                    <span className="text-sm font-black text-white">{Number(rating).toFixed(1)} / 10</span>
+                    <span className="text-xs font-black text-orange-400">{Number(rating).toFixed(1)} / 10</span>
                   </div>
                 </div>
                 <input 
@@ -447,8 +447,14 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
                   step="0.1"
                   value={rating}
                   onChange={(e) => setRating(parseFloat(e.target.value))}
-                  className="w-full accent-orange-500 cursor-pointer h-1.5 bg-zinc-800 rounded-lg"
+                  className="w-full cursor-pointer"
                 />
+                <div className="flex justify-between text-[9px] text-white/30 font-bold px-0.5">
+                  <span>1.0 Fair</span>
+                  <span>5.0 Good</span>
+                  <span>7.5 Great</span>
+                  <span>10.0 Legendary</span>
+                </div>
               </div>
 
               {/* Review Commentary */}
@@ -466,20 +472,29 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
               </div>
 
               {/* Verified Visit Toggle */}
-              <div className="flex items-center justify-between p-2.5 bg-zinc-900/30 rounded-xl border border-white/10">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck size={16} className={isVerifiedVisit ? "text-emerald-400" : "text-white/30"} />
+              <div className="flex items-center justify-between p-3 bg-zinc-900/40 rounded-xl border border-white/10">
+                <div className="flex items-center gap-2.5">
+                  <ShieldCheck size={18} className={isVerifiedVisit ? "text-emerald-400" : "text-white/30"} />
                   <div>
                     <p className="text-xs font-bold text-white">Mark as Verified Visit</p>
                     <p className="text-[9px] text-white/40">Verified dining experience</p>
                   </div>
                 </div>
-                <input 
-                  type="checkbox"
-                  checked={isVerifiedVisit}
-                  onChange={(e) => setIsVerifiedVisit(e.target.checked)}
-                  className="w-4 h-4 accent-emerald-500 rounded cursor-pointer"
-                />
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isVerifiedVisit}
+                  onClick={() => setIsVerifiedVisit(!isVerifiedVisit)}
+                  className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
+                    isVerifiedVisit ? "bg-emerald-500 shadow-md shadow-emerald-500/30" : "bg-white/15"
+                  }`}
+                >
+                  <div
+                    className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow-md ${
+                      isVerifiedVisit ? "translate-x-5.5" : "translate-x-0.5"
+                    }`}
+                  />
+                </button>
               </div>
             </div>
           )}
