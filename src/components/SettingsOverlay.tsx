@@ -28,7 +28,7 @@ import { toast } from "sonner";
 interface SettingsOverlayProps {
   isOpen: boolean;
   onClose: () => void;
-  onEditProfile: () => void;
+  onEditProfile?: () => void;
 }
 
 export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ 
@@ -68,7 +68,7 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
         { 
           label: "Edit Profile", 
           icon: <UserCircle size={20} className="text-muted-foreground" />, 
-          action: () => { onEditProfile(); onClose(); } 
+          action: () => { onEditProfile?.(); onClose(); } 
         },
         { 
           label: "Notifications", 

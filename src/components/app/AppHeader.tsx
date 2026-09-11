@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, Sparkles, MapPin, ChevronDown, User, LogOut, ArrowLeft, Sun, Moon, Settings, Dna, Trophy, Navigation, Plus, Utensils, Compass, Map, BookMarked } from "lucide-react";
+import { Search, Sparkles, MapPin, ChevronDown, User, LogOut, ArrowLeft, Sun, Moon, Settings, Navigation } from "lucide-react";
 import { useAuth } from "../../App";
 import { useTheme } from "../ThemeProvider";
 import { SearchOverlay } from "../SearchOverlay";
@@ -186,75 +186,16 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
             )}
           </div>
 
-          {/* Center: Desktop Navigation Links (Clean Segmented Bar) */}
-          <nav className="hidden lg:flex items-center gap-1 bg-white/[0.03] p-1 rounded-full border border-white/10">
-            <Link
-              to="/app"
-              onClick={() => triggerHaptic()}
-              className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all ${
-                routerLocation.pathname === "/app" || routerLocation.pathname === "/app/"
-                  ? "bg-white text-black font-black shadow-sm"
-                  : "text-white/60 hover:text-white"
-              }`}
-            >
-              Feed
-            </Link>
-            <Link
-              to="/app/dishes"
-              onClick={() => triggerHaptic()}
-              className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all ${
-                routerLocation.pathname.startsWith("/app/dishes") || routerLocation.pathname.startsWith("/app/dish")
-                  ? "bg-white text-black font-black shadow-sm"
-                  : "text-white/60 hover:text-white"
-              }`}
-            >
-              Dishes
-            </Link>
-            <Link
-              to="/app/restaurants"
-              onClick={() => triggerHaptic()}
-              className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all ${
-                routerLocation.pathname.startsWith("/app/restaurants") || routerLocation.pathname.startsWith("/app/restaurant")
-                  ? "bg-white text-black font-black shadow-sm"
-                  : "text-white/60 hover:text-white"
-              }`}
-            >
-              Restaurants
-            </Link>
-            <Link
-              to="/app/map"
-              onClick={() => triggerHaptic()}
-              className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all ${
-                routerLocation.pathname.startsWith("/app/map")
-                  ? "bg-white text-black font-black shadow-sm"
-                  : "text-white/60 hover:text-white"
-              }`}
-            >
-              Food Radar
-            </Link>
-            <Link
-              to="/app/lists"
-              onClick={() => triggerHaptic()}
-              className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all ${
-                routerLocation.pathname.startsWith("/app/lists") || routerLocation.pathname.startsWith("/app/list")
-                  ? "bg-white text-black font-black shadow-sm"
-                  : "text-white/60 hover:text-white"
-              }`}
-            >
-              Lists
-            </Link>
-          </nav>
-
-          {/* Right Action Icons (Search + Log Meal + Profile Dropdown) */}
-          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          {/* Right Action Icons (Clean Search + Profile Dropdown) */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             
             {/* Desktop Search Bar Trigger */}
             <button
               onClick={() => { triggerHaptic(); setIsSearchOpen(true); }}
-              className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/50 hover:text-white text-xs transition-all w-40 xl:w-56 cursor-pointer"
+              className="hidden md:flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/50 hover:text-white text-xs transition-all w-52 xl:w-64 cursor-pointer"
             >
-              <Search size={13} className="text-orange-400 shrink-0" />
-              <span className="truncate">Search Madeater...</span>
+              <Search size={14} className="text-orange-400 shrink-0" />
+              <span className="truncate">Search dishes, spots...</span>
               <span className="ml-auto text-[9px] font-mono bg-white/10 px-1.5 py-0.5 rounded text-white/40">⌘K</span>
             </button>
 
@@ -265,22 +206,6 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
               title="Search"
             >
               <Search size={15} />
-            </button>
-
-            {/* Desktop Log Meal Action */}
-            <button
-              onClick={() => {
-                triggerHaptic();
-                if (!user) {
-                  login();
-                } else {
-                  setIsLogModalOpen(true);
-                }
-              }}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-black text-xs uppercase tracking-wider shadow-md active:scale-95 transition-all cursor-pointer shrink-0"
-            >
-              <Plus size={13} strokeWidth={3} />
-              <span>Log Meal</span>
             </button>
 
             {/* User Profile Avatar & Dropdown Menu */}
