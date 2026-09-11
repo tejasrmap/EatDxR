@@ -10,6 +10,7 @@ import { CommentModal } from "./CommentModal";
 import { ShareMenu } from "./ShareMenu";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic } from "../services/nativeService";
+import { motion, AnimatePresence } from "motion/react";
 
 interface CravingCardProps {
   review: Review;
@@ -28,6 +29,8 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
   const [isMuted, setIsMuted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
+  const [showHeartBurst, setShowHeartBurst] = useState(false);
+  const lastTapRef = useRef<number>(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -161,14 +164,48 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
     }
   };
 
+  const handleMediaTap = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const now = Date.now();
+    if (now - lastTapRef.current < 320) {
+      // Double tap!
+      triggerHaptic();
+      if (!hasLiked) {
+        handleLike();
+      }
+      setShowHeartBurst(true);
+      setTimeout(() => setShowHeartBurst(false), 800);
+      lastTapRef.current = 0;
+    } else {
+      lastTapRef.current = now;
+      setTimeout(() => {
+        if (lastTapRef.current === now) {
+          triggerHaptic();
+          setIsPlaying(!isPlaying);
+          lastTapRef.current = 0;
+        }
+      }, 330);
+    }
+  };
+
   const attachedDish = review.attachedDish || review.dishes?.[0]?.name;
   const cravingScore = review.attachedScore || review.rating;
 
   return (
-    <div ref={containerRef} className="snap-child relative w-full h-[calc(100dvh-135px)] md:h-[calc(100vh-110px)] bg-black overflow-hidden flex items-center justify-center p-2 sm:p-3">
+    <div ref={containerRef} className="snap-child relative w-full h-[calc(100dvh-125px)] md:h-[calc(100vh-100px)] bg-black overflow-hidden flex items-center justify-center p-1.5 sm:p-3 select-none">
       
       {/* Media Viewport */}
-      <div className="relative w-full h-full max-w-md bg-zinc-950 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-white/10 group flex flex-col justify-between">
+      <div 
+        onClick={handleMediaTap}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          triggerHaptic();
+          if (!hasLiked) handleLike();
+          setShowHeartBurst(true);
+          setTimeout(() => setShowHeartBurst(false), 800);
+        }}
+        className="relative w-full h-full max-w-md bg-zinc-950 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-white/10 group flex flex-col justify-between cursor-pointer"
+      >
         
         {/* Video / Background Media */}
         {review.videoUrl ? (
@@ -176,24 +213,16 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
             <video
               ref={videoRef}
               src={review.videoUrl}
-              className="absolute inset-0 w-full h-full object-cover cursor-pointer"
+              className="absolute inset-0 w-full h-full object-cover"
               loop
               playsInline
               muted={isMuted}
-              onClick={() => {
-                triggerHaptic();
-                setIsPlaying(!isPlaying);
-              }}
             />
             {!isPlaying && (
               <div 
-                onClick={() => {
-                  triggerHaptic();
-                  setIsPlaying(true);
-                }}
-                className="absolute inset-0 flex items-center justify-center bg-black/40 z-15 cursor-pointer"
+                className="absolute inset-0 flex items-center justify-center bg-black/40 z-15 pointer-events-none"
               >
-                <div className="w-16 h-16 rounded-full bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-2xl transition-transform transform scale-100 active:scale-90">
+                <div className="w-16 h-16 rounded-full bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-2xl">
                   <Play size={28} className="fill-white translate-x-0.5" />
                 </div>
               </div>
@@ -214,6 +243,23 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
         {/* Ambient Dark Gradient Overlays */}
         <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/80 via-black/30 to-transparent pointer-events-none z-10" />
         <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/95 via-black/70 to-transparent pointer-events-none z-10" />
+
+        {/* Double-Tap Heart Burst Animation */}
+        <AnimatePresence>
+          {showHeartBurst && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: [0, 1.25, 1], opacity: [0, 1, 1] }}
+              exit={{ scale: 1.4, opacity: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="absolute inset-0 flex items-center justify-center pointer-events-none z-40"
+            >
+              <div className="p-5 rounded-full bg-black/50 backdrop-blur-md border border-white/20 shadow-[0_0_50px_rgba(244,63,94,0.7)]">
+                <Heart size={68} className="text-rose-500 fill-rose-500 drop-shadow-[0_0_20px_rgba(244,63,94,0.9)]" />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* TOP BAR: Tag Pill & Sound Control */}
         <div className="relative z-20 p-3 sm:p-4 flex items-center justify-between">

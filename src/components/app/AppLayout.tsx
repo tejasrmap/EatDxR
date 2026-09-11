@@ -77,7 +77,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       )}
 
       {/* Main Full-Bleed App Content Area */}
-      <main className={`flex-1 w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 ${isReelsView ? 'pt-0 pb-0' : 'pb-24 lg:pb-12'}`}>
+      <main className={`flex-1 w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 ${isReelsView ? 'pt-0 pb-0' : 'pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] lg:pb-12'}`}>
         <div key={routerLocation.pathname} className="page-transition w-full">
           {children}
         </div>
