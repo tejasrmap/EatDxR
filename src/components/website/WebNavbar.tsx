@@ -7,6 +7,7 @@ import { LogMealModal } from "../LogMealModal";
 import { CravingUploadModal } from "../CravingUploadModal";
 import { SettingsOverlay } from "../SettingsOverlay";
 import { EditProfileModal } from "../EditProfileModal";
+import { ModeSwitcher } from "../ModeSwitcher";
 import { useAuth } from "../../App";
 
 export function WebNavbar() {
@@ -101,6 +102,11 @@ export function WebNavbar() {
               <Plus size={13} className="stroke-[3]" />
               <span>Log</span>
             </button>
+
+            {/* Mode Switcher Slider (Web / App Mode) */}
+            <div className="hidden sm:block">
+              <ModeSwitcher />
+            </div>
 
             {/* User Profile / Login */}
             {user ? (

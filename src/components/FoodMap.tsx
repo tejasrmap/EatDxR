@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { 
@@ -266,8 +266,11 @@ export function FoodMap() {
     }
   };
 
+  const location = useLocation();
+  const isAppMode = location.pathname.startsWith("/app");
+
   return (
-    <div className="min-h-screen bg-black text-white pt-20 pb-24 md:pb-12 px-3 sm:px-6 max-w-7xl mx-auto flex flex-col">
+    <div className={`min-h-screen bg-black text-white ${isAppMode ? "pt-3 sm:pt-4" : "pt-20 sm:pt-24"} pb-24 md:pb-12 px-3 sm:px-6 max-w-7xl mx-auto flex flex-col`}>
       
       {/* Top Header & Geospatial Bar */}
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-5">

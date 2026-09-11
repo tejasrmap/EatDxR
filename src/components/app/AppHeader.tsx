@@ -6,6 +6,7 @@ import { useTheme } from "../ThemeProvider";
 import { SearchOverlay } from "../SearchOverlay";
 import { AIFoodAssistant } from "../AIFoodAssistant";
 import { LogMealModal } from "../LogMealModal";
+import { ModeSwitcher } from "../ModeSwitcher";
 import { triggerHaptic } from "../../services/nativeService";
 import { toast } from "sonner";
 
@@ -188,6 +189,10 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
 
           {/* Right Action Icons (Clean Search + Profile Dropdown) */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Mode Switcher Slider for Laptop (Web / App Mode) */}
+            <div className="hidden sm:block">
+              <ModeSwitcher />
+            </div>
             
             {/* Desktop Search Bar Trigger */}
             <button

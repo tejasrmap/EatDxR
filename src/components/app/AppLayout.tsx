@@ -47,7 +47,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       return "Profile";
     }
     if (path.startsWith("/app/critics") || path.startsWith("/critics")) return "Food Critics";
-    if (path.startsWith("/app/map") || path.startsWith("/map")) return "Food Radar";
+    if (path.startsWith("/app/map") || path.startsWith("/map")) return undefined;
     if (path.startsWith("/app/journal") || path.startsWith("/journal")) return "Food Diary";
     if (path.startsWith("/app/wrapped") || path.startsWith("/wrapped")) return "My Food Year";
     return undefined;
