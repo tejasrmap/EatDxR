@@ -87,6 +87,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     
     setIsSaving(true);
     try {
+      let finalPhotoURL = photoURL;
       // Storage Upload: Supabase Storage -> Firebase Storage -> Base64 Fallback
       if (photoFile) {
         setIsUploading(true);

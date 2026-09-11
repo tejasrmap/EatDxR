@@ -15,7 +15,8 @@ import {
   Info,
   Sun,
   Moon,
-  Monitor
+  Monitor,
+  Trash2
 } from "lucide-react";
 import { useAuth } from "../App";
 import { useTheme } from "./ThemeProvider";
@@ -99,6 +100,14 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
             } catch (err: any) {
               toast.error(err?.message || "Failed to send password reset email.");
             }
+          } 
+        },
+        { 
+          label: "Delete Account & Data", 
+          icon: <Trash2 size={20} className="text-rose-500" />, 
+          action: () => { 
+            triggerHaptic();
+            window.open("/delete-account", "_blank"); 
           } 
         }
       ]

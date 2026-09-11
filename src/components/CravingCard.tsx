@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Star, Heart, MessageSquare, MapPin, Navigation, Volume2, VolumeX, Sparkles, Flame, ShieldCheck, Share2, Tag, Utensils } from "lucide-react";
+import { Star, Heart, MessageSquare, MapPin, Navigation, Volume2, VolumeX, Sparkles, Flame, ShieldCheck, Share2, Tag, Utensils, Play } from "lucide-react";
 import { Review, Interaction } from "../types";
 import { Link } from "react-router-dom";
 import { useAuth } from "../App";
@@ -26,7 +26,23 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
   const [isFollowing, setIsFollowing] = useState(false);
   const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { threshold: 0.6 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -62,13 +78,13 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
 
   useEffect(() => {
     if (videoRef.current) {
-      if (isActive) {
+      if (isVisible && isActive && isPlaying) {
         videoRef.current.play().catch(() => {});
       } else {
         videoRef.current.pause();
       }
     }
-  }, [isActive]);
+  }, [isVisible, isActive, isPlaying]);
 
   const hasLiked = currentUser ? likes.some(l => l.userId === currentUser.uid) : false;
   const totalLikes = (review.likes || 0) + likes.length;
@@ -149,22 +165,40 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
   const cravingScore = review.attachedScore || review.rating;
 
   return (
-    <div className="snap-child relative w-full h-[calc(100dvh-135px)] md:h-[calc(100vh-110px)] bg-black overflow-hidden flex items-center justify-center p-2 sm:p-3">
+    <div ref={containerRef} className="snap-child relative w-full h-[calc(100dvh-135px)] md:h-[calc(100vh-110px)] bg-black overflow-hidden flex items-center justify-center p-2 sm:p-3">
       
       {/* Media Viewport */}
       <div className="relative w-full h-full max-w-md bg-zinc-950 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden border border-white/10 group flex flex-col justify-between">
         
         {/* Video / Background Media */}
         {review.videoUrl ? (
-          <video
-            ref={videoRef}
-            src={review.videoUrl}
-            className="absolute inset-0 w-full h-full object-cover cursor-pointer"
-            loop
-            playsInline
-            muted={isMuted}
-            onClick={() => setIsMuted(!isMuted)}
-          />
+          <>
+            <video
+              ref={videoRef}
+              src={review.videoUrl}
+              className="absolute inset-0 w-full h-full object-cover cursor-pointer"
+              loop
+              playsInline
+              muted={isMuted}
+              onClick={() => {
+                triggerHaptic();
+                setIsPlaying(!isPlaying);
+              }}
+            />
+            {!isPlaying && (
+              <div 
+                onClick={() => {
+                  triggerHaptic();
+                  setIsPlaying(true);
+                }}
+                className="absolute inset-0 flex items-center justify-center bg-black/40 z-15 cursor-pointer"
+              >
+                <div className="w-16 h-16 rounded-full bg-black/70 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-2xl transition-transform transform scale-100 active:scale-90">
+                  <Play size={28} className="fill-white translate-x-0.5" />
+                </div>
+              </div>
+            )}
+          </>
         ) : firstImage ? (
           <img 
             src={firstImage} 

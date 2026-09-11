@@ -40,6 +40,8 @@ import { Critics } from "./components/Critics";
 import { Journal } from "./components/Journal";
 import { FoodTrails } from "./components/FoodTrails";
 import { ApecERPPrivacy } from "./pages/ApecERPPrivacy";
+import { MadeaterPrivacy } from "./pages/MadeaterPrivacy";
+import { AccountDeletion } from "./pages/AccountDeletion";
 
 // --- Error Boundary ---
 interface ErrorBoundaryProps {
@@ -325,6 +327,16 @@ export function App() {
                 } 
               />
               <Route 
+                path="/cravings" 
+                element={
+                  isNative ? (
+                    <AppLayout><CravingsFeed /></AppLayout>
+                  ) : (
+                    <WebsiteLayout><CravingsFeed /></WebsiteLayout>
+                  )
+                } 
+              />
+              <Route 
                 path="/dishes" 
                 element={
                   isNative ? (
@@ -592,8 +604,13 @@ export function App() {
               />
 
               {/* Privacy Policy Routes (Google Play & Web) */}
-              <Route path="/privacy" element={<ApecERPPrivacy />} />
+              <Route path="/privacy" element={<MadeaterPrivacy />} />
+              <Route path="/madeater/privacy" element={<MadeaterPrivacy />} />
               <Route path="/apecerp/privacy" element={<ApecERPPrivacy />} />
+
+              {/* Account Deletion Routes (Google Play Mandate) */}
+              <Route path="/delete-account" element={<AccountDeletion />} />
+              <Route path="/account-deletion" element={<AccountDeletion />} />
 
               {/* Fallback */}
               <Route path="*" element={<Navigate to="/" replace />} />

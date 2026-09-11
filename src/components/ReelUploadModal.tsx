@@ -167,8 +167,6 @@ export function ReelUploadModal({ isOpen, onClose }: ReelUploadModalProps) {
           setVideoFile(null);
           setVideoPreview(null);
           setIsUploading(false);
-        }
-      );
     } catch (error) {
       console.error(error);
       setIsUploading(false);

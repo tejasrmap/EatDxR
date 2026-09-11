@@ -103,7 +103,7 @@ export function WebFooter() {
         <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-[11px] text-white/40">
           <p>© {new Date().getFullYear()} Madeater Global. Built for true food obsessives.</p>
           <div className="flex items-center gap-6">
-            <Link to="/" className="hover:text-white transition-colors">Privacy</Link>
+            <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link to="/" className="hover:text-white transition-colors">Terms</Link>
             <Link to="/admin/seed" className="hover:text-white transition-colors flex items-center gap-1">
               <Terminal size={12} />

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1082737794356",
+    "project_id": "gen-lang-client-0693814202",
+    "storage_bucket": "gen-lang-client-0693814202.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1082737794356:android:a364c1bd5984e4cb51d961",
+        "android_client_info": {
+          "package_name": "com.madeater.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1082737794356-j0qguqdr9k646nndvbhd7h5dam7ocah0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRaJsbUfFGzT4Og6O9R4s0g0stkKiZtvQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1082737794356-j0qguqdr9k646nndvbhd7h5dam7ocah0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

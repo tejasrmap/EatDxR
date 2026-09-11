@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Review } from "../types";
-import { X, Send, Instagram, MessageCircle, Share2, Copy, Download, Loader2, Sparkles, Check } from "lucide-react";
+import { X, Send, Instagram, MessageCircle, Share2, Copy, Download, Loader2, Check } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { triggerHaptic } from "../services/nativeService";
@@ -16,9 +17,30 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  if (!isOpen) return null;
+  // Lock background scroll when open and handle Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
-  const reviewUrl = `${window.location.origin}/restaurant/${review.restaurantId}`;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen || typeof document === "undefined") return null;
+
+  const baseUrl = (typeof window !== "undefined" && window.location.origin && !window.location.origin.includes("localhost"))
+    ? window.location.origin
+    : "https://madeater.in";
+  const reviewUrl = `${baseUrl}/restaurant/${review.restaurantId}`;
   const shareTitle = `${review.restaurantName} on Madeater`;
   const shareText = `Check out this review of ${review.restaurantName} (${review.rating}★) on Madeater! 🍽️✨`;
 
@@ -94,26 +116,33 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
     setTimeout(() => setCopied(false), 2000);
   };
 
-  return (
-    <div className="fixed inset-0 z-[3000] flex items-end sm:items-center justify-center p-0 sm:p-4">
-      {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-        className="fixed inset-0 bg-black/80 backdrop-blur-md"
+  return createPortal(
+    <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden pointer-events-auto">
+      {/* Fullscreen Backdrop */}
+      <div
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          triggerHaptic();
+          onClose();
+        }}
+        className="fixed inset-0 bg-black/85 backdrop-blur-md cursor-pointer transition-opacity"
       />
       
-      {/* Modal Dialog (Bottom Sheet on Mobile, Centered on Desktop) */}
+      {/* Modal Dialog (Bottom Sheet on Mobile, Centered Card on Desktop) */}
       <motion.div
-        initial={{ opacity: 0, y: 100 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 100 }}
-        transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="relative w-full max-w-md bg-zinc-950 border border-white/15 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl z-10"
+        initial={{ opacity: 0, y: 80, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 80, scale: 0.98 }}
+        transition={{ type: "spring", damping: 28, stiffness: 350 }}
+        className="relative w-full max-w-md bg-zinc-950 border border-white/15 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl z-10 max-h-[90vh] flex flex-col pointer-events-auto my-0"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Swipe / Drag Pill Handle */}
+        <div className="sm:hidden flex justify-center pt-2.5 pb-1 bg-zinc-950">
+          <div className="w-12 h-1.5 rounded-full bg-white/25" />
+        </div>
+
         {/* Header Bar */}
         <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -126,35 +155,44 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
             </div>
           </div>
           <button 
-            onClick={() => { triggerHaptic(); onClose(); }} 
-            className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/60 hover:text-white transition-colors cursor-pointer active:scale-95 shrink-0"
+            type="button"
+            onClick={(e) => { 
+              e.preventDefault();
+              e.stopPropagation();
+              triggerHaptic(); 
+              onClose(); 
+            }} 
+            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white transition-all cursor-pointer active:scale-90 shrink-0 shadow-lg"
+            title="Close Share Menu"
           >
-            <X size={16} />
+            <X size={18} />
           </button>
         </div>
 
         {/* Primary Action Stack */}
-        <div className="p-4 sm:p-6 space-y-3">
+        <div className="p-4 sm:p-6 space-y-3 overflow-y-auto max-h-[calc(90vh-130px)] scrollbar-hide">
           
           {/* 1. Native System Share */}
-          {navigator.share && (
+          {typeof navigator !== "undefined" && typeof navigator.share === "function" && (
             <button 
+              type="button"
               onClick={handleNativeShare}
-              className="w-full h-14 flex items-center justify-between px-5 bg-gradient-to-r from-orange-500 to-amber-500 text-black font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-orange-500/20 active:scale-95 transition-all cursor-pointer"
+              className="w-full h-14 flex items-center justify-between px-5 bg-gradient-to-r from-orange-500 to-amber-500 text-black font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-orange-500/20 active:scale-98 transition-all cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <Share2 size={18} />
                 <span>Share via Device Apps...</span>
               </div>
-              <span className="text-[10px] font-bold bg-black/20 px-2 py-0.5 rounded-full">Native</span>
+              <span className="text-[10px] font-bold bg-black/20 px-2.5 py-0.5 rounded-full">Native</span>
             </button>
           )}
 
           {/* 2. Download 9:16 Instagram Story Card */}
           <button 
+            type="button"
             onClick={handleDownloadStory}
             disabled={isGenerating}
-            className="w-full h-14 flex items-center justify-between px-5 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-pink-500/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+            className="w-full h-14 flex items-center justify-between px-5 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-pink-500/20 active:scale-98 transition-all cursor-pointer disabled:opacity-50"
           >
             <div className="flex items-center gap-3">
               <Instagram size={18} />
@@ -170,6 +208,7 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
           <div className="grid grid-cols-3 gap-2.5 pt-1">
             {/* WhatsApp */}
             <button 
+              type="button"
               onClick={handleShareWhatsApp} 
               className="flex flex-col items-center justify-center gap-2 p-3.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all active:scale-95 cursor-pointer group"
             >
@@ -181,6 +220,7 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
 
             {/* X / Twitter */}
             <button 
+              type="button"
               onClick={handleShareX} 
               className="flex flex-col items-center justify-center gap-2 p-3.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all active:scale-95 cursor-pointer group"
             >
@@ -192,6 +232,7 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
 
             {/* Copy Link */}
             <button 
+              type="button"
               onClick={handleCopyLink} 
               className="flex flex-col items-center justify-center gap-2 p-3.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all active:scale-95 cursor-pointer group"
             >
@@ -209,7 +250,7 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
           <p className="text-[9px] font-mono uppercase tracking-widest text-white/30">MADEATER • Food Discovery & Reviews</p>
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 };
-

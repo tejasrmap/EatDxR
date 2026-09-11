@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Review, Interaction } from "../types";
 import { X, Star, Heart, MessageSquare, Send, MapPin, Calendar, Clock, Share2, Loader2, ChevronLeft, ChevronRight, User, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -29,6 +30,24 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
+
+  // Lock background scroll when open and handle Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   useEffect(() => {
     if (!review) return;
@@ -176,10 +195,12 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
     setIsShareMenuOpen(true);
   };
 
-  return (
+  if (!isOpen || !review || typeof document === "undefined") return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-0 md:p-8 xl:p-24 overflow-hidden">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-0 md:p-8 xl:p-24 overflow-hidden pointer-events-auto">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -446,6 +467,7 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
           )}
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };

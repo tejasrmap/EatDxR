@@ -29,7 +29,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   }, [location]);
 
   const isAppHome = routerLocation.pathname === "/app" || routerLocation.pathname === "/app/";
-  const isReelsView = routerLocation.pathname === "/app/cravings";
+  const isReelsView = routerLocation.pathname === "/app/cravings" || routerLocation.pathname === "/cravings";
 
   const getSubPageTitle = (path: string): string | undefined => {
     if (path.startsWith("/app/dishes") || path.startsWith("/app/explore") || path.startsWith("/dishes")) return "Signature Dishes";

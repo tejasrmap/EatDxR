@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Review } from "../types";
 import { 
   X, 
@@ -32,19 +33,25 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Close on Escape key
+  // Close on Escape key & lock background scroll
   useEffect(() => {
     if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [isOpen, onClose]);
 
-  if (!isOpen || !review) return null;
+  if (!isOpen || !review || typeof document === "undefined") return null;
 
   const images = (review.dishes || []).filter(d => d && d.image).map(d => d.image) || [];
   const heroImage = images[0] || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80";
@@ -166,12 +173,13 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
     }
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <div 
-        className="fixed inset-0 z-[350] flex items-center justify-center p-3 sm:p-6 overflow-y-auto bg-black/90 backdrop-blur-xl select-none"
+        className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 overflow-y-auto bg-black/90 backdrop-blur-xl select-none pointer-events-auto"
         onClick={(e) => {
           if (e.target === e.currentTarget) {
+            e.stopPropagation();
             triggerHaptic();
             onClose();
           }
@@ -199,8 +207,13 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
             </div>
 
             <button
-              onClick={() => { triggerHaptic(); onClose(); }}
-              className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+              type="button"
+              onClick={(e) => { 
+                e.stopPropagation();
+                triggerHaptic(); 
+                onClose(); 
+              }}
+              className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer active:scale-90"
               title="Close Story Studio"
             >
               <X size={18} />
@@ -405,6 +418,7 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
