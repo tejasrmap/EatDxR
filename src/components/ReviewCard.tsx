@@ -349,7 +349,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
       {firstImage && (
         <div 
           onClick={() => setIsDetailedViewOpen(true)}
-          className="w-full aspect-[16/10] sm:aspect-[16/9] max-h-72 bg-zinc-900 rounded-2xl border border-white/10 relative overflow-hidden block group/img shadow-md mb-3 cursor-pointer"
+          className="w-full aspect-[16/10] sm:aspect-[16/9] max-h-72 sm:max-h-96 md:max-h-[420px] bg-zinc-900 rounded-2xl border border-white/10 relative overflow-hidden block group/img shadow-md mb-3 cursor-pointer"
         >
           <img 
             src={optimizeImage(firstImage, { width: 600, quality: 80 })} 

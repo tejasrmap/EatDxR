@@ -11,7 +11,7 @@ export function AppStoriesBar({ onLogClick }: AppStoriesBarProps) {
   const navigate = useNavigate();
 
   return (
-    <div className="w-full overflow-x-auto scrollbar-hide py-3 px-4 border-b border-white/10 bg-black/40">
+    <div className="w-full overflow-x-auto scrollbar-hide py-3 px-3 sm:px-4 rounded-2xl sm:rounded-3xl border border-white/10 bg-zinc-950/70 backdrop-blur-md shadow-lg mb-3 sm:mb-4">
       <div className="flex items-center gap-3 w-max">
         
         {/* Your Story / Log Action */}

@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Search, Sparkles, MapPin, ChevronDown, User, LogOut, ArrowLeft, Sun, Moon, Settings, Dna, Trophy, Navigation } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Search, Sparkles, MapPin, ChevronDown, User, LogOut, ArrowLeft, Sun, Moon, Settings, Dna, Trophy, Navigation, Plus, Utensils, Compass, Map, BookMarked } from "lucide-react";
 import { useAuth } from "../../App";
 import { useTheme } from "../ThemeProvider";
 import { SearchOverlay } from "../SearchOverlay";
 import { AIFoodAssistant } from "../AIFoodAssistant";
+import { LogMealModal } from "../LogMealModal";
 import { triggerHaptic } from "../../services/nativeService";
 import { toast } from "sonner";
 
@@ -22,8 +23,10 @@ import { Geolocation } from "@capacitor/geolocation";
 export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = false, title }: AppHeaderProps) {
   const { user, dishdUser, login, logout } = useAuth();
   const { theme, setTheme } = useTheme();
+  const routerLocation = useLocation();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAIOpen, setIsAIOpen] = useState(false);
+  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [showCityMenu, setShowCityMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [cityFilter, setCityFilter] = useState("");
@@ -81,10 +84,10 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
   return (
     <>
       <header className="sticky top-0 left-0 right-0 z-40 bg-zinc-950/95 border-b border-white/10 pt-[env(safe-area-inset-top,0px)]">
-        <div className="max-w-4xl mx-auto px-3.5 sm:px-4 h-13 sm:h-14 flex items-center justify-between gap-2">
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 h-13 sm:h-14 flex items-center justify-between gap-3">
           
           {/* Left: Back button OR App Brand + City selector */}
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             {showBack ? (
               <button
                 onClick={() => { 
@@ -105,14 +108,14 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
             {title ? (
               <h1 className="text-sm sm:text-base font-black uppercase tracking-tight text-white truncate max-w-[180px] sm:max-w-[280px]">{title}</h1>
             ) : (
-              <div className="flex items-center gap-2 min-w-0">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 <Link 
                   to="/app" 
                   onClick={() => triggerHaptic()} 
                   className="flex items-baseline tracking-tighter shrink-0"
                 >
-                  <span className="font-black text-white text-base tracking-tight uppercase">MAD</span>
-                  <span className="font-black text-orange-500 text-base tracking-tight uppercase">EATER</span>
+                  <span className="font-black text-white text-base sm:text-lg tracking-tight uppercase">MAD</span>
+                  <span className="font-black text-orange-500 text-base sm:text-lg tracking-tight uppercase">EATER</span>
                   <span className="w-1.5 h-1.5 rounded-full bg-orange-500 ml-0.5" />
                 </Link>
 
@@ -123,7 +126,7 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
                     className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-white/80 hover:text-white transition-all active:scale-95"
                   >
                     <MapPin size={10} className="text-orange-500 shrink-0" />
-                    <span className="truncate max-w-[70px] sm:max-w-[100px]">{currentCity}</span>
+                    <span className="truncate max-w-[70px] sm:max-w-[110px]">{currentCity}</span>
                     <ChevronDown size={9} className="text-white/40 shrink-0" />
                   </button>
 
@@ -183,16 +186,101 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
             )}
           </div>
 
-          {/* Right Action Icons (Clean & Minimalist: Search + Profile Dropdown) */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Center: Desktop Navigation Links (Clean Segmented Bar) */}
+          <nav className="hidden lg:flex items-center gap-1 bg-white/[0.03] p-1 rounded-full border border-white/10">
+            <Link
+              to="/app"
+              onClick={() => triggerHaptic()}
+              className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all ${
+                routerLocation.pathname === "/app" || routerLocation.pathname === "/app/"
+                  ? "bg-white text-black font-black shadow-sm"
+                  : "text-white/60 hover:text-white"
+              }`}
+            >
+              Feed
+            </Link>
+            <Link
+              to="/app/dishes"
+              onClick={() => triggerHaptic()}
+              className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all ${
+                routerLocation.pathname.startsWith("/app/dishes") || routerLocation.pathname.startsWith("/app/dish")
+                  ? "bg-white text-black font-black shadow-sm"
+                  : "text-white/60 hover:text-white"
+              }`}
+            >
+              Dishes
+            </Link>
+            <Link
+              to="/app/restaurants"
+              onClick={() => triggerHaptic()}
+              className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all ${
+                routerLocation.pathname.startsWith("/app/restaurants") || routerLocation.pathname.startsWith("/app/restaurant")
+                  ? "bg-white text-black font-black shadow-sm"
+                  : "text-white/60 hover:text-white"
+              }`}
+            >
+              Restaurants
+            </Link>
+            <Link
+              to="/app/map"
+              onClick={() => triggerHaptic()}
+              className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all ${
+                routerLocation.pathname.startsWith("/app/map")
+                  ? "bg-white text-black font-black shadow-sm"
+                  : "text-white/60 hover:text-white"
+              }`}
+            >
+              Food Radar
+            </Link>
+            <Link
+              to="/app/lists"
+              onClick={() => triggerHaptic()}
+              className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all ${
+                routerLocation.pathname.startsWith("/app/lists") || routerLocation.pathname.startsWith("/app/list")
+                  ? "bg-white text-black font-black shadow-sm"
+                  : "text-white/60 hover:text-white"
+              }`}
+            >
+              Lists
+            </Link>
+          </nav>
+
+          {/* Right Action Icons (Search + Log Meal + Profile Dropdown) */}
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             
-            {/* Quick Search */}
+            {/* Desktop Search Bar Trigger */}
             <button
               onClick={() => { triggerHaptic(); setIsSearchOpen(true); }}
-              className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/80 hover:text-white active:scale-95 transition-all shrink-0 cursor-pointer"
+              className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/50 hover:text-white text-xs transition-all w-40 xl:w-56 cursor-pointer"
+            >
+              <Search size={13} className="text-orange-400 shrink-0" />
+              <span className="truncate">Search Madeater...</span>
+              <span className="ml-auto text-[9px] font-mono bg-white/10 px-1.5 py-0.5 rounded text-white/40">⌘K</span>
+            </button>
+
+            {/* Mobile Search Icon */}
+            <button
+              onClick={() => { triggerHaptic(); setIsSearchOpen(true); }}
+              className="md:hidden w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/80 hover:text-white active:scale-95 transition-all shrink-0 cursor-pointer"
               title="Search"
             >
               <Search size={15} />
+            </button>
+
+            {/* Desktop Log Meal Action */}
+            <button
+              onClick={() => {
+                triggerHaptic();
+                if (!user) {
+                  login();
+                } else {
+                  setIsLogModalOpen(true);
+                }
+              }}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-black font-black text-xs uppercase tracking-wider shadow-md active:scale-95 transition-all cursor-pointer shrink-0"
+            >
+              <Plus size={13} strokeWidth={3} />
+              <span>Log Meal</span>
             </button>
 
             {/* User Profile Avatar & Dropdown Menu */}
@@ -285,6 +373,7 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
 
       <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       <AIFoodAssistant isOpen={isAIOpen} onClose={() => setIsAIOpen(false)} />
+      <LogMealModal isOpen={isLogModalOpen} onClose={() => setIsLogModalOpen(false)} />
     </>
   );
 }

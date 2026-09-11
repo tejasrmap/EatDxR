@@ -53,7 +53,7 @@ export function AppNavigationDock() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none pb-[env(safe-area-inset-bottom,6px)]">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none pb-[env(safe-area-inset-bottom,6px)] lg:hidden">
         <div className="max-w-sm sm:max-w-md mx-auto px-3 sm:px-4 pb-1.5">
           <div className="w-full bg-zinc-950/92 backdrop-blur-2xl border border-white/10 rounded-full shadow-2xl pointer-events-auto p-1.5 flex items-center justify-between relative select-none touch-manipulation">
             
