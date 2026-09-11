@@ -4,6 +4,7 @@ import { Geolocation } from '@capacitor/geolocation';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
+import { PushNotifications, Token, ActionPerformed } from '@capacitor/push-notifications';
 
 export const isNative = Capacitor.isNativePlatform();
 
@@ -70,7 +71,49 @@ export async function getNativeLocation(): Promise<{ latitude: number; longitude
 }
 
 /**
- * Configure native Android status bar and splash screen
+ * Initialize Push Notifications on mobile device
+ */
+export async function setupPushNotifications(userId?: string): Promise<string | null> {
+  if (!isNative) return null;
+
+  try {
+    let permStatus = await PushNotifications.checkPermissions();
+
+    if (permStatus.receive === 'prompt') {
+      permStatus = await PushNotifications.requestPermissions();
+    }
+
+    if (permStatus.receive !== 'granted') {
+      console.warn('User denied push notification permission');
+      return null;
+    }
+
+    await PushNotifications.register();
+
+    PushNotifications.addListener('registration', (token: Token) => {
+      console.log('Push registration success, token:', token.value);
+    });
+
+    PushNotifications.addListener('registrationError', (error: any) => {
+      console.warn('Error on push registration:', error);
+    });
+
+    PushNotifications.addListener('pushNotificationReceived', (notification) => {
+      console.log('Push notification received:', notification);
+    });
+
+    PushNotifications.addListener('pushNotificationActionPerformed', (notification: ActionPerformed) => {
+      console.log('Push action performed:', notification.actionId);
+    });
+  } catch (err) {
+    console.warn('Push notification setup warning:', err);
+  }
+
+  return null;
+}
+
+/**
+ * Configure native Android status bar, splash screen, and push notifications
  */
 export async function initializeNativeApp(): Promise<void> {
   if (!isNative) return;
@@ -87,4 +130,7 @@ export async function initializeNativeApp(): Promise<void> {
   } catch (e) {
     console.warn("SplashScreen hide warning:", e);
   }
+
+  // Register push notifications
+  setupPushNotifications().catch(() => {});
 }
