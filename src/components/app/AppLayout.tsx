@@ -30,6 +30,8 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const isAppHome = routerLocation.pathname === "/app" || routerLocation.pathname === "/app/";
   const isReelsView = routerLocation.pathname === "/app/cravings" || routerLocation.pathname === "/cravings";
+  const isMapView = routerLocation.pathname.startsWith("/app/map") || routerLocation.pathname.startsWith("/map");
+  const isFullBleedView = isReelsView || isMapView;
 
   // Check if current page is a deep detail sub-page (e.g. restaurant detail, dish graph, list detail)
   const isDetailPage = 
@@ -83,9 +85,9 @@ export function AppLayout({ children }: AppLayoutProps) {
         </>
       )}
 
-      {/* Main Full-Bleed App Content Area */}
-      <main className={`flex-1 w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 ${isReelsView ? 'pt-0 pb-0' : 'pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] lg:pb-12'}`}>
-        <div key={routerLocation.pathname} className="page-transition w-full">
+      {/* Main App Content Area */}
+      <main className={`flex-1 w-full ${isFullBleedView ? 'p-0 m-0 max-w-none' : 'max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] lg:pb-12'}`}>
+        <div key={routerLocation.pathname} className={`page-transition w-full ${isFullBleedView ? 'h-full' : ''}`}>
           {children}
         </div>
       </main>

@@ -1,6 +1,6 @@
 # Madeater Account & Data Deletion Instructions
 
-**Application Name:** Madeater (Letterboxd for Food)  
+**Application Name:** Madeater 
 **Package Name / Application ID:** `com.madeater.app`  
 **Official Website:** [https://madeater.in](https://madeater.in)  
 **Account Deletion Web URL:** [https://madeater.in/delete-account](https://madeater.in/delete-account)  

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Navigation, MapPin, Clock, IndianRupee, Sparkles, 
@@ -160,11 +161,13 @@ export const INITIAL_FOOD_TRAILS: FoodTrail[] = [
   },
 ];
 
+const TRAIL_CATEGORIES = ['All', 'Desserts', 'Biryani', 'Late Night', 'Coffee'];
+
 export function FoodTrails() {
   const [trails, setTrails] = useState<FoodTrail[]>(INITIAL_FOOD_TRAILS);
-  const [selectedCity, setSelectedCity] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [activeStoryTrail, setActiveStoryTrail] = useState<FoodTrail | null>(null);
-  const [expandedTrailId, setExpandedTrailId] = useState<string | null>('trail_1');
+  const [expandedTrailId, setExpandedTrailId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [savedTrails, setSavedTrails] = useState<Record<string, boolean>>({});
 
@@ -224,19 +227,26 @@ export function FoodTrails() {
     toast.success('🎉 Food Trail published successfully!');
   };
 
+  const filteredTrails = trails.filter(trail => {
+    if (selectedCategory === 'All') return true;
+    const catLower = selectedCategory.toLowerCase();
+    const matchTag = trail.tags.some(t => t.toLowerCase().includes(catLower));
+    const matchTitle = trail.title.toLowerCase().includes(catLower);
+    const matchTagline = trail.tagline.toLowerCase().includes(catLower);
+    return matchTag || matchTitle || matchTagline;
+  });
+
   return (
-    <div className="min-h-screen bg-black text-white pb-32">
-      {/* Hero Header */}
-      <div className="relative pt-6 sm:pt-10 pb-6 px-4 max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-2xl bg-orange-500/20 text-orange-400 flex items-center justify-center">
-              <Navigation size={22} />
-            </div>
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-orange-400">Curated Itineraries</span>
-              <h1 className="text-2xl sm:text-3xl font-black text-white">Food Crawls & Trails</h1>
-            </div>
+    <div className="min-h-screen bg-black text-white pb-28 sm:pb-32 select-none">
+      {/* Sleek Minimalist Header */}
+      <div className="pt-3 sm:pt-6 pb-2.5 px-3 sm:px-6 max-w-3xl mx-auto">
+        <div className="flex items-center justify-between gap-3 mb-2.5">
+          <div>
+            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-orange-400 flex items-center gap-1">
+              <Navigation size={10} className="text-orange-500" />
+              Curated Crawls
+            </span>
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">Food Trails</h1>
           </div>
 
           <button
@@ -244,167 +254,201 @@ export function FoodTrails() {
               triggerHaptic();
               setIsCreateModalOpen(true);
             }}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-orange-500 to-amber-400 text-black font-black text-xs uppercase tracking-wider active:scale-95 shadow-lg shadow-orange-500/20 cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-400 text-black font-black text-xs uppercase tracking-wider active:scale-95 shadow-md shadow-orange-500/20 cursor-pointer shrink-0"
           >
-            <Plus size={16} />
-            <span>Create Trail</span>
+            <Plus size={14} strokeWidth={3} />
+            <span>New Trail</span>
           </button>
         </div>
 
-        <p className="text-xs sm:text-sm text-white/60 max-w-xl">
-          Multi-stop culinary adventures curated by top food critics. Walk, dine, and discover must-order dishes at every stop.
-        </p>
+        {/* Minimal Category Filter Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+          {TRAIL_CATEGORIES.map(cat => (
+            <button
+              key={cat}
+              onClick={() => { triggerHaptic(); setSelectedCategory(cat); }}
+              className={`px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition-all border shrink-0 active:scale-95 cursor-pointer ${
+                selectedCategory === cat
+                  ? "bg-white text-black border-white shadow-md font-black"
+                  : "bg-zinc-900/80 text-white/60 border-white/10 hover:border-white/25 hover:text-white"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Main Trails List */}
-      <div className="max-w-4xl mx-auto px-4 space-y-6">
-        {trails.map((trail) => {
+      <div className="max-w-3xl mx-auto px-3 sm:px-6 space-y-4">
+        {filteredTrails.map((trail) => {
           const isExpanded = expandedTrailId === trail.id;
           const isSaved = savedTrails[trail.id];
 
           return (
             <div
               key={trail.id}
-              className="rounded-3xl bg-zinc-950 border border-white/10 overflow-hidden shadow-2xl transition-all"
+              className="rounded-2xl sm:rounded-3xl bg-zinc-950 border border-white/10 overflow-hidden shadow-xl transition-all"
             >
               {/* Cover Banner */}
-              <div className="relative h-48 sm:h-60 w-full overflow-hidden">
+              <div 
+                onClick={() => {
+                  triggerHaptic();
+                  setExpandedTrailId(isExpanded ? null : trail.id);
+                }}
+                className="relative h-44 sm:h-52 w-full overflow-hidden cursor-pointer group"
+              >
                 <img
                   src={trail.coverImage}
                   alt={trail.title}
-                  className="w-full h-full object-cover filter brightness-90 contrast-105"
+                  className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500 filter brightness-90 contrast-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent" />
 
-                {/* Badges */}
-                <div className="absolute top-3 left-3 flex items-center gap-2">
-                  <span className="px-3 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-orange-400 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
-                    <Sparkles size={11} /> {trail.neighborhood}
-                  </span>
-                  {trail.isOfficial && (
-                    <span className="px-2.5 py-1 rounded-full bg-orange-500 text-black text-[9px] font-black uppercase tracking-widest">
-                      Critic Choice
+                {/* Top Badges & Actions */}
+                <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 flex-wrap max-w-[70%]">
+                    <span className="px-2.5 py-0.5 rounded-full bg-black/75 backdrop-blur-md border border-white/15 text-orange-400 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                      <Sparkles size={10} /> {trail.neighborhood}
                     </span>
-                  )}
+                    {trail.isOfficial && (
+                      <span className="px-2 py-0.5 rounded-full bg-orange-500 text-black text-[9px] font-black uppercase tracking-widest">
+                        Critic Pick
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        triggerHaptic();
+                        setActiveStoryTrail(trail);
+                      }}
+                      className="w-7 h-7 rounded-full bg-black/70 backdrop-blur-md border border-white/20 text-white hover:text-orange-400 flex items-center justify-center transition-colors cursor-pointer"
+                      title="Share Story Card"
+                    >
+                      <Share2 size={13} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSave(trail.id);
+                      }}
+                      className={`w-7 h-7 rounded-full backdrop-blur-md border border-white/20 flex items-center justify-center transition-colors cursor-pointer ${
+                        isSaved ? 'bg-orange-500 text-black' : 'bg-black/70 text-white'
+                      }`}
+                    >
+                      <Bookmark size={13} className={isSaved ? "fill-black" : ""} />
+                    </button>
+                  </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="absolute top-3 right-3 flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      triggerHaptic();
-                      setActiveStoryTrail(trail);
-                    }}
-                    className="p-2 rounded-full bg-black/70 backdrop-blur-md border border-white/20 text-white hover:text-orange-400 transition-colors cursor-pointer"
-                    title="Generate 9:16 Story Card"
-                  >
-                    <Share2 size={16} />
-                  </button>
-                  <button
-                    onClick={() => toggleSave(trail.id)}
-                    className={`p-2 rounded-full backdrop-blur-md border border-white/20 transition-colors cursor-pointer ${
-                      isSaved ? 'bg-orange-500 text-black' : 'bg-black/70 text-white'
-                    }`}
-                  >
-                    <Bookmark size={16} />
-                  </button>
-                </div>
+                {/* Bottom Title & Stats */}
+                <div className="absolute bottom-2.5 left-3 right-3">
+                  <h2 className="text-base sm:text-xl font-black text-white leading-snug">{trail.title}</h2>
+                  <p className="text-[11px] text-white/70 line-clamp-1 mt-0.5">{trail.tagline}</p>
 
-                {/* Title & Stats */}
-                <div className="absolute bottom-3 left-4 right-4">
-                  <h2 className="text-lg sm:text-2xl font-black text-white">{trail.title}</h2>
-                  <p className="text-xs text-white/70 line-clamp-1">{trail.tagline}</p>
-
-                  <div className="flex items-center gap-4 mt-2 text-[11px] text-white/80">
+                  <div className="flex items-center gap-3 mt-1.5 text-[10px] text-white/80 font-medium">
                     <span className="flex items-center gap-1">
-                      <MapPin size={12} className="text-orange-400" /> {trail.stops.length} Stops ({trail.totalDistanceKm} km)
+                      <MapPin size={11} className="text-orange-400" /> {trail.stops.length} Stops ({trail.totalDistanceKm} km)
                     </span>
                     <span className="flex items-center gap-1">
-                      <Clock size={12} className="text-amber-400" /> ~{trail.totalDurationHours} hrs
+                      <Clock size={11} className="text-amber-400" /> ~{trail.totalDurationHours} hrs
                     </span>
                     <span className="flex items-center gap-1">
-                      <IndianRupee size={12} className="text-emerald-400" /> {trail.estimatedBudget}
+                      <IndianRupee size={11} className="text-emerald-400" /> {trail.estimatedBudget}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Collapsible Stops Section */}
-              <div className="p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-white/60">
-                    Trail Itinerary ({trail.stops.length} Stops)
-                  </h3>
-                  <button
-                    onClick={() => {
-                      triggerHaptic();
-                      setExpandedTrailId(isExpanded ? null : trail.id);
-                    }}
-                    className="text-xs font-bold text-orange-400 hover:underline cursor-pointer"
-                  >
-                    {isExpanded ? 'Hide Route' : 'View Full Route'}
-                  </button>
-                </div>
+              {/* Collapsible Stops Header Bar */}
+              <div className="px-3.5 py-2.5 bg-zinc-900/40 border-t border-white/5 flex items-center justify-between">
+                <span className="text-[11px] font-bold text-white/50">
+                  {trail.stops.length} Stops • {trail.neighborhood}
+                </span>
+                <button
+                  onClick={() => {
+                    triggerHaptic();
+                    setExpandedTrailId(isExpanded ? null : trail.id);
+                  }}
+                  className="text-xs font-bold text-orange-400 hover:text-orange-300 flex items-center gap-1 cursor-pointer"
+                >
+                  <span>{isExpanded ? 'Hide Itinerary' : 'View Itinerary'}</span>
+                  <ChevronRight size={13} className={`transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
+                </button>
+              </div>
 
+              {/* Collapsed/Expanded Stops */}
+              <AnimatePresence>
                 {isExpanded && (
-                  <div className="space-y-3 relative before:absolute before:left-3.5 before:top-4 before:bottom-4 before:w-0.5 before:bg-white/15">
-                    {trail.stops.map((stop, idx) => (
-                      <div
-                        key={idx}
-                        className="relative pl-9 flex items-start justify-between p-3 rounded-2xl bg-zinc-900/60 border border-white/10"
-                      >
-                        {/* Number Pin */}
-                        <div className="absolute left-1.5 top-3 w-5 h-5 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 text-black text-[10px] font-black flex items-center justify-center shadow-md">
-                          {idx + 1}
-                        </div>
-
-                        <div className="flex-1 min-w-0 pr-2">
-                          <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-bold text-white">{stop.name}</h4>
-                            <span className="text-[10px] text-white/40">• {stop.cuisine}</span>
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden border-t border-white/5 p-3.5 sm:p-5 bg-zinc-950"
+                  >
+                    <div className="space-y-3 relative before:absolute before:left-3.5 before:top-4 before:bottom-4 before:w-0.5 before:bg-gradient-to-b before:from-orange-500 before:via-amber-400 before:to-orange-500/20">
+                      {trail.stops.map((stop, idx) => (
+                        <div
+                          key={idx}
+                          className="relative pl-8 flex items-start justify-between p-3 rounded-xl bg-zinc-900/50 border border-white/5"
+                        >
+                          {/* Number Pin */}
+                          <div className="absolute left-1.5 top-3 w-5 h-5 rounded-full bg-orange-500 text-black text-[10px] font-black flex items-center justify-center shadow-md">
+                            {idx + 1}
                           </div>
-                          <p className="text-[11px] text-white/50">{stop.location}</p>
 
-                          <div className="mt-2 flex items-center gap-2">
-                            <span className="px-2 py-0.5 rounded-md bg-orange-500/15 border border-orange-500/30 text-orange-400 text-[10px] font-bold flex items-center gap-1">
-                              <Utensils size={10} /> Must-Order: {stop.mustOrderDish}
-                            </span>
-                            {stop.dishPrice && (
-                              <span className="text-[10px] font-mono text-emerald-400">{stop.dishPrice}</span>
+                          <div className="flex-1 min-w-0 pr-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <h4 className="text-xs sm:text-sm font-black text-white">{stop.name}</h4>
+                              <span className="text-[10px] text-white/40 truncate">{stop.cuisine}</span>
+                            </div>
+                            <p className="text-[10px] text-white/40 truncate mt-0.5">{stop.location}</p>
+
+                            <div className="mt-2 flex items-center justify-between gap-2 p-1.5 rounded-lg bg-white/[0.03] border border-white/5">
+                              <span className="text-[10px] font-bold text-orange-400 flex items-center gap-1 truncate">
+                                <Utensils size={10} /> Must-Order: {stop.mustOrderDish}
+                              </span>
+                              {stop.dishPrice && (
+                                <span className="text-[10px] font-mono text-emerald-400 font-bold shrink-0">{stop.dishPrice}</span>
+                              )}
+                            </div>
+
+                            {stop.criticTip && (
+                              <p className="text-[10px] text-white/50 italic mt-1.5 leading-snug">
+                                💡 Tip: "{stop.criticTip}"
+                              </p>
                             )}
                           </div>
-
-                          <p className="text-[11px] text-white/60 italic mt-1.5">
-                            💡 Critic Tip: "{stop.criticTip}"
-                          </p>
                         </div>
+                      ))}
+
+                      {/* Action Row */}
+                      <div className="pt-2 flex items-center gap-2">
+                        <button
+                          onClick={() => openGoogleMapsRoute(trail)}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition-all active:scale-95 cursor-pointer"
+                        >
+                          <ExternalLink size={13} />
+                          <span>Start Route in Maps</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            triggerHaptic();
+                            setActiveStoryTrail(trail);
+                          }}
+                          className="py-2.5 px-4 rounded-xl bg-orange-500 text-black text-xs font-black uppercase tracking-wider transition-all active:scale-95 cursor-pointer shrink-0"
+                        >
+                          Share
+                        </button>
                       </div>
-                    ))}
-
-                    {/* Open Route in Google Maps CTA */}
-                    <div className="pt-2 flex items-center gap-2">
-                      <button
-                        onClick={() => openGoogleMapsRoute(trail)}
-                        className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold transition-all cursor-pointer"
-                      >
-                        <ExternalLink size={14} className="text-orange-400" />
-                        <span>Navigate All Stops in Google Maps</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          triggerHaptic();
-                          setActiveStoryTrail(trail);
-                        }}
-                        className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-orange-500 hover:bg-orange-400 text-black text-xs font-black transition-all cursor-pointer"
-                      >
-                        <Share2 size={14} />
-                        <span>Story Card</span>
-                      </button>
                     </div>
-                  </div>
+                  </motion.div>
                 )}
-              </div>
+              </AnimatePresence>
             </div>
           );
         })}
@@ -420,14 +464,14 @@ export function FoodTrails() {
       )}
 
       {/* Create Custom Trail Modal */}
-      <AnimatePresence>
-        {isCreateModalOpen && (
-          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+      {isCreateModalOpen && createPortal(
+        <AnimatePresence>
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-2xl overflow-y-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-lg bg-zinc-950 border border-white/15 rounded-3xl p-5 sm:p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto"
+              initial={{ opacity: 0, scale: 0.95, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 12 }}
+              className="w-full max-w-lg bg-zinc-950 border border-white/15 rounded-3xl p-5 sm:p-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto text-white"
             >
               <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
                 <div className="flex items-center gap-2">
@@ -441,9 +485,9 @@ export function FoodTrails() {
                 </div>
                 <button
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="p-1.5 rounded-full bg-white/10 text-white"
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer"
                 >
-                  <X size={18} />
+                  <X size={16} />
                 </button>
               </div>
 
@@ -537,7 +581,7 @@ export function FoodTrails() {
                         { order: newStops.length + 1, name: '', cuisine: '', location: '', mustOrderDish: '', criticTip: '' },
                       ]);
                     }}
-                    className="mt-2 text-xs font-bold text-orange-400 hover:underline flex items-center gap-1"
+                    className="mt-2 text-xs font-bold text-orange-400 hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <Plus size={14} /> Add Another Stop
                   </button>
@@ -547,13 +591,13 @@ export function FoodTrails() {
                   <button
                     type="button"
                     onClick={() => setIsCreateModalOpen(false)}
-                    className="px-4 py-2 rounded-xl bg-white/10 text-white text-xs font-bold"
+                    className="px-4 py-2 rounded-xl bg-white/10 text-white text-xs font-bold cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2 rounded-xl bg-orange-500 hover:bg-orange-400 text-black text-xs font-black uppercase tracking-wider"
+                    className="px-6 py-2 rounded-xl bg-orange-500 hover:bg-orange-400 text-black text-xs font-black uppercase tracking-wider cursor-pointer"
                   >
                     Publish Trail
                   </button>
@@ -561,8 +605,9 @@ export function FoodTrails() {
               </form>
             </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
