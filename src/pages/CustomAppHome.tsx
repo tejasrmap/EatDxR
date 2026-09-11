@@ -15,9 +15,57 @@ import { getReviews } from "../services/supabaseService";
 import { 
   Home, Search, Compass, UtensilsCrossed, Clapperboard, 
   MapPin, Bookmark, Sparkles, Plus, Settings, 
-  User as UserIcon, Loader2, Star
+  User as UserIcon, Star
 } from "lucide-react";
 import { toast } from "sonner";
+import { motion } from "motion/react";
+
+const FEED_TABS = [
+  { id: "for-you", label: "For You" },
+  { id: "following", label: "Friends" },
+  { id: "trending", label: "Hot" },
+  { id: "nearby", label: "Nearby" },
+] as const;
+
+function ReviewCardSkeleton() {
+  return (
+    <div className="p-4 sm:p-5 mb-4 bg-zinc-950/60 border border-white/10 rounded-3xl space-y-3.5">
+      {/* Top author row skeleton */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full skeleton-shimmer shrink-0" />
+          <div className="space-y-1.5">
+            <div className="w-28 h-3.5 rounded-md skeleton-shimmer" />
+            <div className="w-18 h-2.5 rounded-md skeleton-shimmer" />
+          </div>
+        </div>
+        <div className="w-14 h-6 rounded-full skeleton-shimmer" />
+      </div>
+
+      {/* Hero image skeleton with exact aspect ratio */}
+      <div className="w-full aspect-[16/10] sm:aspect-[16/9] max-h-72 sm:max-h-96 md:max-h-[420px] rounded-2xl skeleton-shimmer" />
+
+      {/* Dish & quote skeleton */}
+      <div className="space-y-2 pt-1">
+        <div className="w-3/4 h-4 rounded-md skeleton-shimmer" />
+        <div className="w-1/2 h-3 rounded-md skeleton-shimmer" />
+      </div>
+
+      {/* Action bar skeleton */}
+      <div className="flex items-center justify-between pt-2.5 border-t border-white/10">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-4 rounded-full skeleton-shimmer" />
+          <div className="w-12 h-4 rounded-full skeleton-shimmer" />
+          <div className="w-6 h-4 rounded-full skeleton-shimmer" />
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-14 h-6 rounded-full skeleton-shimmer" />
+          <div className="w-6 h-6 rounded-full skeleton-shimmer" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function CustomAppHome() {
   const { user, dishdUser, login } = useAuth();
@@ -258,66 +306,46 @@ export function CustomAppHome() {
             {/* Stories Tray */}
             <AppStoriesBar onLogClick={() => setIsCravingModalOpen(true)} />
 
-            {/* Minimalist Feed Tabs */}
-            <div className="sticky top-13 sm:top-14 z-30 bg-black/85 backdrop-blur-xl py-1.5 px-0.5">
-              <div className="flex items-center justify-between gap-1 w-full bg-white/[0.04] p-1 rounded-2xl border border-white/10">
-                
-                <button
-                  onClick={() => { triggerHaptic(); setFeedTab("for-you"); }}
-                  className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer ${
-                    feedTab === "for-you"
-                      ? "bg-white text-black font-black shadow-sm"
-                      : "text-white/50 hover:text-white"
-                  }`}
-                >
-                  For You
-                </button>
-
-                <button
-                  onClick={() => { triggerHaptic(); setFeedTab("following"); }}
-                  className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer ${
-                    feedTab === "following"
-                      ? "bg-white text-black font-black shadow-sm"
-                      : "text-white/50 hover:text-white"
-                  }`}
-                >
-                  Friends
-                </button>
-
-                <button
-                  onClick={() => { triggerHaptic(); setFeedTab("trending"); }}
-                  className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer ${
-                    feedTab === "trending"
-                      ? "bg-white text-black font-black shadow-sm"
-                      : "text-white/50 hover:text-white"
-                  }`}
-                >
-                  Hot
-                </button>
-
-                <button
-                  onClick={() => { triggerHaptic(); setFeedTab("nearby"); }}
-                  className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer ${
-                    feedTab === "nearby"
-                      ? "bg-white text-black font-black shadow-sm"
-                      : "text-white/50 hover:text-white"
-                  }`}
-                >
-                  Nearby
-                </button>
-
+            {/* Fluid Spring Feed Tabs */}
+            <div className="sticky top-13 sm:top-14 z-30 bg-black/85 backdrop-blur-xl py-2 px-0.5">
+              <div className="flex items-center justify-between gap-1 w-full bg-white/[0.04] p-1 rounded-2xl border border-white/10 shadow-lg">
+                {FEED_TABS.map((tab) => {
+                  const isActive = feedTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => { triggerHaptic(); setFeedTab(tab.id); }}
+                      className={`relative flex-1 py-2 px-2 rounded-xl text-xs font-bold transition-colors cursor-pointer select-none text-center ${
+                        isActive ? "text-black" : "text-white/60 hover:text-white"
+                      }`}
+                    >
+                      {isActive && (
+                        <motion.div
+                          layoutId="feedTabPill"
+                          className="absolute inset-0 bg-white rounded-xl shadow-md z-0"
+                          transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                        />
+                      )}
+                      <span className="relative z-10 font-black">{tab.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Review Cards Feed */}
             <div className="space-y-4">
               {loading ? (
-                <div className="py-24 flex flex-col items-center justify-center text-white/40 gap-3 bg-zinc-950/60 border border-white/10 rounded-3xl">
-                  <Loader2 className="w-9 h-9 animate-spin text-orange-500" />
-                  <span className="text-xs uppercase font-mono tracking-widest">Loading Madeater Feed...</span>
+                <div className="space-y-4">
+                  <ReviewCardSkeleton />
+                  <ReviewCardSkeleton />
+                  <ReviewCardSkeleton />
                 </div>
               ) : displayedReviews.length === 0 ? (
-                <div className="py-16 text-center text-white/50 space-y-4 bg-zinc-950/80 border border-white/10 rounded-3xl p-8">
+                <div className="py-16 text-center text-white/50 space-y-4 bg-zinc-950/80 border border-white/10 rounded-3xl p-8 shadow-xl">
+                  <div className="w-12 h-12 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 flex items-center justify-center mx-auto">
+                    <Sparkles size={22} />
+                  </div>
                   <p className="text-base font-black text-white">No reviews found in this view.</p>
                   <p className="text-xs text-white/40 max-w-sm mx-auto">
                     Be the first food critic to log an experience or switch filter tabs to discover more.
@@ -384,37 +412,45 @@ export function CustomAppHome() {
                 {MOCK_CRITICS_DATA.slice(1, 4).map(critic => {
                   const isFollowing = followedCritics.includes(critic.uid);
                   return (
-                    <div key={critic.uid} className="flex items-center justify-between gap-2">
+                    <div key={critic.uid} className="flex items-center justify-between gap-2 p-1.5 rounded-2xl hover:bg-white/[0.03] transition-colors">
                       <Link
                         to={`/app/profile/${critic.username || critic.uid}`}
                         onClick={() => triggerHaptic()}
                         className="flex items-center gap-3 min-w-0 group"
                       >
-                        <img
-                          src={critic.photoURL || `https://ui-avatars.com/api/?name=${critic.displayName}`}
-                          alt={critic.displayName}
-                          className="w-9 h-9 rounded-full object-cover border border-white/10 shrink-0"
-                        />
+                        <div className="relative shrink-0">
+                          <img
+                            src={critic.photoURL || `https://ui-avatars.com/api/?name=${critic.displayName}`}
+                            alt={critic.displayName}
+                            className="w-10 h-10 rounded-full object-cover border border-white/10"
+                          />
+                          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-purple-500 rounded-full flex items-center justify-center border border-black shadow-sm">
+                            <Sparkles size={8} className="text-white" />
+                          </div>
+                        </div>
                         <div className="min-w-0">
-                          <span className="text-xs font-bold text-white group-hover:underline block truncate">
-                            {critic.username || critic.displayName.toLowerCase().replace(/\s+/g, '')}
-                          </span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-bold text-white group-hover:text-orange-400 transition-colors truncate">
+                              {critic.username || critic.displayName.toLowerCase().replace(/\s+/g, '')}
+                            </span>
+                          </div>
                           <span className="text-[11px] text-white/40 block truncate">
                             {critic.stats.followers} followers • {critic.favoriteCuisines?.[0] || "Foodie"}
                           </span>
                         </div>
                       </Link>
 
-                      <button
+                      <motion.button
+                        whileTap={{ scale: 0.92 }}
                         onClick={() => toggleFollow(critic.uid)}
-                        className={`text-xs font-bold transition-colors cursor-pointer shrink-0 ${
+                        className={`text-[11px] font-bold px-3 py-1 rounded-full border transition-all cursor-pointer shrink-0 ${
                           isFollowing
-                            ? "text-white/40 hover:text-rose-400"
-                            : "text-orange-400 hover:text-orange-300"
+                            ? "border-white/15 bg-white/5 text-white/50 hover:border-rose-500/40 hover:text-rose-400"
+                            : "border-orange-500/40 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20"
                         }`}
                       >
                         {isFollowing ? "Following" : "Follow"}
-                      </button>
+                      </motion.button>
                     </div>
                   );
                 })}

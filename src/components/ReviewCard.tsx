@@ -12,7 +12,8 @@ import {
   Send, 
   Loader2, 
   Sparkles,
-  MapPin
+  MapPin,
+  Bookmark
 } from "lucide-react";
 import { useAuth } from "../App";
 import { 
@@ -59,6 +60,10 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
   const [isDetailedViewOpen, setIsDetailedViewOpen] = useState(false);
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [showHeartBurst, setShowHeartBurst] = useState(false);
+  const lastTapRef = useRef<number>(0);
   const optionsRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -263,12 +268,35 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
     }
   };
 
+  const handleImageTap = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const now = Date.now();
+    if (now - lastTapRef.current < 320) {
+      // Double tap detected!
+      triggerHaptic();
+      if (!hasLiked) {
+        handleLike();
+      }
+      setShowHeartBurst(true);
+      setTimeout(() => setShowHeartBurst(false), 800);
+      lastTapRef.current = 0;
+    } else {
+      lastTapRef.current = now;
+      setTimeout(() => {
+        if (lastTapRef.current === now) {
+          setIsDetailedViewOpen(true);
+          lastTapRef.current = 0;
+        }
+      }, 330);
+    }
+  };
+
   const dishesWithImages = review.dishes?.filter(d => d && d.image) || [];
   const firstImage = dishesWithImages[0]?.image;
   const primaryDishName = review.dishes?.[0]?.name || review.attachedDish || "Special Dish";
 
   return (
-    <div ref={cardRef} className="group p-4 sm:p-5 mb-4 bg-zinc-950/60 hover:bg-zinc-950/90 border border-white/10 hover:border-white/15 rounded-3xl shadow-xl relative transition-all active:scale-[0.99] touch-manipulation">
+    <div ref={cardRef} className="group p-4 sm:p-5 mb-4 bg-zinc-950/70 hover:bg-zinc-950/90 border border-white/10 hover:border-white/20 rounded-3xl shadow-xl hover:shadow-2xl relative transition-all duration-300">
       
       {/* 1. TOP AUTHOR & META ROW */}
       <div className="flex items-center justify-between gap-2 mb-3">
@@ -277,32 +305,48 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
           onClick={(e) => e.stopPropagation()}
           className="flex items-center gap-2.5 min-w-0 group/author"
         >
-          <img 
-            src={optimizeImage(review.userPhoto, { width: 44 })} 
-            alt={review.userName} 
-            className="w-8 h-8 rounded-full border border-white/15 object-cover shrink-0 group-hover/author:border-orange-500 transition-colors"
-            referrerPolicy="no-referrer"
-            loading="lazy"
-            decoding="async"
-          />
+          <div className="relative shrink-0">
+            <img 
+              src={optimizeImage(review.userPhoto, { width: 44 })} 
+              alt={review.userName} 
+              className="w-9 h-9 rounded-full border border-white/15 object-cover group-hover/author:border-orange-500 transition-colors"
+              referrerPolicy="no-referrer"
+              loading="lazy"
+              decoding="async"
+            />
+            {review.rating >= 9.0 && (
+              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-amber-400 rounded-full flex items-center justify-center border border-black" title="Top Rated Critic Review">
+                <Sparkles size={8} className="text-black" />
+              </div>
+            )}
+          </div>
           <div className="min-w-0">
-            <span className="text-xs font-bold text-white group-hover/author:text-orange-400 transition-colors block truncate leading-tight">
-              {review.userName}
-            </span>
-            <div className="flex items-center gap-1 text-[10px] text-white/50 leading-tight">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-white group-hover/author:text-orange-400 transition-colors truncate leading-tight">
+                {review.userName}
+              </span>
+              {review.rating >= 9.0 && (
+                <span className="hidden sm:inline-flex items-center text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300">
+                  Critic's Choice
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1 text-[10px] text-white/50 leading-tight mt-0.5">
               <MapPin size={9} className="text-orange-500/80 shrink-0" />
               <span className="truncate">{review.city || "Bangalore"}</span>
+              <span>•</span>
+              <span className="font-mono text-white/40">
+                {formatDistanceToNow(parseFirebaseDate(review.createdAt), { addSuffix: true })}
+              </span>
             </div>
           </div>
         </Link>
 
-        {/* Stars & Time */}
+        {/* Rating Badge & Options */}
         <div className="flex items-center gap-2 shrink-0">
-          <div className="flex flex-col items-end">
-            <StarRating rating={review.rating} size={13} />
-            <span className="text-[9px] text-white/40 font-mono mt-0.5">
-              {formatDistanceToNow(parseFirebaseDate(review.createdAt), { addSuffix: true })}
-            </span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-400 font-mono font-bold text-xs shadow-sm">
+            <Star size={12} className="fill-amber-400 text-amber-400" />
+            <span>{review.rating ? Number(review.rating).toFixed(1) : "9.0"}</span>
           </div>
 
           {currentUser?.uid === review.userId && (
@@ -312,9 +356,9 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
                   e.stopPropagation();
                   setShowOptions(!showOptions);
                 }}
-                className="p-1 text-white/50 hover:text-white transition-colors"
+                className="p-1 text-white/50 hover:text-white transition-colors cursor-pointer"
               >
-                <MoreVertical size={15} />
+                <MoreVertical size={16} />
               </button>
               {showOptions && (
                 <div className="absolute right-0 top-full mt-1.5 w-36 bg-zinc-950 border border-white/15 rounded-2xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
@@ -324,7 +368,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
                       setShowOptions(false);
                       setIsEditing(true);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/5 transition-colors"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/5 transition-colors cursor-pointer"
                   >
                     <Edit2 size={12} /> Edit Entry
                   </button>
@@ -334,7 +378,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
                       setShowOptions(false);
                       handleDelete();
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
                   >
                     <Trash2 size={12} /> Delete
                   </button>
@@ -345,21 +389,53 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
         </div>
       </div>
 
-      {/* 2. HERO DISH PHOTO (Clean Aspect Ratio) */}
+      {/* 2. HERO DISH PHOTO (Clean Aspect Ratio & Double-Tap Heart Burst) */}
       {firstImage && (
         <div 
-          onClick={() => setIsDetailedViewOpen(true)}
-          className="w-full aspect-[16/10] sm:aspect-[16/9] max-h-72 sm:max-h-96 md:max-h-[420px] bg-zinc-900 rounded-2xl border border-white/10 relative overflow-hidden block group/img shadow-md mb-3 cursor-pointer"
+          onClick={handleImageTap}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            triggerHaptic();
+            if (!hasLiked) handleLike();
+            setShowHeartBurst(true);
+            setTimeout(() => setShowHeartBurst(false), 800);
+          }}
+          className="w-full aspect-[16/10] sm:aspect-[16/9] max-h-72 sm:max-h-96 md:max-h-[420px] bg-zinc-900 rounded-2xl border border-white/10 relative overflow-hidden block group/img shadow-md mb-3 cursor-pointer select-none"
         >
+          {/* Shimmer skeleton while image loads */}
+          {!imageLoaded && (
+            <div className="absolute inset-0 skeleton-shimmer z-0" />
+          )}
+
           <img 
-            src={optimizeImage(firstImage, { width: 600, quality: 80 })} 
+            src={optimizeImage(firstImage, { width: 700, quality: 85 })} 
             alt={primaryDishName} 
-            className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-700 ease-out"
+            onLoad={() => setImageLoaded(true)}
+            className={`w-full h-full object-cover group-hover/img:scale-105 transition-all duration-700 ease-out relative z-10 ${
+              imageLoaded ? "opacity-100" : "opacity-0"
+            }`}
             referrerPolicy="no-referrer"
             loading="lazy"
             decoding="async"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity z-10 pointer-events-none" />
+
+          {/* Double-Tap Heart Burst Overlay */}
+          <AnimatePresence>
+            {showHeartBurst && (
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: [0, 1.25, 1], opacity: [0, 1, 1] }}
+                exit={{ scale: 1.4, opacity: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
+              >
+                <div className="p-4 sm:p-5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 shadow-[0_0_50px_rgba(244,63,94,0.7)]">
+                  <Heart size={64} className="text-rose-500 fill-rose-500 drop-shadow-[0_0_20px_rgba(244,63,94,0.9)]" />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
 
@@ -393,9 +469,10 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
       {/* 5. DECLUTTERED ACTION BAR */}
       <div className="flex items-center justify-between pt-2.5 border-t border-white/10 text-xs">
         
-        {/* Left Actions: Like & Comment */}
-        <div className="flex items-center gap-4">
-          <button 
+        {/* Left Actions: Like, Comment, Bookmark */}
+        <div className="flex items-center gap-3.5 sm:gap-4">
+          <motion.button 
+            whileTap={{ scale: 0.8 }}
             onClick={(e) => {
               e.stopPropagation();
               handleLike();
@@ -404,11 +481,12 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
               hasLiked ? 'text-rose-500 font-bold' : 'text-white/60 hover:text-white'
             }`}
           >
-            <Heart size={15} className={hasLiked ? "fill-rose-500" : ""} />
+            <Heart size={16} className={hasLiked ? "fill-rose-500" : ""} />
             <span className="text-[11px] font-bold">{totalLikes}</span>
-          </button>
+          </motion.button>
 
-          <button 
+          <motion.button 
+            whileTap={{ scale: 0.8 }}
             onClick={(e) => {
               e.stopPropagation();
               setShowComments(!showComments);
@@ -417,28 +495,46 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
               showComments ? 'text-white font-bold' : 'text-white/60 hover:text-white'
             }`}
           >
-            <MessageSquare size={15} className={showComments ? "fill-white" : ""} />
+            <MessageSquare size={16} className={showComments ? "fill-white" : ""} />
             <span className="text-[11px] font-bold">
               {comments.length > 0 ? comments.length : 'Review'}
             </span>
-          </button>
+          </motion.button>
+
+          <motion.button 
+            whileTap={{ scale: 0.8 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              triggerHaptic();
+              setIsBookmarked(!isBookmarked);
+              toast.success(!isBookmarked ? "Saved to your food list!" : "Removed from list");
+            }}
+            className={`p-1 transition-all cursor-pointer ${
+              isBookmarked ? 'text-amber-400' : 'text-white/50 hover:text-white'
+            }`}
+            title={isBookmarked ? "Saved" : "Save to list"}
+          >
+            <Bookmark size={16} className={isBookmarked ? "fill-amber-400" : ""} />
+          </motion.button>
         </div>
 
         {/* Right Actions: Story Card + Share */}
         <div className="flex items-center gap-2">
-          <button 
+          <motion.button 
+            whileTap={{ scale: 0.95 }}
             onClick={(e) => {
               e.stopPropagation();
               setIsStoryModalOpen(true);
             }}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-500/15 via-rose-500/15 to-amber-500/15 hover:from-orange-500/25 hover:to-amber-500/25 border border-orange-500/35 text-orange-400 font-black text-[10px] uppercase tracking-wider transition-all active:scale-95 cursor-pointer whitespace-nowrap shadow-sm"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-500/20 via-rose-500/20 to-amber-500/20 hover:from-orange-500/30 hover:to-amber-500/30 border border-orange-500/40 text-orange-400 font-black text-[10px] uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap shadow-sm"
             title="Open 9:16 Instagram Story Card"
           >
             <Sparkles size={11} className="text-orange-400" />
             <span>Story</span>
-          </button>
+          </motion.button>
 
-          <button 
+          <motion.button 
+            whileTap={{ scale: 0.85 }}
             onClick={(e) => {
               e.stopPropagation();
               setIsShareMenuOpen(true);
@@ -446,8 +542,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
             className="p-1.5 rounded-full text-white/50 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
             title="Share review"
           >
-            <Share2 size={15} />
-          </button>
+            <Share2 size={16} />
+          </motion.button>
         </div>
 
       </div>

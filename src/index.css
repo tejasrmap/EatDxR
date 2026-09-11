@@ -488,3 +488,32 @@ input[type="range"].slider-green::-moz-range-progress {
 .dark-map-tiles img {
   filter: brightness(0.62) invert(1) contrast(2.6) hue-rotate(200deg) saturate(0.25) !important;
 }
+
+/* =========================================================
+   PERFORMANCE & SKELETON SHIMMER UTILITIES
+   ========================================================= */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 25%,
+    rgba(255, 255, 255, 0.08) 37%,
+    rgba(255, 255, 255, 0.03) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
