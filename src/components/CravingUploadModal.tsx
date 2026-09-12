@@ -3,9 +3,8 @@ import { createPortal } from "react-dom";
 import { X, Star, Upload, Search, MapPin, Loader2, Plus, Flame, ShieldCheck, ArrowLeft, Video, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../App";
-import { db, storage } from "../firebase";
+import { db } from "../firebase";
 import { collection, doc, setDoc, updateDoc, serverTimestamp, increment } from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { toast } from "sonner";
 import { searchRestaurants } from "../services/mapsService";
 import { RestaurantSearchResult, CravingTag } from "../types";
@@ -137,52 +136,18 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
         const ext = videoFile.name.split('.').pop() || 'mp4';
         const videoPath = `${user.uid}_${Date.now()}.${ext}`;
 
-        // 1. Primary: Supabase Storage bucket 'cravings' with live progress
+        // Primary: Supabase Storage bucket 'cravings' with live progress
         try {
           const supaUrl = await uploadMedia(videoFile, 'cravings', videoPath, (pct) => {
             setUploadProgress(pct);
           });
           if (supaUrl) {
             finalVideoUrl = supaUrl;
-          } else if (storage) {
-            // 2. Secondary fallback: Firebase Storage
-            const videoRef = ref(storage, `videos/${user.uid}_${Date.now()}.${ext}`);
-            const uploadTask = uploadBytesResumable(videoRef, videoFile);
-
-            finalVideoUrl = await new Promise<string>((resolve) => {
-              const timeout = setTimeout(() => {
-                try { uploadTask.cancel(); } catch {}
-                console.warn("Video upload timed out, proceeding with media fallback");
-                resolve(finalVideoUrl);
-              }, 45000);
-
-              uploadTask.on(
-                "state_changed",
-                (snapshot) => {
-                  if (snapshot.totalBytes > 0) {
-                    const pct = Math.min(95, Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100));
-                    setUploadProgress(pct);
-                  }
-                },
-                (err) => {
-                  clearTimeout(timeout);
-                  console.warn("Firebase upload error:", err);
-                  resolve(finalVideoUrl);
-                },
-                async () => {
-                  clearTimeout(timeout);
-                  try {
-                    const url = await getDownloadURL(uploadTask.snapshot.ref);
-                    resolve(url);
-                  } catch (e) {
-                    resolve(finalVideoUrl);
-                  }
-                }
-              );
-            });
+          } else {
+            console.warn("Supabase video upload returned null, using default video");
           }
         } catch (uploadErr) {
-          console.warn("Video upload notice:", uploadErr);
+          console.warn("Supabase video upload exception:", uploadErr);
         }
       }
 
