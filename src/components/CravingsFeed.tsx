@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { collection, query, where, onSnapshot, orderBy, limit } from "firebase/firestore";
+import { collection, query, where, onSnapshot, limit } from "firebase/firestore";
 import { db } from "../firebase";
 import { Review, CravingTag } from "../types";
 import { CravingCard } from "./CravingCard";
 import { CravingUploadModal } from "./CravingUploadModal";
-import { Flame, Plus, Sparkles, Filter, Loader2, ArrowLeft } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Flame, Plus, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../App";
 import { triggerHaptic } from "../services/nativeService";
+import { getCravings } from "../services/supabaseService";
 
 const CATEGORIES: { label: string; tag?: CravingTag }[] = [
   { label: "All Cravings" },
@@ -29,28 +30,64 @@ export function CravingsFeed() {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
+    // 1. Fetch from Supabase
+    getCravings()
+      .then((supaCravings) => {
+        if (!isMounted) return;
+        if (supaCravings && supaCravings.length > 0) {
+          setCravings((prev) => {
+            const map = new Map<string, Review>();
+            supaCravings.forEach(c => map.set(c.id, c));
+            prev.forEach(c => map.set(c.id, c));
+            return Array.from(map.values());
+          });
+          setLoading(false);
+        }
+      })
+      .catch((err) => console.warn("Supabase cravings fetch notice:", err));
+
+    // 2. Real-time listener from Firestore
     const q = query(
       collection(db, "reviews"),
       where("type", "==", "craving"),
-      orderBy("createdAt", "desc"),
       limit(50)
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetched = snapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id
-      })) as Review[];
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        if (!isMounted) return;
+        const fetched = snapshot.docs.map((doc) => ({
+          ...doc.data(),
+          id: doc.id,
+        })) as Review[];
 
-      setCravings(fetched);
-      setLoading(false);
-    }, (err) => {
-      console.warn("Cravings fetch notice:", err.message);
-      setCravings([]);
-      setLoading(false);
-    });
+        setCravings((prev) => {
+          const map = new Map<string, Review>();
+          prev.forEach((c) => map.set(c.id, c));
+          fetched.forEach((c) => map.set(c.id, c));
+          const merged = Array.from(map.values());
+          merged.sort((a, b) => {
+            const tA = (a.createdAt as any)?.toDate?.()?.getTime?.() || new Date(a.createdAt || 0).getTime();
+            const tB = (b.createdAt as any)?.toDate?.()?.getTime?.() || new Date(b.createdAt || 0).getTime();
+            return tB - tA;
+          });
+          return merged;
+        });
+        setLoading(false);
+      },
+      (err) => {
+        console.warn("Cravings firestore notice:", err.message);
+        setLoading(false);
+      }
+    );
 
-    return unsubscribe;
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const filteredCravings = cravings.filter(craving => {
@@ -62,9 +99,9 @@ export function CravingsFeed() {
   return (
     <div className="h-[100dvh] w-full bg-black text-white relative flex flex-col items-center justify-start overflow-hidden select-none">
       
-      {/* Top Sleek Control Bar (Floating right below notch) */}
-      <div className="fixed top-[calc(env(safe-area-inset-top,0px)+0.5rem)] left-0 right-0 z-40 max-w-xl mx-auto px-3 flex flex-col items-center gap-2 pointer-events-none">
-        <div className="w-full flex items-center justify-between pointer-events-auto bg-black/75 backdrop-blur-2xl border border-white/10 px-3.5 py-1.5 rounded-full shadow-2xl">
+      {/* Top Sleek Control Bar (Floating right below notch / top edge, aligned to main content area) */}
+      <div className="absolute top-[calc(env(safe-area-inset-top,0px)+0.75rem)] inset-x-0 z-40 w-full max-w-md lg:max-w-xl mx-auto px-3 flex flex-col items-center gap-2 pointer-events-none">
+        <div className="w-full flex items-center justify-between pointer-events-auto bg-black/80 backdrop-blur-2xl border border-white/15 px-4 py-2 rounded-full shadow-2xl">
           <div className="flex items-center gap-2">
             <Flame size={16} className="text-orange-500 fill-orange-500 animate-pulse" />
             <span className="text-xs font-black uppercase tracking-widest text-white">Cravings</span>
@@ -75,7 +112,7 @@ export function CravingsFeed() {
               triggerHaptic();
               user ? setIsUploadOpen(true) : login();
             }}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-black text-[11px] font-black uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all shadow-md shadow-orange-500/25 cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-black text-[11px] font-black uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all shadow-md shadow-orange-500/25 cursor-pointer"
           >
             <Plus size={14} strokeWidth={3} />
             <span>Post Reel</span>
@@ -91,10 +128,10 @@ export function CravingsFeed() {
                 triggerHaptic();
                 setSelectedCategory(cat.label);
               }}
-              className={`px-3 py-1 rounded-full text-[10px] font-bold whitespace-nowrap transition-all border shrink-0 active:scale-95 cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all border shrink-0 active:scale-95 cursor-pointer ${
                 selectedCategory === cat.label
                   ? "bg-white text-black border-white shadow-lg font-black"
-                  : "bg-black/85 backdrop-blur-md text-white/60 border-white/10 hover:border-white/30 hover:text-white"
+                  : "bg-black/85 backdrop-blur-md text-white/65 border-white/10 hover:border-white/30 hover:text-white"
               }`}
             >
               {cat.label}
@@ -110,7 +147,7 @@ export function CravingsFeed() {
           <p className="text-xs uppercase tracking-widest font-black text-white/40">Loading Cravings...</p>
         </div>
       ) : filteredCravings.length > 0 ? (
-        <div className="w-full h-[100dvh] snap-y snap-mandatory overflow-y-scroll no-scrollbar select-none">
+        <div className="w-full max-w-md lg:max-w-[420px] mx-auto h-[100dvh] snap-y snap-mandatory overflow-y-scroll no-scrollbar select-none relative shadow-2xl">
           {filteredCravings.map((craving) => (
             <CravingCard 
               key={craving.id} 
@@ -120,12 +157,12 @@ export function CravingsFeed() {
           ))}
         </div>
       ) : (
-        <div className="h-[70vh] flex flex-col items-center justify-center text-center px-6 max-w-sm mx-auto">
+        <div className="flex-1 w-full max-w-md mx-auto flex flex-col items-center justify-center text-center px-6 py-12">
           <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-orange-500/20 to-rose-500/20 border border-orange-500/30 flex items-center justify-center text-orange-400 mb-4 shadow-xl">
             <Flame size={32} />
           </div>
           <h3 className="text-lg font-bold text-white mb-1.5">No Cravings Yet</h3>
-          <p className="text-xs text-white/50 mb-6">
+          <p className="text-xs text-white/50 mb-6 max-w-xs">
             {selectedCategory === "All Cravings" 
               ? "Be the very first to capture and share a crave-worthy food reel!"
               : `No cravings found under "${selectedCategory}".`}
@@ -134,7 +171,7 @@ export function CravingsFeed() {
             {selectedCategory !== "All Cravings" && (
               <button
                 onClick={() => setSelectedCategory("All Cravings")}
-                className="px-5 py-2.5 rounded-full bg-white/10 border border-white/20 text-xs font-bold uppercase tracking-wider hover:bg-white/20 transition-all"
+                className="px-5 py-2.5 rounded-full bg-white/10 border border-white/20 text-xs font-bold uppercase tracking-wider hover:bg-white/20 transition-all cursor-pointer"
               >
                 View All
               </button>
@@ -145,7 +182,7 @@ export function CravingsFeed() {
                 if (!user) login();
                 else setIsUploadOpen(true);
               }}
-              className="px-6 py-3 rounded-full bg-gradient-to-r from-orange-500 to-rose-500 text-white font-black text-xs uppercase tracking-wider shadow-xl shadow-orange-500/25 active:scale-95 transition-all"
+              className="px-6 py-3 rounded-full bg-gradient-to-r from-orange-500 to-rose-500 text-white font-black text-xs uppercase tracking-wider shadow-xl shadow-orange-500/25 active:scale-95 transition-all cursor-pointer"
             >
               + Post First Craving
             </button>

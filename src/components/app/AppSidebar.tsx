@@ -34,7 +34,9 @@ export function AppSidebar() {
 
   return (
     <>
-      <aside className="hidden lg:flex flex-col justify-between w-56 xl:w-64 shrink-0 sticky top-16 select-none h-[calc(100vh-4.5rem)] pb-6 pr-2">
+      <aside className={`hidden lg:flex flex-col justify-between w-56 xl:w-64 shrink-0 select-none pb-6 pr-2 ${
+        isCravings ? "sticky top-4 h-[calc(100vh-2rem)]" : "sticky top-16 h-[calc(100vh-4.5rem)]"
+      }`}>
         <div className="space-y-1.5 pt-2">
           {/* 1. Home */}
           <Link

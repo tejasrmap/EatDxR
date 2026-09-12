@@ -74,49 +74,55 @@ export async function upsertProfile(user: User): Promise<void> {
 }
 
 // ----------------------------------------------------------------------------
-// 2. REVIEWS & MEAL LOGS
+// 2. REVIEWS & DISH RATINGS
 // ----------------------------------------------------------------------------
 
-export async function getReviews(city?: string): Promise<Review[]> {
+export async function ensureProfile(userId: string, userName?: string, userPhoto?: string): Promise<void> {
+  if (!isSupabaseConfigured || !userId) return;
+  try {
+    await supabase.from('profiles').upsert({
+      id: userId,
+      display_name: userName || 'Food Critic',
+      photo_url: userPhoto || '',
+      username: `critic_${userId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 12)}`,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'id' });
+  } catch (e) {
+    console.warn('[Supabase] Profile ensure notice:', e);
+  }
+}
+
+export async function getReviews(restaurantId?: string): Promise<Review[]> {
   if (!isSupabaseConfigured) return [];
 
   try {
-    let query = supabase
-      .from('reviews')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(30);
-
-    if (city && city !== 'All') {
-      query = query.ilike('city', `%${city}%`);
+    let query = supabase.from('reviews').select('*').order('created_at', { ascending: false });
+    if (restaurantId) {
+      query = query.eq('restaurant_id', restaurantId);
     }
-
     const { data, error } = await query;
     if (error) throw error;
-
-    if (!data || data.length === 0) {
-      return [];
-    }
+    if (!data) return [];
 
     return data.map((r: any) => ({
       id: r.id,
       userId: r.user_id,
-      userName: r.user_name || 'Food Critic',
-      userPhoto: r.user_photo || `https://api.dicebear.com/7.x/bottts/svg?seed=${r.user_id}`,
-      userCriticLevel: r.user_critic_level || 'Foodie',
-      restaurantId: r.restaurant_id || 'rest-1',
+      userName: r.user_name,
+      userPhoto: r.user_photo,
+      userCriticLevel: r.user_critic_level,
+      restaurantId: r.restaurant_id,
       restaurantName: r.restaurant_name,
       restaurantLocation: r.restaurant_location,
       city: r.city,
       dishes: r.dishes || [],
-      rating: Number(r.rating) || 8.5,
-      content: r.content || '',
+      rating: Number(r.rating) || 9.0,
+      content: r.content,
       videoUrl: r.video_url,
       likes: r.likes || 0,
+      type: r.type || 'review',
       ratingsDetail: r.ratings_detail,
       isVerifiedVisit: r.is_verified_visit,
       visitProofType: r.visit_proof_type,
-      type: r.type || 'review',
       createdAt: r.created_at
     }));
   } catch (err) {
@@ -150,6 +156,9 @@ export async function createReview(review: Partial<Review>): Promise<Review> {
 
   if (isSupabaseConfigured) {
     try {
+      if (newReview.userId && newReview.userId !== 'anonymous') {
+        await ensureProfile(newReview.userId, newReview.userName, newReview.userPhoto);
+      }
       const { error } = await supabase.from('reviews').insert({
         id: newReview.id,
         user_id: newReview.userId,
@@ -192,7 +201,7 @@ export async function getCravings(): Promise<Review[]> {
       .from('cravings')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(50);
 
     if (error) throw error;
     if (!data || data.length === 0) return [];
@@ -205,11 +214,13 @@ export async function getCravings(): Promise<Review[]> {
       restaurantId: 'crav-rest',
       restaurantName: c.restaurant_name,
       dishName: c.dish_name,
-      city: c.city,
+      attachedDish: c.dish_name,
+      city: c.city || 'Hyderabad',
       videoUrl: c.video_url,
       content: c.content || '',
-      dishes: c.dishes || [],
+      dishes: c.dishes || [{ name: c.dish_name, rating: 5 }],
       rating: 9.5,
+      attachedScore: 9.5,
       likes: c.likes || 0,
       cravingTag: c.craving_tag || 'Street Food',
       type: 'craving',
@@ -225,17 +236,21 @@ export async function createCraving(craving: Partial<Review>): Promise<void> {
   if (!isSupabaseConfigured) return;
 
   try {
+    if (craving.userId) {
+      await ensureProfile(craving.userId, craving.userName, craving.userPhoto);
+    }
+
     const { error } = await supabase.from('cravings').insert({
       id: craving.id || `crav-${Date.now()}`,
       user_id: craving.userId,
       user_name: craving.userName,
       user_photo: craving.userPhoto,
       restaurant_name: craving.restaurantName,
-      dish_name: craving.attachedDish || craving.restaurantName,
+      dish_name: craving.attachedDish || craving.dishName || craving.restaurantName,
       video_url: craving.videoUrl,
       city: craving.city || 'Hyderabad',
       content: craving.content || '',
-      dishes: craving.dishes || [],
+      dishes: craving.dishes || [{ name: craving.attachedDish || craving.dishName || 'Food Item', rating: 5 }],
       likes: 0,
       craving_tag: craving.cravingTag || 'Street Food',
       created_at: new Date().toISOString()
@@ -243,6 +258,7 @@ export async function createCraving(craving: Partial<Review>): Promise<void> {
     if (error) throw error;
   } catch (err) {
     console.warn('[Supabase] Error creating craving in Supabase:', err);
+    throw err;
   }
 }
 

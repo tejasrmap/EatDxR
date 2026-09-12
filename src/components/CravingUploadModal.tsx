@@ -224,22 +224,40 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
         likes: 0
       };
 
-      // Write to Firestore
-      await setDoc(reviewRef, cravingDoc);
+      let firestoreSaved = false;
+      let supabaseSaved = false;
 
-      // Write to Supabase table
-      await createCraving({
-        id: reviewRef.id,
-        userId: user.uid,
-        userName: dishdUser?.displayName || user.displayName || "Critic",
-        userPhoto: dishdUser?.photoURL || user.photoURL || "",
-        restaurantName: restaurantName.trim(),
-        attachedDish: dishName.trim(),
-        city: selectedRestaurant?.city || "Hyderabad",
-        videoUrl: finalVideoUrl,
-        content: reviewContent.trim(),
-        cravingTag: cravingTag,
-      }).catch(err => console.warn("Supabase craving insert notice:", err));
+      // 1. Write to Firestore
+      try {
+        await setDoc(reviewRef, cravingDoc);
+        firestoreSaved = true;
+      } catch (fErr) {
+        console.warn("[Database] Firestore craving save notice:", fErr);
+      }
+
+      // 2. Write to Supabase table
+      try {
+        await createCraving({
+          id: reviewRef.id,
+          userId: user.uid,
+          userName: dishdUser?.displayName || user.displayName || "Critic",
+          userPhoto: dishdUser?.photoURL || user.photoURL || "",
+          restaurantName: restaurantName.trim(),
+          attachedDish: dishName.trim(),
+          dishName: dishName.trim(),
+          city: selectedRestaurant?.city || "Hyderabad",
+          videoUrl: finalVideoUrl,
+          content: reviewContent.trim(),
+          cravingTag: cravingTag,
+        });
+        supabaseSaved = true;
+      } catch (sErr) {
+        console.warn("[Database] Supabase craving save notice:", sErr);
+      }
+
+      if (!firestoreSaved && !supabaseSaved) {
+        throw new Error("Unable to save craving to remote database. Please check your network connection.");
+      }
 
       // Update user stats
       const userRef = doc(db, "users", user.uid);
