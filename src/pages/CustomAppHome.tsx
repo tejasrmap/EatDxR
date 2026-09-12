@@ -308,23 +308,23 @@ export function CustomAppHome() {
 
             {/* Fluid Spring Feed Tabs */}
             <div className="sticky top-13 sm:top-14 z-30 bg-slate-50/90 dark:bg-black/85 backdrop-blur-xl py-2 px-0.5">
-              <div className="flex items-center justify-between gap-1 w-full bg-slate-200/60 dark:bg-white/[0.04] p-1 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-sm dark:shadow-lg">
+              <div className="flex items-center justify-between gap-1 w-full bg-slate-200/70 dark:bg-white/[0.05] p-1.5 rounded-full border border-slate-300/70 dark:border-white/10 shadow-sm dark:shadow-lg">
                 {FEED_TABS.map((tab) => {
                   const isActive = feedTab === tab.id;
                   return (
                     <button
                       key={tab.id}
                       onClick={() => { triggerHaptic(); setFeedTab(tab.id); }}
-                      className={`relative flex-1 py-2 px-2 rounded-xl text-xs font-bold transition-colors cursor-pointer select-none text-center ${
+                      className={`relative flex-1 py-2 sm:py-2.5 px-3 sm:px-4 rounded-full text-xs font-bold transition-colors cursor-pointer select-none text-center ${
                         isActive 
-                          ? "text-slate-900 dark:text-black" 
+                          ? "text-slate-950 dark:text-black" 
                           : "text-slate-600 hover:text-slate-900 dark:text-white/60 dark:hover:text-white"
                       }`}
                     >
                       {isActive && (
                         <motion.div
                           layoutId="feedTabPill"
-                          className="absolute inset-0 bg-white rounded-xl shadow-md border border-slate-200/60 dark:border-transparent z-0"
+                          className="absolute inset-0 bg-white rounded-full shadow-sm border border-slate-200/90 dark:border-transparent z-0"
                           transition={{ type: "spring", stiffness: 450, damping: 35 }}
                         />
                       )}

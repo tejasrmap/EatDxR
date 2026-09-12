@@ -140,10 +140,10 @@ export function WebsiteHome() {
                   <button
                     key={mode.id}
                     onClick={() => setFeedFilter(mode.id as any)}
-                    className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
+                    className={`px-3.5 py-1.5 rounded-full font-bold transition-all cursor-pointer ${
                       feedFilter === mode.id
-                        ? "text-orange-400 border-b-2 border-orange-500 rounded-b-none"
-                        : "text-white/40 hover:text-white"
+                        ? "bg-orange-500 text-white shadow-md shadow-orange-500/20"
+                        : "text-slate-600 dark:text-white/50 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5"
                     }`}
                   >
                     {mode.label}
