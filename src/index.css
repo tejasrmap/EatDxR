@@ -54,59 +54,81 @@ html.light body {
   color: #0f172a !important;
 }
 
-html.light .bg-black {
-  background-color: #f8fafc !important;
-}
-
-html.light .bg-black\/95,
-html.light .bg-black\/90,
-html.light .bg-black\/80 {
+html.light .bg-black,
+html.light [class*="bg-black/"],
+html.light [class*="bg-black\/"] {
   background-color: rgba(255, 255, 255, 0.96) !important;
 }
 
-html.light .bg-zinc-950,
-html.light .bg-zinc-950\/95,
-html.light .bg-zinc-950\/92 {
-  background-color: rgba(255, 255, 255, 0.96) !important;
+/* Match ANY bg-zinc-950 variation (bg-zinc-950, bg-zinc-950/70, bg-zinc-950/90, etc.) */
+html.light [class*="bg-zinc-950"] {
+  background-color: #ffffff !important;
 }
 
-html.light .bg-zinc-900 {
+/* Match ANY bg-zinc-900 variation */
+html.light [class*="bg-zinc-900"] {
   background-color: #f1f5f9 !important;
 }
 
-html.light .bg-zinc-900\/90,
-html.light .bg-zinc-900\/80,
-html.light .bg-zinc-900\/60,
-html.light .bg-zinc-900\/40 {
-  background-color: rgba(241, 245, 249, 0.95) !important;
-}
-
-html.light .bg-zinc-850,
-html.light .bg-zinc-800 {
+html.light [class*="bg-zinc-850"],
+html.light [class*="bg-zinc-800"] {
   background-color: #e2e8f0 !important;
 }
 
-html.light .border-white\/10,
-html.light .border-white\/15,
-html.light .border-white\/20,
-html.light .border-white\/5 {
-  border-color: rgba(0, 0, 0, 0.09) !important;
+/* Match ANY translucent white surfaces */
+html.light [class*="bg-white/"],
+html.light [class*="bg-white\/"],
+html.light [class*="bg-white/\["] {
+  background-color: rgba(0, 0, 0, 0.04) !important;
 }
 
-html.light .text-white {
+/* Match ANY white borders */
+html.light [class*="border-white/"],
+html.light [class*="border-white\/"] {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Primary text colors */
+html.light .text-white,
+html.light [class~="text-white"] {
   color: #0f172a !important;
 }
 
-html.light .text-white\/80,
-html.light .text-white\/70,
-html.light .text-white\/60,
-html.light .text-white\/50 {
+/* All translucent white text variants default to dark slate in light mode */
+html.light [class*="text-white/"],
+html.light [class*="text-white\/"] {
   color: #475569 !important;
 }
 
-html.light .text-white\/40,
-html.light .text-white\/30,
-html.light .text-white\/20 {
+html.light [class*="text-white/90"],
+html.light [class*="text-white\/90"],
+html.light [class*="text-white/80"],
+html.light [class*="text-white\/80"] {
+  color: #1e293b !important;
+}
+
+html.light [class*="text-white/70"],
+html.light [class*="text-white\/70"],
+html.light [class*="text-white/60"],
+html.light [class*="text-white\/60"] {
+  color: #475569 !important;
+}
+
+html.light [class*="text-white/50"],
+html.light [class*="text-white\/50"],
+html.light [class*="text-white/45"],
+html.light [class*="text-white\/45"],
+html.light [class*="text-white/40"],
+html.light [class*="text-white\/40"] {
+  color: #64748b !important;
+}
+
+html.light [class*="text-white/30"],
+html.light [class*="text-white\/30"],
+html.light [class*="text-white/20"],
+html.light [class*="text-white\/20"],
+html.light [class*="text-white/10"],
+html.light [class*="text-white\/10"] {
   color: #94a3b8 !important;
 }
 
@@ -120,13 +142,40 @@ html.light .text-zinc-600 {
   color: #64748b !important;
 }
 
-html.light .bg-white\/5,
-html.light .bg-white\/10 {
-  background-color: rgba(0, 0, 0, 0.05) !important;
+/* Skeleton shimmer in light mode */
+html.light .skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.04) 25%,
+    rgba(0, 0, 0, 0.09) 37%,
+    rgba(0, 0, 0, 0.04) 63%
+  ) !important;
+  background-size: 200% 100% !important;
 }
 
-html.light .bg-white\/20 {
-  background-color: rgba(0, 0, 0, 0.1) !important;
+/* PROTECT text colors inside colored buttons, pills, gradients, and tags! */
+html.light [class*="bg-orange-"] .text-white,
+html.light [class*="from-orange-"] .text-white,
+html.light [class*="bg-rose-"] .text-white,
+html.light [class*="bg-emerald-"] .text-white,
+html.light [class*="bg-gradient-"] .text-white,
+html.light button[class*="from-orange"] *,
+html.light button[class*="bg-orange"] *,
+html.light a[class*="from-orange"] *,
+html.light a[class*="bg-orange"] * {
+  color: inherit !important;
+}
+
+html.light [class*="hover:text-white"]:hover {
+  color: #0f172a !important;
+}
+
+html.light [class*="hover:bg-white"]:hover {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+html.light [class*="hover:bg-zinc-950"]:hover {
+  background-color: #f8fafc !important;
 }
 
 html.light header {

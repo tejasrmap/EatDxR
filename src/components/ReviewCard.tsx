@@ -296,7 +296,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
   const primaryDishName = review.dishes?.[0]?.name || review.attachedDish || "Special Dish";
 
   return (
-    <div ref={cardRef} className="group p-4 sm:p-5 mb-4 bg-zinc-950/70 hover:bg-zinc-950/90 border border-white/10 hover:border-white/20 rounded-3xl shadow-xl hover:shadow-2xl relative transition-all duration-300">
+    <div ref={cardRef} className="group p-4 sm:p-5 mb-4 bg-white dark:bg-zinc-950/70 hover:bg-slate-50/80 dark:hover:bg-zinc-950/90 border border-slate-200/80 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 rounded-3xl shadow-sm hover:shadow-md dark:shadow-xl dark:hover:shadow-2xl relative transition-all duration-300">
       
       {/* 1. TOP AUTHOR & META ROW */}
       <div className="flex items-center justify-between gap-2 mb-3">
@@ -309,7 +309,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
             <img 
               src={optimizeImage(review.userPhoto, { width: 44 })} 
               alt={review.userName} 
-              className="w-9 h-9 rounded-full border border-white/15 object-cover group-hover/author:border-orange-500 transition-colors"
+              className="w-9 h-9 rounded-full border border-slate-200 dark:border-white/15 object-cover group-hover/author:border-orange-500 transition-colors"
               referrerPolicy="no-referrer"
               loading="lazy"
               decoding="async"
@@ -322,20 +322,20 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-white group-hover/author:text-orange-400 transition-colors truncate leading-tight">
+              <span className="text-xs font-bold text-slate-900 dark:text-white group-hover/author:text-orange-500 dark:group-hover/author:text-orange-400 transition-colors truncate leading-tight">
                 {review.userName}
               </span>
               {review.rating >= 9.0 && (
-                <span className="hidden sm:inline-flex items-center text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300">
+                <span className="hidden sm:inline-flex items-center text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-300">
                   Critic's Choice
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-1 text-[10px] text-white/50 leading-tight mt-0.5">
+            <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-white/50 leading-tight mt-0.5">
               <MapPin size={9} className="text-orange-500/80 shrink-0" />
               <span className="truncate">{review.city || "Bangalore"}</span>
               <span>•</span>
-              <span className="font-mono text-white/40">
+              <span className="font-mono text-slate-400 dark:text-white/40">
                 {formatDistanceToNow(parseFirebaseDate(review.createdAt), { addSuffix: true })}
               </span>
             </div>
@@ -344,8 +344,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
 
         {/* Rating Badge & Options */}
         <div className="flex items-center gap-2 shrink-0">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-400 font-mono font-bold text-xs shadow-sm">
-            <Star size={12} className="fill-amber-400 text-amber-400" />
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-600 dark:text-amber-400 font-mono font-bold text-xs shadow-sm">
+            <Star size={12} className="fill-amber-500 dark:fill-amber-400 text-amber-500 dark:text-amber-400" />
             <span>{review.rating ? Number(review.rating).toFixed(1) : "9.0"}</span>
           </div>
 
@@ -356,19 +356,19 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
                   e.stopPropagation();
                   setShowOptions(!showOptions);
                 }}
-                className="p-1 text-white/50 hover:text-white transition-colors cursor-pointer"
+                className="p-1 text-slate-400 hover:text-slate-700 dark:text-white/50 dark:hover:text-white transition-colors cursor-pointer"
               >
                 <MoreVertical size={16} />
               </button>
               {showOptions && (
-                <div className="absolute right-0 top-full mt-1.5 w-36 bg-zinc-950 border border-white/15 rounded-2xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="absolute right-0 top-full mt-1.5 w-36 bg-white dark:bg-zinc-950 border border-slate-200 dark:border-white/15 rounded-2xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowOptions(false);
                       setIsEditing(true);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/5 transition-colors cursor-pointer"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
                   >
                     <Edit2 size={12} /> Edit Entry
                   </button>
@@ -378,7 +378,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
                       setShowOptions(false);
                       handleDelete();
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
                   >
                     <Trash2 size={12} /> Delete
                   </button>
@@ -400,7 +400,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
             setShowHeartBurst(true);
             setTimeout(() => setShowHeartBurst(false), 800);
           }}
-          className="w-full aspect-[16/10] sm:aspect-[16/9] max-h-72 sm:max-h-96 md:max-h-[420px] bg-zinc-900 rounded-2xl border border-white/10 relative overflow-hidden block group/img shadow-md mb-3 cursor-pointer select-none"
+          className="w-full aspect-[16/10] sm:aspect-[16/9] max-h-72 sm:max-h-96 md:max-h-[420px] bg-slate-100 dark:bg-zinc-900 rounded-2xl border border-slate-200/80 dark:border-white/10 relative overflow-hidden block group/img shadow-sm mb-3 cursor-pointer select-none"
         >
           {/* Shimmer skeleton while image loads */}
           {!imageLoaded && (
@@ -441,14 +441,14 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
 
       {/* 3. DISH & RESTAURANT HEADLINE */}
       <div className="cursor-pointer mb-2" onClick={() => setIsDetailedViewOpen(true)}>
-        <h3 className="text-base sm:text-lg font-black text-white hover:text-orange-400 transition-colors tracking-tight line-clamp-1">
+        <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white hover:text-orange-500 dark:hover:text-orange-400 transition-colors tracking-tight line-clamp-1">
           {primaryDishName}
         </h3>
-        <div className="flex items-center gap-1.5 text-xs text-white/60 mt-0.5">
+        <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-white/60 mt-0.5">
           <span>at</span>
           <Link 
             to={getAppUrl(`/restaurant/${review.restaurantId}`)} 
-            className="text-white hover:text-orange-400 font-bold transition-colors underline decoration-white/20 hover:decoration-orange-400 underline-offset-4 line-clamp-1"
+            className="text-slate-900 dark:text-white hover:text-orange-500 dark:hover:text-orange-400 font-bold transition-colors underline decoration-slate-300 dark:decoration-white/20 hover:decoration-orange-500 underline-offset-4 line-clamp-1"
             onClick={(e) => e.stopPropagation()}
           >
             {review.restaurantName}
@@ -460,14 +460,14 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
       {review.content && (
         <p 
           onClick={() => setIsDetailedViewOpen(true)}
-          className="text-white/70 text-xs sm:text-sm leading-relaxed mb-3 line-clamp-3 cursor-pointer font-normal"
+          className="text-slate-700 dark:text-white/70 text-xs sm:text-sm leading-relaxed mb-3 line-clamp-3 cursor-pointer font-normal"
         >
           {review.content}
         </p>
       )}
 
       {/* 5. DECLUTTERED ACTION BAR */}
-      <div className="flex items-center justify-between pt-2.5 border-t border-white/10 text-xs">
+      <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 dark:border-white/10 text-xs">
         
         {/* Left Actions: Like, Comment, Bookmark */}
         <div className="flex items-center gap-3.5 sm:gap-4">
@@ -478,7 +478,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
               handleLike();
             }}
             className={`flex items-center gap-1.5 transition-all cursor-pointer ${
-              hasLiked ? 'text-rose-500 font-bold' : 'text-white/60 hover:text-white'
+              hasLiked ? 'text-rose-500 font-bold' : 'text-slate-500 hover:text-slate-900 dark:text-white/60 dark:hover:text-white'
             }`}
           >
             <Heart size={16} className={hasLiked ? "fill-rose-500" : ""} />
@@ -492,10 +492,10 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
               setShowComments(!showComments);
             }}
             className={`flex items-center gap-1.5 transition-all cursor-pointer ${
-              showComments ? 'text-white font-bold' : 'text-white/60 hover:text-white'
+              showComments ? 'text-slate-900 dark:text-white font-bold' : 'text-slate-500 hover:text-slate-900 dark:text-white/60 dark:hover:text-white'
             }`}
           >
-            <MessageSquare size={16} className={showComments ? "fill-white" : ""} />
+            <MessageSquare size={16} className={showComments ? "fill-slate-900 dark:fill-white" : ""} />
             <span className="text-[11px] font-bold">
               {comments.length > 0 ? comments.length : 'Review'}
             </span>
@@ -510,11 +510,11 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
               toast.success(!isBookmarked ? "Saved to your food list!" : "Removed from list");
             }}
             className={`p-1 transition-all cursor-pointer ${
-              isBookmarked ? 'text-amber-400' : 'text-white/50 hover:text-white'
+              isBookmarked ? 'text-amber-500' : 'text-slate-400 hover:text-slate-700 dark:text-white/50 dark:hover:text-white'
             }`}
             title={isBookmarked ? "Saved" : "Save to list"}
           >
-            <Bookmark size={16} className={isBookmarked ? "fill-amber-400" : ""} />
+            <Bookmark size={16} className={isBookmarked ? "fill-amber-500" : ""} />
           </motion.button>
         </div>
 
@@ -526,10 +526,10 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
               e.stopPropagation();
               setIsStoryModalOpen(true);
             }}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-500/20 via-rose-500/20 to-amber-500/20 hover:from-orange-500/30 hover:to-amber-500/30 border border-orange-500/40 text-orange-400 font-black text-[10px] uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap shadow-sm"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-500/20 via-rose-500/20 to-amber-500/20 hover:from-orange-500/30 hover:to-amber-500/30 border border-orange-500/40 text-orange-500 dark:text-orange-400 font-black text-[10px] uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap shadow-sm"
             title="Open 9:16 Instagram Story Card"
           >
-            <Sparkles size={11} className="text-orange-400" />
+            <Sparkles size={11} className="text-orange-500 dark:text-orange-400" />
             <span>Story</span>
           </motion.button>
 
@@ -539,7 +539,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
               e.stopPropagation();
               setIsShareMenuOpen(true);
             }}
-            className="p-1.5 rounded-full text-white/50 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+            className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:text-white/50 dark:hover:text-white dark:hover:bg-white/5 transition-all cursor-pointer"
             title="Share review"
           >
             <Share2 size={16} />
@@ -553,13 +553,13 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-4 bg-zinc-900/60 border border-white/10 rounded-2xl shadow-xl overflow-hidden"
+          className="mt-4 bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm dark:shadow-xl overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="max-h-72 overflow-y-auto p-4 space-y-4 scrollbar-hide">
             {comments.length === 0 ? (
               <div className="py-3 text-center">
-                 <p className="text-xs text-white/50">No thoughts yet. Be the first to chime in!</p>
+                 <p className="text-xs text-slate-400 dark:text-white/50">No thoughts yet. Be the first to chime in!</p>
               </div>
             ) : (
               comments.map(comment => (
@@ -568,23 +568,23 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
                     <img 
                       src={optimizeImage(comment.userPhoto, { width: 32 })} 
                       alt={comment.userName} 
-                      className="w-6 h-6 rounded-full border border-white/10 object-cover"
+                      className="w-6 h-6 rounded-full border border-slate-200 dark:border-white/10 object-cover"
                       referrerPolicy="no-referrer"
                     />
                   </Link>
-                  <div className="flex-1 bg-white/5 rounded-2xl p-2.5 border border-white/5">
+                  <div className="flex-1 bg-white dark:bg-white/5 rounded-2xl p-2.5 border border-slate-200/80 dark:border-white/5">
                     <div className="flex items-center justify-between mb-1">
                       <Link 
                         to={getAppUrl(`/profile/${comment.userId}`)}
-                        className="text-[11px] font-bold text-white hover:text-orange-400 transition-colors"
+                        className="text-[11px] font-bold text-slate-900 dark:text-white hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
                       >
                         {comment.userName}
                       </Link>
-                      <span className="text-[9px] text-white/40 font-mono">
+                      <span className="text-[9px] text-slate-400 dark:text-white/40 font-mono">
                         {comment.createdAt?.toMillis ? formatDistanceToNow(comment.createdAt.toMillis(), { addSuffix: true }) : 'just now'}
                       </span>
                     </div>
-                    <p className="text-xs text-white/80 leading-relaxed font-normal">
+                    <p className="text-xs text-slate-700 dark:text-white/80 leading-relaxed font-normal">
                       {comment.content}
                     </p>
                   </div>
@@ -592,19 +592,19 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
               ))
             )}
           </div>
-          <div className="p-3 bg-zinc-950 border-t border-white/10">
+          <div className="p-3 bg-white dark:bg-zinc-950 border-t border-slate-200 dark:border-white/10">
             <form onSubmit={handleCommentSubmit} className="flex gap-2">
               <input 
                 type="text" 
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Write a thought..."
-                className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-xs text-white focus:outline-none focus:border-orange-500 placeholder:text-white/30"
+                className="flex-1 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-full px-4 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 placeholder:text-slate-400 dark:placeholder:text-white/30"
               />
               <button 
                 type="submit" 
                 disabled={isCommentLoading || !newComment.trim()}
-                className="w-8 h-8 flex items-center justify-center bg-orange-500 text-black rounded-full transition-all disabled:opacity-30 hover:scale-105 shrink-0"
+                className="w-8 h-8 flex items-center justify-center bg-orange-500 text-white rounded-full transition-all disabled:opacity-30 hover:scale-105 shrink-0"
               >
                 {isCommentLoading ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
               </button>
