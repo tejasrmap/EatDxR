@@ -278,31 +278,28 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
         image: d.image || "" 
       }));
 
-      // --- Universal Parallel Upload Engine: Firebase Storage Primary -> Supabase Storage -> Base64 Fallback ---
+      // --- Universal Parallel Upload Engine: Supabase Storage Primary -> Firebase Storage Backup -> Base64 Fallback ---
       if (filesToUpload.length > 0) {
         const uploadPromises = filesToUpload.map(async (task) => {
           try {
-            // 1. Primary: Firebase Storage (Fast, direct, authenticated)
+            // 1. Primary: Supabase Storage bucket 'dishes'
+            const supabaseUrl = await uploadMedia(task.file, 'dishes', task.path);
+            if (supabaseUrl) {
+              uploadedDishes[task.fieldIndex].image = supabaseUrl;
+              transferredMap.set(task.path, task.file.size);
+              updateOmniProgress();
+              return;
+            }
+
+            // 2. Secondary fallback: Firebase Storage
             const downloadUrl = await uploadFileWithProgress(task.file, task.path, (bytes) => {
               transferredMap.set(task.path, bytes);
               updateOmniProgress();
             });
             uploadedDishes[task.fieldIndex].image = downloadUrl;
             return;
-          } catch (fbErr) {
-            console.warn(`Firebase storage notice for dish ${task.fieldIndex} (trying Supabase):`, fbErr);
-            try {
-              // 2. Secondary: Supabase Storage bucket 'dishes'
-              const supabaseUrl = await uploadMedia(task.file, 'dishes', task.path);
-              if (supabaseUrl) {
-                uploadedDishes[task.fieldIndex].image = supabaseUrl;
-                transferredMap.set(task.path, task.file.size);
-                updateOmniProgress();
-                return;
-              }
-            } catch (supaErr) {
-              console.warn(`Supabase storage notice for dish ${task.fieldIndex}:`, supaErr);
-            }
+          } catch (storageErr) {
+            console.warn(`Storage upload notice for dish ${task.fieldIndex}:`, storageErr);
             // 3. Fallback: Base64 data URL
             uploadedDishes[task.fieldIndex].image = data.dishes[task.fieldIndex]?.image || "";
           }

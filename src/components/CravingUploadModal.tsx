@@ -135,50 +135,52 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
     try {
       let finalVideoUrl = "https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-pizza-being-cut-with-a-slicer-44171-large.mp4";
 
-      if (videoFile && storage) {
+      if (videoFile) {
+        const ext = videoFile.name.split('.').pop() || 'mp4';
+        const videoPath = `cravings/${user.uid}_${Date.now()}.${ext}`;
+
+        // 1. Primary: Supabase Storage bucket 'cravings'
         try {
-          const ext = videoFile.name.split('.').pop() || 'mp4';
-          const videoPath = `videos/${user.uid}_${Date.now()}.${ext}`;
-          const videoRef = ref(storage, videoPath);
-          const uploadTask = uploadBytesResumable(videoRef, videoFile);
+          const supaUrl = await uploadMedia(videoFile, 'cravings', videoPath);
+          if (supaUrl) {
+            finalVideoUrl = supaUrl;
+          } else if (storage) {
+            // 2. Secondary fallback: Firebase Storage
+            const videoRef = ref(storage, `videos/${user.uid}_${Date.now()}.${ext}`);
+            const uploadTask = uploadBytesResumable(videoRef, videoFile);
 
-          finalVideoUrl = await new Promise<string>((resolve, reject) => {
-            const timeout = setTimeout(() => {
-              try { uploadTask.cancel(); } catch {}
-              reject(new Error("Video upload timed out"));
-            }, 90000);
+            finalVideoUrl = await new Promise<string>((resolve, reject) => {
+              const timeout = setTimeout(() => {
+                try { uploadTask.cancel(); } catch {}
+                reject(new Error("Video upload timed out"));
+              }, 90000);
 
-            uploadTask.on(
-              "state_changed",
-              (snapshot) => {
-                if (snapshot.totalBytes > 0) {
-                  const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-                  setUploadProgress(pct);
+              uploadTask.on(
+                "state_changed",
+                (snapshot) => {
+                  if (snapshot.totalBytes > 0) {
+                    const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                    setUploadProgress(pct);
+                  }
+                },
+                (err) => {
+                  clearTimeout(timeout);
+                  reject(err);
+                },
+                async () => {
+                  clearTimeout(timeout);
+                  try {
+                    const url = await getDownloadURL(uploadTask.snapshot.ref);
+                    resolve(url);
+                  } catch (e) {
+                    reject(e);
+                  }
                 }
-              },
-              (err) => {
-                clearTimeout(timeout);
-                console.warn("Firebase video upload warning:", err);
-                reject(err);
-              },
-              async () => {
-                clearTimeout(timeout);
-                try {
-                  const url = await getDownloadURL(uploadTask.snapshot.ref);
-                  resolve(url);
-                } catch (e) {
-                  reject(e);
-                }
-              }
-            );
-          });
-        } catch (storageErr) {
-          console.warn("Storage fallback triggered (trying Supabase):", storageErr);
-          try {
-            const ext = videoFile.name.split('.').pop() || 'mp4';
-            const supaUrl = await uploadMedia(videoFile, 'cravings', `cravings/${user.uid}_${Date.now()}.${ext}`);
-            if (supaUrl) finalVideoUrl = supaUrl;
-          } catch {}
+              );
+            });
+          }
+        } catch (uploadErr) {
+          console.warn("Video upload notice:", uploadErr);
         }
       }
 

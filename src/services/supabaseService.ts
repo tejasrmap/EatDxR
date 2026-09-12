@@ -382,9 +382,9 @@ export async function uploadMedia(
 
   const timeoutPromise = new Promise<null>((resolve) => {
     setTimeout(() => {
-      console.warn('[Supabase Storage] Upload timed out after 8 seconds');
+      console.warn('[Supabase Storage] Upload timed out after 180 seconds');
       resolve(null);
-    }, 8000);
+    }, 180000);
   });
 
   const uploadPromise = (async (): Promise<string | null> => {
@@ -410,7 +410,7 @@ export async function uploadMedia(
 
       // If bucket doesn't exist or failed, attempt general bucket 'dish-media' as fallback
       if (uploadRes.error && bucket !== 'dish-media') {
-        console.warn(`[Supabase Storage] Bucket "${bucket}" upload error:`, uploadRes.error.message, 'Trying fallback bucket "dish-media"...');
+        console.warn(`[Supabase Storage] Bucket "${bucket}" upload notice:`, uploadRes.error.message, 'Trying fallback bucket "dish-media"...');
         uploadRes = await supabase.storage.from('dish-media').upload(filePath, file, {
           cacheControl: '3600',
           upsert: true,
@@ -423,7 +423,7 @@ export async function uploadMedia(
       }
 
       if (uploadRes.error) {
-        console.warn('[Supabase Storage] Upload error:', uploadRes.error.message);
+        console.warn(`[Supabase Storage] Upload error to bucket "${bucket}":`, uploadRes.error.message);
         return null;
       }
 
