@@ -19,6 +19,7 @@
 }
 
 :root {
+  color-scheme: dark;
   /* Dark Mode Defaults */
   --background: #000000;
   --foreground: #ffffff;
@@ -34,6 +35,7 @@
 }
 
 html.light {
+  color-scheme: light;
   /* Light Mode - High-End Clean Editorial */
   --background: #f8fafc;
   --foreground: #0f172a;
@@ -46,6 +48,48 @@ html.light {
   --primary-foreground: #ffffff;
   --accent: #f59e0b;
   --accent-foreground: #000000;
+}
+
+/* =========================================================
+   UNIVERSAL BROWSER AUTOFILL STYLING FIX
+   Eliminates Chrome/Edge white background glitch in dark mode
+   ========================================================= */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+textarea:-webkit-autofill:active,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus,
+select:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #18181b inset !important;
+  box-shadow: 0 0 0 1000px #18181b inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff !important;
+  transition: background-color 999999s ease-in-out 0s, color 999999s ease-in-out 0s;
+}
+
+html.light input:-webkit-autofill,
+html.light input:-webkit-autofill:hover, 
+html.light input:-webkit-autofill:focus,
+html.light input:-webkit-autofill:active,
+html.light textarea:-webkit-autofill,
+html.light textarea:-webkit-autofill:hover,
+html.light textarea:-webkit-autofill:focus,
+html.light textarea:-webkit-autofill:active,
+html.light select:-webkit-autofill,
+html.light select:-webkit-autofill:hover,
+html.light select:-webkit-autofill:focus,
+html.light select:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: #0f172a !important;
+  transition: background-color 999999s ease-in-out 0s, color 999999s ease-in-out 0s;
 }
 
 /* =========================================================

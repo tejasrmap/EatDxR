@@ -254,7 +254,7 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
 
           {/* Version Info */}
           <div className="pt-6 pb-8 text-center space-y-1">
-             <p className="text-[10px] uppercase tracking-[0.4em] font-black text-muted-foreground">Madeater v1.0.4</p>
+             <p className="text-[10px] uppercase tracking-[0.4em] font-black text-muted-foreground">Madeater v1.0.5</p>
              <p className="text-[9px] font-medium italic serif text-muted-foreground/30">Designed for the Culinary Elite</p>
           </div>
         </div>

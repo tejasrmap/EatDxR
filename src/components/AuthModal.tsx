@@ -9,7 +9,10 @@ import {
   updateProfile, 
   GoogleAuthProvider 
 } from "firebase/auth";
-import { auth } from "../firebase";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../firebase";
+import { upsertProfile } from "../services/supabaseService";
+import { User as DishdUser } from "../types";
 import { triggerHaptic, isNative } from "../services/nativeService";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -151,13 +154,52 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
         const userCred = await createUserWithEmailAndPassword(auth, email.trim(), password);
         
         if (userCred.user) {
-          // 2. Update user profile details
+          const fallbackPhoto = `https://api.dicebear.com/7.x/bottts/svg?seed=${userCred.user.uid}`;
+          const cleanName = displayName.trim() || "Food Lover";
+          const defaultUsername = cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 15) || `critic_${userCred.user.uid.slice(0, 6)}`;
+
+          // 2. Update user profile details in Firebase Auth
           await updateProfile(userCred.user, {
-            displayName: displayName.trim(),
-            photoURL: `https://api.dicebear.com/7.x/bottts/svg?seed=${userCred.user.uid}`
+            displayName: cleanName,
+            photoURL: fallbackPhoto
           });
 
-          // 3. Send email verification on initial registration
+          // 3. Immediately create complete profile in Firestore & Supabase with entered name
+          try {
+            const userDocRef = doc(db, "users", userCred.user.uid);
+            const newUser: DishdUser = {
+              uid: userCred.user.uid,
+              displayName: cleanName,
+              email: email.trim(),
+              photoURL: fallbackPhoto,
+              username: defaultUsername,
+              bio: "Food critic on Madeater",
+              tasteDNA: {
+                spice: 60,
+                indian: 75,
+                nonVeg: 50,
+                asian: 40,
+                desserts: 50,
+                coffee: 70,
+                personaTitle: "The Flavor Explorer"
+              },
+              stats: {
+                mealsLogged: 0,
+                reviewsWritten: 0,
+                followers: 0,
+                following: 0,
+                followingList: []
+              },
+              createdAt: new Date().toISOString()
+            };
+            await setDoc(userDocRef, newUser, { merge: true });
+            await upsertProfile(newUser);
+            localStorage.setItem("madeater_dishd_user", JSON.stringify(newUser));
+          } catch (profileSaveErr) {
+            console.warn("Notice saving initial critic profile:", profileSaveErr);
+          }
+
+          // 4. Send email verification on initial registration
           try {
             await sendEmailVerification(userCred.user);
             toast.success(`Verification email sent to ${email.trim()}`);
@@ -178,12 +220,18 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
       const code = error?.code || "";
 
       if (code === "auth/user-not-found" || code === "auth/wrong-password" || code === "auth/invalid-credential") {
-        setErrorMessage("Invalid email or password. Please verify your details or switch to Create Account.");
+        setErrorMessage("Invalid email or password. Please check your credentials or click 'Forgot password?'.");
       } else if (code === "auth/email-already-in-use") {
-        setErrorMessage("An account already exists with this email. Please sign in.");
+        setErrorMessage("An account already exists with this email address. We've switched to Sign In for you.");
         setAuthMode("signin");
+      } else if (code === "auth/invalid-email") {
+        setErrorMessage("Please enter a valid email address.");
       } else if (code === "auth/weak-password") {
         setErrorMessage("Password is too weak. Please use at least 6 characters.");
+      } else if (code === "auth/network-request-failed") {
+        setErrorMessage("Network error. Please check your internet connection and try again.");
+      } else if (code === "auth/too-many-requests") {
+        setErrorMessage("Too many attempts. Please wait a moment before trying again.");
       } else {
         setErrorMessage(error?.message || "Authentication failed. Please try again.");
       }
@@ -423,15 +471,19 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
                     <label className="block text-xs font-bold uppercase tracking-wider text-white/70 mb-1.5">
                       Email Address
                     </label>
-                    <div className="relative flex items-center h-13 rounded-2xl bg-zinc-900/90 border border-white/10 hover:border-white/20 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all">
-                      <Mail size={18} className="absolute left-4 text-white/40 pointer-events-none" />
+                    <div className="relative flex items-center h-13 rounded-2xl bg-zinc-900/90 border border-white/10 hover:border-white/20 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all overflow-hidden">
+                      <Mail size={18} className="absolute left-4 text-white/40 pointer-events-none z-10" />
                       <input
                         type="email"
+                        name="email"
+                        autoComplete="email"
+                        autoCapitalize="none"
+                        spellCheck={false}
                         required
                         placeholder="yourname@gmail.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full h-full bg-transparent pl-12 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none font-medium"
+                        className="w-full h-full bg-zinc-900/90 rounded-2xl pl-12 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none font-medium z-0"
                       />
                     </div>
                   </div>
@@ -534,15 +586,18 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
                     <label className="block text-xs font-bold uppercase tracking-wider text-white/70 mb-1.5">
                       Full Name
                     </label>
-                    <div className="relative flex items-center h-13 rounded-2xl bg-zinc-900/90 border border-white/10 hover:border-white/20 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all">
-                      <User size={18} className="absolute left-4 text-white/40 pointer-events-none" />
+                    <div className="relative flex items-center h-13 rounded-2xl bg-zinc-900/90 border border-white/10 hover:border-white/20 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all overflow-hidden">
+                      <User size={18} className="absolute left-4 text-white/40 pointer-events-none z-10" />
                       <input
                         type="text"
+                        name="name"
+                        autoComplete="name"
+                        spellCheck={false}
                         required
                         placeholder="e.g. Teja Sharma"
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
-                        className="w-full h-full bg-transparent pl-12 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none font-medium"
+                        className="w-full h-full bg-zinc-900/90 rounded-2xl pl-12 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none font-medium z-0"
                       />
                     </div>
                   </div>
@@ -552,15 +607,19 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
                   <label className="block text-xs font-bold uppercase tracking-wider text-white/70 mb-1.5">
                     Email Address
                   </label>
-                  <div className="relative flex items-center h-13 rounded-2xl bg-zinc-900/90 border border-white/10 hover:border-white/20 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all">
-                    <Mail size={18} className="absolute left-4 text-white/40 pointer-events-none" />
+                  <div className="relative flex items-center h-13 rounded-2xl bg-zinc-900/90 border border-white/10 hover:border-white/20 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all overflow-hidden">
+                    <Mail size={18} className="absolute left-4 text-white/40 pointer-events-none z-10" />
                     <input
                       type="email"
+                      name="email"
+                      autoComplete="email"
+                      autoCapitalize="none"
+                      spellCheck={false}
                       required
                       placeholder="yourname@gmail.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full h-full bg-transparent pl-12 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none font-medium"
+                      className="w-full h-full bg-zinc-900/90 rounded-2xl pl-12 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none font-medium z-0"
                     />
                   </div>
                 </div>
@@ -585,21 +644,23 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
                       </button>
                     )}
                   </div>
-                  <div className="relative flex items-center h-13 rounded-2xl bg-zinc-900/90 border border-white/10 hover:border-white/20 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all">
-                    <Lock size={18} className="absolute left-4 text-white/40 pointer-events-none" />
+                  <div className="relative flex items-center h-13 rounded-2xl bg-zinc-900/90 border border-white/10 hover:border-white/20 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all overflow-hidden">
+                    <Lock size={18} className="absolute left-4 text-white/40 pointer-events-none z-10" />
                     <input
                       type={showPassword ? "text" : "password"}
+                      name="password"
+                      autoComplete={authMode === "signup" ? "new-password" : "current-password"}
                       required
                       placeholder="At least 6 characters"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full h-full bg-transparent pl-12 pr-12 text-sm text-white placeholder:text-white/30 focus:outline-none font-medium"
+                      className="w-full h-full bg-zinc-900/90 rounded-2xl pl-12 pr-12 text-sm text-white placeholder:text-white/30 focus:outline-none font-medium z-0"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       aria-label={showPassword ? "Hide password" : "Show password"}
-                      className="absolute right-4 text-white/40 hover:text-white transition-colors p-1 cursor-pointer"
+                      className="absolute right-4 text-white/40 hover:text-white transition-colors p-1 cursor-pointer z-10"
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
