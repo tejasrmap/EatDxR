@@ -69,7 +69,7 @@ html.light [class*="bg-black\/"] {
 }
 
 /* Modal and drawer fixed backdrops stay dark translucent in light mode so dialogs stand out */
-html.light .fixed[class*="bg-black"],
+html.light .fixed.inset-0[class*="bg-black"],
 html.light [class*="fixed"][class*="inset-0"][class*="bg-black"],
 html.light [class*="fixed"][class*="inset-0"][class*="bg-background/9"] {
   background-color: rgba(15, 23, 42, 0.52) !important;

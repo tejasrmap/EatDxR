@@ -150,13 +150,21 @@ export function FoodMap() {
     markersLayerRef.current = markersLayer;
     leafletMapRef.current = map;
 
-    // Invalidate size once DOM stabilizes
+    // Invalidate size once DOM stabilizes and observe container resizing
     const timer = setTimeout(() => {
       map.invalidateSize();
     }, 250);
 
+    const resizeObserver = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+    if (mapContainerRef.current) {
+      resizeObserver.observe(mapContainerRef.current);
+    }
+
     return () => {
       clearTimeout(timer);
+      resizeObserver.disconnect();
       map.remove();
       leafletMapRef.current = null;
     };
@@ -281,7 +289,7 @@ export function FoodMap() {
 
   if (isAppMode) {
     return (
-      <div className="relative w-full h-[calc(100dvh-3.5rem)] overflow-hidden bg-zinc-950 select-none">
+      <div className="relative w-full h-[calc(100dvh-4.5rem)] overflow-hidden bg-zinc-950 select-none lg:rounded-3xl lg:border lg:border-slate-200/80 lg:dark:border-white/10 shadow-sm">
         {/* Full-Bleed Leaflet Map Canvas */}
         <div ref={mapContainerRef} className="w-full h-full z-0 select-none" />
 

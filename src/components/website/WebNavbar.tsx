@@ -34,34 +34,34 @@ export function WebNavbar() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-2xl border-b border-white/10">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-black/90 backdrop-blur-2xl border-b border-slate-200/80 dark:border-white/10">
         <div className="max-w-7xl mx-auto px-6 md:px-10 h-16 flex items-center justify-between gap-4">
           
           {/* Left: Brand Logo & Primary Navigation */}
           <div className="flex items-center gap-8 lg:gap-10">
             <Link to="/" className="flex items-center gap-1.5 group shrink-0">
               <div className="logo-text flex items-baseline tracking-tighter">
-                <span className="font-black text-white text-2xl uppercase tracking-tight">MAD</span>
+                <span className="font-black text-slate-900 dark:text-white text-2xl uppercase tracking-tight">MAD</span>
                 <span className="font-black text-orange-500 text-2xl uppercase tracking-tight">EATER</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-orange-500 ml-1 group-hover:scale-150 transition-transform" />
               </div>
             </Link>
 
             {/* Desktop Navigation Links (Clean, Minimalist, No icon noise) */}
-            <nav className="hidden md:flex items-center gap-8 text-xs font-semibold uppercase tracking-wider text-white/60">
-              <Link to="/dishes" className="hover:text-white transition-colors">
+            <nav className="hidden md:flex items-center gap-8 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-white/60">
+              <Link to="/dishes" className="hover:text-slate-950 dark:hover:text-white transition-colors">
                 Dishes
               </Link>
-              <Link to="/restaurants" className="hover:text-white transition-colors">
+              <Link to="/restaurants" className="hover:text-slate-950 dark:hover:text-white transition-colors">
                 Spots
               </Link>
-              <Link to="/map" className="hover:text-white transition-colors">
+              <Link to="/map" className="hover:text-slate-950 dark:hover:text-white transition-colors">
                 Radar
               </Link>
-              <Link to="/critics" className="hover:text-white transition-colors">
+              <Link to="/critics" className="hover:text-slate-950 dark:hover:text-white transition-colors">
                 Critics
               </Link>
-              <Link to="/lists" className="hover:text-white transition-colors">
+              <Link to="/lists" className="hover:text-slate-950 dark:hover:text-white transition-colors">
                 Lists
               </Link>
             </nav>
@@ -73,21 +73,21 @@ export function WebNavbar() {
             {/* Quick Search */}
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-white/60 hover:text-white transition-all cursor-pointer"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200/80 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-xs text-slate-700 dark:text-white/60 hover:text-slate-950 dark:hover:text-white transition-all cursor-pointer"
               title="Search dishes & restaurants (Ctrl+K)"
             >
               <Search size={13} />
               <span className="hidden sm:inline">Search</span>
-              <kbd className="hidden sm:inline-block text-[9px] px-1.5 py-0.5 rounded bg-white/10 text-white/40 font-mono">⌘K</kbd>
+              <kbd className="hidden sm:inline-block text-[9px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-white/40 font-mono">⌘K</kbd>
             </button>
 
             {/* AI Assistant Pill */}
             <button
               onClick={() => setIsAIOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-orange-500/50 text-white/80 hover:text-orange-400 text-xs font-semibold transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-50 hover:bg-orange-100/80 dark:bg-white/5 dark:hover:bg-white/10 border border-orange-200/80 dark:border-white/10 hover:border-orange-500/50 text-orange-700 dark:text-white/80 hover:text-orange-900 dark:hover:text-orange-400 text-xs font-semibold transition-all cursor-pointer"
               title="Ask Chef AI"
             >
-              <Sparkles size={13} className="text-orange-400" />
+              <Sparkles size={13} className="text-orange-500 dark:text-orange-400" />
               <span className="hidden sm:inline">Ask Chef AI</span>
             </button>
 
@@ -97,7 +97,7 @@ export function WebNavbar() {
                 if (!user) { login(); return; }
                 setIsLogModalOpen(true);
               }}
-              className="flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-white hover:bg-orange-500 text-black hover:text-black font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-sm active:scale-95"
+              className="flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-slate-900 hover:bg-orange-500 dark:bg-white dark:hover:bg-orange-500 text-white dark:text-black hover:text-white dark:hover:text-black font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-sm active:scale-95"
             >
               <Plus size={13} className="stroke-[3]" />
               <span>Log</span>

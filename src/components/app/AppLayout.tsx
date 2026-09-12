@@ -1,5 +1,6 @@
 import { ReactNode, useState, useEffect } from "react";
 import { AppHeader } from "./AppHeader";
+import { AppSidebar } from "./AppSidebar";
 import { AppNavigationDock } from "./AppNavigationDock";
 import { EmailVerificationBanner } from "../EmailVerificationBanner";
 import { useLocation as useRouterLocation } from "react-router-dom";
@@ -85,12 +86,18 @@ export function AppLayout({ children }: AppLayoutProps) {
         </>
       )}
 
-      {/* Main App Content Area */}
-      <main className={`flex-1 w-full ${isFullBleedView ? 'p-0 m-0 max-w-none' : 'max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] lg:pb-12'}`}>
-        <div key={routerLocation.pathname} className={`page-transition w-full ${isFullBleedView ? 'h-full' : ''}`}>
-          {children}
-        </div>
-      </main>
+      {/* Main App Container with Persistent Desktop Sidebar */}
+      <div className={`flex-1 w-full ${isMapView ? 'px-0 lg:px-4 max-w-none' : isReelsView ? 'p-0 m-0 max-w-none' : 'max-w-7xl mx-auto px-2 sm:px-4 lg:px-6'} flex gap-4 lg:gap-6 relative`}>
+        {/* Persistent Desktop Sidebar on Laptop (lg+) */}
+        {!isReelsView && <AppSidebar />}
+
+        {/* Page Content */}
+        <main className={`flex-1 min-w-0 ${isFullBleedView ? 'p-0 m-0' : 'pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] lg:pb-12'}`}>
+          <div key={routerLocation.pathname} className={`page-transition w-full ${isFullBleedView ? 'h-full' : ''}`}>
+            {children}
+          </div>
+        </main>
+      </div>
 
       {/* Persistent App Navigation Dock */}
       <AppNavigationDock />
