@@ -368,7 +368,7 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
                 <button
                   type="button"
                   onClick={() => {
-                    setVideoPreview("https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-pizza-being-cut-with-a-slicer-44171-large.mp4");
+                    setVideoPreview("https://res.cloudinary.com/demo/video/upload/q_auto,w_720/breakfast.mp4");
                     setStep("details");
                   }}
                   className="text-[11px] text-white/50 hover:text-orange-400 underline underline-offset-4 transition-colors"
