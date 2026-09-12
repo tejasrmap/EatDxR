@@ -87,9 +87,9 @@ export function AppLayout({ children }: AppLayoutProps) {
       )}
 
       {/* Main App Container with Persistent Desktop Sidebar */}
-      <div className={`flex-1 w-full ${isMapView ? 'px-0 lg:px-4 max-w-none' : isReelsView ? 'p-0 m-0 max-w-none' : 'max-w-7xl mx-auto px-2 sm:px-4 lg:px-6'} flex gap-4 lg:gap-6 relative`}>
+      <div className={`flex-1 w-full ${isMapView ? 'px-0 lg:px-4 max-w-none' : isReelsView ? 'px-0 lg:px-6 max-w-none' : 'max-w-7xl mx-auto px-2 sm:px-4 lg:px-6'} flex gap-4 lg:gap-6 relative`}>
         {/* Persistent Desktop Sidebar on Laptop (lg+) */}
-        {!isReelsView && <AppSidebar />}
+        <AppSidebar />
 
         {/* Page Content */}
         <main className={`flex-1 min-w-0 ${isFullBleedView ? 'p-0 m-0' : 'pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] lg:pb-12'}`}>

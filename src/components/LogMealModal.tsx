@@ -278,27 +278,31 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
         image: d.image || "" 
       }));
 
-      // --- Universal Parallel Upload Engine: Supabase Storage -> Firebase Storage -> Base64 Fallback ---
+      // --- Universal Parallel Upload Engine: Firebase Storage Primary -> Supabase Storage -> Base64 Fallback ---
       if (filesToUpload.length > 0) {
         const uploadPromises = filesToUpload.map(async (task) => {
           try {
-            // 1. Primary: Supabase Storage bucket 'dishes'
-            const supabaseUrl = await uploadMedia(task.file, 'dishes', task.path);
-            if (supabaseUrl) {
-              uploadedDishes[task.fieldIndex].image = supabaseUrl;
-              transferredMap.set(task.path, task.file.size);
-              updateOmniProgress();
-              return;
-            }
-
-            // 2. Secondary: Firebase Storage
+            // 1. Primary: Firebase Storage (Fast, direct, authenticated)
             const downloadUrl = await uploadFileWithProgress(task.file, task.path, (bytes) => {
               transferredMap.set(task.path, bytes);
               updateOmniProgress();
             });
             uploadedDishes[task.fieldIndex].image = downloadUrl;
-          } catch (uploadErr) {
-            console.warn(`Storage upload fallback to base64 for dish ${task.fieldIndex}:`, uploadErr);
+            return;
+          } catch (fbErr) {
+            console.warn(`Firebase storage notice for dish ${task.fieldIndex} (trying Supabase):`, fbErr);
+            try {
+              // 2. Secondary: Supabase Storage bucket 'dishes'
+              const supabaseUrl = await uploadMedia(task.file, 'dishes', task.path);
+              if (supabaseUrl) {
+                uploadedDishes[task.fieldIndex].image = supabaseUrl;
+                transferredMap.set(task.path, task.file.size);
+                updateOmniProgress();
+                return;
+              }
+            } catch (supaErr) {
+              console.warn(`Supabase storage notice for dish ${task.fieldIndex}:`, supaErr);
+            }
             // 3. Fallback: Base64 data URL
             uploadedDishes[task.fieldIndex].image = data.dishes[task.fieldIndex]?.image || "";
           }
@@ -330,6 +334,8 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
         }
       }
 
+      const cleanRating = Math.min(10, Math.max(1, Number(data.rating) || 5));
+
       if (existingReview) {
         const reviewRef = doc(db, "reviews", existingReview.id);
         
@@ -338,7 +344,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
           restaurantName: data.restaurant,
           restaurantId: restaurantId,
           dishes: uploadedDishes,
-          rating: data.rating,
+          rating: cleanRating,
           content: data.review || "",
           restaurantLocation: manualLocation || selectedRestaurant?.location || "India",
           userId: user.uid,
@@ -359,23 +365,25 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
           userCriticLevel: dishdUser?.criticLevel || "Food Critic",
           restaurantName: data.restaurant,
           restaurantId: restaurantId,
-          restaurantLocation: manualLocation,
+          restaurantLocation: manualLocation || "India",
           city: city,
           dishes: uploadedDishes,
-          rating: data.rating,
+          rating: cleanRating,
           content: data.review || "",
           type: "review",
           isVerifiedVisit: isVerifiedVisit,
           visitProofType: "receipt",
-          ratingsDetail: ratingMode === "critic" ? {
-            taste: tasteScore,
-            quality: qualityScore,
-            portion: portionScore,
-            value: valueScore,
-            presentation: presentationScore,
-            service: serviceScore,
-            ambience: ambienceScore
-          } : undefined,
+          ...(ratingMode === "critic" ? {
+            ratingsDetail: {
+              taste: tasteScore,
+              quality: qualityScore,
+              portion: portionScore,
+              value: valueScore,
+              presentation: presentationScore,
+              service: serviceScore,
+              ambience: ambienceScore
+            }
+          } : {}),
           createdAt: serverTimestamp(),
           likes: 0
         };
@@ -386,10 +394,12 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
           id: reviewRef.id, 
           type: "review" as const,
           visitProofType: "receipt" as const 
-        });
+        }).catch(err => console.warn("Supabase review sync notice:", err));
         
         const userRef = doc(db, "users", user.uid);
-        await updateDoc(userRef, { "stats.reviewsWritten": increment(1) });
+        await updateDoc(userRef, { "stats.reviewsWritten": increment(1) }).catch(async () => {
+          await setDoc(userRef, { stats: { reviewsWritten: 1 } }, { merge: true }).catch(() => {});
+        });
         toast.success("Narrative Live!");
       }
 

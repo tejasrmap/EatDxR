@@ -85,12 +85,30 @@ class OfflineSyncService {
       const item = queue[i];
       try {
         // Dynamic import to prevent circular dependencies
-        const { addDoc, collection } = await import('firebase/firestore');
+        const { doc, setDoc, collection, serverTimestamp } = await import('firebase/firestore');
         const { db } = await import('../firebase');
-        await addDoc(collection(db, 'reviews'), {
-          ...item.payload,
+        const reviewRef = doc(collection(db, 'reviews'));
+        const cleanRating = Math.min(10, Math.max(1, Number(item.payload.rating) || 5));
+
+        await setDoc(reviewRef, {
+          id: reviewRef.id,
+          userId: item.payload.userId,
+          userName: item.payload.userName || "Critic",
+          userPhoto: item.payload.userPhoto || "",
+          restaurantId: item.payload.restaurantId || `rest_${Date.now()}`,
+          restaurantName: item.payload.restaurantName || "Local Spot",
+          restaurantLocation: item.payload.restaurantLocation || "India",
+          city: item.payload.city || "Nearby",
+          dishes: Array.isArray(item.payload.dishes) && item.payload.dishes.length > 0
+            ? item.payload.dishes
+            : [{ name: "Culinary Selection", rating: Math.round(cleanRating / 2) }],
+          rating: cleanRating,
+          content: item.payload.content || "",
+          type: item.payload.type || "review",
+          createdAt: serverTimestamp(),
+          likes: 0,
           isOfflineSynced: true,
-          syncedAt: new Date(),
+          syncedAt: serverTimestamp(),
         });
         this.remove(item.id);
         success++;

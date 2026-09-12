@@ -135,39 +135,50 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
     try {
       let finalVideoUrl = "https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-pizza-being-cut-with-a-slicer-44171-large.mp4";
 
-      if (videoFile) {
+      if (videoFile && storage) {
         try {
-          const videoPath = `cravings/${user.uid}_${Date.now()}.mp4`;
-          
-          // Race Supabase upload with a 6-second timeout
-          const uploadTaskPromise = uploadMedia(videoFile, 'cravings', videoPath);
-          const timeoutPromise = new Promise<string | null>((resolve) => {
-            setTimeout(() => resolve(null), 6000);
-          });
+          const ext = videoFile.name.split('.').pop() || 'mp4';
+          const videoPath = `videos/${user.uid}_${Date.now()}.${ext}`;
+          const videoRef = ref(storage, videoPath);
+          const uploadTask = uploadBytesResumable(videoRef, videoFile);
 
-          const supabaseUrl = await Promise.race([uploadTaskPromise, timeoutPromise]);
-          if (supabaseUrl) {
-            finalVideoUrl = supabaseUrl;
-          } else if (storage) {
-            // Quick fallback attempt
-            const videoRef = ref(storage, videoPath);
-            const uploadTask = uploadBytesResumable(videoRef, videoFile);
-            await new Promise<void>((resolve) => {
-              const timer = setTimeout(() => resolve(), 5000);
-              uploadTask.on(
-                "state_changed",
-                () => {},
-                () => { clearTimeout(timer); resolve(); },
-                async () => {
-                  clearTimeout(timer);
-                  finalVideoUrl = await getDownloadURL(uploadTask.snapshot.ref).catch(() => finalVideoUrl);
-                  resolve();
+          finalVideoUrl = await new Promise<string>((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              try { uploadTask.cancel(); } catch {}
+              reject(new Error("Video upload timed out"));
+            }, 90000);
+
+            uploadTask.on(
+              "state_changed",
+              (snapshot) => {
+                if (snapshot.totalBytes > 0) {
+                  const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                  setUploadProgress(pct);
                 }
-              );
-            });
-          }
+              },
+              (err) => {
+                clearTimeout(timeout);
+                console.warn("Firebase video upload warning:", err);
+                reject(err);
+              },
+              async () => {
+                clearTimeout(timeout);
+                try {
+                  const url = await getDownloadURL(uploadTask.snapshot.ref);
+                  resolve(url);
+                } catch (e) {
+                  reject(e);
+                }
+              }
+            );
+          });
         } catch (storageErr) {
-          console.warn("Storage fallback triggered:", storageErr);
+          console.warn("Storage fallback triggered (trying Supabase):", storageErr);
+          try {
+            const ext = videoFile.name.split('.').pop() || 'mp4';
+            const supaUrl = await uploadMedia(videoFile, 'cravings', `cravings/${user.uid}_${Date.now()}.${ext}`);
+            if (supaUrl) finalVideoUrl = supaUrl;
+          } catch {}
         }
       }
 
@@ -175,6 +186,8 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
       setUploadProgress(100);
 
       const reviewRef = doc(collection(db, "reviews"));
+      const cleanRating = Math.min(10, Math.max(1, Number(rating) || 9));
+
       const cravingDoc = {
         id: reviewRef.id,
         userId: user.uid,
@@ -185,24 +198,24 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
         restaurantName: restaurantName.trim(),
         restaurantLocation: selectedRestaurant?.location || "Local Spot",
         city: selectedRestaurant?.city || "Hyderabad",
-        rating: Number(rating),
+        rating: cleanRating,
         content: reviewContent.trim() || `Craving ${dishName} at ${restaurantName}!`,
         videoUrl: finalVideoUrl,
         type: "craving",
         cravingTag: cravingTag,
         attachedDish: dishName.trim(),
         attachedCuisine: cuisine,
-        attachedScore: Number(rating),
+        attachedScore: cleanRating,
         isVerifiedVisit: isVerifiedVisit,
         visitProofType: visitProofType,
         ratingsDetail: {
-          taste: Number(rating),
-          quality: Math.min(10, Number(rating) + 0.1),
+          taste: cleanRating,
+          quality: Math.min(10, cleanRating + 0.1),
           portion: 9.0,
           value: 8.8
         },
         dishes: [
-          { name: dishName.trim(), rating: Math.round(Number(rating) / 2) }
+          { name: dishName.trim(), rating: Math.round(cleanRating / 2) }
         ],
         createdAt: serverTimestamp(),
         likes: 0
@@ -227,7 +240,9 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
 
       // Update user stats
       const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, { "stats.mealsLogged": increment(1) }).catch(() => {});
+      await updateDoc(userRef, { "stats.mealsLogged": increment(1) }).catch(async () => {
+        await setDoc(userRef, { stats: { mealsLogged: 1 } }, { merge: true }).catch(() => {});
+      });
 
       triggerHaptic();
       toast.success("Craving posted live!");

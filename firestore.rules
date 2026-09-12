@@ -95,19 +95,19 @@ service cloud.firestore {
     }
 
     function isValidReview(data) {
-      return data.keys().hasAll(['id', 'userId', 'userName', 'userPhoto', 'restaurantId', 'restaurantName', 'dishes', 'rating', 'content', 'createdAt', 'likes']) &&
-             hasOnlyAllowedFields(['id', 'userId', 'userName', 'userPhoto', 'restaurantId', 'restaurantName', 'dishes', 'rating', 'content', 'createdAt', 'likes', 'city', 'restaurantLocation', 'videoUrl', 'type']) &&
+      return data.keys().hasAll(['id', 'userId', 'userName', 'restaurantId', 'restaurantName', 'dishes', 'rating', 'content', 'createdAt', 'likes']) &&
+             hasOnlyAllowedFields(['id', 'userId', 'userName', 'userPhoto', 'restaurantId', 'restaurantName', 'dishes', 'rating', 'content', 'createdAt', 'likes', 'city', 'restaurantLocation', 'videoUrl', 'type', 'userCriticLevel', 'isVerifiedVisit', 'visitProofType', 'ratingsDetail', 'attachedDish', 'attachedScore', 'attachedCuisine', 'cravingTag', 'image', 'isOfflineSynced', 'syncedAt', 'updatedAt']) &&
              data.id is string && data.id.size() > 0 &&
              data.userId == request.auth.uid &&
              data.userName is string && data.userName.size() > 0 && data.userName.size() < 200 &&
-             data.userPhoto is string && data.userPhoto.size() > 0 && data.userPhoto.size() < 1048576 &&
+             (!('userPhoto' in data) || (data.userPhoto is string && data.userPhoto.size() < 1048576)) &&
              data.restaurantId is string && data.restaurantId.size() > 0 &&
              data.restaurantName is string && data.restaurantName.size() > 0 && data.restaurantName.size() < 300 &&
              data.dishes is list && data.dishes.size() > 0 && data.dishes.size() < 20 &&
-             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+             data.rating is number && data.rating >= 0 && data.rating <= 10 &&
              data.content is string && data.content.size() < 10000 &&
              data.createdAt is timestamp &&
-             data.likes is int && data.likes >= 0;
+             data.likes is number && data.likes >= 0;
     }
 
     function isValidRestaurant(data) {
