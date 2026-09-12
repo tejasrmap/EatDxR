@@ -1,6 +1,6 @@
 import { supabase, isSupabaseConfigured } from '../supabase';
 import { User, Review, Restaurant, DishEntity, FoodList } from '../types';
-import { MOCK_CRAVINGS, MOCK_DISHES, MOCK_LISTS } from '../data/mockData';
+import { MOCK_DISHES } from '../data/mockData';
 import { GLOBAL_RESTAURANTS } from '../data/globalRestaurants';
 
 const DEFAULT_FALLBACK_RESTAURANTS: Restaurant[] = GLOBAL_RESTAURANTS;
@@ -78,7 +78,7 @@ export async function upsertProfile(user: User): Promise<void> {
 // ----------------------------------------------------------------------------
 
 export async function getReviews(city?: string): Promise<Review[]> {
-  if (!isSupabaseConfigured) return MOCK_CRAVINGS;
+  if (!isSupabaseConfigured) return [];
 
   try {
     let query = supabase
@@ -95,7 +95,7 @@ export async function getReviews(city?: string): Promise<Review[]> {
     if (error) throw error;
 
     if (!data || data.length === 0) {
-      return MOCK_CRAVINGS;
+      return [];
     }
 
     return data.map((r: any) => ({
@@ -120,8 +120,8 @@ export async function getReviews(city?: string): Promise<Review[]> {
       createdAt: r.created_at
     }));
   } catch (err) {
-    console.warn('[Supabase] Error fetching reviews, falling back to mock:', err);
-    return MOCK_CRAVINGS;
+    console.warn('[Supabase] Error fetching reviews:', err);
+    return [];
   }
 }
 
@@ -185,7 +185,7 @@ export async function createReview(review: Partial<Review>): Promise<Review> {
 // ----------------------------------------------------------------------------
 
 export async function getCravings(): Promise<Review[]> {
-  if (!isSupabaseConfigured) return MOCK_CRAVINGS;
+  if (!isSupabaseConfigured) return [];
 
   try {
     const { data, error } = await supabase
@@ -195,7 +195,7 @@ export async function getCravings(): Promise<Review[]> {
       .limit(20);
 
     if (error) throw error;
-    if (!data || data.length === 0) return MOCK_CRAVINGS;
+    if (!data || data.length === 0) return [];
 
     return data.map((c: any) => ({
       id: c.id,
@@ -217,7 +217,7 @@ export async function getCravings(): Promise<Review[]> {
     }));
   } catch (err) {
     console.warn('[Supabase] Error fetching cravings:', err);
-    return MOCK_CRAVINGS;
+    return [];
   }
 }
 
@@ -309,12 +309,12 @@ export async function getDishes(): Promise<DishEntity[]> {
 // ----------------------------------------------------------------------------
 
 export async function getLists(): Promise<FoodList[]> {
-  if (!isSupabaseConfigured) return MOCK_LISTS;
+  if (!isSupabaseConfigured) return [];
 
   try {
     const { data, error } = await supabase.from('lists').select('*').limit(30);
     if (error) throw error;
-    if (!data || data.length === 0) return MOCK_LISTS;
+    if (!data || data.length === 0) return [];
 
     return data.map((l: any) => ({
       id: l.id,
@@ -330,7 +330,7 @@ export async function getLists(): Promise<FoodList[]> {
       createdAt: l.created_at
     }));
   } catch (err) {
-    return MOCK_LISTS;
+    return [];
   }
 }
 

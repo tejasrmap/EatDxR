@@ -3,7 +3,6 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { FoodList } from "../types";
-import { MOCK_LISTS } from "../data/mockData";
 import { ChevronLeft, Heart, Bookmark, Share2, Star, MapPin, Plus, ArrowRight, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../App";
@@ -20,28 +19,15 @@ export function ListDetail() {
   const [hasLiked, setHasLiked] = useState(false);
 
   useEffect(() => {
-    // Check mock data first
-    const mock = MOCK_LISTS.find(l => l.id === listId);
-    if (mock) {
-      setList(mock);
-      setLikesCount(mock.likes);
-      return;
-    }
-
-    // Try fetching from Firestore
     if (listId) {
       getDoc(doc(db, "lists", listId)).then(snap => {
         if (snap.exists()) {
           const data = snap.data() as FoodList;
           setList({ ...data, id: snap.id });
           setLikesCount(data.likes || 0);
-        } else {
-          setList(MOCK_LISTS[0]);
-          setLikesCount(MOCK_LISTS[0].likes);
         }
-      }).catch(() => {
-        setList(MOCK_LISTS[0]);
-        setLikesCount(MOCK_LISTS[0].likes);
+      }).catch((err) => {
+        console.warn("Failed to load list:", err);
       });
     }
   }, [listId]);

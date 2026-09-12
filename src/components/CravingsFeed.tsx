@@ -4,7 +4,6 @@ import { db } from "../firebase";
 import { Review, CravingTag } from "../types";
 import { CravingCard } from "./CravingCard";
 import { CravingUploadModal } from "./CravingUploadModal";
-import { MOCK_CRAVINGS } from "../data/mockData";
 import { Flame, Plus, Sparkles, Filter, Loader2, ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../App";
@@ -43,14 +42,11 @@ export function CravingsFeed() {
         id: doc.id
       })) as Review[];
 
-      // Merge with MOCK_CRAVINGS ensuring zero duplicates
-      const existingIds = new Set(fetched.map(c => c.id));
-      const combined = [...fetched, ...MOCK_CRAVINGS.filter(m => !existingIds.has(m.id))];
-      setCravings(combined);
+      setCravings(fetched);
       setLoading(false);
     }, (err) => {
-      console.warn("Cravings fetch notice (using mock stream):", err.message);
-      setCravings(MOCK_CRAVINGS);
+      console.warn("Cravings fetch notice:", err.message);
+      setCravings([]);
       setLoading(false);
     });
 
@@ -124,14 +120,36 @@ export function CravingsFeed() {
           ))}
         </div>
       ) : (
-        <div className="h-[60vh] flex flex-col items-center justify-center text-center px-6">
-          <p className="text-white/40 font-serif italic text-base mb-3">No cravings found under this category yet.</p>
-          <button
-            onClick={() => setSelectedCategory("All Cravings")}
-            className="px-5 py-2 rounded-full bg-white/10 border border-white/20 text-xs font-bold uppercase tracking-wider hover:bg-white/20 transition-all"
-          >
-            View All Cravings
-          </button>
+        <div className="h-[70vh] flex flex-col items-center justify-center text-center px-6 max-w-sm mx-auto">
+          <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-orange-500/20 to-rose-500/20 border border-orange-500/30 flex items-center justify-center text-orange-400 mb-4 shadow-xl">
+            <Flame size={32} />
+          </div>
+          <h3 className="text-lg font-bold text-white mb-1.5">No Cravings Yet</h3>
+          <p className="text-xs text-white/50 mb-6">
+            {selectedCategory === "All Cravings" 
+              ? "Be the very first to capture and share a crave-worthy food reel!"
+              : `No cravings found under "${selectedCategory}".`}
+          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            {selectedCategory !== "All Cravings" && (
+              <button
+                onClick={() => setSelectedCategory("All Cravings")}
+                className="px-5 py-2.5 rounded-full bg-white/10 border border-white/20 text-xs font-bold uppercase tracking-wider hover:bg-white/20 transition-all"
+              >
+                View All
+              </button>
+            )}
+            <button
+              onClick={() => {
+                triggerHaptic();
+                if (!user) login();
+                else setIsUploadOpen(true);
+              }}
+              className="px-6 py-3 rounded-full bg-gradient-to-r from-orange-500 to-rose-500 text-white font-black text-xs uppercase tracking-wider shadow-xl shadow-orange-500/25 active:scale-95 transition-all"
+            >
+              + Post First Craving
+            </button>
+          </div>
         </div>
       )}
 

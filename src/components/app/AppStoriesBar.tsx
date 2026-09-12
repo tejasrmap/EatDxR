@@ -1,18 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 import { triggerHaptic } from "../../services/nativeService";
-import { MOCK_CRAVINGS, MOCK_CRITICS_DATA } from "../../data/mockData";
+import { Review } from "../../types";
+import { collection, query, where, orderBy, limit, onSnapshot } from "firebase/firestore";
+import { db } from "../../firebase";
 import { motion } from "motion/react";
 import { useAuth } from "../../App";
 
 interface AppStoriesBarProps {
   onLogClick?: () => void;
+  cravings?: Review[];
 }
 
-export function AppStoriesBar({ onLogClick }: AppStoriesBarProps) {
+export function AppStoriesBar({ onLogClick, cravings: propCravings }: AppStoriesBarProps) {
   const { user } = useAuth();
+  const [liveCravings, setLiveCravings] = useState<Review[]>([]);
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (propCravings) {
+      setLiveCravings(propCravings.filter(c => !!c.videoUrl || c.type === "craving"));
+      return;
+    }
+
+    const q = query(
+      collection(db, "reviews"),
+      where("type", "==", "craving"),
+      orderBy("createdAt", "desc"),
+      limit(10)
+    );
+
+    const unsub = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(d => ({ ...d.data(), id: d.id })) as Review[];
+      setLiveCravings(docs);
+    }, (err) => {
+      console.warn("AppStoriesBar live cravings notice:", err);
+    });
+
+    return () => unsub();
+  }, [propCravings]);
 
   const handleImageLoad = (id: string) => {
     setLoadedImages((prev) => ({ ...prev, [id]: true }));
@@ -58,9 +85,10 @@ export function AppStoriesBar({ onLogClick }: AppStoriesBarProps) {
           </button>
         </motion.div>
 
-        {/* Live Stories from Cravings */}
-        {MOCK_CRAVINGS.slice(0, 8).map((craving) => {
+        {/* Live Stories from Real User Cravings */}
+        {liveCravings.map((craving) => {
           const isLoaded = !!loadedImages[craving.id];
+          const mediaThumbnail = craving.dishes?.[0]?.image || craving.userPhoto || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5";
           return (
             <motion.div
               key={craving.id}
@@ -79,7 +107,7 @@ export function AppStoriesBar({ onLogClick }: AppStoriesBarProps) {
                       <div className="absolute inset-0 skeleton-shimmer" />
                     )}
                     <img
-                      src={craving.dishes?.[0]?.image || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5"}
+                      src={mediaThumbnail}
                       alt={craving.restaurantName}
                       onLoad={() => handleImageLoad(craving.id)}
                       className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-110 ${
@@ -94,45 +122,6 @@ export function AppStoriesBar({ onLogClick }: AppStoriesBarProps) {
                 </div>
                 <span className="text-[10px] font-medium text-slate-700 dark:text-white/80 max-w-[68px] sm:max-w-[72px] truncate group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors block text-center">
                   {craving.dishes?.[0]?.name || craving.attachedDish || craving.restaurantName}
-                </span>
-              </Link>
-            </motion.div>
-          );
-        })}
-
-        {/* Critics Stories */}
-        {MOCK_CRITICS_DATA.slice(0, 4).map((critic) => {
-          const isLoaded = !!loadedImages[critic.uid];
-          return (
-            <motion.div
-              key={critic.uid}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="shrink-0 snap-start"
-            >
-              <Link
-                to={`/app/profile/${critic.username || critic.uid}`}
-                onClick={() => triggerHaptic()}
-                className="flex flex-col items-center gap-1.5 group text-center cursor-pointer block"
-              >
-                <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-0.5 bg-gradient-to-tr from-purple-500 via-pink-500 to-orange-400 shadow-md group-hover:shadow-[0_0_16px_rgba(168,85,247,0.4)] transition-all">
-                  <div className="w-full h-full rounded-full overflow-hidden border-2 border-white dark:border-zinc-950 bg-slate-100 dark:bg-zinc-900 relative">
-                    {!isLoaded && (
-                      <div className="absolute inset-0 skeleton-shimmer" />
-                    )}
-                    <img
-                      src={critic.photoURL}
-                      alt={critic.displayName}
-                      onLoad={() => handleImageLoad(critic.uid)}
-                      className={`w-full h-full object-cover transition-opacity duration-300 ${
-                        isLoaded ? "opacity-100" : "opacity-0"
-                      }`}
-                      loading="lazy"
-                    />
-                  </div>
-                </div>
-                <span className="text-[10px] font-medium text-slate-700 dark:text-white/80 max-w-[68px] sm:max-w-[72px] truncate group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors block text-center">
-                  {critic.displayName.split(" ")[0]}
                 </span>
               </Link>
             </motion.div>

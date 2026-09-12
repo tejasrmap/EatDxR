@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../App";
-import { Review } from "../types";
-import { MOCK_CRAVINGS, MOCK_CRITICS_DATA } from "../data/mockData";
+import { Review, Restaurant, User } from "../types";
 import { ReviewCard } from "../components/ReviewCard";
 import { AppStoriesBar } from "../components/app/AppStoriesBar";
 import { LogMealModal } from "../components/LogMealModal";
@@ -11,7 +10,9 @@ import { CravingMatcherModal } from "../components/CravingMatcherModal";
 import { SearchOverlay } from "../components/SearchOverlay";
 import { SettingsOverlay } from "../components/SettingsOverlay";
 import { triggerHaptic } from "../services/nativeService";
-import { getReviews } from "../services/supabaseService";
+import { getReviews, getRestaurants } from "../services/supabaseService";
+import { collection, query, orderBy, limit, onSnapshot, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
 import {
   Home, Search, Compass, UtensilsCrossed, Clapperboard,
   MapPin, Bookmark, Sparkles, Plus, Settings,
@@ -70,15 +71,10 @@ function ReviewCardSkeleton() {
 export function CustomAppHome() {
   const { user, dishdUser, login } = useAuth();
   const navigate = useNavigate();
-  const [reviews, setReviews] = useState<Review[]>(() => {
-    try {
-      const cached = localStorage.getItem("madeater_feed_cache");
-      return cached ? JSON.parse(cached) : MOCK_CRAVINGS;
-    } catch {
-      return MOCK_CRAVINGS;
-    }
-  });
-  const [loading, setLoading] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [suggestedCritics, setSuggestedCritics] = useState<User[]>([]);
+  const [popularRestaurants, setPopularRestaurants] = useState<Restaurant[]>([]);
+  const [loading, setLoading] = useState(true);
   const [feedTab, setFeedTab] = useState<"for-you" | "following" | "trending" | "nearby">("for-you");
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [isCravingModalOpen, setIsCravingModalOpen] = useState(false);
@@ -88,27 +84,71 @@ export function CustomAppHome() {
   const [followedCritics, setFollowedCritics] = useState<string[]>(["teja"]);
 
   useEffect(() => {
-    getReviews().then((fetched) => {
-      if (fetched && fetched.length > 0) {
-        setReviews(fetched);
-        try {
-          localStorage.setItem("madeater_feed_cache", JSON.stringify(fetched));
-        } catch {
-          // ignore quota error
-        }
+    // Clear old mock cache if any
+    try {
+      localStorage.removeItem("madeater_feed_cache");
+    } catch {}
+
+    // 1. Live real-time Firestore reviews listener
+    const q = query(
+      collection(db, "reviews"),
+      orderBy("createdAt", "desc"),
+      limit(30)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const firestoreReviews = snapshot.docs.map(d => ({
+        ...d.data(),
+        id: d.id,
+      })) as Review[];
+
+      // Merge Supabase reviews
+      getReviews().then((supaReviews) => {
+        const idMap = new Map<string, Review>();
+        firestoreReviews.forEach(r => idMap.set(r.id, r));
+        (supaReviews || []).forEach(r => {
+          if (!idMap.has(r.id)) idMap.set(r.id, r);
+        });
+        setReviews(Array.from(idMap.values()));
+        setLoading(false);
+      }).catch(() => {
+        setReviews(firestoreReviews);
+        setLoading(false);
+      });
+    }, (err) => {
+      console.warn("Firestore reviews listener notice:", err);
+      getReviews().then((supaReviews) => {
+        setReviews(supaReviews || []);
+        setLoading(false);
+      }).catch(() => setLoading(false));
+    });
+
+    // 2. Fetch real users for Suggested Critics
+    getDocs(query(collection(db, "users"), limit(8))).then((snap) => {
+      const usersList = snap.docs
+        .map(d => d.data() as User)
+        .filter(u => u.uid !== user?.uid);
+      setSuggestedCritics(usersList);
+    }).catch(() => {});
+
+    // 3. Fetch popular restaurants
+    getRestaurants().then((rests) => {
+      if (rests && rests.length > 0) {
+        setPopularRestaurants(rests.slice(0, 4));
       }
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, []);
+    }).catch(() => {});
+
+    return () => unsubscribe();
+  }, [user?.uid]);
 
   const displayedReviews = reviews.filter((r) => {
     if (feedTab === "for-you") return true;
     if (feedTab === "following") {
-      const followingList = dishdUser?.stats?.followingList || ["teja", "priya"];
+      const followingList = dishdUser?.stats?.followingList || [];
       return followingList.includes(r.userId);
     }
     if (feedTab === "trending") {
-      return (r.likes || 0) > 10 || r.rating >= 9.0;
+      return (r.likes || 0) > 5 || r.rating >= 9.0;
     }
     if (feedTab === "nearby") {
       return true;
@@ -129,33 +169,6 @@ export function CustomAppHome() {
     });
   };
 
-  const trendingSpots = [
-    {
-      id: "bawarchi-rtc",
-      name: "Bawarchi",
-      score: 9.6,
-      cuisine: "Hyderabadi Biryani",
-      location: "RTC X Roads",
-      image: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=400&q=80"
-    },
-    {
-      id: "shadab-oldcity",
-      name: "Hotel Shadab",
-      score: 9.4,
-      cuisine: "Mutton Biryani & Haleem",
-      location: "Ghansi Bazaar",
-      image: "https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=400&q=80"
-    },
-    {
-      id: "ulavacharu",
-      name: "Ulavacharu",
-      score: 9.7,
-      cuisine: "Andhra Specialities",
-      location: "Jubilee Hills",
-      image: "https://images.unsplash.com/photo-1545247181-516773cae754?auto=format&fit=crop&w=400&q=80"
-    }
-  ];
-
   const profileLink = user ? `/app/profile/${dishdUser?.username || user.uid}` : "/app";
 
   return (
@@ -167,7 +180,7 @@ export function CustomAppHome() {
         <section className="w-full max-w-[620px] mx-auto min-w-0 space-y-4">
 
           {/* Stories Tray */}
-          <AppStoriesBar onLogClick={() => setIsCravingModalOpen(true)} />
+          <AppStoriesBar onLogClick={() => setIsCravingModalOpen(true)} cravings={reviews} />
 
           {/* Fluid Spring Feed Tabs */}
           <div className="sticky top-13 sm:top-14 z-30 bg-slate-50/90 dark:bg-black/85 backdrop-blur-xl py-2 px-0.5">
@@ -273,50 +286,59 @@ export function CustomAppHome() {
 
             {/* Critics List */}
             <div className="space-y-3 pt-1">
-              {MOCK_CRITICS_DATA.slice(1, 4).map(critic => {
-                const isFollowing = followedCritics.includes(critic.uid);
-                return (
-                  <div key={critic.uid} className="flex items-center justify-between gap-2 p-1.5 rounded-2xl hover:bg-white/[0.03] transition-colors">
-                    <Link
-                      to={`/app/profile/${critic.username || critic.uid}`}
-                      onClick={() => triggerHaptic()}
-                      className="flex items-center gap-3 min-w-0 group"
-                    >
-                      <div className="relative shrink-0">
-                        <img
-                          src={critic.photoURL || `https://ui-avatars.com/api/?name=${critic.displayName}`}
-                          alt={critic.displayName}
-                          className="w-10 h-10 rounded-full object-cover border border-white/10"
-                        />
-                        <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-purple-500 rounded-full flex items-center justify-center border border-black shadow-sm">
-                          <Sparkles size={8} className="text-white" />
+              {suggestedCritics.length > 0 ? (
+                suggestedCritics.slice(0, 4).map(critic => {
+                  const isFollowing = followedCritics.includes(critic.uid);
+                  return (
+                    <div key={critic.uid} className="flex items-center justify-between gap-2 p-1.5 rounded-2xl hover:bg-white/[0.03] transition-colors">
+                      <Link
+                        to={`/app/profile/${critic.username || critic.uid}`}
+                        onClick={() => triggerHaptic()}
+                        className="flex items-center gap-3 min-w-0 group"
+                      >
+                        <div className="relative shrink-0">
+                          <img
+                            src={critic.photoURL || `https://ui-avatars.com/api/?name=${critic.displayName || 'Critic'}`}
+                            alt={critic.displayName || "Critic"}
+                            className="w-10 h-10 rounded-full object-cover border border-white/10"
+                          />
+                          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-purple-500 rounded-full flex items-center justify-center border border-black shadow-sm">
+                            <Sparkles size={8} className="text-white" />
+                          </div>
                         </div>
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs font-bold text-white group-hover:text-orange-400 transition-colors truncate">
-                            {critic.username || critic.displayName.toLowerCase().replace(/\s+/g, '')}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-bold text-white group-hover:text-orange-400 transition-colors truncate">
+                              {critic.username || critic.displayName?.toLowerCase().replace(/\s+/g, '') || "critic"}
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-white/40 block truncate">
+                            {critic.stats?.followers || 0} followers • {critic.favoriteCuisines?.[0] || "Food Critic"}
                           </span>
                         </div>
-                        <span className="text-[11px] text-white/40 block truncate">
-                          {critic.stats.followers} followers • {critic.favoriteCuisines?.[0] || "Foodie"}
-                        </span>
-                      </div>
-                    </Link>
+                      </Link>
 
-                    <motion.button
-                      whileTap={{ scale: 0.92 }}
-                      onClick={() => toggleFollow(critic.uid)}
-                      className={`text-[11px] font-bold px-3 py-1 rounded-full border transition-all cursor-pointer shrink-0 ${isFollowing
-                          ? "border-white/15 bg-white/5 text-white/50 hover:border-rose-500/40 hover:text-rose-400"
-                          : "border-orange-500/40 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20"
-                        }`}
-                    >
-                      {isFollowing ? "Following" : "Follow"}
-                    </motion.button>
-                  </div>
-                );
-              })}
+                      <motion.button
+                        whileTap={{ scale: 0.92 }}
+                        onClick={() => toggleFollow(critic.uid)}
+                        className={`text-[11px] font-bold px-3 py-1 rounded-full border transition-all cursor-pointer shrink-0 ${isFollowing
+                            ? "border-white/15 bg-white/5 text-white/50 hover:border-rose-500/40 hover:text-rose-400"
+                            : "border-orange-500/40 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20"
+                          }`}
+                      >
+                        {isFollowing ? "Following" : "Follow"}
+                      </motion.button>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 text-center">
+                  <p className="text-[11px] text-white/40">Connect with fellow critics & foodies</p>
+                  <Link to="/app/critics" className="text-xs font-bold text-orange-400 hover:text-orange-300 mt-1 inline-block">
+                    Explore Critics →
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
 
@@ -330,31 +352,40 @@ export function CustomAppHome() {
             </div>
 
             <div className="space-y-2.5 pt-1">
-              {trendingSpots.map(spot => (
-                <Link
-                  key={spot.id}
-                  to={`/app/restaurant/${spot.id}`}
-                  onClick={() => triggerHaptic()}
-                  className="flex items-center gap-3 group"
-                >
-                  <img
-                    src={spot.image}
-                    alt={spot.name}
-                    className="w-10 h-10 rounded-xl object-cover border border-white/10 group-hover:scale-105 transition-transform shrink-0"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-xs font-bold text-white group-hover:text-orange-400 transition-colors truncate">
-                        {spot.name}
-                      </span>
-                      <span className="text-[11px] font-bold text-amber-400 shrink-0 font-mono">
-                        ★ {spot.score}
-                      </span>
+              {popularRestaurants.length > 0 ? (
+                popularRestaurants.map(spot => (
+                  <Link
+                    key={spot.id}
+                    to={`/app/restaurant/${spot.id}`}
+                    onClick={() => triggerHaptic()}
+                    className="flex items-center gap-3 group"
+                  >
+                    <img
+                      src={spot.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"}
+                      alt={spot.name}
+                      className="w-10 h-10 rounded-xl object-cover border border-white/10 group-hover:scale-105 transition-transform shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-bold text-white group-hover:text-orange-400 transition-colors truncate">
+                          {spot.name}
+                        </span>
+                        <span className="text-[11px] font-bold text-amber-400 shrink-0 font-mono">
+                          ★ {spot.rating}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-white/40 truncate">{spot.location}</p>
                     </div>
-                    <p className="text-[10px] text-white/40 truncate">{spot.location}</p>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                ))
+              ) : (
+                <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 text-center">
+                  <p className="text-[11px] text-white/40">Discover top dining destinations</p>
+                  <Link to="/app/restaurants" className="text-xs font-bold text-orange-400 hover:text-orange-300 mt-1 inline-block">
+                    Browse Restaurants →
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
 

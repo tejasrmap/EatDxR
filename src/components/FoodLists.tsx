@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { collection, query, onSnapshot, orderBy, limit, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { FoodList } from "../types";
-import { MOCK_LISTS } from "../data/mockData";
 import { ListOrdered, Heart, Plus, Search, Sparkles, CheckCircle2, Bookmark, Share2, X, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../App";
@@ -40,12 +39,11 @@ export function FoodLists() {
         id: doc.id
       })) as FoodList[];
 
-      const existingIds = new Set(fetched.map(l => l.id));
-      const combined = [...fetched, ...MOCK_LISTS.filter(m => !existingIds.has(m.id))];
-      setLists(combined);
+      setLists(fetched);
       setLoading(false);
     }, (err) => {
-      setLists(MOCK_LISTS);
+      console.warn("Lists fetch notice:", err);
+      setLists([]);
       setLoading(false);
     });
 

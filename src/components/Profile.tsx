@@ -14,7 +14,6 @@ import { DiaryEntryModal } from "./DiaryEntryModal";
 import { StarRating } from "./StarRating";
 import { RatingGraph } from "./RatingGraph";
 import { TasteDNAView } from "./TasteDNAView";
-import { MOCK_LISTS, MOCK_CRAVINGS } from "../data/mockData";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic, isNative } from "../services/nativeService";
 import { uploadMedia, upsertProfile } from "../services/supabaseService";
@@ -185,11 +184,7 @@ export const Profile: React.FC = () => {
               createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
             })) as Review[];
 
-            if (reviewsData.length === 0 && (resolvedUser?.username === "guest_critic" || resolvedUser?.displayName === "Guest Critic")) {
-              setReviews(MOCK_CRAVINGS.slice(0, 4));
-            } else {
-              setReviews(reviewsData);
-            }
+            setReviews(reviewsData);
             setLoading(false);
           });
 
@@ -788,25 +783,11 @@ export const Profile: React.FC = () => {
               <Link to={getAppUrl("/lists")} onClick={() => triggerHaptic()} className="text-xs text-orange-400 hover:text-orange-300 font-bold uppercase tracking-wider">Explore Community Lists →</Link>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-              {MOCK_LISTS.slice(0, 2).map((list) => (
-                <Link
-                  key={list.id}
-                  to={getAppUrl(`/list/${list.id}`)}
-                  onClick={() => triggerHaptic()}
-                  className="p-4 rounded-2xl bg-zinc-900/60 border border-white/10 hover:border-white/20 transition-all flex flex-col justify-between group active:scale-[0.98] touch-manipulation"
-                >
-                  <div className="space-y-1.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">Curated List</span>
-                    <h4 className="text-sm font-bold text-white group-hover:text-orange-400 transition-colors">{list.title}</h4>
-                    <p className="text-xs text-zinc-400 line-clamp-2 italic">"{list.description}"</p>
-                  </div>
-                  <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-xs text-zinc-400">
-                    <span>{list.items?.length || 4} Entries</span>
-                    <span className="text-white font-bold group-hover:text-orange-400">View →</span>
-                  </div>
-                </Link>
-              ))}
+            <div className="p-8 text-center rounded-2xl bg-zinc-900/40 border border-white/5 space-y-2">
+              <p className="text-xs text-zinc-400">No curated collections created yet.</p>
+              <Link to={getAppUrl("/lists")} onClick={() => triggerHaptic()} className="text-xs text-orange-400 hover:text-orange-300 font-bold inline-block">
+                Browse Community Lists →
+              </Link>
             </div>
           </motion.div>
         )}

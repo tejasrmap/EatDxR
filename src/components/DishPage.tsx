@@ -1,6 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { MOCK_DISHES, MOCK_CRAVINGS } from "../data/mockData";
+import { MOCK_DISHES } from "../data/mockData";
+import { collection, query, limit, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
+import { Review } from "../types";
 import { Star, MapPin, ChevronLeft, Flame, Trophy, Utensils, Share2, Plus, Sparkles, ArrowRight, ShieldCheck } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -15,6 +18,7 @@ export function DishPage() {
   const { user, login } = useAuth();
   const { getAppUrl, isAppMode } = useAppUrl();
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+  const [relatedCravings, setRelatedCravings] = useState<Review[]>([]);
 
   // Find dish by id or normalized name
   const currentDish = MOCK_DISHES.find(d => 
@@ -22,16 +26,26 @@ export function DishPage() {
     d.name.toLowerCase().includes((dishId || "").toLowerCase().replace("-", " "))
   ) || MOCK_DISHES[0];
 
+  useEffect(() => {
+    if (!currentDish?.name) return;
+    getDocs(query(collection(db, "reviews"), limit(25))).then((snap) => {
+      const live = snap.docs.map(d => ({ ...d.data(), id: d.id })) as Review[];
+      const matched = live.filter(c => 
+        (c.videoUrl || c.type === "craving") && (
+          c.attachedDish?.toLowerCase().includes(currentDish.name.toLowerCase()) ||
+          currentDish.name.toLowerCase().includes(c.attachedDish?.toLowerCase() || "") ||
+          c.dishes?.some(d => d.name.toLowerCase().includes(currentDish.name.toLowerCase()))
+        )
+      );
+      setRelatedCravings(matched);
+    }).catch(() => {});
+  }, [currentDish?.name]);
+
   const handleShare = () => {
     triggerHaptic();
     navigator.clipboard.writeText(window.location.href);
     toast.success("Dish link copied to clipboard!");
   };
-
-  const relatedCravings = MOCK_CRAVINGS.filter(c => 
-    c.attachedDish?.toLowerCase().includes(currentDish.name.toLowerCase()) ||
-    currentDish.name.toLowerCase().includes(c.attachedDish?.toLowerCase() || "")
-  );
 
   return (
     <div className="min-h-screen bg-black text-white py-4 sm:py-8 md:py-12">

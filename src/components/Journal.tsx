@@ -6,7 +6,6 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Loader2, LayoutGrid, PlayCircle, Info, MapPin, Flame } from "lucide-react";
 import { PostCard } from "./PostCard";
 import { CravingCard } from "./CravingCard";
-import { MOCK_CRAVINGS } from "../data/mockData";
 import { motion, AnimatePresence } from "motion/react";
 
 type FeedMode = 'posts' | 'cravings';
@@ -142,8 +141,8 @@ export const Journal: React.FC = () => {
               className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden"
             >
                  <div className="h-svh md:h-[90vh] w-full max-w-6xl relative shadow-2xl snap-y-container scrollbar-hide md:rounded-3xl md:overflow-hidden">
-                     {[...reviews.filter(r => !!r.videoUrl), ...MOCK_CRAVINGS].length > 0 ? (
-                        [...reviews.filter(r => !!r.videoUrl), ...MOCK_CRAVINGS].map(review => (
+                     {reviews.filter(r => !!r.videoUrl).length > 0 ? (
+                        reviews.filter(r => !!r.videoUrl).map(review => (
                             <CravingCard key={review.id} review={review} />
                         ))
                     ) : (

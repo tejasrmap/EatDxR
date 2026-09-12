@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { TasteDNA, User } from "../types";
 import { Sparkles, Flame, Coffee, Cake, Utensils, Award, Users, Share2, Dna, Trophy } from "lucide-react";
-import { MOCK_CRITICS_DATA } from "../data/mockData";
+import { collection, query, limit, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { TasteQuizModal } from "./TasteQuizModal";
@@ -15,6 +16,16 @@ interface TasteDNAViewProps {
 export function TasteDNAView({ user }: TasteDNAViewProps) {
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [isQuestsOpen, setIsQuestsOpen] = useState(false);
+  const [critics, setCritics] = useState<User[]>([]);
+
+  useEffect(() => {
+    getDocs(query(collection(db, "users"), limit(6))).then((snap) => {
+      const list = snap.docs
+        .map(d => d.data() as User)
+        .filter(u => u.uid !== user.uid);
+      setCritics(list);
+    }).catch(() => {});
+  }, [user.uid]);
 
   // Use user's tasteDNA or fallback to calculated defaults
   const dna: TasteDNA = user.tasteDNA || {
@@ -179,33 +190,39 @@ export function TasteDNAView({ user }: TasteDNAViewProps) {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {MOCK_CRITICS_DATA.filter(c => c.uid !== user.uid).slice(0, 3).map((critic, i) => {
-            const matchScore = [89, 84, 79][i] || 82;
-            return (
-              <Link
-                key={critic.uid}
-                to={`/profile/${critic.username || critic.uid}`}
-                className="p-4 rounded-2xl bg-zinc-900/40 hover:bg-zinc-900 border border-white/10 hover:border-orange-500/40 transition-all flex items-center justify-between gap-3 group"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <img src={critic.photoURL} alt={critic.displayName} className="w-10 h-10 rounded-full border border-white/20 object-cover" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-white group-hover:text-orange-400 transition-colors truncate">
-                      {critic.displayName}
-                    </p>
-                    <p className="text-[10px] text-white/40 truncate">
-                      @{critic.username}
-                    </p>
+          {critics.length > 0 ? (
+            critics.slice(0, 3).map((critic, i) => {
+              const matchScore = [89, 84, 79][i] || 82;
+              return (
+                <Link
+                  key={critic.uid}
+                  to={`/profile/${critic.username || critic.uid}`}
+                  className="p-4 rounded-2xl bg-zinc-900/40 hover:bg-zinc-900 border border-white/10 hover:border-orange-500/40 transition-all flex items-center justify-between gap-3 group"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <img src={critic.photoURL || `https://ui-avatars.com/api/?name=${critic.displayName}`} alt={critic.displayName} className="w-10 h-10 rounded-full border border-white/20 object-cover" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-white group-hover:text-orange-400 transition-colors truncate">
+                        {critic.displayName}
+                      </p>
+                      <p className="text-[10px] text-white/40 truncate">
+                        @{critic.username || "critic"}
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="text-right shrink-0">
-                  <span className="text-sm font-black text-orange-400">{matchScore}%</span>
-                  <p className="text-[9px] uppercase font-bold text-white/40">Match</p>
-                </div>
-              </Link>
-            );
-          })}
+                  <div className="text-right shrink-0">
+                    <span className="text-sm font-black text-orange-400">{matchScore}%</span>
+                    <p className="text-[9px] uppercase font-bold text-white/40">Match</p>
+                  </div>
+                </Link>
+              );
+            })
+          ) : (
+            <div className="col-span-full p-6 rounded-2xl bg-zinc-900/30 border border-white/5 text-center">
+              <p className="text-xs text-white/50">Follow other food lovers and critics to unlock real-time Taste Matches!</p>
+            </div>
+          )}
         </div>
       </div>
 
