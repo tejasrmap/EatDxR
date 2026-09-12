@@ -135,7 +135,7 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
 
       if (videoFile) {
         const ext = videoFile.name.split('.').pop() || 'mp4';
-        const videoPath = `cravings/${user.uid}_${Date.now()}.${ext}`;
+        const videoPath = `${user.uid}_${Date.now()}.${ext}`;
 
         // 1. Primary: Supabase Storage bucket 'cravings' with live progress
         try {

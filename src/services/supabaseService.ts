@@ -408,24 +408,26 @@ export async function uploadMedia(
     else if (file.type.includes('webp')) extension = 'webp';
   }
 
-  const filePath = customPath || `${Date.now()}_${Math.random().toString(36).substr(2, 8)}.${extension}`;
+  let cleanPath = customPath || `${Date.now()}_${Math.random().toString(36).substr(2, 8)}.${extension}`;
+  if (cleanPath.startsWith(`${bucket}/`)) {
+    cleanPath = cleanPath.slice(bucket.length + 1);
+  }
 
   // 1. In browser environments: Use XMLHttpRequest for real progress tracking
   if (typeof XMLHttpRequest !== 'undefined' && supabaseUrl && supabaseAnonKey) {
     const xhrUpload = new Promise<string | null>((resolve) => {
       try {
-        const uploadUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${filePath}`;
+        const uploadUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${cleanPath}`;
         const xhr = new XMLHttpRequest();
         xhr.open('POST', uploadUrl, true);
         xhr.setRequestHeader('apikey', supabaseAnonKey);
         xhr.setRequestHeader('Authorization', `Bearer ${supabaseAnonKey}`);
         xhr.setRequestHeader('x-upsert', 'true');
-        if (file.type) {
-          xhr.setRequestHeader('Content-Type', file.type);
-        }
+        const mimeType = file.type || (extension === 'mp4' ? 'video/mp4' : extension === 'mov' ? 'video/quicktime' : 'application/octet-stream');
+        xhr.setRequestHeader('Content-Type', mimeType);
 
-        // Reasonable safety timeout (45 seconds)
-        xhr.timeout = 45000;
+        // Reasonable safety timeout (60 seconds)
+        xhr.timeout = 60000;
 
         if (xhr.upload && onProgress) {
           xhr.upload.onprogress = (evt) => {
@@ -438,7 +440,7 @@ export async function uploadMedia(
 
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
-            const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${filePath}`;
+            const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${cleanPath}`;
             onProgress?.(100);
             resolve(publicUrl);
           } else {
@@ -470,14 +472,14 @@ export async function uploadMedia(
 
   // 2. Fallback using Supabase JS client
   try {
-    let uploadRes = await supabase.storage.from(bucket).upload(filePath, file, {
+    let uploadRes = await supabase.storage.from(bucket).upload(cleanPath, file, {
       cacheControl: '3600',
       upsert: true,
       contentType: file.type || undefined
     });
 
     if (uploadRes.error && bucket !== 'dish-media') {
-      uploadRes = await supabase.storage.from('dish-media').upload(filePath, file, {
+      uploadRes = await supabase.storage.from('dish-media').upload(cleanPath, file, {
         cacheControl: '3600',
         upsert: true,
         contentType: file.type || undefined
@@ -498,8 +500,7 @@ export async function uploadMedia(
     onProgress?.(100);
     return publicUrlData.publicUrl;
   } catch (err) {
-    console.warn('[Supabase Storage] Media upload caught exception:', err);
+    console.warn('[Supabase Storage] Unexpected error in fallback upload:', err);
     return null;
   }
 }
-
