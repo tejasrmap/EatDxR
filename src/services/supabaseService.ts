@@ -1,4 +1,4 @@
-import { supabase, isSupabaseConfigured } from '../supabase';
+import { supabase, isSupabaseConfigured, supabaseUrl, supabaseAnonKey } from '../supabase';
 import { User, Review, Restaurant, DishEntity, FoodList } from '../types';
 import { MOCK_DISHES } from '../data/mockData';
 import { GLOBAL_RESTAURANTS } from '../data/globalRestaurants';
@@ -376,65 +376,114 @@ export async function toggleLike(targetId: string, targetType: string, userId: s
 export async function uploadMedia(
   file: File | Blob, 
   bucket: 'dishes' | 'cravings' | 'profiles' | 'dish-media' | string = 'dishes',
-  customPath?: string
+  customPath?: string,
+  onProgress?: (pct: number) => void
 ): Promise<string | null> {
   if (!isSupabaseConfigured) return null;
 
-  const timeoutPromise = new Promise<null>((resolve) => {
-    setTimeout(() => {
-      console.warn('[Supabase Storage] Upload timed out after 180 seconds');
-      resolve(null);
-    }, 180000);
-  });
+  // Determine file extension
+  let extension = 'jpg';
+  if (file instanceof File && file.name) {
+    const parts = file.name.split('.');
+    if (parts.length > 1) extension = parts.pop() || 'jpg';
+  } else if (file.type) {
+    if (file.type.includes('mp4') || file.type.includes('video')) extension = 'mp4';
+    else if (file.type.includes('png')) extension = 'png';
+    else if (file.type.includes('webp')) extension = 'webp';
+  }
 
-  const uploadPromise = (async (): Promise<string | null> => {
-    try {
-      let extension = 'jpg';
-      if (file instanceof File && file.name) {
-        const parts = file.name.split('.');
-        if (parts.length > 1) extension = parts.pop() || 'jpg';
-      } else if (file.type) {
-        if (file.type.includes('mp4') || file.type.includes('video')) extension = 'mp4';
-        else if (file.type.includes('png')) extension = 'png';
-        else if (file.type.includes('webp')) extension = 'webp';
+  const filePath = customPath || `${Date.now()}_${Math.random().toString(36).substr(2, 8)}.${extension}`;
+
+  // 1. In browser environments: Use XMLHttpRequest for real progress tracking
+  if (typeof XMLHttpRequest !== 'undefined' && supabaseUrl && supabaseAnonKey) {
+    const xhrUpload = new Promise<string | null>((resolve) => {
+      try {
+        const uploadUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${filePath}`;
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', uploadUrl, true);
+        xhr.setRequestHeader('apikey', supabaseAnonKey);
+        xhr.setRequestHeader('Authorization', `Bearer ${supabaseAnonKey}`);
+        xhr.setRequestHeader('x-upsert', 'true');
+        if (file.type) {
+          xhr.setRequestHeader('Content-Type', file.type);
+        }
+
+        // Reasonable safety timeout (45 seconds)
+        xhr.timeout = 45000;
+
+        if (xhr.upload && onProgress) {
+          xhr.upload.onprogress = (evt) => {
+            if (evt.lengthComputable && evt.total > 0) {
+              const pct = Math.min(95, Math.round((evt.loaded / evt.total) * 100));
+              onProgress(pct);
+            }
+          };
+        }
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${filePath}`;
+            onProgress?.(100);
+            resolve(publicUrl);
+          } else {
+            console.warn(`[Supabase Storage] XHR upload to "${bucket}" returned status ${xhr.status}. Trying fallback...`);
+            resolve(null);
+          }
+        };
+
+        xhr.onerror = () => {
+          console.warn('[Supabase Storage] XHR network error during upload');
+          resolve(null);
+        };
+
+        xhr.ontimeout = () => {
+          console.warn('[Supabase Storage] XHR upload timed out after 45s');
+          resolve(null);
+        };
+
+        xhr.send(file);
+      } catch (err) {
+        console.warn('[Supabase Storage] Error initiating XHR upload:', err);
+        resolve(null);
       }
+    });
 
-      const filePath = customPath || `${Date.now()}_${Math.random().toString(36).substr(2, 8)}.${extension}`;
-      
-      // Attempt upload to primary bucket
-      let uploadRes = await supabase.storage.from(bucket).upload(filePath, file, {
+    const result = await xhrUpload;
+    if (result) return result;
+  }
+
+  // 2. Fallback using Supabase JS client
+  try {
+    let uploadRes = await supabase.storage.from(bucket).upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: true,
+      contentType: file.type || undefined
+    });
+
+    if (uploadRes.error && bucket !== 'dish-media') {
+      uploadRes = await supabase.storage.from('dish-media').upload(filePath, file, {
         cacheControl: '3600',
         upsert: true,
         contentType: file.type || undefined
       });
-
-      // If bucket doesn't exist or failed, attempt general bucket 'dish-media' as fallback
-      if (uploadRes.error && bucket !== 'dish-media') {
-        console.warn(`[Supabase Storage] Bucket "${bucket}" upload notice:`, uploadRes.error.message, 'Trying fallback bucket "dish-media"...');
-        uploadRes = await supabase.storage.from('dish-media').upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true,
-          contentType: file.type || undefined
-        });
-        if (!uploadRes.error) {
-          const { data: publicUrlData } = supabase.storage.from('dish-media').getPublicUrl(uploadRes.data.path);
-          return publicUrlData.publicUrl;
-        }
+      if (!uploadRes.error) {
+        const { data: publicUrlData } = supabase.storage.from('dish-media').getPublicUrl(uploadRes.data.path);
+        onProgress?.(100);
+        return publicUrlData.publicUrl;
       }
+    }
 
-      if (uploadRes.error) {
-        console.warn(`[Supabase Storage] Upload error to bucket "${bucket}":`, uploadRes.error.message);
-        return null;
-      }
-
-      const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(uploadRes.data.path);
-      return publicUrlData.publicUrl;
-    } catch (err) {
-      console.warn('[Supabase Storage] Media upload caught exception:', err);
+    if (uploadRes.error) {
+      console.warn(`[Supabase Storage] Fallback upload error to bucket "${bucket}":`, uploadRes.error.message);
       return null;
     }
-  })();
 
-  return Promise.race([uploadPromise, timeoutPromise]);
+    const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(uploadRes.data.path);
+    onProgress?.(100);
+    return publicUrlData.publicUrl;
+  } catch (err) {
+    console.warn('[Supabase Storage] Media upload caught exception:', err);
+    return null;
+  }
 }
 
