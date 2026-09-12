@@ -426,13 +426,13 @@ export async function uploadMedia(
         const mimeType = file.type || (extension === 'mp4' ? 'video/mp4' : extension === 'mov' ? 'video/quicktime' : 'application/octet-stream');
         xhr.setRequestHeader('Content-Type', mimeType);
 
-        // Reasonable safety timeout (60 seconds)
-        xhr.timeout = 60000;
+        // Do not abort on artificial timeout; allow large videos to finish at any connection speed
+        xhr.timeout = 0;
 
         if (xhr.upload && onProgress) {
           xhr.upload.onprogress = (evt) => {
             if (evt.lengthComputable && evt.total > 0) {
-              const pct = Math.min(95, Math.round((evt.loaded / evt.total) * 100));
+              const pct = Math.min(99, Math.round((evt.loaded / evt.total) * 100));
               onProgress(pct);
             }
           };
@@ -444,7 +444,7 @@ export async function uploadMedia(
             onProgress?.(100);
             resolve(publicUrl);
           } else {
-            console.warn(`[Supabase Storage] XHR upload to "${bucket}" returned status ${xhr.status}. Trying fallback...`);
+            console.warn(`[Supabase Storage] XHR upload to "${bucket}" returned status ${xhr.status}. Response:`, xhr.responseText);
             resolve(null);
           }
         };
@@ -455,7 +455,7 @@ export async function uploadMedia(
         };
 
         xhr.ontimeout = () => {
-          console.warn('[Supabase Storage] XHR upload timed out after 45s');
+          console.warn('[Supabase Storage] XHR upload timed out');
           resolve(null);
         };
 
