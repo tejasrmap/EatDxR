@@ -9,7 +9,7 @@ interface WebsiteLayoutProps {
 
 export function WebsiteLayout({ children }: WebsiteLayoutProps) {
   return (
-    <div className="min-h-screen bg-black text-white relative z-0 flex flex-col justify-between selection:bg-orange-500 selection:text-black">
+    <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-white relative z-0 flex flex-col justify-between selection:bg-orange-500 selection:text-black">
       {/* Aurora glow effect */}
       <div className="aurora-wrapper pointer-events-none">
         <div className="aurora-gradient opacity-30" />

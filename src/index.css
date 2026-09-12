@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Outfit:wght@500;700;900&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
@@ -47,32 +49,46 @@ html.light {
 }
 
 /* =========================================================
-   LIGHT MODE SURFACE & TEXT OVERRIDES (Clean & Professional)
+   PLATFORM-WIDE LIGHT MODE ENGINE (Editorial & High-Contrast)
    ========================================================= */
 html.light body {
   background-color: #f8fafc !important;
   color: #0f172a !important;
 }
 
+/* Page shells & background canvas */
 html.light .bg-black,
-html.light [class*="bg-black/"],
-html.light [class*="bg-black\/"] {
-  background-color: rgba(255, 255, 255, 0.96) !important;
+html.light [class~="bg-black"] {
+  background-color: #f8fafc !important;
 }
 
-/* Match ANY bg-zinc-950 variation (bg-zinc-950, bg-zinc-950/70, bg-zinc-950/90, etc.) */
-html.light [class*="bg-zinc-950"] {
+/* Floating headers & sticky navigation trays */
+html.light [class*="bg-black/"],
+html.light [class*="bg-black\/"] {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Modal and drawer fixed backdrops stay dark translucent in light mode so dialogs stand out */
+html.light .fixed[class*="bg-black"],
+html.light [class*="fixed"][class*="inset-0"][class*="bg-black"],
+html.light [class*="fixed"][class*="inset-0"][class*="bg-background/9"] {
+  background-color: rgba(15, 23, 42, 0.52) !important;
+}
+
+/* Match ANY solid dark card variations */
+html.light [class*="bg-zinc-950"],
+html.light [class*="bg-zinc-900"],
+html.light [class*="bg-[#0f0f13]"],
+html.light [class*="bg-[#0a0a0c]"],
+html.light [class*="bg-[#0b0b0d]"],
+html.light [class*="bg-[#0c0c0e]"] {
   background-color: #ffffff !important;
 }
 
-/* Match ANY bg-zinc-900 variation */
-html.light [class*="bg-zinc-900"] {
-  background-color: #f1f5f9 !important;
-}
-
+/* Match secondary cards, tag pills, inner wells, and table rows */
 html.light [class*="bg-zinc-850"],
 html.light [class*="bg-zinc-800"] {
-  background-color: #e2e8f0 !important;
+  background-color: #f1f5f9 !important;
 }
 
 /* Match ANY translucent white surfaces */
@@ -82,15 +98,26 @@ html.light [class*="bg-white/\["] {
   background-color: rgba(0, 0, 0, 0.04) !important;
 }
 
-/* Match ANY white borders */
+/* Match ANY white borders & dark zinc borders */
 html.light [class*="border-white/"],
-html.light [class*="border-white\/"] {
+html.light [class*="border-white\/"],
+html.light [class*="border-zinc-950"],
+html.light [class*="border-zinc-900"],
+html.light [class*="border-zinc-850"],
+html.light [class*="border-zinc-800"] {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Dividers */
+html.light [class*="divide-white/"] > * + * {
   border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
 /* Primary text colors */
 html.light .text-white,
-html.light [class~="text-white"] {
+html.light [class~="text-white"],
+html.light .text-zinc-100,
+html.light .text-zinc-200 {
   color: #0f172a !important;
 }
 
@@ -100,33 +127,49 @@ html.light [class*="text-white\/"] {
   color: #475569 !important;
 }
 
+html.light [class*="text-white/95"],
+html.light [class*="text-white\/95"],
 html.light [class*="text-white/90"],
 html.light [class*="text-white\/90"],
+html.light [class*="text-white/85"],
+html.light [class*="text-white\/85"],
 html.light [class*="text-white/80"],
 html.light [class*="text-white\/80"] {
   color: #1e293b !important;
 }
 
+html.light [class*="text-white/75"],
+html.light [class*="text-white\/75"],
 html.light [class*="text-white/70"],
 html.light [class*="text-white\/70"],
+html.light [class*="text-white/65"],
+html.light [class*="text-white\/65"],
 html.light [class*="text-white/60"],
 html.light [class*="text-white\/60"] {
   color: #475569 !important;
 }
 
+html.light [class*="text-white/55"],
+html.light [class*="text-white\/55"],
 html.light [class*="text-white/50"],
 html.light [class*="text-white\/50"],
 html.light [class*="text-white/45"],
 html.light [class*="text-white\/45"],
 html.light [class*="text-white/40"],
-html.light [class*="text-white\/40"] {
+html.light [class*="text-white\/40"],
+html.light [class*="text-white/35"],
+html.light [class*="text-white\/35"] {
   color: #64748b !important;
 }
 
 html.light [class*="text-white/30"],
 html.light [class*="text-white\/30"],
+html.light [class*="text-white/25"],
+html.light [class*="text-white\/25"],
 html.light [class*="text-white/20"],
 html.light [class*="text-white\/20"],
+html.light [class*="text-white/15"],
+html.light [class*="text-white\/15"],
 html.light [class*="text-white/10"],
 html.light [class*="text-white\/10"] {
   color: #94a3b8 !important;
@@ -153,16 +196,31 @@ html.light .skeleton-shimmer {
   background-size: 200% 100% !important;
 }
 
+/* Map tiles in light mode */
+html.light .dark-map-tiles .leaflet-tile,
+html.light .dark-map-tiles img {
+  filter: saturate(0.85) contrast(1.05) brightness(1.02) !important;
+}
+
+/* Subtle pastel aurora in light mode */
+html.light .aurora-gradient {
+  opacity: 0.06 !important;
+}
+
 /* PROTECT text colors inside colored buttons, pills, gradients, and tags! */
 html.light [class*="bg-orange-"] .text-white,
 html.light [class*="from-orange-"] .text-white,
 html.light [class*="bg-rose-"] .text-white,
 html.light [class*="bg-emerald-"] .text-white,
+html.light [class*="bg-amber-"] .text-white,
+html.light [class*="bg-purple-"] .text-white,
 html.light [class*="bg-gradient-"] .text-white,
 html.light button[class*="from-orange"] *,
 html.light button[class*="bg-orange"] *,
 html.light a[class*="from-orange"] *,
-html.light a[class*="bg-orange"] * {
+html.light a[class*="bg-orange"] *,
+html.light button[class*="from-amber"] *,
+html.light button[class*="bg-amber"] * {
   color: inherit !important;
 }
 
@@ -174,12 +232,17 @@ html.light [class*="hover:bg-white"]:hover {
   background-color: rgba(0, 0, 0, 0.06) !important;
 }
 
-html.light [class*="hover:bg-zinc-950"]:hover {
+html.light [class*="hover:bg-zinc-950"]:hover,
+html.light [class*="hover:bg-zinc-900"]:hover {
   background-color: #f8fafc !important;
 }
 
+html.light [class*="hover:bg-zinc-800"]:hover {
+  background-color: #e2e8f0 !important;
+}
+
 html.light header {
-  background-color: rgba(255, 255, 255, 0.96) !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
   border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
@@ -200,9 +263,19 @@ html.light textarea::placeholder {
   color: #94a3b8 !important;
 }
 
+html.light select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
 html.light .shadow-2xl,
 html.light .shadow-xl {
   box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.03) !important;
+}
+
+html.light .shadow-lg,
+html.light .shadow-md {
+  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.03) !important;
 }
 
 /* =========================================================

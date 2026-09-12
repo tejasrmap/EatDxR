@@ -51,7 +51,7 @@ export function WebsiteHome() {
   });
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-orange-500 selection:text-black">
+    <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-white selection:bg-orange-500 selection:text-black">
       
       {/* 1. MINIMAL HERO */}
       <Hero />

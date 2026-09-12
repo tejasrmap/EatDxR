@@ -577,7 +577,7 @@ export const Profile: React.FC = () => {
                 key={tab.id}
                 onClick={() => { triggerHaptic(); setActiveTab(tab.id as any); }}
                 className={`flex-1 py-2.5 flex flex-col items-center justify-center relative transition-colors cursor-pointer ${
-                  isActive ? "text-white" : "text-zinc-500 hover:text-zinc-300"
+                  isActive ? "text-orange-500 dark:text-white" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
                 }`}
                 title={tab.label}
               >
@@ -585,7 +585,7 @@ export const Profile: React.FC = () => {
                 {isActive && (
                   <motion.div
                     layoutId="instagramActiveTab"
-                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-white shadow-[0_0_8px_rgba(255,255,255,0.6)]"
+                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-orange-500 dark:bg-white shadow-[0_0_8px_rgba(249,115,22,0.6)] dark:shadow-[0_0_8px_rgba(255,255,255,0.6)]"
                   />
                 )}
               </button>
