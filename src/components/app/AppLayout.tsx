@@ -24,7 +24,13 @@ export function AppLayout({ children }: AppLayoutProps) {
   useEffect(() => {
     if (location) {
       getCurrentCity(location.latitude, location.longitude).then((city) => {
-        if (city) setCurrentCity(city);
+        if (city) {
+          setCurrentCity(city);
+          try {
+            localStorage.setItem("madeater_detected_city", city);
+            localStorage.setItem("user_city", city);
+          } catch {}
+        }
       });
     }
   }, [location]);

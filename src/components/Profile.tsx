@@ -6,7 +6,6 @@ import { Review, User, Restaurant } from "../types";
 import { useAuth } from "../App";
 import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus, Edit3, Share2, UtensilsCrossed, Sparkles, ListOrdered, ShieldCheck, Award, Layers, Camera, CheckCircle2, Lock, Menu, TrendingUp, ChevronRight, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
-import { DiaryTable } from "./DiaryTable";
 import { FollowListModal } from "./FollowListModal";
 import { EditProfileModal } from "./EditProfileModal";
 import { DiaryEntryModal } from "./DiaryEntryModal";
@@ -29,7 +28,7 @@ export const Profile: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"profile" | "diary" | "eatlist" | "taste" | "lists">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "taste" | "eatlist" | "lists">("profile");
   const [followerCount, setFollowerCount] = useState(0);
   const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
   const [followModalType, setFollowModalType] = useState<"followers" | "following" | null>(null);
@@ -518,12 +517,11 @@ export const Profile: React.FC = () => {
         </div>
       )}
 
-      {/* 4. Refined Balanced Segmented Tab Navigation (Single Top, 5 Columns, No Wrapping) */}
+      {/* 4. Refined Balanced Segmented Tab Navigation (4 Columns, Perfectly Uniform) */}
       <div className="sticky top-0 z-30 bg-black/95 backdrop-blur-2xl border-b border-white/[0.08] -mx-3.5 sm:-mx-6 px-3.5 sm:px-6 py-2 mb-4 select-none">
-        <div className="grid grid-cols-5 gap-1 max-w-xl mx-auto p-1 bg-white/[0.03] border border-white/[0.06] rounded-2xl shadow-sm">
+        <div className="grid grid-cols-4 gap-1 sm:gap-1.5 max-w-xl mx-auto p-1 bg-white/[0.03] border border-white/[0.06] rounded-2xl shadow-sm">
           {[
             { id: "profile", label: "Logs", icon: Grid },
-            { id: "diary", label: "Diary", icon: Clock },
             { id: "taste", label: "Taste", icon: Sparkles },
             { id: "eatlist", label: "Saved", icon: Heart },
             { id: "lists", label: "Guides", icon: ListOrdered },
@@ -533,15 +531,15 @@ export const Profile: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => { triggerHaptic(); setActiveTab(tab.id as any); }}
-                className={`py-2 px-1 rounded-xl flex items-center justify-center gap-1 sm:gap-1.5 relative transition-all cursor-pointer ${
+                className={`py-2 px-1 sm:px-2 rounded-xl flex items-center justify-center gap-1.5 relative transition-all cursor-pointer ${
                   isActive 
                     ? "text-white font-bold" 
                     : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] font-medium"
                 }`}
                 title={tab.label}
               >
-                <tab.icon size={14} className={isActive ? "text-orange-400 stroke-[2.2]" : "stroke-[1.6]"} />
-                <span className="text-[11px] sm:text-xs font-bold tracking-tight whitespace-nowrap">{tab.label}</span>
+                <tab.icon size={15} className={isActive ? "text-orange-400 stroke-[2.2]" : "stroke-[1.6]"} />
+                <span className="text-xs font-bold tracking-tight whitespace-nowrap">{tab.label}</span>
                 {isActive && (
                   <motion.div
                     layoutId="profileActiveTabPill"
@@ -653,29 +651,7 @@ export const Profile: React.FC = () => {
           </motion.div>
         )}
 
-        {/* TAB 2: DIARY TABLE & RATINGS DISTRIBUTION */}
-        {activeTab === "diary" && (
-          <motion.div
-            key="diary"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 45 }}
-            className="w-full flex flex-col pb-8 pt-1"
-          >
-            <DiaryTable reviews={reviews} showUser={false} />
-            {reviews.length > 0 && (
-              <div className="mt-8 pt-6 border-t border-white/10 max-w-2xl mx-auto w-full px-2">
-                <div className="text-center mb-4">
-                  <h3 className="text-xs font-bold tracking-widest uppercase text-white/60">Ratings Distribution</h3>
-                </div>
-                <RatingGraph reviews={reviews} />
-              </div>
-            )}
-          </motion.div>
-        )}
-
-        {/* TAB 3: TASTE DNA */}
+        {/* TAB 2: TASTE DNA */}
         {activeTab === "taste" && (
           <motion.div
             key="taste"
@@ -686,6 +662,14 @@ export const Profile: React.FC = () => {
             className="w-full pt-1"
           >
             <TasteDNAView user={user} />
+            {reviews.length > 0 && (
+              <div className="mt-8 pt-6 border-t border-white/10 max-w-2xl mx-auto w-full px-2">
+                <div className="text-center mb-4">
+                  <h3 className="text-xs font-bold tracking-widest uppercase text-white/60">Ratings Distribution</h3>
+                </div>
+                <RatingGraph reviews={reviews} />
+              </div>
+            )}
           </motion.div>
         )}
 
