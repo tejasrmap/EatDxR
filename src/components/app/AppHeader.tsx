@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, Sparkles, MapPin, ChevronDown, User, LogOut, ArrowLeft, Sun, Moon, Settings, Navigation } from "lucide-react";
+import { Search, Sparkles, MapPin, ChevronDown, ArrowLeft, Navigation, Menu } from "lucide-react";
 import { useAuth } from "../../App";
 import { useTheme } from "../ThemeProvider";
 import { SearchOverlay } from "../SearchOverlay";
 import { AIFoodAssistant } from "../AIFoodAssistant";
 import { LogMealModal } from "../LogMealModal";
 import { ModeSwitcher } from "../ModeSwitcher";
+import { SettingsOverlay } from "../SettingsOverlay";
 import { triggerHaptic } from "../../services/nativeService";
 import { toast } from "sonner";
 
@@ -22,28 +23,16 @@ import { getCurrentCity } from "../../services/mapsService";
 import { Geolocation } from "@capacitor/geolocation";
 
 export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = false, title }: AppHeaderProps) {
-  const { user, dishdUser, login, logout } = useAuth();
-  const currentPhoto = dishdUser?.photoURL || user?.photoURL;
-  const userDisplayName = dishdUser?.displayName || user?.displayName || "User";
-  const { theme, setTheme } = useTheme();
+  const { user, dishdUser } = useAuth();
   const routerLocation = useLocation();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [showCityMenu, setShowCityMenu] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [cityFilter, setCityFilter] = useState("");
   const [isLocating, setIsLocating] = useState(false);
   const navigate = useNavigate();
-
-  const isDarkMode = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-
-  const toggleTheme = () => {
-    triggerHaptic();
-    const nextTheme = isDarkMode ? 'light' : 'dark';
-    setTheme(nextTheme);
-    toast.success(nextTheme === 'dark' ? '🌙 Dark Mode activated' : '☀️ Light Mode activated');
-  };
 
   const detectLocation = async () => {
     triggerHaptic();
@@ -224,97 +213,18 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
               <Search size={15} />
             </button>
 
-            {/* User Profile Avatar & Dropdown Menu */}
-            <div className="relative shrink-0">
-              <button
-                onClick={() => { 
-                  triggerHaptic(); 
-                  if (!user) {
-                    login();
-                  } else {
-                    setShowUserMenu(!showUserMenu);
-                  }
-                }}
-                className="w-8 h-8 rounded-full border border-orange-500/60 overflow-hidden hover:border-orange-400 active:scale-95 transition-all shrink-0 cursor-pointer shadow-sm flex items-center justify-center bg-zinc-900"
-                title={user ? "Account & Menu" : "Sign In"}
-              >
-                {currentPhoto ? (
-                  <img 
-                    src={currentPhoto} 
-                    alt={userDisplayName} 
-                    referrerPolicy="no-referrer"
-                    loading="lazy"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userDisplayName)}&background=f97316&color=fff&bold=true`;
-                    }}
-                    className="w-full h-full object-cover" 
-                  />
-                ) : (
-                  <User size={15} className="text-orange-400" />
-                )}
-              </button>
-
-              {showUserMenu && user && (
-                <div className="absolute right-0 mt-2 w-52 rounded-2xl bg-zinc-950 border border-white/15 shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 text-white">
-                  <div className="px-3.5 py-2 border-b border-white/10">
-                    <p className="text-xs font-bold truncate text-white">{user.displayName || "Food Critic"}</p>
-                    <p className="text-[10px] text-white/50 truncate">@{dishdUser?.username || "critic"}</p>
-                  </div>
-
-                  {/* 1-Tap Theme Switch */}
-                  <button
-                    onClick={() => { toggleTheme(); }}
-                    className="w-full text-left px-3.5 py-2 text-xs font-semibold text-white/80 hover:text-white hover:bg-white/5 flex items-center justify-between transition-colors"
-                  >
-                    <span className="flex items-center gap-2">
-                      {isDarkMode ? <Sun size={13} className="text-amber-400" /> : <Moon size={13} className="text-zinc-400" />}
-                      Theme Mode
-                    </span>
-                    <span className="text-[10px] uppercase font-bold text-orange-400">
-                      {isDarkMode ? "Dark" : "Light"}
-                    </span>
-                  </button>
-
-                  {/* Ask Chef AI */}
-                  <button
-                    onClick={() => {
-                      triggerHaptic();
-                      setShowUserMenu(false);
-                      setIsAIOpen(true);
-                    }}
-                    className="w-full text-left px-3.5 py-2 text-xs font-semibold text-white/80 hover:text-white hover:bg-white/5 flex items-center gap-2 transition-colors"
-                  >
-                    <Sparkles size={13} className="text-orange-400" />
-                    Ask Chef AI Assistant
-                  </button>
-
-                  {/* View Profile */}
-                  <Link
-                    to={`/app/profile/${dishdUser?.username || user.uid}`}
-                    onClick={() => { triggerHaptic(); setShowUserMenu(false); }}
-                    className="w-full text-left px-3.5 py-2 text-xs font-semibold text-white/80 hover:text-white hover:bg-white/5 flex items-center gap-2 transition-colors"
-                  >
-                    <User size={13} className="text-white/60" />
-                    My Critic Profile
-                  </Link>
-
-                  {/* Sign Out */}
-                  <div className="pt-1 border-t border-white/10 mt-1">
-                    <button
-                      onClick={() => {
-                        triggerHaptic();
-                        setShowUserMenu(false);
-                        logout();
-                      }}
-                      className="w-full text-left px-3.5 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 flex items-center gap-2 transition-colors"
-                    >
-                      <LogOut size={13} />
-                      Sign Out
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Instagram 3-line bar (Settings and activity) */}
+            <button
+              onClick={() => { 
+                triggerHaptic(); 
+                setIsSettingsOpen(true);
+              }}
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all shrink-0 cursor-pointer shadow-sm"
+              title="Settings and activity"
+              aria-label="Settings and activity"
+            >
+              <Menu size={19} className="stroke-[2.2]" />
+            </button>
 
           </div>
 
@@ -324,6 +234,11 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
       <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       <AIFoodAssistant isOpen={isAIOpen} onClose={() => setIsAIOpen(false)} />
       <LogMealModal isOpen={isLogModalOpen} onClose={() => setIsLogModalOpen(false)} />
+      <SettingsOverlay 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+        onEditProfile={() => navigate(user ? `/app/profile/${dishdUser?.username || user.uid}` : '/app')} 
+      />
     </>
   );
 }
