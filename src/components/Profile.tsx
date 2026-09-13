@@ -434,112 +434,35 @@ export const Profile: React.FC = () => {
         )}
       </div>
 
-      {/* 4. Instagram Story Highlights Tray */}
-      <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto pb-2.5 mb-2 scrollbar-hide pt-0.5 select-none">
-        {/* Taste DNA */}
-        <button
-          onClick={() => { triggerHaptic(); setActiveTab("taste"); }}
-          className="flex flex-col items-center gap-1 shrink-0 group active:scale-95 transition-transform cursor-pointer"
-        >
-          <div className={`w-13 h-13 sm:w-14 sm:h-14 rounded-full p-[2px] transition-all ${
-            activeTab === "taste" 
-              ? "bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600" 
-              : "bg-zinc-800 group-hover:bg-amber-500/50"
-          }`}>
-            <div className="w-full h-full rounded-full bg-zinc-950 border border-white/10 flex items-center justify-center text-orange-400 group-hover:text-white transition-colors">
-              <Sparkles size={19} />
-            </div>
-          </div>
-          <span className="text-[10px] font-semibold text-zinc-300 group-hover:text-white truncate max-w-[62px]">Taste DNA</span>
-        </button>
-
-        {/* Top Rated */}
-        <button
-          onClick={() => { triggerHaptic(); setActiveTab("profile"); }}
-          className="flex flex-col items-center gap-1 shrink-0 group active:scale-95 transition-transform cursor-pointer"
-        >
-          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-full p-[2px] bg-zinc-800 group-hover:bg-orange-500/50 transition-all">
-            <div className="w-full h-full rounded-full bg-zinc-950 border border-white/10 flex items-center justify-center text-orange-400">
-              <Star size={19} />
-            </div>
-          </div>
-          <span className="text-[10px] font-semibold text-zinc-300 group-hover:text-white truncate max-w-[62px]">Top Rated</span>
-        </button>
-
-        {/* Radar Map */}
-        <Link
-          to={getAppUrl("/map")}
-          onClick={() => triggerHaptic()}
-          className="flex flex-col items-center gap-1 shrink-0 group active:scale-95 transition-transform cursor-pointer"
-        >
-          <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-full p-[2px] bg-zinc-800 group-hover:bg-emerald-500/50 transition-all">
-            <div className="w-full h-full rounded-full bg-zinc-950 border border-white/10 flex items-center justify-center text-emerald-400">
-              <MapPin size={19} />
-            </div>
-          </div>
-          <span className="text-[10px] font-semibold text-zinc-300 group-hover:text-white truncate max-w-[62px]">Food Radar</span>
-        </Link>
-
-        {/* Food Lists */}
-        <button
-          onClick={() => { triggerHaptic(); setActiveTab("lists"); }}
-          className="flex flex-col items-center gap-1 shrink-0 group active:scale-95 transition-transform cursor-pointer"
-        >
-          <div className={`w-13 h-13 sm:w-14 sm:h-14 rounded-full p-[2px] transition-all ${
-            activeTab === "lists" 
-              ? "bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600" 
-              : "bg-zinc-800 group-hover:bg-blue-500/50"
-          }`}>
-            <div className="w-full h-full rounded-full bg-zinc-950 border border-white/10 flex items-center justify-center text-blue-400">
-              <ListOrdered size={19} />
-            </div>
-          </div>
-          <span className="text-[10px] font-semibold text-zinc-300 group-hover:text-white truncate max-w-[62px]">Food Lists</span>
-        </button>
-
-        {/* Want to Try / Cravings */}
-        <button
-          onClick={() => { triggerHaptic(); setActiveTab("eatlist"); }}
-          className="flex flex-col items-center gap-1 shrink-0 group active:scale-95 transition-transform cursor-pointer"
-        >
-          <div className={`w-13 h-13 sm:w-14 sm:h-14 rounded-full p-[2px] transition-all ${
-            activeTab === "eatlist" 
-              ? "bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600" 
-              : "bg-zinc-800 group-hover:bg-rose-500/50"
-          }`}>
-            <div className="w-full h-full rounded-full bg-zinc-950 border border-white/10 flex items-center justify-center text-rose-400">
-              <Heart size={19} className="fill-rose-400/20" />
-            </div>
-          </div>
-          <span className="text-[10px] font-semibold text-zinc-300 group-hover:text-white truncate max-w-[62px]">Want to Try</span>
-        </button>
-      </div>
-
-      {/* 5. Instagram Sticky Tab Bar */}
-      <div className="sticky top-14 z-30 bg-black/95 backdrop-blur-xl border-t border-b border-white/10 -mx-3 sm:-mx-6 px-3 sm:px-6 mb-2.5 select-none">
-        <div className="flex items-center justify-around">
+      {/* 4. Refined Balanced Segmented Tab Navigation */}
+      <div className="sticky top-14 z-30 bg-black/85 backdrop-blur-2xl border-b border-white/[0.08] -mx-3 sm:-mx-6 px-3 sm:px-6 py-2 mb-4 select-none">
+        <div className="flex items-center justify-center gap-1 sm:gap-1.5 max-w-xl mx-auto p-1 bg-white/[0.03] border border-white/[0.06] rounded-2xl shadow-sm">
           {[
-            { id: "profile", label: "Food History", icon: Grid },
-            { id: "diary", label: "Food Diary", icon: Clock },
+            { id: "profile", label: "Logs", icon: Grid },
+            { id: "diary", label: "Diary", icon: Clock },
             { id: "taste", label: "Taste DNA", icon: Sparkles },
-            { id: "eatlist", label: "Want to Try", icon: Heart },
-            { id: "lists", label: "Food Lists", icon: ListOrdered },
+            { id: "eatlist", label: "Saved", icon: Heart },
+            { id: "lists", label: "Guides", icon: ListOrdered },
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => { triggerHaptic(); setActiveTab(tab.id as any); }}
-                className={`flex-1 py-2.5 flex flex-col items-center justify-center relative transition-colors cursor-pointer ${
-                  isActive ? "text-orange-500 dark:text-white" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                className={`flex-1 py-2 px-2 sm:px-3 rounded-xl flex items-center justify-center gap-1.5 relative transition-all cursor-pointer ${
+                  isActive 
+                    ? "text-white font-bold" 
+                    : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] font-medium"
                 }`}
                 title={tab.label}
               >
-                <tab.icon size={19} className={isActive ? "stroke-[2.3]" : "stroke-[1.6]"} />
+                <tab.icon size={15} className={isActive ? "text-orange-400 stroke-[2.2]" : "stroke-[1.6]"} />
+                <span className="text-xs tracking-tight">{tab.label}</span>
                 {isActive && (
                   <motion.div
-                    layoutId="instagramActiveTab"
-                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-orange-500 dark:bg-white shadow-[0_0_8px_rgba(249,115,22,0.6)] dark:shadow-[0_0_8px_rgba(255,255,255,0.6)]"
+                    layoutId="profileActiveTabPill"
+                    className="absolute inset-0 bg-white/[0.08] border border-white/[0.12] rounded-xl -z-10 shadow-sm"
+                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
                   />
                 )}
               </button>

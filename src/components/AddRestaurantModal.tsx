@@ -115,8 +115,6 @@ export const AddRestaurantModal: React.FC<AddRestaurantModalProps> = ({
     };
   }, [isOpen, initialName]);
 
-  if (!isOpen) return null;
-
   // Interactive Leaflet Pinpoint Mini-Map
   useEffect(() => {
     if (!isOpen) return;
@@ -218,6 +216,8 @@ export const AddRestaurantModal: React.FC<AddRestaurantModalProps> = ({
       }
     };
   }, [isOpen]);
+
+  if (!isOpen) return null;
 
   // Auto-detect GPS Coordinates & City with Pin Snap
   const handleDetectLocation = async () => {
