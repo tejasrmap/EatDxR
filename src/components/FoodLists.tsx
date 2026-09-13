@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { collection, query, onSnapshot, orderBy, limit, doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebase";
+
 import { FoodList } from "../types";
 import { ListOrdered, Heart, Plus, Search, Sparkles, CheckCircle2, Bookmark, Share2, X, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -29,26 +28,10 @@ export function FoodLists() {
 
   useEffect(() => {
     getLists().then(supaLists => {
-      if (supaLists && supaLists.length > 0) {
+      if (supaLists) {
         setLists(supaLists);
-        setLoading(false);
-      } else {
-        // Fallback to Firestore lists if empty
-        const q = query(
-          collection(db, "lists"),
-          orderBy("createdAt", "desc"),
-          limit(20)
-        );
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-          const fetched = snapshot.docs.map(doc => ({
-            ...doc.data(),
-            id: doc.id
-          })) as FoodList[];
-          setLists(fetched);
-          setLoading(false);
-        }, () => setLoading(false));
-        return () => unsubscribe();
       }
+      setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
 
@@ -103,11 +86,7 @@ export function FoodLists() {
       await createList(newList);
       setLists(prev => [newList, ...prev]);
 
-      // 2. Mirror to Firestore
-      try {
-        const listRef = doc(db, "lists", newListId);
-        await setDoc(listRef, { ...newList, createdAt: serverTimestamp() });
-      } catch {}
+
 
       toast.success("Curated list published!");
       setIsCreateModalOpen(false);

@@ -4,8 +4,7 @@ import { Link } from "react-router-dom";
 import { triggerHaptic } from "../../services/nativeService";
 import { Review } from "../../types";
 import { getCravings } from "../../services/supabaseService";
-import { collection, query, where, orderBy, limit, onSnapshot } from "firebase/firestore";
-import { db } from "../../firebase";
+
 import { motion } from "motion/react";
 import { useAuth } from "../../App";
 
@@ -29,21 +28,8 @@ export function AppStoriesBar({ onLogClick, cravings: propCravings }: AppStories
     }
 
     getCravings(10).then((cravings) => {
-      if (cravings && cravings.length > 0) {
+      if (cravings) {
         setLiveCravings(cravings);
-      } else {
-        // Fallback to Firestore if empty
-        const q = query(
-          collection(db, "reviews"),
-          where("type", "==", "craving"),
-          orderBy("createdAt", "desc"),
-          limit(10)
-        );
-        const unsub = onSnapshot(q, (snapshot) => {
-          const docs = snapshot.docs.map(d => ({ ...d.data(), id: d.id })) as Review[];
-          setLiveCravings(docs);
-        }, () => {});
-        return () => unsub();
       }
     }).catch(() => {});
   }, [propCravings]);

@@ -84,14 +84,11 @@ class OfflineSyncService {
     for (let i = 0; i < queue.length; i++) {
       const item = queue[i];
       try {
-        // Dynamic import to prevent circular dependencies
-        const { doc, setDoc, collection, serverTimestamp } = await import('firebase/firestore');
-        const { db } = await import('../firebase');
-        const reviewRef = doc(collection(db, 'reviews'));
+        const { createReview } = await import('./supabaseService');
         const cleanRating = Math.min(10, Math.max(1, Number(item.payload.rating) || 5));
 
-        await setDoc(reviewRef, {
-          id: reviewRef.id,
+        await createReview({
+          id: item.payload.id || `rev-offline-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
           userId: item.payload.userId,
           userName: item.payload.userName || "Critic",
           userPhoto: item.payload.userPhoto || "",
@@ -105,10 +102,7 @@ class OfflineSyncService {
           rating: cleanRating,
           content: item.payload.content || "",
           type: item.payload.type || "review",
-          createdAt: serverTimestamp(),
-          likes: 0,
-          isOfflineSynced: true,
-          syncedAt: serverTimestamp(),
+          likes: 0
         });
         this.remove(item.id);
         success++;

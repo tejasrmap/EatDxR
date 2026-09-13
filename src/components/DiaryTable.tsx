@@ -6,8 +6,7 @@ import { parseFirebaseDate } from "../lib/utils";
 import { MapPin, Star, Heart, MoreVertical, Edit2, Trash2 } from "lucide-react";
 import { useAuth } from "../App";
 import { LogMealModal } from "./LogMealModal";
-import { db } from "../firebase";
-import { deleteDoc, doc, updateDoc, increment, collection, query, where, getDocs } from "firebase/firestore";
+
 import { toast } from "sonner";
 import { DiaryEntryModal } from "./DiaryEntryModal";
 import { deleteReview, upsertProfile } from "../services/supabaseService";
@@ -52,18 +51,7 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
         }
       });
 
-      // 3. Mirror delete to Firestore for legacy sync
-      try {
-        const interactionsQuery = query(collection(db, "interactions"), where("reviewId", "==", review.id));
-        const interactionsSnap = await getDocs(interactionsQuery);
-        const deletePromises = interactionsSnap.docs.map(docSnap => deleteDoc(doc(db, "interactions", docSnap.id)));
-        await Promise.all(deletePromises);
-        await deleteDoc(doc(db, "reviews", review.id));
-        const userRef = doc(db, "users", currentUser.uid);
-        await updateDoc(userRef, { "stats.reviewsWritten": increment(-1) }).catch(() => {});
-      } catch (fbErr) {
-        console.warn("Notice mirroring review deletion to Firebase:", fbErr);
-      }
+
       
       toast.success("Diary entry deleted successfully.");
     } catch (error) {

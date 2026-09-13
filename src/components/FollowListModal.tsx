@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { User } from "../types";
 import { X, Loader2 } from "lucide-react";
-import { collection, query, where, getDocs, doc } from "firebase/firestore";
-import { db } from "../firebase";
 import { Link } from "react-router-dom";
-import { getProfile } from "../services/supabaseService";
+import { getProfile, getFollowers } from "../services/supabaseService";
 
 interface FollowListModalProps {
   isOpen: boolean;
@@ -34,34 +32,10 @@ export const FollowListModal: React.FC<FollowListModalProps> = ({ isOpen, onClos
 
           const results = await Promise.all(followingListIds.map(id => getProfile(id)));
           const supaUsers = results.filter((u): u is User => u !== null);
-
-          if (supaUsers.length > 0) {
-            setUsers(supaUsers);
-          } else {
-            // Fallback to Firestore
-            const chunks: string[][] = [];
-            for (let i = 0; i < followingListIds.length; i += 30) {
-              chunks.push(followingListIds.slice(i, i + 30));
-            }
-
-            let aggregatedUsers: User[] = [];
-            for (const chunk of chunks) {
-              const q = query(collection(db, "users"), where("uid", "in", chunk));
-              const snap = await getDocs(q);
-              aggregatedUsers = [...aggregatedUsers, ...snap.docs.map(doc => doc.data() as User)];
-            }
-            setUsers(aggregatedUsers);
-          }
+          setUsers(supaUsers);
         } else if (type === "followers") {
-          try {
-            const q = query(
-              collection(db, "users"),
-              where("stats.followingList", "array-contains", userId)
-            );
-            const snap = await getDocs(q);
-            const list = snap.docs.map(doc => doc.data() as User);
-            setUsers(list);
-          } catch {}
+          const list = await getFollowers(userId);
+          setUsers(list);
         }
       } catch (error) {
         console.error("Error fetching follow list:", error);

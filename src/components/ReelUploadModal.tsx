@@ -5,8 +5,7 @@ import { X, Star, Upload, Search, MapPin, Loader2, Plus, Trash2, Zap, Film, Arro
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../App";
-import { db, storage } from "../firebase";
-import { collection, doc, setDoc, updateDoc, serverTimestamp, increment } from "firebase/firestore";
+import { storage } from "../firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { toast } from "sonner";
 import { searchRestaurants } from "../services/mapsService";
@@ -179,18 +178,7 @@ export function ReelUploadModal({ isOpen, onClose }: ReelUploadModalProps) {
         });
       }
 
-      // 3. Mirror to Firebase for backward compatibility
-      try {
-        const reviewRef = doc(db, "reviews", reviewId);
-        await setDoc(reviewRef, {
-          ...newReview,
-          createdAt: serverTimestamp()
-        });
-        const userRef = doc(db, "users", user.uid);
-        await updateDoc(userRef, { "stats.mealsLogged": increment(1) }).catch(() => {});
-      } catch (fbErr) {
-        console.warn("Notice mirroring reel to Firebase:", fbErr);
-      }
+
           
       toast.success("Reel Narrative Live!");
       onClose();

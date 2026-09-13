@@ -80,11 +80,5 @@
       },
       "required": ["id", "userId", "title", "restaurantIds", "createdAt"]
     }
-  },
-  "firestore": {
-    "/users/{userId}": { "schema": "User", "description": "User profiles." },
-    "/restaurants/{restaurantId}": { "schema": "Restaurant", "description": "Restaurant information." },
-    "/reviews/{reviewId}": { "schema": "Review", "description": "Dish reviews." },
-    "/lists/{listId}": { "schema": "FoodList", "description": "Curated food lists." }
   }
 }

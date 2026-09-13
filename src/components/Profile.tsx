@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { collection, query, where, onSnapshot, orderBy, doc, getDoc, getDocs, updateDoc, arrayUnion, arrayRemove, setDoc, deleteDoc, serverTimestamp, increment } from "firebase/firestore";
-import { db } from "../firebase";
+
 import { Review, User, Restaurant } from "../types";
 import { useAuth } from "../App";
 import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus, Edit3, Share2, UtensilsCrossed, Sparkles, ListOrdered, ShieldCheck, Award, Layers, Camera, CheckCircle2 } from "lucide-react";
@@ -16,7 +15,7 @@ import { RatingGraph } from "./RatingGraph";
 import { TasteDNAView } from "./TasteDNAView";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic, isNative } from "../services/nativeService";
-import { uploadMedia, upsertProfile, getProfile, getUserReviews, toggleFollow as toggleFollowUser } from "../services/supabaseService";
+import { uploadMedia, upsertProfile, getProfile, getUserReviews, toggleFollow as toggleFollowUser, getRestaurantById } from "../services/supabaseService";
 import { getShareUrl } from "../utils/shareUrl";
 
 export const Profile: React.FC = () => {
@@ -61,33 +60,6 @@ export const Profile: React.FC = () => {
       // Local state update
       setFollowerCount(prev => newFollowStatus ? prev + 1 : Math.max(0, prev - 1));
       toast.success(newFollowStatus ? `Following ${user.displayName}` : `Unfollowed ${user.displayName}`);
-
-      // Mirror to Firestore for legacy sync
-      try {
-        const currentUserRef = doc(db, "users", currentUser.uid);
-        const targetUserRef = doc(db, "users", user.uid);
-        const notifId = `${currentUser.uid}_${user.uid}_FOLLOW`;
-        if (!newFollowStatus) {
-          await updateDoc(currentUserRef, { "stats.followingList": arrayRemove(user.uid), "stats.following": increment(-1) });
-          await updateDoc(targetUserRef, { "stats.followers": increment(-1) });
-          await deleteDoc(doc(db, "notifications", notifId)).catch(() => {});
-        } else {
-          await updateDoc(currentUserRef, { "stats.followingList": arrayUnion(user.uid), "stats.following": increment(1) });
-          await updateDoc(targetUserRef, { "stats.followers": increment(1) });
-          await setDoc(doc(db, "notifications", notifId), {
-            id: notifId,
-            recipientId: user.uid,
-            actorId: currentUser.uid,
-            actorName: currentUser.displayName,
-            actorPhoto: currentUser.photoURL,
-            type: "FOLLOW",
-            read: false,
-            createdAt: serverTimestamp()
-          });
-        }
-      } catch (fbErr) {
-        console.warn("Notice mirroring follow to Firebase:", fbErr);
-      }
     } catch (error) {
       console.error("Error toggling follow:", error);
       toast.error("Failed to update follow status");
@@ -113,13 +85,12 @@ export const Profile: React.FC = () => {
           // Optimistically update local state for instant feedback
           setUser(prev => prev ? ({ ...prev, photoURL: finalUrl }) : null);
 
-          await updateDoc(doc(db, "users", user.uid), { photoURL: finalUrl });
           if (user) {
-            upsertProfile({ ...user, photoURL: finalUrl });
+            await upsertProfile({ ...user, photoURL: finalUrl });
           }
           toast.success("Profile photo updated!");
         } catch (err) {
-          console.error("Firestore update error:", err);
+          console.error("Profile photo update error:", err);
           toast.error("Failed to save to database.");
         } finally {
           setIsUpdatingPhoto(false);
@@ -168,29 +139,13 @@ export const Profile: React.FC = () => {
     setReviews([]);
     setFollowerCount(0);
 
-    let unsubscribeReviews: any;
-    let unsubscribeFollowers: any;
+    let isMounted = true;
 
     const resolveProfile = async () => {
       try {
         // 1. Primary: Resolve user profile directly from Supabase
-        let resolvedUser: User | null = await getProfile(identifier);
-
-        if (!resolvedUser) {
-          // Fallback to Firestore users if not found
-          try {
-            const usernameQuery = query(collection(db, "users"), where("username", "==", identifier.toLowerCase()));
-            const snap = await getDocs(usernameQuery);
-            if (!snap.empty) {
-              resolvedUser = snap.docs[0].data() as User;
-            } else {
-              const docSnap = await getDoc(doc(db, "users", identifier));
-              if (docSnap.exists()) {
-                resolvedUser = docSnap.data() as User;
-              }
-            }
-          } catch {}
-        }
+        const resolvedUser: User | null = await getProfile(identifier);
+        if (!isMounted) return;
 
         if (resolvedUser) {
           const cleanIdentifier = identifier?.replace(/^@+/, '') || '';
@@ -206,46 +161,22 @@ export const Profile: React.FC = () => {
 
           // 2. Fetch user reviews directly from Supabase
           const supaReviews = await getUserReviews(resolvedUser.uid);
+          if (!isMounted) return;
           setReviews(supaReviews);
           setLoading(false);
-
-          // 3. Optional Firestore reviews listener for legacy sync
-          try {
-            const q = query(
-              collection(db, "reviews"),
-              where("userId", "==", resolvedUser.uid),
-              orderBy("createdAt", "desc")
-            );
-
-            unsubscribeReviews = onSnapshot(q, (snapshot) => {
-              const reviewsData = snapshot.docs.map(doc => ({
-                ...doc.data(),
-                id: doc.id,
-                createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
-              })) as Review[];
-
-              if (reviewsData.length > 0) {
-                const map = new Map<string, Review>();
-                supaReviews.forEach(r => map.set(r.id, r));
-                reviewsData.forEach(r => map.set(r.id, r));
-                setReviews(Array.from(map.values()));
-              }
-            }, () => {});
-          } catch {}
         } else {
           setLoading(false);
         }
       } catch (error) {
         console.error("Error fetching user:", error);
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     resolveProfile();
 
     return () => {
-      if (unsubscribeReviews) unsubscribeReviews();
-      if (unsubscribeFollowers) unsubscribeFollowers();
+      isMounted = false;
     };
   }, [identifier, navigate]);
 
@@ -254,12 +185,10 @@ export const Profile: React.FC = () => {
       setLoadingEatlist(true);
       const fetchEatlist = async () => {
         try {
-          const restaurantDocs = await Promise.all(
-            user.eatlist!.map(id => getDoc(doc(db, "restaurants", id)))
+          const results = await Promise.all(
+            user.eatlist!.map(id => getRestaurantById(id))
           );
-          const restaurantData = restaurantDocs
-            .filter(d => d.exists())
-            .map(d => ({ ...d.data(), id: d.id })) as Restaurant[];
+          const restaurantData = results.filter((r): r is Restaurant => r !== null);
           setEatlistRestaurants(restaurantData);
         } catch (error) {
           console.error("Error fetching eatlist:", error);

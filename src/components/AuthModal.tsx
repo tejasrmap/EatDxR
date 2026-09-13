@@ -197,27 +197,9 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
           if (resolved) {
             loginEmail = resolved;
           } else {
-            // Check Firestore fallback in case account only exists in legacy Firebase
-            try {
-              const { collection, query, where, getDocs } = await import("firebase/firestore");
-              const cleanId = loginEmail.replace(/^@/, '').toLowerCase();
-              const q = query(collection(db, "users"), where("username", "==", cleanId));
-              const snap = await getDocs(q);
-              if (!snap.empty) {
-                const fbData = snap.docs[0].data();
-                if (fbData.email) {
-                  loginEmail = fbData.email;
-                }
-              }
-            } catch (err) {
-              console.warn("Firestore username fallback check failed:", err);
-            }
-
-            if (!loginEmail.includes('@')) {
-              setErrorMessage(`No account found for "${email.trim()}". Please check your username or use your registered email.`);
-              setLoading(false);
-              return;
-            }
+            setErrorMessage(`No account found for "${email.trim()}". Please check your username or use your registered email.`);
+            setLoading(false);
+            return;
           }
         }
 

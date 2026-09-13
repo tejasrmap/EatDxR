@@ -7,9 +7,7 @@ import { formatDistanceToNow, format } from "date-fns";
 import { parseFirebaseDate } from "../lib/utils";
 import { Link } from "react-router-dom";
 import { useAuth } from "../App";
-import { db } from "../firebase";
-import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp, updateDoc, increment, getDocs } from "firebase/firestore";
-import { toggleSupabaseLike, getComments, addComment } from "../services/supabaseService";
+import { toggleSupabaseLike, getComments, addComment, createNotification } from "../services/supabaseService";
 import { toast } from "sonner";
 import { ShareMenu } from "./ShareMenu";
 import { StoryCardModal } from "./StoryCardModal";
@@ -99,42 +97,15 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
         setLikes(prev => prev.filter(l => l.userId !== currentUser.uid));
       }
 
-      // Legacy mirror
-      try {
-        const likeId = `${review.id}_${currentUser.uid}_LIKE`;
-        const likeRef = doc(db, "interactions", likeId);
-        if (hasLiked) {
-          await deleteDoc(likeRef);
-          if (currentUser.uid !== review.userId) {
-            await deleteDoc(doc(db, "notifications", likeId)).catch(() => {});
-          }
-        } else {
-          await setDoc(likeRef, {
-            id: likeId,
-            reviewId: review.id,
-            userId: currentUser.uid,
-            userName: currentUser.displayName,
-            userPhoto: currentUser.photoURL,
-            type: "LIKE",
-            createdAt: serverTimestamp()
-          });
-
-          if (currentUser.uid !== review.userId) {
-            await setDoc(doc(db, "notifications", likeId), {
-              id: likeId,
-              recipientId: review.userId,
-              actorId: currentUser.uid,
-              actorName: currentUser.displayName,
-              actorPhoto: currentUser.photoURL,
-              type: "LIKE",
-              targetId: review.id,
-              read: false,
-              createdAt: serverTimestamp()
-            });
-          }
-        }
-      } catch (fbErr) {
-        console.warn("Notice mirroring like to Firebase:", fbErr);
+      if (currentUser.uid !== review.userId && !hasLiked) {
+        createNotification({
+          recipientId: review.userId,
+          actorId: currentUser.uid,
+          actorName: currentUser.displayName || 'Critic',
+          actorPhoto: currentUser.photoURL || undefined,
+          type: 'LIKE',
+          targetId: review.id
+        });
       }
     } catch (error) {
       console.error("Like error:", error);
@@ -165,36 +136,15 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
       setNewComment("");
       toast.success("Comment posted!");
 
-      // Legacy mirror
-      try {
-        const commentRef = doc(collection(db, "interactions"));
-        await setDoc(commentRef, {
-          id: commentRef.id,
-          reviewId: review.id,
-          userId: currentUser.uid,
-          userName: currentUser.displayName,
-          userPhoto: currentUser.photoURL,
-          type: "COMMENT",
-          content: newComment.trim(),
-          createdAt: serverTimestamp()
+      if (currentUser.uid !== review.userId) {
+        createNotification({
+          recipientId: review.userId,
+          actorId: currentUser.uid,
+          actorName: currentUser.displayName || 'Critic',
+          actorPhoto: currentUser.photoURL || undefined,
+          type: 'COMMENT',
+          targetId: review.id
         });
-
-        if (currentUser.uid !== review.userId) {
-          const notifRef = doc(collection(db, "notifications"));
-          await setDoc(notifRef, {
-            id: notifRef.id,
-            recipientId: review.userId,
-            actorId: currentUser.uid,
-            actorName: currentUser.displayName,
-            actorPhoto: currentUser.photoURL,
-            type: "COMMENT",
-            targetId: review.id,
-            read: false,
-            createdAt: serverTimestamp()
-          });
-        }
-      } catch (fbErr) {
-        console.warn("Notice mirroring comment to Firebase:", fbErr);
       }
     } catch (error) {
       console.error("Comment error:", error);

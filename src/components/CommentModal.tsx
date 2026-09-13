@@ -2,11 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Send, MessageSquare, Loader2, User as UserIcon } from "lucide-react";
-import { collection, query, where, orderBy, onSnapshot, doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebase";
+
 import { Interaction, Review } from "../types";
 import { useAuth } from "../App";
-import { getComments, addComment } from "../services/supabaseService";
+import { getComments, addComment, createNotification } from "../services/supabaseService";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { parseFirebaseDate } from "../lib/utils";
@@ -28,13 +27,6 @@ export const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, rev
   useEffect(() => {
     if (!isOpen) return;
 
-    const q = query(
-      collection(db, "interactions"),
-      where("reviewId", "==", review.id),
-      where("type", "==", "COMMENT"),
-      orderBy("createdAt", "asc")
-    );
-
     // Social Synchronization Events: Notify Navigation to hide when discussing
     if (isOpen) {
         window.dispatchEvent(new CustomEvent('MODAL_OPEN_STATE_CHANGE', { detail: { isOpen: true, type: 'COMMENT' } }));
@@ -42,7 +34,7 @@ export const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, rev
 
     // 1. Primary: Fetch comments from Supabase
     getComments(review.id).then(supaComments => {
-      if (supaComments && supaComments.length > 0) {
+      if (supaComments) {
         setComments(supaComments.map(c => ({
           id: c.id,
           reviewId: c.targetId,
@@ -53,25 +45,8 @@ export const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, rev
           content: c.text,
           createdAt: c.createdAt
         } as unknown as Interaction)));
-        setLoading(false);
-      } else {
-        // Fallback to Firestore comments
-        const q = query(
-          collection(db, "interactions"),
-          where("reviewId", "==", review.id),
-          where("type", "==", "COMMENT"),
-          orderBy("createdAt", "asc")
-        );
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-          const fetchedComments = snapshot.docs.map(doc => ({
-            ...doc.data(),
-            id: doc.id
-          })) as Interaction[];
-          setComments(fetchedComments);
-          setLoading(false);
-        }, () => setLoading(false));
-        return () => unsubscribe();
       }
+      setLoading(false);
     }).catch(() => setLoading(false));
 
     return () => {
@@ -111,37 +86,15 @@ export const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, rev
         } as unknown as Interaction]);
       }
 
-      // 2. Mirror to Firestore for legacy sync
-      try {
-        const commentId = `comment_${currentUser.uid}_${Date.now()}`;
-        const commentRef = doc(db, "interactions", commentId);
-        await setDoc(commentRef, {
-          id: commentId,
-          reviewId: review.id,
-          userId: currentUser.uid,
-          userName: currentUser.displayName || "Critic",
-          userPhoto: currentUser.photoURL || "",
+      if (currentUser.uid !== review.userId) {
+        createNotification({
+          recipientId: review.userId,
+          actorId: currentUser.uid,
+          actorName: currentUser.displayName || "Critic",
+          actorPhoto: currentUser.photoURL || undefined,
           type: "COMMENT",
-          content: commentText,
-          createdAt: serverTimestamp()
+          targetId: review.id
         });
-
-        if (currentUser.uid !== review.userId) {
-          const notifId = `notif_comment_${currentUser.uid}_${Date.now()}`;
-          await setDoc(doc(db, "notifications", notifId), {
-            id: notifId,
-            recipientId: review.userId,
-            actorId: currentUser.uid,
-            actorName: currentUser.displayName || "Critic",
-            actorPhoto: currentUser.photoURL || "",
-            type: "COMMENT",
-            targetId: review.id,
-            read: false,
-            createdAt: serverTimestamp()
-          });
-        }
-      } catch (fbErr) {
-        console.warn("Notice mirroring comment to Firebase:", fbErr);
       }
 
       setNewComment("");

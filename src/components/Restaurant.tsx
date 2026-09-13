@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useParams, useNavigate } from "react-router-dom";
-import { collection, query, where, onSnapshot, doc, getDoc, updateDoc, arrayUnion, arrayRemove, increment } from "firebase/firestore";
-import { db } from "../firebase";
+
 import { Review, Restaurant as RestaurantType } from "../types";
 import { ReviewCard } from "./ReviewCard";
 import { Star, Bookmark, Heart, Edit3, Map as MapIcon, ChevronLeft, Share2, Info, UtensilsCrossed, Trophy, Flame, MapPin, BookOpen } from "lucide-react";
@@ -128,15 +127,6 @@ export const Restaurant: React.FC = () => {
         });
       }
 
-      try {
-        const userRef = doc(db, "users", user.uid);
-        if (isInEatlist) {
-          await updateDoc(userRef, { eatlist: arrayRemove(restaurantId) });
-        } else {
-          await updateDoc(userRef, { eatlist: arrayUnion(restaurantId) });
-        }
-      } catch {}
-
       toast.success(isInEatlist ? "Removed from your Eatlist!" : "Added to your Eatlist!");
     } catch (error) {
       console.error("Error updating eatlist:", error);
@@ -167,18 +157,6 @@ export const Restaurant: React.FC = () => {
         });
       }
 
-      try {
-        const userRef = doc(db, "users", user.uid);
-        const restaurantRef = doc(db, "restaurants", restaurantId);
-        if (hasLiked) {
-          await updateDoc(userRef, { likes: arrayRemove(restaurantId) });
-          await updateDoc(restaurantRef, { likesCount: increment(-1) });
-        } else {
-          await updateDoc(userRef, { likes: arrayUnion(restaurantId) });
-          await updateDoc(restaurantRef, { likesCount: increment(1) });
-        }
-      } catch {}
-
       toast.success(hasLiked ? "Removed from your likes" : "Added to your likes!");
       setRestaurant(prev => prev ? { 
         ...prev, 
@@ -204,12 +182,6 @@ export const Restaurant: React.FC = () => {
         if (!isMounted) return;
         if (supaRest) {
           setRestaurant(supaRest);
-        } else {
-          // Fallback check
-          const restaurantDoc = await getDoc(doc(db, "restaurants", restaurantId)).catch(() => null);
-          if (restaurantDoc && restaurantDoc.exists() && isMounted) {
-            setRestaurant(restaurantDoc.data() as RestaurantType);
-          }
         }
 
         // 2. Fetch reviews from Supabase
@@ -225,39 +197,9 @@ export const Restaurant: React.FC = () => {
 
     fetchRestaurantData();
 
-    // 3. Fallback live listener for reviews from Firestore
-    try {
-      const q = query(
-        collection(db, "reviews"),
-        where("restaurantId", "==", restaurantId)
-      );
-
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        if (!isMounted) return;
-        const reviewsData = snapshot.docs.map(d => ({
-          id: d.id,
-          ...d.data()
-        })) as Review[];
-
-        if (reviewsData.length > 0) {
-          reviewsData.sort((a, b) => {
-            const timeA = (a.createdAt as any)?.toMillis?.() || new Date(a.createdAt || 0).getTime();
-            const timeB = (b.createdAt as any)?.toMillis?.() || new Date(b.createdAt || 0).getTime();
-            return timeB - timeA;
-          });
-          setReviews(reviewsData);
-        }
-      }, () => {});
-
-      return () => {
-        isMounted = false;
-        unsubscribe();
-      };
-    } catch {
-      return () => {
-        isMounted = false;
-      };
-    }
+    return () => {
+      isMounted = false;
+    };
   }, [restaurantId]);
 
   if (loading) {

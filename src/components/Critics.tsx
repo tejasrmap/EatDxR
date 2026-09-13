@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
-import { db, handleFirestoreError, OperationType } from "../firebase";
+
 import { User } from "../types";
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
@@ -18,26 +17,10 @@ export function Critics() {
 
   useEffect(() => {
     getTopCritics(50).then((topCritics) => {
-      if (topCritics && topCritics.length > 0) {
+      if (topCritics) {
         setCritics(topCritics);
-        setLoading(false);
-      } else {
-        const q = query(
-          collection(db, "users"),
-          orderBy("stats.reviewsWritten", "desc"),
-          limit(50)
-        );
-        const unsubscribe = onSnapshot(
-          q,
-          (snapshot) => {
-            const fetchedUsers = snapshot.docs.map((doc) => doc.data() as User);
-            setCritics(fetchedUsers);
-            setLoading(false);
-          },
-          () => setLoading(false)
-        );
-        return () => unsubscribe();
       }
+      setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
 

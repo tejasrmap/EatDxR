@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../App';
-import { db } from '../firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+
 import { upsertRestaurant, createReview } from '../services/supabaseService';
 import { toast } from 'sonner';
 import { MapPin, Zap, Database, Loader2, Search, Map as MapIcon, ChevronRight, Timer, Lock, ShieldCheck } from 'lucide-react';
@@ -206,22 +205,7 @@ export const AdminSeed: React.FC = () => {
           ]
         });
 
-        // Legacy mirror
-        try {
-          await setDoc(doc(db, 'restaurants', docId), {
-            id: docId, name, cuisine, location: _locationStr, rating: ratingNum, reviewCount: Math.floor(Math.random() * 200) + 10, image: randomImage, menuItems: [], lat: plat, lng: plon
-          });
-          await setDoc(doc(db, 'reviews', reviewId), {
-            id: reviewId, userId: user.uid, userName: user.displayName || "Regional Guide", userPhoto: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'G'}&background=random`,
-            restaurantId: docId, restaurantName: name, restaurantLocation: _locationStr, city: pinpointTown, rating: ratingNum,
-            content: "Absolutely phenomenal experience. The flavors were authentic and the service was impeccable. A true local gem.",
-            createdAt: serverTimestamp(), likes: Math.floor(Math.random() * 50), videoUrl: videoUrl,
-            dishes: [
-              { name: "Signature Dish", rating: 5, image: randomImage },
-              { name: "House Special", rating: 4, image: foodImages[Math.floor(Math.random() * foodImages.length)] }
-            ]
-          });
-        } catch {}
+
 
         seedCount++;
         setProgress({ total: topPlaces.length, current: seedCount });

@@ -93,7 +93,7 @@ export function CustomAppHome() {
         setReviews(supaReviews);
         setLoading(false);
       } else {
-        // If Supabase table is empty yet, fallback to getReviews or firestore
+        // If Supabase table is empty yet, fallback to getReviews
         getReviews().then((revs) => {
           setReviews(revs || []);
           setLoading(false);

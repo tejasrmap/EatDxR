@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase";
+
 import { FoodList } from "../types";
 import { ChevronLeft, Heart, Bookmark, Share2, Star, MapPin, Plus, ArrowRight, Trophy } from "lucide-react";
 import { toast } from "sonner";
@@ -26,15 +25,6 @@ export function ListDetail() {
         if (supaList) {
           setList(supaList);
           setLikesCount(supaList.likes || 0);
-        } else {
-          // Fallback to Firestore
-          getDoc(doc(db, "lists", listId)).then(snap => {
-            if (snap.exists()) {
-              const data = snap.data() as FoodList;
-              setList({ ...data, id: snap.id });
-              setLikesCount(data.likes || 0);
-            }
-          }).catch(() => {});
         }
       }).catch((err) => {
         console.warn("Failed to load list:", err);

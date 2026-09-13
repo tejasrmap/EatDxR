@@ -16,20 +16,7 @@ import {
   Bookmark
 } from "lucide-react";
 import { useAuth } from "../App";
-import { 
-  collection, 
-  query, 
-  where, 
-  onSnapshot, 
-  doc, 
-  deleteDoc, 
-  setDoc, 
-  serverTimestamp, 
-  updateDoc, 
-  increment,
-  getDocs
-} from "firebase/firestore";
-import { db } from "../firebase";
+import { deleteReview, toggleLike as toggleSupabaseLike, addComment, getComments, createNotification } from "../services/supabaseService";
 import { toast } from "sonner";
 import { StarRating } from "./StarRating";
 import { LogMealModal } from "./LogMealModal";
@@ -38,7 +25,6 @@ import { DiaryEntryModal } from "./DiaryEntryModal";
 import { StoryCardModal } from "./StoryCardModal";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic } from "../services/nativeService";
-import { deleteReview, toggleLike as toggleSupabaseLike, addComment } from "../services/supabaseService";
 import { formatDistanceToNow } from "date-fns";
 import { parseFirebaseDate } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
@@ -104,19 +90,6 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
     
     try {
       await deleteReview(review.id);
-
-      const interactionsQuery = query(collection(db, "interactions"), where("reviewId", "==", review.id));
-      const interactionsSnap = await getDocs(interactionsQuery);
-      const deletePromises = interactionsSnap.docs.map(docSnap => deleteDoc(doc(db, "interactions", docSnap.id)));
-      await Promise.all(deletePromises);
-      
-      const userRef = doc(db, "users", currentUser.uid);
-      await updateDoc(userRef, {
-        "stats.reviewsWritten": increment(-1)
-      });
-      
-      await deleteDoc(doc(db, "reviews", review.id));
-      
       toast.success("Diary entry deleted successfully.");
     } catch (error) {
       console.error("Error deleting review:", error);
@@ -125,35 +98,20 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
   };
 
   useEffect(() => {
-    if (!isVisible) return;
-    const q = query(
-      collection(db, "interactions"),
-      where("reviewId", "==", review.id)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const interactions = snapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id
-      })) as Interaction[];
-      
-      setLikes(interactions.filter(i => i.type === "LIKE"));
-      
-      const fetchedComments = interactions
-        .filter(i => i.type === "COMMENT")
-        .sort((a, b) => {
-          const timeA = a.createdAt?.toMillis?.() || 0;
-          const timeB = b.createdAt?.toMillis?.() || 0;
-          return timeA - timeB; 
-        });
-        
-      setComments(fetchedComments);
-    }, () => {
-      // Ignore
-    });
-
-    return unsubscribe;
-  }, [review.id, isVisible]);
+    if (!isVisible && !showComments) return;
+    getComments(review.id).then(fetched => {
+      setComments(fetched.map(c => ({
+        id: c.id,
+        reviewId: c.targetId,
+        userId: c.userId,
+        userName: c.userName,
+        userPhoto: c.userPhoto,
+        type: "COMMENT",
+        content: c.text,
+        createdAt: c.createdAt
+      } as unknown as Interaction)));
+    }).catch(() => {});
+  }, [review.id, isVisible, showComments]);
 
   const hasLiked = currentUser ? likes.some(l => l.userId === currentUser.uid) : false;
   const totalLikes = (review.likes || 0) + likes.length;
@@ -189,37 +147,15 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
     try {
       await toggleSupabaseLike(review.id, 'review', currentUser.uid);
 
-      const likeRef = doc(db, "interactions", likeId);
-      if (!willLike) {
-        await deleteDoc(likeRef);
-        if (currentUser.uid !== review.userId) {
-          await deleteDoc(doc(db, "notifications", likeId)).catch(() => {});
-        }
-      } else {
-        await setDoc(likeRef, {
-          id: likeId,
-          reviewId: review.id,
-          userId: currentUser.uid,
-          userName: currentUser.displayName,
-          userPhoto: currentUser.photoURL,
+      if (willLike && currentUser.uid !== review.userId) {
+        createNotification({
+          recipientId: review.userId,
+          actorId: currentUser.uid,
+          actorName: currentUser.displayName || "User",
+          actorPhoto: currentUser.photoURL || undefined,
           type: "LIKE",
-          createdAt: serverTimestamp()
+          targetId: review.id
         });
-
-        if (currentUser.uid !== review.userId) {
-          const notifRef = doc(collection(db, "notifications"));
-          await setDoc(notifRef, {
-            id: notifRef.id,
-            recipientId: review.userId,
-            actorId: currentUser.uid,
-            actorName: currentUser.displayName,
-            actorPhoto: currentUser.photoURL,
-            type: "LIKE",
-            targetId: review.id,
-            read: false,
-            createdAt: serverTimestamp()
-          });
-        }
       }
     } catch (error) {
       console.error("Like error:", error);
@@ -238,7 +174,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
     const commentText = newComment.trim();
 
     try {
-      await addComment({
+      const saved = await addComment({
         targetId: review.id,
         targetType: "review",
         userId: currentUser.uid,
@@ -247,30 +183,27 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
         text: commentText
       });
 
-      const commentRef = doc(collection(db, "interactions"));
-      await setDoc(commentRef, {
-        id: commentRef.id,
-        reviewId: review.id,
-        userId: currentUser.uid,
-        userName: currentUser.displayName,
-        userPhoto: currentUser.photoURL,
-        type: "COMMENT",
-        content: commentText,
-        createdAt: serverTimestamp()
-      });
+      if (saved) {
+        setComments(prev => [...prev, {
+          id: saved.id,
+          reviewId: review.id,
+          userId: currentUser.uid,
+          userName: currentUser.displayName || "Critic",
+          userPhoto: currentUser.photoURL || "",
+          type: "COMMENT",
+          content: commentText,
+          createdAt: saved.createdAt
+        } as unknown as Interaction]);
+      }
 
       if (currentUser.uid !== review.userId) {
-        const notifRef = doc(collection(db, "notifications"));
-        await setDoc(notifRef, {
-          id: notifRef.id,
+        createNotification({
           recipientId: review.userId,
           actorId: currentUser.uid,
-          actorName: currentUser.displayName,
-          actorPhoto: currentUser.photoURL,
+          actorName: currentUser.displayName || "Critic",
+          actorPhoto: currentUser.photoURL || undefined,
           type: "COMMENT",
-          targetId: review.id,
-          read: false,
-          createdAt: serverTimestamp()
+          targetId: review.id
         });
       }
 

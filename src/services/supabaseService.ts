@@ -537,6 +537,33 @@ export async function toggleFollow(
   }
 }
 
+export async function getFollowers(userId: string): Promise<User[]> {
+  if (!isSupabaseConfigured || !userId) return [];
+  try {
+    const { data } = await supabase.from('profiles').select('*').limit(100);
+    if (!data) return [];
+    return data
+      .filter((d: any) => d.stats?.followingList && Array.isArray(d.stats.followingList) && d.stats.followingList.includes(userId))
+      .map((d: any) => ({
+        uid: d.id,
+        displayName: d.display_name || 'Critic',
+        username: d.username,
+        email: d.email,
+        photoURL: d.photo_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${d.id}`,
+        bio: d.bio,
+        pronouns: d.pronouns,
+        criticLevel: d.critic_level || 'Foodie',
+        credibilityScore: d.credibility_score ?? 50,
+        isVerifiedCritic: d.is_verified_critic || false,
+        tasteDNA: d.taste_dna,
+        stats: d.stats || { mealsLogged: 0, reviewsWritten: 0, followers: 0, following: 0 },
+        createdAt: d.created_at
+      }));
+  } catch {
+    return [];
+  }
+}
+
 // ============================================================================
 // 3. REVIEWS & MEAL LOGS
 // ============================================================================
@@ -669,7 +696,7 @@ export async function createReview(review: Partial<Review>): Promise<Review> {
 
       const { error } = await supabase
         .from('reviews')
-        .insert({
+        .upsert({
           id: newReview.id,
           user_id: newReview.userId,
           user_name: newReview.userName,
@@ -940,22 +967,16 @@ export async function getRestaurantById(id: string): Promise<Restaurant | null> 
     rest = DEFAULT_FALLBACK_RESTAURANTS.find(r => r.id === id) || null;
   }
 
-  // Enrich with Firestore custom fields (menuCards, menuList) if saved
+  // Enrich with cached custom fields (menuCards, menuList) if saved
   try {
-    const { db } = await import('../firebase');
-    const { doc, getDoc } = await import('firebase/firestore');
-    const snap = await getDoc(doc(db, 'restaurants', id)).catch(() => null);
-    if (snap && snap.exists()) {
-      const data = snap.data();
-      if (rest) {
-        if (data.menuCards && Array.isArray(data.menuCards)) {
-          rest.menuCards = data.menuCards;
-        }
-        if (data.menuList && Array.isArray(data.menuList)) {
-          rest.menuList = data.menuList;
-        }
-      } else {
-        rest = data as Restaurant;
+    const key = `madeater_rest_extras_${id}`;
+    const cached = JSON.parse(localStorage.getItem(key) || '{}');
+    if (rest) {
+      if (cached.menuCards && Array.isArray(cached.menuCards)) {
+        rest.menuCards = [...(rest.menuCards || []), ...cached.menuCards.filter((c: string) => !rest!.menuCards?.includes(c))];
+      }
+      if (cached.menuList && Array.isArray(cached.menuList)) {
+        rest.menuList = cached.menuList;
       }
     }
   } catch {}
@@ -1108,38 +1129,28 @@ export async function createRestaurant(restaurant: {
     }
   }
 
-  // Non-blocking mirror to Firestore
-  try {
-    const { db } = await import('../firebase');
-    const { doc, setDoc } = await import('firebase/firestore');
-    await setDoc(doc(db, 'restaurants', newRestaurant.id), {
-      id: newRestaurant.id,
-      name: newRestaurant.name,
-      cuisine: newRestaurant.cuisine,
-      location: newRestaurant.location,
-      rating: newRestaurant.rating,
-      reviewCount: newRestaurant.reviewCount,
-      image: newRestaurant.image,
-      menuCards: newRestaurant.menuCards || [],
-      menuList: newRestaurant.menuList || []
-    }, { merge: true });
-  } catch (err) {
-    console.warn('[Firestore] Restaurant mirror notice:', err);
-  }
-
   return newRestaurant;
 }
 
 export async function uploadRestaurantMenuCard(restaurantId: string, imageUrl: string): Promise<void> {
   try {
-    const { db } = await import('../firebase');
-    const { doc, setDoc, arrayUnion } = await import('firebase/firestore');
-    const restRef = doc(db, 'restaurants', restaurantId);
-    await setDoc(restRef, {
-      menuCards: arrayUnion(imageUrl)
-    }, { merge: true });
+    const key = `madeater_rest_extras_${restaurantId}`;
+    const cached = JSON.parse(localStorage.getItem(key) || '{}');
+    const menuCards: string[] = Array.isArray(cached.menuCards) ? cached.menuCards : [];
+    if (!menuCards.includes(imageUrl)) {
+      menuCards.push(imageUrl);
+    }
+    localStorage.setItem(key, JSON.stringify({ ...cached, menuCards }));
+
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('restaurants').update({
+          menu_cards: menuCards
+        }).eq('id', restaurantId);
+      } catch {}
+    }
   } catch (err) {
-    console.warn('[Firestore] Error saving menu card:', err);
+    console.warn('[Storage] Error saving menu card:', err);
   }
 }
 
@@ -1454,6 +1465,32 @@ export async function getNotifications(recipientId: string): Promise<AppNotifica
   } catch (err) {
     console.warn('[Supabase] Error fetching notifications:', err);
     return [];
+  }
+}
+
+export async function createNotification(notification: {
+  recipientId: string;
+  actorId: string;
+  actorName: string;
+  actorPhoto?: string;
+  type: 'LIKE' | 'COMMENT' | 'FOLLOW';
+  targetId?: string;
+}): Promise<void> {
+  if (!isSupabaseConfigured || !notification.recipientId || notification.recipientId === notification.actorId) return;
+  try {
+    await supabase.from('notifications').insert({
+      id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      recipient_id: notification.recipientId,
+      sender_id: notification.actorId,
+      sender_name: notification.actorName,
+      sender_photo: notification.actorPhoto || '',
+      type: notification.type,
+      target_id: notification.targetId || null,
+      is_read: false,
+      created_at: new Date().toISOString()
+    });
+  } catch (err) {
+    console.warn('[Supabase] Error creating notification:', err);
   }
 }
 

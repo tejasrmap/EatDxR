@@ -145,7 +145,7 @@ export interface Review {
   rating: number; // 1-10 or 1-5 (Letterboxd style)
   content: string;
   videoUrl?: string; // Short-form video for Cravings
-  createdAt: any; // Firestore Timestamp
+  createdAt: any; // ISO timestamp or Date string
   likes: number;
   
   // Rich Food Ecosystem additions
@@ -238,7 +238,7 @@ export interface Interaction {
   userPhoto: string;
   type: "LIKE" | "COMMENT";
   content?: string; // Only used if type is "COMMENT"
-  createdAt: any; // Firestore Timestamp
+  createdAt: any; // ISO timestamp or Date string
 }
 
 export interface AppNotification {

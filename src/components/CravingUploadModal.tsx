@@ -3,8 +3,7 @@ import { createPortal } from "react-dom";
 import { X, Star, Upload, Search, MapPin, Loader2, Plus, Flame, ShieldCheck, ArrowLeft, Video, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../App";
-import { db } from "../firebase";
-import { collection, doc, setDoc, updateDoc, serverTimestamp, increment } from "firebase/firestore";
+
 import { toast } from "sonner";
 import { searchRestaurants } from "../services/mapsService";
 import { RestaurantSearchResult, CravingTag } from "../types";
@@ -174,77 +173,23 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
       setUploadProgress(98);
       setUploadStatusText("Saving...");
 
-      const reviewRef = doc(collection(db, "reviews"));
+      const cravingId = `crav-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
       const cleanRating = Math.min(10, Math.max(1, Number(rating) || 9));
 
-      const cravingDoc = {
-        id: reviewRef.id,
+      await createCraving({
+        id: cravingId,
         userId: user.uid,
         userName: dishdUser?.displayName || user.displayName || "Critic",
         userPhoto: dishdUser?.photoURL || user.photoURL || "",
-        userCriticLevel: dishdUser?.criticLevel || "Food Critic",
-        restaurantId: selectedRestaurant?.id || `rest_${Date.now()}`,
         restaurantName: restaurantName.trim(),
-        restaurantLocation: selectedRestaurant?.location || "Local Spot",
-        city: selectedRestaurant?.city || "Hyderabad",
-        rating: cleanRating,
-        content: reviewContent.trim() || `Craving ${dishName} at ${restaurantName}!`,
-        videoUrl: finalVideoUrl,
-        type: "craving",
-        cravingTag: cravingTag,
         attachedDish: dishName.trim(),
-        attachedCuisine: cuisine,
-        attachedScore: cleanRating,
-        isVerifiedVisit: isVerifiedVisit,
-        visitProofType: visitProofType,
-        ratingsDetail: {
-          taste: cleanRating,
-          quality: Math.min(10, cleanRating + 0.1),
-          portion: 9.0,
-          value: 8.8
-        },
-        dishes: [
-          { name: dishName.trim(), rating: Math.round(cleanRating / 2) }
-        ],
-        createdAt: serverTimestamp(),
-        likes: 0
-      };
+        city: selectedRestaurant?.city || "Hyderabad",
+        videoUrl: finalVideoUrl,
+        content: reviewContent.trim(),
+        cravingTag: cravingTag,
+      });
 
-      let firestoreSaved = false;
-      let supabaseSaved = false;
-
-      // 1. Write to Firestore
-      try {
-        await setDoc(reviewRef, cravingDoc);
-        firestoreSaved = true;
-      } catch (fErr) {
-        console.warn("[Database] Firestore craving save notice:", fErr);
-      }
-
-      // 2. Write to Supabase table
-      try {
-        await createCraving({
-          id: reviewRef.id,
-          userId: user.uid,
-          userName: dishdUser?.displayName || user.displayName || "Critic",
-          userPhoto: dishdUser?.photoURL || user.photoURL || "",
-          restaurantName: restaurantName.trim(),
-          attachedDish: dishName.trim(),
-          city: selectedRestaurant?.city || "Hyderabad",
-          videoUrl: finalVideoUrl,
-          content: reviewContent.trim(),
-          cravingTag: cravingTag,
-        });
-        supabaseSaved = true;
-      } catch (sErr) {
-        console.warn("[Database] Supabase craving save notice:", sErr);
-      }
-
-      if (!firestoreSaved && !supabaseSaved) {
-        throw new Error("Unable to save craving to remote database. Please check your network connection.");
-      }
-
-      // Update user stats in Supabase & Firestore
+      // Update user stats in Supabase
       if (dishdUser) {
         await upsertProfile({
           uid: user.uid,
@@ -254,11 +199,6 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
           }
         }).catch(() => {});
       }
-
-      const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, { "stats.mealsLogged": increment(1) }).catch(async () => {
-        await setDoc(userRef, { stats: { mealsLogged: 1 } }, { merge: true }).catch(() => {});
-      });
 
       triggerHaptic();
       toast.success("Craving posted live!");

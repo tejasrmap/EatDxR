@@ -2,9 +2,8 @@ import React, { useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { User } from "../types";
 import { X, Loader2, Save, Camera, ChevronRight } from "lucide-react";
-import { doc, setDoc } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
-import { db, auth, storage } from "../firebase";
+import { auth, storage } from "../firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { upsertProfile, uploadMedia, getProfile, syncUserAuthorInfo } from "../services/supabaseService";
 import { toast } from "sonner";
@@ -182,25 +181,12 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
         navigate(newProfilePath, { replace: true });
       }
 
-      // 6. Safe non-blocking mirror to Firestore
       try {
         const currentUser = auth.currentUser;
         if (currentUser) {
           updateProfile(currentUser, { displayName: displayName.trim() }).catch(() => {});
         }
-        const userRef = doc(db, "users", user.uid);
-        const cleanPayload = Object.fromEntries(Object.entries({
-          displayName: displayName.trim(),
-          photoURL: finalPhotoURL.trim(),
-          username: targetUsername,
-          pronouns: pronouns.trim() || undefined,
-          bio: bio.trim() || undefined,
-          favoriteCuisines: favoriteCuisines.length > 0 ? favoriteCuisines : undefined
-        }).filter(([_, v]) => v !== undefined));
-        setDoc(userRef, cleanPayload, { merge: true }).catch(() => {});
-      } catch (fbErr) {
-        console.warn("Notice mirroring profile to Firestore:", fbErr);
-      }
+      } catch {}
     } catch (error: any) {
       console.error("Error updating profile:", error);
       toast.error("Failed to update profile.");

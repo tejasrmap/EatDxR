@@ -6,13 +6,12 @@ import { X, Star, Upload, Image as ImageIcon, Search, MapPin, Loader2, Plus, Tra
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../App";
-import { db, handleFirestoreError, OperationType, storage } from "../firebase";
-import { collection, doc, setDoc, updateDoc, serverTimestamp, getDoc, increment } from "firebase/firestore";
+import { storage } from "../firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { toast } from "sonner";
 import { searchRestaurants } from "../services/mapsService";
 import { RestaurantSearchResult, Review } from "../types";
-import { createReview, uploadMedia, upsertProfile } from "../services/supabaseService";
+import { createReview, uploadMedia, upsertProfile, createRestaurant } from "../services/supabaseService";
 import { offlineSyncService } from "../services/offlineSyncService";
 import { AddRestaurantModal } from "./AddRestaurantModal";
 
@@ -315,105 +314,79 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
       
       if (selectedRestaurant) {
         try {
-          const restRef = doc(db, "restaurants", selectedRestaurant.id);
-          const restDoc = await getDoc(restRef);
-          if (!restDoc.exists()) {
-            await setDoc(restRef, {
-              id: selectedRestaurant.id,
-              name: selectedRestaurant.name,
-              cuisine: selectedRestaurant.cuisine || "Various",
-              location: manualLocation || selectedRestaurant.location || "India",
-              rating: selectedRestaurant.rating || 0,
-              reviewCount: 1,
-              image: selectedRestaurant.image || "",
-              menuItems: selectedRestaurant.menuItems || []
-            });
-          }
+          await createRestaurant({
+            id: selectedRestaurant.id,
+            name: selectedRestaurant.name,
+            cuisine: selectedRestaurant.cuisine || "Various",
+            location: manualLocation || selectedRestaurant.location || "India",
+            city: selectedRestaurant.city || manualLocation.split(',').pop()?.trim() || "Nearby",
+            rating: selectedRestaurant.rating || 4.5,
+            reviewCount: 1,
+            image: selectedRestaurant.image || "",
+            lat: selectedRestaurant.lat,
+            lng: selectedRestaurant.lng,
+            priceLevel: selectedRestaurant.priceLevel,
+            menuList: (selectedRestaurant.menuItems || []).map((dish, idx) => ({
+              id: `item-${idx}`,
+              name: dish,
+              category: "Special"
+            }))
+          });
         } catch (restaurantError) {
-          console.warn("Could not save restaurant data (likely due to permissions). Proceeding with review log.");
+          console.warn("Could not save restaurant data. Proceeding with review log.", restaurantError);
         }
       }
 
       const cleanRating = Math.min(10, Math.max(1, Number(data.rating) || 5));
+      const reviewId = existingReview?.id || `rev-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+      const city = selectedRestaurant?.city || manualLocation.split(',').pop()?.trim() || "Nearby";
 
-      if (existingReview) {
-        const reviewRef = doc(db, "reviews", existingReview.id);
-        
-        // Critical: Align with firestore.rules (Remove illegal/immutable fields)
-        await updateDoc(reviewRef, {
-          restaurantName: data.restaurant,
-          restaurantId: restaurantId,
-          dishes: uploadedDishes,
-          rating: cleanRating,
-          content: data.review || "",
-          restaurantLocation: manualLocation || selectedRestaurant?.location || "India",
-          userId: user.uid,
-          userName: dishdUser?.displayName || user.displayName || "Critic",
-          userPhoto: dishdUser?.photoURL || user.photoURL || "",
-          likes: existingReview?.likes || 0
+      const reviewData = {
+        id: reviewId,
+        userId: user.uid,
+        userName: dishdUser?.displayName || user.displayName || "Anonymous Critic",
+        userPhoto: dishdUser?.photoURL || user.photoURL || `https://ui-avatars.com/api/?name=${dishdUser?.displayName || user.displayName || 'User'}&background=random`,
+        userCriticLevel: dishdUser?.criticLevel || "Food Critic",
+        restaurantName: data.restaurant,
+        restaurantId: restaurantId,
+        restaurantLocation: manualLocation || "India",
+        city: city,
+        dishes: uploadedDishes,
+        rating: cleanRating,
+        content: data.review || "",
+        type: "review" as const,
+        isVerifiedVisit: isVerifiedVisit,
+        visitProofType: "receipt" as const,
+        ...(ratingMode === "critic" ? {
+          ratingsDetail: {
+            taste: tasteScore,
+            quality: qualityScore,
+            portion: portionScore,
+            value: valueScore,
+            presentation: presentationScore,
+            service: serviceScore,
+            ambience: ambienceScore
+          }
+        } : {}),
+        likes: existingReview?.likes || 0
+      };
+
+      // 1. Primary: Save to Supabase
+      await createReview(reviewData);
+
+      // 2. Update Supabase Profile stats
+      if (dishdUser && !existingReview) {
+        const currentCount = dishdUser.stats?.reviewsWritten || 0;
+        await upsertProfile({
+          uid: user.uid,
+          stats: {
+            ...dishdUser.stats,
+            reviewsWritten: currentCount + 1
+          }
         });
-        toast.success("Narrative updated!");
-        const reviewId = existingReview?.id || `rev-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-        const city = selectedRestaurant?.city || manualLocation.split(',').pop()?.trim() || "Nearby";
-
-        const reviewData = {
-          id: reviewId,
-          userId: user.uid,
-          userName: dishdUser?.displayName || user.displayName || "Anonymous Critic",
-          userPhoto: dishdUser?.photoURL || user.photoURL || `https://ui-avatars.com/api/?name=${dishdUser?.displayName || user.displayName || 'User'}&background=random`,
-          userCriticLevel: dishdUser?.criticLevel || "Food Critic",
-          restaurantName: data.restaurant,
-          restaurantId: restaurantId,
-          restaurantLocation: manualLocation || "India",
-          city: city,
-          dishes: uploadedDishes,
-          rating: cleanRating,
-          content: data.review || "",
-          type: "review" as const,
-          isVerifiedVisit: isVerifiedVisit,
-          visitProofType: "receipt" as const,
-          ...(ratingMode === "critic" ? {
-            ratingsDetail: {
-              taste: tasteScore,
-              quality: qualityScore,
-              portion: portionScore,
-              value: valueScore,
-              presentation: presentationScore,
-              service: serviceScore,
-              ambience: ambienceScore
-            }
-          } : {}),
-          likes: existingReview?.likes || 0
-        };
-
-        // 1. Primary: Save to Supabase
-        await createReview(reviewData);
-
-        // 2. Update Supabase Profile stats
-        if (dishdUser) {
-          const currentCount = dishdUser.stats?.reviewsWritten || 0;
-          await upsertProfile({
-            uid: user.uid,
-            stats: {
-              ...dishdUser.stats,
-              reviewsWritten: currentCount + 1
-            }
-          });
-        }
-
-        // 3. Mirror to Firebase Firestore for backward compatibility
-        try {
-          const reviewRef = doc(db, "reviews", reviewId);
-          await setDoc(reviewRef, {
-            ...reviewData,
-            createdAt: serverTimestamp()
-          }, { merge: true });
-        } catch (fbErr) {
-          console.warn("Notice mirroring review to Firebase:", fbErr);
-        }
-
-        toast.success(existingReview ? "Narrative updated!" : "Narrative Live!");
       }
+
+      toast.success(existingReview ? "Narrative updated!" : "Narrative Live!");
 
       reset();
       setRating(0);

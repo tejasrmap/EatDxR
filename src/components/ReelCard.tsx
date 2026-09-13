@@ -5,12 +5,10 @@ import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { parseFirebaseDate } from "../lib/utils";
 import { useAuth } from "../App";
-import { db } from "../firebase";
-import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp, updateDoc, arrayUnion, arrayRemove, increment } from "firebase/firestore";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { CommentModal } from "./CommentModal";
-import { toggleLike as toggleSupabaseLike, toggleFollow as toggleSupabaseFollow } from "../services/supabaseService";
+import { toggleLike as toggleSupabaseLike, toggleFollow as toggleSupabaseFollow, getComments } from "../services/supabaseService";
 
 interface ReelCardProps {
   review: Review;
@@ -25,35 +23,26 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
   const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
   
   useEffect(() => {
-    if (!currentUser) return;
-    const unsubscribe = onSnapshot(doc(db, "users", currentUser.uid), (snapshot) => {
-        const userData = snapshot.data();
-        if (userData?.stats?.followingList) {
-            setIsFollowing(userData.stats.followingList.includes(review.userId));
-        }
-    });
-    return unsubscribe;
-  }, [currentUser, review.userId]);
+    if (currentUser?.stats?.followingList) {
+      setIsFollowing(currentUser.stats.followingList.includes(review.userId));
+    }
+  }, [currentUser?.stats?.followingList, review.userId]);
   
   useEffect(() => {
-    const q = query(
-      collection(db, "interactions"),
-      where("reviewId", "==", review.id)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const interactions = snapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id
-      })) as Interaction[];
-      
-      setLikes(interactions.filter(i => i.type === "LIKE"));
-      setComments(interactions.filter(i => i.type === "COMMENT"));
-    }, (error) => {
-      console.warn("Interactions subscription error:", error.message);
-    });
-
-    return unsubscribe;
+    getComments(review.id).then(c => {
+      if (c) {
+        setComments(c.map(comm => ({
+          id: comm.id,
+          reviewId: comm.targetId,
+          userId: comm.userId,
+          userName: comm.userName,
+          userPhoto: comm.userPhoto,
+          type: "COMMENT",
+          content: comm.text,
+          createdAt: comm.createdAt
+        } as unknown as Interaction)));
+      }
+    }).catch(() => {});
   }, [review.id]);
 
   const hasLiked = currentUser ? likes.some(l => l.userId === currentUser.uid) : false;
@@ -67,24 +56,23 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
       return;
     }
 
+    const willLike = !hasLiked;
+    if (willLike) {
+      setLikes(prev => [...prev, {
+        id: `like_${currentUser.uid}_${review.id}`,
+        reviewId: review.id,
+        userId: currentUser.uid,
+        userName: currentUser.displayName || "User",
+        userPhoto: currentUser.photoURL || "",
+        type: "LIKE",
+        createdAt: new Date()
+      }]);
+    } else {
+      setLikes(prev => prev.filter(l => l.userId !== currentUser.uid));
+    }
+
     try {
       await toggleSupabaseLike(review.id, 'review', currentUser.uid);
-
-      const likeId = `like_${currentUser.uid}_${review.id}`;
-      const likeRef = doc(db, "interactions", likeId);
-      if (hasLiked) {
-        await deleteDoc(likeRef);
-      } else {
-        await setDoc(likeRef, {
-          id: likeId,
-          reviewId: review.id,
-          userId: currentUser.uid,
-          userName: currentUser.displayName || "User",
-          userPhoto: currentUser.photoURL || "",
-          type: "LIKE",
-          createdAt: serverTimestamp()
-        });
-      }
     } catch (error) {
       console.error("Error toggling like:", error);
       toast.error("Failed to update like");
@@ -109,33 +97,6 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
 
       setIsFollowing(newFollowStatus);
       toast.success(newFollowStatus ? `Following ${review.userName}` : `Unfollowed ${review.userName}`);
-
-      // Legacy Firebase sync
-      try {
-        const currentUserRef = doc(db, "users", currentUser.uid);
-        const targetUserRef = doc(db, "users", review.userId);
-        const notifId = `${currentUser.uid}_${review.userId}_FOLLOW`;
-        if (!newFollowStatus) {
-          await updateDoc(currentUserRef, { "stats.followingList": arrayRemove(review.userId), "stats.following": increment(-1) });
-          await updateDoc(targetUserRef, { "stats.followers": increment(-1) });
-          await deleteDoc(doc(db, "notifications", notifId)).catch(() => {});
-        } else {
-          await updateDoc(currentUserRef, { "stats.followingList": arrayUnion(review.userId), "stats.following": increment(1) });
-          await updateDoc(targetUserRef, { "stats.followers": increment(1) });
-          await setDoc(doc(db, "notifications", notifId), {
-            id: notifId,
-            recipientId: review.userId,
-            actorId: currentUser.uid,
-            actorName: currentUser.displayName,
-            actorPhoto: currentUser.photoURL,
-            type: "FOLLOW",
-            read: false,
-            createdAt: serverTimestamp()
-          });
-        }
-      } catch (fbErr) {
-        console.warn("Notice mirroring follow to Firebase:", fbErr);
-      }
     } catch (error) {
       console.error("Error following:", error);
       toast.error("Process failed");

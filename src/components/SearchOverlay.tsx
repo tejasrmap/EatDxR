@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Search, X, User as UserIcon, UtensilsCrossed, MapPin, Loader2, ArrowRight } from "lucide-react";
-import { collection, query, where, getDocs, limit, orderBy } from "firebase/firestore";
-import { db } from "../firebase";
+
 import { User, Restaurant } from "../types";
 import { Link, useNavigate } from "react-router-dom";
 import { searchRestaurants } from "../services/mapsService";
