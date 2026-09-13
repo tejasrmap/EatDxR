@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../App";
 import { db } from "../firebase";
 import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp, updateDoc, increment, getDocs } from "firebase/firestore";
+import { toggleSupabaseLike, getComments, addComment } from "../services/supabaseService";
 import { toast } from "sonner";
 import { ShareMenu } from "./ShareMenu";
 import { StoryCardModal } from "./StoryCardModal";
@@ -50,35 +51,8 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
   }, [isOpen, onClose]);
 
   useEffect(() => {
-    if (!review) return;
-
-    const q = query(
-      collection(db, "interactions"),
-      where("reviewId", "==", review.id)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const interactions = snapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id
-      })) as Interaction[];
-      
-      setLikes(interactions.filter(i => i.type === "LIKE"));
-      
-      const fetchedComments = interactions
-        .filter(i => i.type === "COMMENT")
-        .sort((a, b) => {
-          const timeA = a.createdAt?.toMillis?.() || 0;
-          const timeB = b.createdAt?.toMillis?.() || 0;
-          return timeA - timeB;
-        });
-        
-      setComments(fetchedComments);
-    }, (error) => {
-      console.error("Interactions feed error:", error);
-    });
-
-    return unsubscribe;
+    if (!review?.id) return;
+    getComments(review.id).then(c => setComments(c));
   }, [review?.id]);
 
   // Lock body scroll when modal is open
@@ -106,38 +80,61 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
     
     setIsLikeLoading(true);
     try {
-      const likeId = `${review.id}_${currentUser.uid}_LIKE`;
-      const likeRef = doc(db, "interactions", likeId);
-      
-      if (hasLiked) {
-        await deleteDoc(likeRef);
-        if (currentUser.uid !== review.userId) {
-          await deleteDoc(doc(db, "notifications", likeId)).catch(() => {});
-        }
-      } else {
-        await setDoc(likeRef, {
-          id: likeId,
+      const isNowLiked = await toggleSupabaseLike(review.id, currentUser.uid, hasLiked, {
+        name: currentUser.displayName || undefined,
+        photo: currentUser.photoURL || undefined
+      });
+
+      if (isNowLiked) {
+        setLikes(prev => [...prev, {
+          id: `${review.id}_${currentUser.uid}_LIKE`,
           reviewId: review.id,
           userId: currentUser.uid,
-          userName: currentUser.displayName,
-          userPhoto: currentUser.photoURL,
-          type: "LIKE",
-          createdAt: serverTimestamp()
-        });
+          userName: currentUser.displayName || 'Critic',
+          userPhoto: currentUser.photoURL || '',
+          type: 'LIKE',
+          createdAt: new Date()
+        }]);
+      } else {
+        setLikes(prev => prev.filter(l => l.userId !== currentUser.uid));
+      }
 
-        if (currentUser.uid !== review.userId) {
-          await setDoc(doc(db, "notifications", likeId), {
+      // Legacy mirror
+      try {
+        const likeId = `${review.id}_${currentUser.uid}_LIKE`;
+        const likeRef = doc(db, "interactions", likeId);
+        if (hasLiked) {
+          await deleteDoc(likeRef);
+          if (currentUser.uid !== review.userId) {
+            await deleteDoc(doc(db, "notifications", likeId)).catch(() => {});
+          }
+        } else {
+          await setDoc(likeRef, {
             id: likeId,
-            recipientId: review.userId,
-            actorId: currentUser.uid,
-            actorName: currentUser.displayName,
-            actorPhoto: currentUser.photoURL,
+            reviewId: review.id,
+            userId: currentUser.uid,
+            userName: currentUser.displayName,
+            userPhoto: currentUser.photoURL,
             type: "LIKE",
-            targetId: review.id,
-            read: false,
             createdAt: serverTimestamp()
           });
+
+          if (currentUser.uid !== review.userId) {
+            await setDoc(doc(db, "notifications", likeId), {
+              id: likeId,
+              recipientId: review.userId,
+              actorId: currentUser.uid,
+              actorName: currentUser.displayName,
+              actorPhoto: currentUser.photoURL,
+              type: "LIKE",
+              targetId: review.id,
+              read: false,
+              createdAt: serverTimestamp()
+            });
+          }
         }
+      } catch (fbErr) {
+        console.warn("Notice mirroring like to Firebase:", fbErr);
       }
     } catch (error) {
       console.error("Like error:", error);
@@ -154,35 +151,51 @@ export const DiaryEntryModal: React.FC<DiaryEntryModalProps> = ({ isOpen, onClos
     
     setIsCommentLoading(true);
     try {
-      const commentRef = doc(collection(db, "interactions"));
-      await setDoc(commentRef, {
-        id: commentRef.id,
+      const posted = await addComment({
         reviewId: review.id,
         userId: currentUser.uid,
-        userName: currentUser.displayName,
-        userPhoto: currentUser.photoURL,
-        type: "COMMENT",
-        content: newComment.trim(),
-        createdAt: serverTimestamp()
+        userName: currentUser.displayName || 'Critic',
+        userPhoto: currentUser.photoURL || '',
+        content: newComment.trim()
       });
 
-      if (currentUser.uid !== review.userId) {
-        const notifRef = doc(collection(db, "notifications"));
-        await setDoc(notifRef, {
-          id: notifRef.id,
-          recipientId: review.userId,
-          actorId: currentUser.uid,
-          actorName: currentUser.displayName,
-          actorPhoto: currentUser.photoURL,
-          type: "COMMENT",
-          targetId: review.id,
-          read: false,
-          createdAt: serverTimestamp()
-        });
+      if (posted) {
+        setComments(prev => [...prev, posted]);
       }
-
       setNewComment("");
       toast.success("Comment posted!");
+
+      // Legacy mirror
+      try {
+        const commentRef = doc(collection(db, "interactions"));
+        await setDoc(commentRef, {
+          id: commentRef.id,
+          reviewId: review.id,
+          userId: currentUser.uid,
+          userName: currentUser.displayName,
+          userPhoto: currentUser.photoURL,
+          type: "COMMENT",
+          content: newComment.trim(),
+          createdAt: serverTimestamp()
+        });
+
+        if (currentUser.uid !== review.userId) {
+          const notifRef = doc(collection(db, "notifications"));
+          await setDoc(notifRef, {
+            id: notifRef.id,
+            recipientId: review.userId,
+            actorId: currentUser.uid,
+            actorName: currentUser.displayName,
+            actorPhoto: currentUser.photoURL,
+            type: "COMMENT",
+            targetId: review.id,
+            read: false,
+            createdAt: serverTimestamp()
+          });
+        }
+      } catch (fbErr) {
+        console.warn("Notice mirroring comment to Firebase:", fbErr);
+      }
     } catch (error) {
       console.error("Comment error:", error);
       toast.error("Failed to post comment.");

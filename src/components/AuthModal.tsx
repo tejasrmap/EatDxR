@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase";
 import { 
-  signInWithPopup, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  sendPasswordResetEmail,
-  sendEmailVerification,
-  updateProfile, 
-  GoogleAuthProvider 
-} from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
-import { auth, db } from "../firebase";
-import { upsertProfile } from "../services/supabaseService";
+  signInWithEmail, 
+  signUpWithEmail, 
+  signInWithGoogleOAuth, 
+  resetUserPassword, 
+  upsertProfile,
+  getCurrentSession
+} from "../services/supabaseService";
 import { User as DishdUser } from "../types";
 import { triggerHaptic, isNative } from "../services/nativeService";
 import { motion, AnimatePresence } from "motion/react";
@@ -90,7 +88,7 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
 
   if (!isOpen || typeof document === "undefined") return null;
 
-  // Google Sign-In (available on Web browser)
+  // Google Sign-In via Supabase OAuth
   const handleGoogleSignIn = async () => {
     triggerHaptic();
     setErrorMessage(null);
@@ -101,31 +99,17 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
     }
 
     setLoading(true);
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: "select_account" });
-
     try {
-      await signInWithPopup(auth, provider);
-      handleSuccess("Welcome to Madeater!");
+      await signInWithGoogleOAuth();
+      // Browser will redirect to Google OAuth URL
     } catch (error: any) {
       console.error("Google sign in error:", error);
-      const code = error?.code || "";
-
-      if (code === "auth/popup-blocked" || code === "auth/operation-not-supported-in-this-environment") {
-        setErrorMessage("Google Sign-In popup is unavailable in this browser. Please sign in with your email below.");
-      } else if (code === "auth/popup-closed-by-user") {
-        // User just closed popup
-      } else if (code === "auth/unauthorized-domain") {
-        setErrorMessage("Domain not authorized in Firebase. Please use your email below.");
-      } else {
-        setErrorMessage(error?.message || "Google Sign-In could not complete. Please use your email.");
-      }
-    } finally {
+      setErrorMessage(error?.message || "Google Sign-In could not complete. Please use your email.");
       setLoading(false);
     }
   };
 
-  // Email & Password Auth (with Automatic Initial Verification)
+  // Email & Password Auth via Supabase
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     triggerHaptic();
@@ -150,91 +134,86 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
 
     try {
       if (authMode === "signup") {
-        // 1. Create account
-        const userCred = await createUserWithEmailAndPassword(auth, email.trim(), password);
+        // 1. Sign up with Supabase
+        const data = await signUpWithEmail(email.trim(), password, displayName.trim());
         
-        if (userCred.user) {
-          const fallbackPhoto = `https://api.dicebear.com/7.x/bottts/svg?seed=${userCred.user.uid}`;
+        if (data.user) {
+          const fallbackPhoto = `https://api.dicebear.com/7.x/bottts/svg?seed=${data.user.id}`;
           const cleanName = displayName.trim() || "Food Lover";
-          const defaultUsername = cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 15) || `critic_${userCred.user.uid.slice(0, 6)}`;
+          const defaultUsername = cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 15) || `critic_${data.user.id.slice(0, 6)}`;
 
-          // 2. Update user profile details in Firebase Auth
-          await updateProfile(userCred.user, {
+          const newUser: DishdUser = {
+            uid: data.user.id,
             displayName: cleanName,
-            photoURL: fallbackPhoto
-          });
+            email: email.trim(),
+            photoURL: fallbackPhoto,
+            username: defaultUsername,
+            bio: "Food critic on Madeater",
+            tasteDNA: {
+              spice: 60,
+              indian: 75,
+              nonVeg: 50,
+              asian: 40,
+              desserts: 50,
+              coffee: 70,
+              personaTitle: "The Flavor Explorer"
+            },
+            stats: {
+              mealsLogged: 0,
+              reviewsWritten: 0,
+              followers: 0,
+              following: 0,
+              followingList: []
+            },
+            createdAt: new Date().toISOString()
+          };
 
-          // 3. Immediately create complete profile in Firestore & Supabase with entered name
-          try {
-            const userDocRef = doc(db, "users", userCred.user.uid);
-            const newUser: DishdUser = {
-              uid: userCred.user.uid,
-              displayName: cleanName,
-              email: email.trim(),
-              photoURL: fallbackPhoto,
-              username: defaultUsername,
-              bio: "Food critic on Madeater",
-              tasteDNA: {
-                spice: 60,
-                indian: 75,
-                nonVeg: 50,
-                asian: 40,
-                desserts: 50,
-                coffee: 70,
-                personaTitle: "The Flavor Explorer"
-              },
-              stats: {
-                mealsLogged: 0,
-                reviewsWritten: 0,
-                followers: 0,
-                following: 0,
-                followingList: []
-              },
-              createdAt: new Date().toISOString()
-            };
-            await setDoc(userDocRef, newUser, { merge: true });
-            await upsertProfile(newUser);
-            localStorage.setItem("madeater_dishd_user", JSON.stringify(newUser));
-          } catch (profileSaveErr) {
-            console.warn("Notice saving initial critic profile:", profileSaveErr);
-          }
+          await upsertProfile(newUser);
+          localStorage.setItem("madeater_dishd_user", JSON.stringify(newUser));
 
-          // 4. Send email verification on initial registration
+          // Also mirror to Firebase in background if configured
           try {
-            await sendEmailVerification(userCred.user);
+            await createUserWithEmailAndPassword(auth, email.trim(), password).catch(() => {});
+          } catch {}
+
+          if (data.session) {
+            handleSuccess("Welcome to Madeater!");
+          } else {
+            setRegisteredEmail(email.trim());
+            setResendCooldown(60);
+            setAuthMode("verify-email");
             toast.success(`Verification email sent to ${email.trim()}`);
-          } catch (verifErr) {
-            console.warn("Could not send initial verification email:", verifErr);
           }
-
-          setRegisteredEmail(email.trim());
-          setResendCooldown(60);
-          setAuthMode("verify-email");
         }
       } else {
-        await signInWithEmailAndPassword(auth, email.trim(), password);
-        handleSuccess("Welcome back to Madeater!");
+        // Sign in with Supabase Auth
+        try {
+          await signInWithEmail(email.trim(), password);
+          handleSuccess("Welcome back to Madeater!");
+        } catch (supaErr: any) {
+          // If user exists in Firebase but not yet Supabase, try Firebase fallback & auto-migrate!
+          try {
+            const fbCred = await signInWithEmailAndPassword(auth, email.trim(), password);
+            if (fbCred.user) {
+              await signUpWithEmail(email.trim(), password, fbCred.user.displayName || "Critic").catch(() => {});
+              handleSuccess("Welcome back to Madeater!");
+              return;
+            }
+          } catch {}
+
+          const msg = supaErr?.message || "";
+          if (msg.toLowerCase().includes("invalid login") || msg.toLowerCase().includes("invalid_grant")) {
+            setErrorMessage("Invalid email or password. Please check your credentials or click 'Forgot password?'.");
+          } else if (msg.toLowerCase().includes("email not confirmed")) {
+            setErrorMessage("Please confirm your email address before signing in. Check your inbox.");
+          } else {
+            setErrorMessage(msg || "Authentication failed. Please try again.");
+          }
+        }
       }
     } catch (error: any) {
       console.error("Email auth error:", error);
-      const code = error?.code || "";
-
-      if (code === "auth/user-not-found" || code === "auth/wrong-password" || code === "auth/invalid-credential") {
-        setErrorMessage("Invalid email or password. Please check your credentials or click 'Forgot password?'.");
-      } else if (code === "auth/email-already-in-use") {
-        setErrorMessage("An account already exists with this email address. We've switched to Sign In for you.");
-        setAuthMode("signin");
-      } else if (code === "auth/invalid-email") {
-        setErrorMessage("Please enter a valid email address.");
-      } else if (code === "auth/weak-password") {
-        setErrorMessage("Password is too weak. Please use at least 6 characters.");
-      } else if (code === "auth/network-request-failed") {
-        setErrorMessage("Network error. Please check your internet connection and try again.");
-      } else if (code === "auth/too-many-requests") {
-        setErrorMessage("Too many attempts. Please wait a moment before trying again.");
-      } else {
-        setErrorMessage(error?.message || "Authentication failed. Please try again.");
-      }
+      setErrorMessage(error?.message || "Authentication failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -242,21 +221,16 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
 
   // Resend Email Verification link
   const handleResendVerification = async () => {
-    if (!auth.currentUser || resendCooldown > 0 || isResending) return;
+    if (resendCooldown > 0 || isResending) return;
     triggerHaptic();
     setIsResending(true);
     try {
-      await sendEmailVerification(auth.currentUser);
-      toast.success(`New verification link sent to ${auth.currentUser.email}!`);
+      await resetUserPassword(registeredEmail || email.trim());
+      toast.success(`New link sent to ${registeredEmail || email.trim()}!`);
       setResendCooldown(60);
     } catch (err: any) {
       console.error("Resend error:", err);
-      if (err?.code === "auth/too-many-requests") {
-        toast.error("Please wait a minute before requesting another verification email.");
-        setResendCooldown(60);
-      } else {
-        toast.error(err?.message || "Failed to resend verification email.");
-      }
+      toast.error(err?.message || "Failed to resend email.");
     } finally {
       setIsResending(false);
     }
@@ -264,15 +238,15 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
 
   // Check if User Verified Email Live
   const handleCheckEmailVerified = async () => {
-    if (!auth.currentUser || isCheckingVerification) return;
+    if (isCheckingVerification) return;
     triggerHaptic();
     setIsCheckingVerification(true);
     try {
-      await auth.currentUser.reload();
-      if (auth.currentUser.emailVerified) {
-        handleSuccess("🎉 Email verified! Welcome to Madeater.");
+      const session = await getCurrentSession();
+      if (session?.user) {
+        handleSuccess("🎉 Logged in! Welcome to Madeater.");
       } else {
-        toast.info("Email is not verified yet. Please check your inbox or spam folder.");
+        toast.info("Please check your email and click the confirmation link, then sign in.");
       }
     } catch (err) {
       console.error("Check status error:", err);
@@ -291,19 +265,12 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
     setLoading(true);
     setErrorMessage(null);
     try {
-      await sendPasswordResetEmail(auth, email.trim());
+      await resetUserPassword(email.trim());
       setResetEmailSent(true);
       toast.success("Password reset link sent! Check your email inbox.");
     } catch (err: any) {
       console.error("Password reset error:", err);
-      const code = err?.code || "";
-      if (code === "auth/user-not-found") {
-        setErrorMessage("No account found with this email. Please check your spelling or create an account.");
-      } else if (code === "auth/invalid-email") {
-        setErrorMessage("Please enter a valid email address.");
-      } else {
-        setErrorMessage(err?.message || "Failed to send password reset email.");
-      }
+      setErrorMessage(err?.message || "Failed to send password reset email.");
     } finally {
       setLoading(false);
     }

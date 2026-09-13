@@ -6,6 +6,7 @@ import { db } from "../firebase";
 import { User, Restaurant } from "../types";
 import { Link, useNavigate } from "react-router-dom";
 import { searchRestaurants } from "../services/mapsService";
+import { searchProfiles, searchRestaurants as searchRestaurantsSupabase } from "../services/supabaseService";
 
 interface SearchOverlayProps {
   isOpen: boolean;
@@ -60,58 +61,20 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
 
       setIsSearching(true);
       try {
-        // 1. Process variants for multi-field case-insensitive search
-        const rawQ = searchQuery.trim().replace(/^@/, ''); // Strip leading @
-        const capitalized = rawQ.charAt(0).toUpperCase() + rawQ.slice(1);
-        const lowercase = rawQ.toLowerCase();
-        
-        // --- 1. SEARCH USERS (Multi-field & Case Strategy) ---
-        const userDisplayNameQuery = query(
-          collection(db, "users"),
-          where("displayName", ">=", capitalized),
-          where("displayName", "<=", capitalized + "\uf8ff"),
-          limit(5)
-        );
+        const rawQ = searchQuery.trim().replace(/^@/, '');
 
-        const userUsernameQuery = query(
-          collection(db, "users"),
-          where("username", ">=", lowercase),
-          where("username", "<=", lowercase + "\uf8ff"),
-          limit(5)
-        );
-        
-        // --- 2. SEARCH RESTAURANTS ---
-        const restQuery = query(
-          collection(db, "restaurants"),
-          where("name", ">=", capitalized),
-          where("name", "<=", capitalized + "\uf8ff"),
-          limit(5)
-        );
-
-        const [userDNSnap, userUNSnap, restSnap] = await Promise.all([
-          getDocs(userDisplayNameQuery),
-          getDocs(userUsernameQuery),
-          getDocs(restQuery)
+        // 1. Search Users and Restaurants via Supabase
+        const [supaUsers, supaRests] = await Promise.all([
+          searchProfiles(rawQ),
+          searchRestaurantsSupabase(rawQ)
         ]);
 
-        // Merge and Deduplicate Users by uid
-        const userMap = new Map<string, User>();
-        [...userDNSnap.docs, ...userUNSnap.docs].forEach(doc => {
-          const u = doc.data() as User;
-          userMap.set(u.uid, u);
-        });
-        const localUsers = Array.from(userMap.values());
+        setUserResults(supaUsers);
+        setRestaurantResults(supaRests);
 
-        const localRests = restSnap.docs.map(d => ({ ...d.data(), id: d.id } as Restaurant));
-        
-        setUserResults(localUsers);
-        setRestaurantResults(localRests);
-
-        // 2. If fewer than 2 local restaurants, trigger AI Backfill
-        if (localRests.length < 2) {
+        // 2. If fewer than 2 local restaurants, trigger AI Maps Backfill
+        if (supaRests.length < 2) {
           const aiRests = await searchRestaurants(rawQ);
-          
-          // Merge AI results with local ones, ensuring no duplicates by name
           setRestaurantResults(prev => {
             const existingNames = new Set(prev.map(r => r.name.toLowerCase()));
             const uniqueAiRests = aiRests

@@ -136,7 +136,7 @@ export interface Review {
   likes: number;
   
   // Rich Food Ecosystem additions
-  type?: "review" | "craving" | "post" | "diary";
+  type?: "review" | "craving" | "post" | "diary" | "reel";
   ratingsDetail?: DetailedRatings;
   isVerifiedVisit?: boolean;
   visitProofType?: "qr" | "reservation" | "receipt" | "pos" | "self";
@@ -188,12 +188,14 @@ export interface FoodList {
   userName?: string;
   userPhoto?: string;
   title: string;
+  name?: string;
   description: string;
   coverImage?: string;
   restaurantIds?: string[];
   items?: FoodListItem[];
   isRanked?: boolean;
   isPublic?: boolean;
+  isPrivate?: boolean;
   tags?: string[];
   likes: number;
   createdAt: any;

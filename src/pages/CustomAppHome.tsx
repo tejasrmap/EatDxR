@@ -10,9 +10,7 @@ import { CravingMatcherModal } from "../components/CravingMatcherModal";
 import { SearchOverlay } from "../components/SearchOverlay";
 import { SettingsOverlay } from "../components/SettingsOverlay";
 import { triggerHaptic } from "../services/nativeService";
-import { getReviews, getRestaurants } from "../services/supabaseService";
-import { collection, query, orderBy, limit, onSnapshot, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
+import { getReviews, getRestaurants, getTopCritics, subscribeToReviews } from "../services/supabaseService";
 import {
   Home, Search, Compass, UtensilsCrossed, Clapperboard,
   MapPin, Bookmark, Sparkles, Plus, Settings,
@@ -89,56 +87,35 @@ export function CustomAppHome() {
       localStorage.removeItem("madeater_feed_cache");
     } catch {}
 
-    // 1. Live real-time Firestore reviews listener
-    const q = query(
-      collection(db, "reviews"),
-      orderBy("createdAt", "desc"),
-      limit(30)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const firestoreReviews = snapshot.docs.map(d => ({
-        ...d.data(),
-        id: d.id,
-      })) as Review[];
-
-      // Merge Supabase reviews
-      getReviews().then((supaReviews) => {
-        const idMap = new Map<string, Review>();
-        firestoreReviews.forEach(r => idMap.set(r.id, r));
-        (supaReviews || []).forEach(r => {
-          if (!idMap.has(r.id)) idMap.set(r.id, r);
-        });
-        setReviews(Array.from(idMap.values()));
+    // 1. Primary: Real-time Supabase reviews subscription
+    const supaSub = subscribeToReviews((supaReviews) => {
+      if (supaReviews && supaReviews.length > 0) {
+        setReviews(supaReviews);
         setLoading(false);
-      }).catch(() => {
-        setReviews(firestoreReviews);
-        setLoading(false);
-      });
-    }, (err) => {
-      console.warn("Firestore reviews listener notice:", err);
-      getReviews().then((supaReviews) => {
-        setReviews(supaReviews || []);
-        setLoading(false);
-      }).catch(() => setLoading(false));
+      } else {
+        // If Supabase table is empty yet, fallback to getReviews or firestore
+        getReviews().then((revs) => {
+          setReviews(revs || []);
+          setLoading(false);
+        }).catch(() => setLoading(false));
+      }
     });
 
-    // 2. Fetch real users for Suggested Critics
-    getDocs(query(collection(db, "users"), limit(8))).then((snap) => {
-      const usersList = snap.docs
-        .map(d => d.data() as User)
-        .filter(u => u.uid !== user?.uid);
-      setSuggestedCritics(usersList);
+    // 2. Fetch real users for Suggested Critics from Supabase
+    getTopCritics(8).then((critics) => {
+      setSuggestedCritics(critics.filter(u => u.uid !== user?.uid));
     }).catch(() => {});
 
-    // 3. Fetch popular restaurants
+    // 3. Fetch popular restaurants from Supabase
     getRestaurants().then((rests) => {
       if (rests && rests.length > 0) {
         setPopularRestaurants(rests.slice(0, 4));
       }
     }).catch(() => {});
 
-    return () => unsubscribe();
+    return () => {
+      supaSub?.unsubscribe();
+    };
   }, [user?.uid]);
 
   const displayedReviews = reviews.filter((r) => {

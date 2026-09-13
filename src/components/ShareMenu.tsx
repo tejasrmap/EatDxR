@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { triggerHaptic } from "../services/nativeService";
 import { generateReviewStoryBlob } from "../utils/storyCanvasGenerator";
+import { getShareUrl, openInstagramStoryDirect } from "../utils/shareUrl";
 
 interface ShareMenuProps {
   isOpen: boolean;

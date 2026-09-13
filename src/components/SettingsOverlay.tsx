@@ -22,8 +22,7 @@ import {
 import { useAuth } from "../App";
 import { useTheme } from "./ThemeProvider";
 import { triggerHaptic } from "../services/nativeService";
-import { auth } from "../firebase";
-import { sendPasswordResetEmail } from "firebase/auth";
+import { resetUserPassword } from "../services/supabaseService";
 import { toast } from "sonner";
 
 interface SettingsOverlayProps {
@@ -113,7 +112,7 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
               return;
             }
             try {
-              await sendPasswordResetEmail(auth, user.email);
+              await resetUserPassword(user.email);
               toast.success(`Password reset email sent to ${user.email}!`);
             } catch (err: any) {
               toast.error(err?.message || "Failed to send password reset email.");

@@ -16,7 +16,7 @@ import { RatingGraph } from "./RatingGraph";
 import { TasteDNAView } from "./TasteDNAView";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic, isNative } from "../services/nativeService";
-import { uploadMedia, upsertProfile } from "../services/supabaseService";
+import { uploadMedia, upsertProfile, getProfile, getUserReviews, toggleFollow as toggleFollowUser } from "../services/supabaseService";
 import { getShareUrl } from "../utils/shareUrl";
 
 export const Profile: React.FC = () => {
@@ -48,31 +48,45 @@ export const Profile: React.FC = () => {
 
     setIsUpdatingFollow(true);
     try {
-      const currentUserRef = doc(db, "users", currentUser.uid);
-      const targetUserRef = doc(db, "users", user.uid);
-      const notifId = `${currentUser.uid}_${user.uid}_FOLLOW`;
+      const newFollowStatus = await toggleFollowUser(
+        currentUser.uid,
+        user.uid,
+        !!isFollowing,
+        {
+          name: currentUser.displayName || undefined,
+          photo: currentUser.photoURL || undefined
+        }
+      );
 
-      if (isFollowing) {
-        await updateDoc(currentUserRef, { "stats.followingList": arrayRemove(user.uid) });
-        await updateDoc(currentUserRef, { "stats.following": increment(-1) });
-        await updateDoc(targetUserRef, { "stats.followers": increment(-1) });
-        await deleteDoc(doc(db, "notifications", notifId)).catch(() => { });
-        toast.success(`Unfollowed ${user.displayName}`);
-      } else {
-        await updateDoc(currentUserRef, { "stats.followingList": arrayUnion(user.uid) });
-        await updateDoc(currentUserRef, { "stats.following": increment(1) });
-        await updateDoc(targetUserRef, { "stats.followers": increment(1) });
-        await setDoc(doc(db, "notifications", notifId), {
-          id: notifId,
-          recipientId: user.uid,
-          actorId: currentUser.uid,
-          actorName: currentUser.displayName,
-          actorPhoto: currentUser.photoURL,
-          type: "FOLLOW",
-          read: false,
-          createdAt: serverTimestamp()
-        });
-        toast.success(`Following ${user.displayName}`);
+      // Local state update
+      setFollowerCount(prev => newFollowStatus ? prev + 1 : Math.max(0, prev - 1));
+      toast.success(newFollowStatus ? `Following ${user.displayName}` : `Unfollowed ${user.displayName}`);
+
+      // Mirror to Firestore for legacy sync
+      try {
+        const currentUserRef = doc(db, "users", currentUser.uid);
+        const targetUserRef = doc(db, "users", user.uid);
+        const notifId = `${currentUser.uid}_${user.uid}_FOLLOW`;
+        if (!newFollowStatus) {
+          await updateDoc(currentUserRef, { "stats.followingList": arrayRemove(user.uid), "stats.following": increment(-1) });
+          await updateDoc(targetUserRef, { "stats.followers": increment(-1) });
+          await deleteDoc(doc(db, "notifications", notifId)).catch(() => {});
+        } else {
+          await updateDoc(currentUserRef, { "stats.followingList": arrayUnion(user.uid), "stats.following": increment(1) });
+          await updateDoc(targetUserRef, { "stats.followers": increment(1) });
+          await setDoc(doc(db, "notifications", notifId), {
+            id: notifId,
+            recipientId: user.uid,
+            actorId: currentUser.uid,
+            actorName: currentUser.displayName,
+            actorPhoto: currentUser.photoURL,
+            type: "FOLLOW",
+            read: false,
+            createdAt: serverTimestamp()
+          });
+        }
+      } catch (fbErr) {
+        console.warn("Notice mirroring follow to Firebase:", fbErr);
       }
     } catch (error) {
       console.error("Error toggling follow:", error);
@@ -159,58 +173,64 @@ export const Profile: React.FC = () => {
 
     const resolveProfile = async () => {
       try {
-        let resolvedUser: User | null = null;
-        const usernameQuery = query(collection(db, "users"), where("username", "==", identifier.toLowerCase()));
-        const snap = await getDocs(usernameQuery);
+        // 1. Primary: Resolve user profile directly from Supabase
+        let resolvedUser: User | null = await getProfile(identifier);
 
-        if (!snap.empty) {
-          resolvedUser = snap.docs[0].data() as User;
-        } else {
-          const docSnap = await getDoc(doc(db, "users", identifier));
-          if (docSnap.exists()) {
-            resolvedUser = docSnap.data() as User;
-            if (resolvedUser?.username) {
-              const isAppRoute = isNative && window.location.pathname.startsWith('/app');
-              const targetPath = isAppRoute ? `/app/profile/${resolvedUser.username}` : `/profile/${resolvedUser.username}`;
-              navigate(targetPath, { replace: true });
-              return;
+        if (!resolvedUser) {
+          // Fallback to Firestore users if not found
+          try {
+            const usernameQuery = query(collection(db, "users"), where("username", "==", identifier.toLowerCase()));
+            const snap = await getDocs(usernameQuery);
+            if (!snap.empty) {
+              resolvedUser = snap.docs[0].data() as User;
+            } else {
+              const docSnap = await getDoc(doc(db, "users", identifier));
+              if (docSnap.exists()) {
+                resolvedUser = docSnap.data() as User;
+              }
             }
-          }
+          } catch {}
         }
 
         if (resolvedUser) {
+          if (resolvedUser.username && identifier.toLowerCase() !== resolvedUser.username.toLowerCase()) {
+            const isAppRoute = isNative && window.location.pathname.startsWith('/app');
+            const targetPath = isAppRoute ? `/app/profile/${resolvedUser.username}` : `/profile/${resolvedUser.username}`;
+            navigate(targetPath, { replace: true });
+            return;
+          }
+
           setUser(resolvedUser);
-          const q = query(
-            collection(db, "reviews"),
-            where("userId", "==", resolvedUser.uid),
-            orderBy("createdAt", "desc")
-          );
+          setFollowerCount(resolvedUser.stats?.followers || 0);
 
-          unsubscribeReviews = onSnapshot(q, (snapshot) => {
-            const reviewsData = snapshot.docs.map(doc => ({
-              ...doc.data(),
-              id: doc.id,
-              createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
-            })) as Review[];
+          // 2. Fetch user reviews directly from Supabase
+          const supaReviews = await getUserReviews(resolvedUser.uid);
+          setReviews(supaReviews);
+          setLoading(false);
 
-            setReviews(reviewsData);
-            setLoading(false);
-          });
+          // 3. Optional Firestore reviews listener for legacy sync
+          try {
+            const q = query(
+              collection(db, "reviews"),
+              where("userId", "==", resolvedUser.uid),
+              orderBy("createdAt", "desc")
+            );
 
-          const followersQuery = query(
-            collection(db, "users"),
-            where("stats.followingList", "array-contains", resolvedUser.uid)
-          );
+            unsubscribeReviews = onSnapshot(q, (snapshot) => {
+              const reviewsData = snapshot.docs.map(doc => ({
+                ...doc.data(),
+                id: doc.id,
+                createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
+              })) as Review[];
 
-          unsubscribeFollowers = onSnapshot(followersQuery, async (snapshot) => {
-            const count = snapshot.size;
-            setFollowerCount(count);
-            if (resolvedUser && resolvedUser.stats?.followers !== count) {
-              await updateDoc(doc(db, "users", resolvedUser.uid), {
-                "stats.followers": count
-              }).catch(e => console.warn("Silent sync failed:", e));
-            }
-          });
+              if (reviewsData.length > 0) {
+                const map = new Map<string, Review>();
+                supaReviews.forEach(r => map.set(r.id, r));
+                reviewsData.forEach(r => map.set(r.id, r));
+                setReviews(Array.from(map.values()));
+              }
+            }, () => {});
+          } catch {}
         } else {
           setLoading(false);
         }

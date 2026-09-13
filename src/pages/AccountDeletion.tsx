@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { Trash2, ShieldAlert, CheckCircle2, Mail, ChevronLeft, AlertCircle, Loader2, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { db, auth } from "../firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { submitDeletionRequest } from "../services/supabaseService";
 import { toast } from "sonner";
 import { useAuth } from "../App";
 
@@ -23,13 +22,11 @@ export function AccountDeletion() {
 
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, "deletion_requests"), {
+      await submitDeletionRequest({
         email: email.trim().toLowerCase(),
-        username: username.trim().toLowerCase() || null,
+        username: username.trim().toLowerCase() || undefined,
         reason: reason.trim() || "User requested via web portal",
-        userId: user?.uid || null,
-        createdAt: serverTimestamp(),
-        status: "pending"
+        userId: user?.uid || undefined,
       });
       setSubmitted(true);
       toast.success("Account deletion request submitted successfully.");

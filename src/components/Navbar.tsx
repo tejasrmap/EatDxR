@@ -6,8 +6,7 @@ import { CravingUploadModal } from "./CravingUploadModal";
 import { SearchOverlay } from "./SearchOverlay";
 import { AIFoodAssistant } from "./AIFoodAssistant";
 import { useAuth } from "../App";
-import { collection, query, where, onSnapshot, doc, updateDoc } from "firebase/firestore";
-import { db } from "../firebase";
+import { subscribeToNotifications, markNotificationRead } from "../services/supabaseService";
 import { AppNotification } from "../types";
 import { formatDistanceToNow } from "date-fns";
 import { SettingsOverlay } from "./SettingsOverlay";
@@ -53,19 +52,12 @@ export function Navbar() {
       setNotifications([]);
       return;
     }
-    const q = query(collection(db, "notifications"), where("recipientId", "==", user.uid));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const notifsData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as AppNotification[];
-      notifsData.sort((a, b) => {
-        const timeA = a.createdAt?.toMillis?.() || 0;
-        const timeB = b.createdAt?.toMillis?.() || 0;
-        return timeB - timeA;
-      });
+    const sub = subscribeToNotifications(user.uid, (notifsData) => {
       setNotifications(notifsData);
-    }, (error) => {
-      console.warn("Notifications subscription error:", error.message);
     });
-    return unsubscribe;
+    return () => {
+      sub.unsubscribe();
+    };
   }, [user]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -74,13 +66,15 @@ export function Navbar() {
     setShowNotifMenu(false);
     if (!notif.read) {
       try {
-        await updateDoc(doc(db, "notifications", notif.id), { read: true });
+        await markNotificationRead(notif.id);
+        setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
       } catch (error) {
         console.error("Failed to mark notification read", error);
       }
     }
     navigate(`/profile/${notif.actorId}`);
   };
+
 
   return (
     <>
@@ -221,7 +215,11 @@ export function Navbar() {
                 {/* Notifications */}
                 <div className="relative">
                   <button 
-                    onClick={() => setShowNotifMenu(!showNotifMenu)}
+                    onClick={() => {
+                      setShowNotifMenu(!showNotifMenu);
+                      setShowUserMenu(false);
+                      setShowActionMenu(false);
+                    }}
                     className="p-2 text-muted-foreground hover:text-foreground transition-colors relative rounded-full hover:bg-muted"
                   >
                     <Bell size={18} />
@@ -229,6 +227,70 @@ export function Navbar() {
                       <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-orange-500" />
                     )}
                   </button>
+
+                  <AnimatePresence>
+                    {showNotifMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute top-full right-0 mt-3 w-80 bg-background border border-border shadow-2xl py-3 rounded-2xl z-[350] overflow-hidden"
+                      >
+                        <div className="px-4 pb-2 border-b border-border/50 flex items-center justify-between">
+                          <span className="text-xs font-black uppercase tracking-wider text-foreground">Notifications</span>
+                          {unreadCount > 0 && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">
+                              {unreadCount} new
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="max-h-72 overflow-y-auto divide-y divide-border/20">
+                          {notifications.length === 0 ? (
+                            <div className="p-6 text-center text-xs text-muted-foreground">
+                              No notifications yet
+                            </div>
+                          ) : (
+                            notifications.map((n) => (
+                              <button
+                                key={n.id}
+                                onClick={() => handleNotificationClick(n)}
+                                className={`w-full p-3 text-left flex items-start gap-3 hover:bg-muted/50 transition-colors ${!n.read ? 'bg-orange-500/5' : ''}`}
+                              >
+                                <img
+                                  src={n.actorPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(n.actorName || 'User')}&background=random`}
+                                  alt=""
+                                  className="w-8 h-8 rounded-full object-cover shrink-0 mt-0.5"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs text-foreground leading-tight">
+                                    <span className="font-bold">{n.actorName}</span>{' '}
+                                    <span className="text-muted-foreground">
+                                      {n.type === 'LIKE' && 'liked your review'}
+                                      {n.type === 'COMMENT' && 'commented on your review'}
+                                      {n.type === 'FOLLOW' && 'started following you'}
+                                    </span>
+                                  </p>
+                                  <span className="text-[10px] text-muted-foreground/70 mt-1 block">
+                                    {n.createdAt ? (
+                                      typeof n.createdAt === 'string'
+                                        ? formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })
+                                        : n.createdAt?.toDate
+                                          ? formatDistanceToNow(n.createdAt.toDate(), { addSuffix: true })
+                                          : 'recently'
+                                    ) : 'recently'}
+                                  </span>
+                                </div>
+                                {!n.read && (
+                                  <span className="w-2 h-2 rounded-full bg-orange-500 shrink-0 mt-1.5" />
+                                )}
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 {/* User Menu */}

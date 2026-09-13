@@ -11,7 +11,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { toast } from "sonner";
 import { searchRestaurants } from "../services/mapsService";
 import { RestaurantSearchResult } from "../types";
-import { uploadMedia } from "../services/supabaseService";
+import { uploadMedia, createReview, createCraving, upsertProfile } from "../services/supabaseService";
 
 const reelSchema = z.object({
   restaurant: z.string().min(1, "Restaurant is required"),
@@ -137,36 +137,63 @@ export function ReelUploadModal({ isOpen, onClose }: ReelUploadModalProps) {
         });
       }
 
-      const reviewRef = doc(collection(db, "reviews"));
-          
-          await setDoc(reviewRef, {
-            id: reviewRef.id,
-            userId: user.uid,
-            userName: dishdUser?.displayName || user.displayName || "Critic",
-            userPhoto: dishdUser?.photoURL || user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`,
-            restaurantName: data.restaurant,
-            restaurantId: selectedRestaurant?.id || `manual_rest_${Date.now()}`,
-            restaurantLocation: manualLocation,
-            content: data.diary,
-            rating: data.rating,
-            videoUrl: videoUrl,
-            dishes: data.dishes,
-            type: "reel",
-            createdAt: serverTimestamp(),
-            likes: 0
-          });
+      const reviewId = `reel-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+      const restId = selectedRestaurant?.id || `manual_rest_${Date.now()}`;
+      
+      const newReview = {
+        id: reviewId,
+        userId: user.uid,
+        userName: dishdUser?.displayName || user.displayName || "Critic",
+        userPhoto: dishdUser?.photoURL || user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`,
+        restaurantName: data.restaurant,
+        restaurantId: restId,
+        restaurantLocation: manualLocation,
+        content: data.diary,
+        rating: data.rating,
+        videoUrl: videoUrl,
+        dishes: data.dishes,
+        type: "reel" as const,
+        likes: 0
+      };
 
-          // Correct the stats path
-          const userRef = doc(db, "users", user.uid);
-          await updateDoc(userRef, { "stats.mealsLogged": increment(1) });
+      // 1. Primary: Save to Supabase
+      await createReview(newReview);
+      await createCraving({
+        ...newReview,
+        attachedDish: data.dishes?.[0]?.name || data.restaurant
+      });
+
+      // 2. Update Supabase profile stats
+      if (dishdUser) {
+        await upsertProfile({
+          uid: user.uid,
+          stats: {
+            ...dishdUser.stats,
+            mealsLogged: (dishdUser.stats?.mealsLogged || 0) + 1
+          }
+        });
+      }
+
+      // 3. Mirror to Firebase for backward compatibility
+      try {
+        const reviewRef = doc(db, "reviews", reviewId);
+        await setDoc(reviewRef, {
+          ...newReview,
+          createdAt: serverTimestamp()
+        });
+        const userRef = doc(db, "users", user.uid);
+        await updateDoc(userRef, { "stats.mealsLogged": increment(1) }).catch(() => {});
+      } catch (fbErr) {
+        console.warn("Notice mirroring reel to Firebase:", fbErr);
+      }
           
-          toast.success("Reel Narrative Live!");
-          onClose();
-          reset();
-          setStage("CLIP");
-          setVideoFile(null);
-          setVideoPreview(null);
-          setIsUploading(false);
+      toast.success("Reel Narrative Live!");
+      onClose();
+      reset();
+      setStage("CLIP");
+      setVideoFile(null);
+      setVideoPreview(null);
+      setIsUploading(false);
     } catch (error) {
       console.error(error);
       setIsUploading(false);

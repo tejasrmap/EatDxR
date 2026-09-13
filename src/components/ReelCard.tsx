@@ -10,6 +10,7 @@ import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTim
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { CommentModal } from "./CommentModal";
+import { toggleLike as toggleSupabaseLike, toggleFollow as toggleSupabaseFollow } from "../services/supabaseService";
 
 interface ReelCardProps {
   review: Review;
@@ -66,10 +67,11 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
       return;
     }
 
-    const likeId = `like_${currentUser.uid}_${review.id}`;
-    const likeRef = doc(db, "interactions", likeId);
-    
     try {
+      await toggleSupabaseLike(review.id, 'review', currentUser.uid);
+
+      const likeId = `like_${currentUser.uid}_${review.id}`;
+      const likeRef = doc(db, "interactions", likeId);
       if (hasLiked) {
         await deleteDoc(likeRef);
       } else {
@@ -95,31 +97,44 @@ export const ReelCard: React.FC<ReelCardProps> = ({ review }) => {
     
     setIsUpdatingFollow(true);
     try {
-      const currentUserRef = doc(db, "users", currentUser.uid);
-      const targetUserRef = doc(db, "users", review.userId);
-      const notifId = `${currentUser.uid}_${review.userId}_FOLLOW`;
-      
-      if (isFollowing) {
-        await updateDoc(currentUserRef, { "stats.followingList": arrayRemove(review.userId) });
-        await updateDoc(currentUserRef, { "stats.following": increment(-1) });
-        await updateDoc(targetUserRef, { "stats.followers": increment(-1) });
-        await deleteDoc(doc(db, "notifications", notifId)).catch(() => {});
-        toast.success(`Unfollowed ${review.userName}`);
-      } else {
-        await updateDoc(currentUserRef, { "stats.followingList": arrayUnion(review.userId) });
-        await updateDoc(currentUserRef, { "stats.following": increment(1) });
-        await updateDoc(targetUserRef, { "stats.followers": increment(1) });
-        await setDoc(doc(db, "notifications", notifId), {
-          id: notifId,
-          recipientId: review.userId,
-          actorId: currentUser.uid,
-          actorName: currentUser.displayName,
-          actorPhoto: currentUser.photoURL,
-          type: "FOLLOW",
-          read: false,
-          createdAt: serverTimestamp()
-        });
-        toast.success(`Following ${review.userName}`);
+      const newFollowStatus = await toggleSupabaseFollow(
+        currentUser.uid,
+        review.userId,
+        isFollowing,
+        {
+          name: currentUser.displayName || undefined,
+          photo: currentUser.photoURL || undefined
+        }
+      );
+
+      setIsFollowing(newFollowStatus);
+      toast.success(newFollowStatus ? `Following ${review.userName}` : `Unfollowed ${review.userName}`);
+
+      // Legacy Firebase sync
+      try {
+        const currentUserRef = doc(db, "users", currentUser.uid);
+        const targetUserRef = doc(db, "users", review.userId);
+        const notifId = `${currentUser.uid}_${review.userId}_FOLLOW`;
+        if (!newFollowStatus) {
+          await updateDoc(currentUserRef, { "stats.followingList": arrayRemove(review.userId), "stats.following": increment(-1) });
+          await updateDoc(targetUserRef, { "stats.followers": increment(-1) });
+          await deleteDoc(doc(db, "notifications", notifId)).catch(() => {});
+        } else {
+          await updateDoc(currentUserRef, { "stats.followingList": arrayUnion(review.userId), "stats.following": increment(1) });
+          await updateDoc(targetUserRef, { "stats.followers": increment(1) });
+          await setDoc(doc(db, "notifications", notifId), {
+            id: notifId,
+            recipientId: review.userId,
+            actorId: currentUser.uid,
+            actorName: currentUser.displayName,
+            actorPhoto: currentUser.photoURL,
+            type: "FOLLOW",
+            read: false,
+            createdAt: serverTimestamp()
+          });
+        }
+      } catch (fbErr) {
+        console.warn("Notice mirroring follow to Firebase:", fbErr);
       }
     } catch (error) {
       console.error("Error following:", error);

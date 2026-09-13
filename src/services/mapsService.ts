@@ -1,6 +1,5 @@
 import { Restaurant, RestaurantSearchResult } from "../types";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
+import { getRestaurants } from "./supabaseService";
 import { GLOBAL_RESTAURANTS, GLOBAL_CITIES, GlobalRestaurant } from "../data/globalRestaurants";
 import { getDistanceKM } from "../lib/distance";
 
@@ -9,14 +8,14 @@ const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || "";
 // In-memory caches for high-speed zero-lag lookups
 const searchCache = new Map<string, RestaurantSearchResult[]>();
 const cityCache = new Map<string, string>();
-let cachedFirebaseRestaurants: RestaurantSearchResult[] | null = null;
+let cachedRestaurants: RestaurantSearchResult[] | null = null;
 
 /**
- * Preload and merge Firebase custom added restaurants with the Global Restaurant dataset
+ * Preload and merge Supabase custom added restaurants with the Global Restaurant dataset
  */
 export async function preloadAllRestaurants(): Promise<RestaurantSearchResult[]> {
-  if (cachedFirebaseRestaurants && cachedFirebaseRestaurants.length > 0) {
-    return cachedFirebaseRestaurants;
+  if (cachedRestaurants && cachedRestaurants.length > 0) {
+    return cachedRestaurants;
   }
 
   const globalFormatted: RestaurantSearchResult[] = GLOBAL_RESTAURANTS.map(gr => ({
@@ -34,32 +33,29 @@ export async function preloadAllRestaurants(): Promise<RestaurantSearchResult[]>
   } as RestaurantSearchResult & { lat?: number; lng?: number; rating?: number; priceLevel?: string }));
 
   try {
-    const snap = await getDocs(collection(db, "restaurants"));
-    const fbList = snap.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: data.id || doc.id,
-        name: data.name,
-        location: data.location || "Unknown",
-        city: data.city || (data.location ? data.location.split(',').pop()?.trim() : "Unknown"),
-        cuisine: data.cuisine || "Various",
-        menuItems: data.menuItems || data.signatureDishes || [],
-        image: data.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80",
-        lat: data.lat,
-        lng: data.lng,
-        rating: data.rating || 4.5,
-        priceLevel: data.priceLevel || "₹₹"
-      } as RestaurantSearchResult;
-    });
+    const supaList = await getRestaurants(undefined, 200);
+    const formattedList: RestaurantSearchResult[] = supaList.map(r => ({
+      id: r.id,
+      name: r.name,
+      location: r.location || "Unknown",
+      city: r.city || (r.location ? r.location.split(',').pop()?.trim() : "Unknown"),
+      cuisine: r.cuisine || "Various",
+      menuItems: (r as any).menuItems || (r as any).signatureDishes || [],
+      image: r.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80",
+      lat: (r as any).lat,
+      lng: (r as any).lng,
+      rating: r.rating || 4.5,
+      priceLevel: r.priceLevel || "₹₹"
+    }));
 
     // Merge without duplicates
-    const idSet = new Set(fbList.map(r => r.id));
-    const merged = [...fbList, ...globalFormatted.filter(r => !idSet.has(r.id))];
-    cachedFirebaseRestaurants = merged;
+    const idSet = new Set(formattedList.map(r => r.id));
+    const merged = [...formattedList, ...globalFormatted.filter(r => !idSet.has(r.id))];
+    cachedRestaurants = merged;
     return merged;
   } catch (e) {
-    console.warn("Firestore unavailable, using offline global directory", e);
-    cachedFirebaseRestaurants = globalFormatted;
+    console.warn("Supabase restaurants unavailable, using offline global directory", e);
+    cachedRestaurants = globalFormatted;
     return globalFormatted;
   }
 }

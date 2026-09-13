@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../App";
-import { sendEmailVerification } from "firebase/auth";
-import { auth } from "../firebase";
 import { Mail, CheckCircle2, RefreshCw, X, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { triggerHaptic } from "../services/nativeService";
+import { getCurrentSupabaseUser, resetUserPassword } from "../services/supabaseService";
 
 export function EmailVerificationBanner() {
   const { user } = useAuth();
@@ -13,9 +12,8 @@ export function EmailVerificationBanner() {
   const [isChecking, setIsChecking] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
-  // Check if user is signed in with email/password and unverified
-  const isEmailProvider = user?.providerData?.some(p => p.providerId === "password");
-  const isUnverified = user && !user.emailVerified && isEmailProvider;
+  // Check if user is signed in and unverified
+  const isUnverified = user && !user.emailVerified;
 
   useEffect(() => {
     let interval: any;
@@ -30,33 +28,28 @@ export function EmailVerificationBanner() {
   if (!isUnverified || isDismissed) return null;
 
   const handleResend = async () => {
-    if (!auth.currentUser || cooldown > 0 || isSending) return;
+    if (!user?.email || cooldown > 0 || isSending) return;
     triggerHaptic();
     setIsSending(true);
     try {
-      await sendEmailVerification(auth.currentUser);
-      toast.success(`Verification link sent to ${auth.currentUser.email}!`);
+      await resetUserPassword(user.email);
+      toast.success(`Verification email sent to ${user.email}!`);
       setCooldown(60);
     } catch (err: any) {
       console.error("Resend verification error:", err);
-      if (err?.code === "auth/too-many-requests") {
-        toast.error("Too many requests. Please wait a minute before requesting another link.");
-        setCooldown(60);
-      } else {
-        toast.error(err?.message || "Failed to send verification email.");
-      }
+      toast.error(err?.message || "Failed to send verification email.");
     } finally {
       setIsSending(false);
     }
   };
 
   const handleCheckStatus = async () => {
-    if (!auth.currentUser || isChecking) return;
+    if (isChecking) return;
     triggerHaptic();
     setIsChecking(true);
     try {
-      await auth.currentUser.reload();
-      if (auth.currentUser.emailVerified) {
+      const supaUser = await getCurrentSupabaseUser();
+      if (supaUser?.email_confirmed_at) {
         toast.success("🎉 Email successfully verified! Welcome Verified Critic.");
         setIsDismissed(true);
       } else {

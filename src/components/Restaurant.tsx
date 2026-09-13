@@ -12,6 +12,7 @@ import { LogMealModal } from "./LogMealModal";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic } from "../services/nativeService";
 import { getShareUrl } from "../utils/shareUrl";
+import { getRestaurantById, getReviews, toggleLike as toggleSupabaseLike, upsertProfile } from "../services/supabaseService";
 
 export const Restaurant: React.FC = () => {
   const { restaurantId } = useParams<{ restaurantId: string }>();
@@ -114,14 +115,27 @@ export const Restaurant: React.FC = () => {
     
     setIsUpdatingEatlist(true);
     try {
-      const userRef = doc(db, "users", user.uid);
-      if (isInEatlist) {
-        await updateDoc(userRef, { eatlist: arrayRemove(restaurantId) });
-        toast.success("Removed from your Eatlist!");
-      } else {
-        await updateDoc(userRef, { eatlist: arrayUnion(restaurantId) });
-        toast.success("Added to your Eatlist!");
+      if (dishdUser) {
+        const currentEatlist = dishdUser.eatlist || [];
+        const nextEatlist = isInEatlist
+          ? currentEatlist.filter(id => id !== restaurantId)
+          : [...currentEatlist, restaurantId];
+        await upsertProfile({
+          uid: user.uid,
+          eatlist: nextEatlist
+        });
       }
+
+      try {
+        const userRef = doc(db, "users", user.uid);
+        if (isInEatlist) {
+          await updateDoc(userRef, { eatlist: arrayRemove(restaurantId) });
+        } else {
+          await updateDoc(userRef, { eatlist: arrayUnion(restaurantId) });
+        }
+      } catch {}
+
+      toast.success(isInEatlist ? "Removed from your Eatlist!" : "Added to your Eatlist!");
     } catch (error) {
       console.error("Error updating eatlist:", error);
       toast.error("Failed to update Eatlist");
@@ -138,19 +152,32 @@ export const Restaurant: React.FC = () => {
     
     setIsUpdatingLike(true);
     try {
-      const userRef = doc(db, "users", user.uid);
-      const restaurantRef = doc(db, "restaurants", restaurantId);
-      
-      if (hasLiked) {
-        await updateDoc(userRef, { likes: arrayRemove(restaurantId) });
-        await updateDoc(restaurantRef, { likesCount: increment(-1) });
-        toast.success("Removed from your likes");
-      } else {
-        await updateDoc(userRef, { likes: arrayUnion(restaurantId) });
-        await updateDoc(restaurantRef, { likesCount: increment(1) });
-        toast.success("Added to your likes!");
+      await toggleSupabaseLike(restaurantId, 'restaurant', user.uid);
+
+      if (dishdUser) {
+        const currentLikes = dishdUser.likes || [];
+        const nextLikes = hasLiked
+          ? currentLikes.filter(id => id !== restaurantId)
+          : [...currentLikes, restaurantId];
+        await upsertProfile({
+          uid: user.uid,
+          likes: nextLikes
+        });
       }
 
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const restaurantRef = doc(db, "restaurants", restaurantId);
+        if (hasLiked) {
+          await updateDoc(userRef, { likes: arrayRemove(restaurantId) });
+          await updateDoc(restaurantRef, { likesCount: increment(-1) });
+        } else {
+          await updateDoc(userRef, { likes: arrayUnion(restaurantId) });
+          await updateDoc(restaurantRef, { likesCount: increment(1) });
+        }
+      } catch {}
+
+      toast.success(hasLiked ? "Removed from your likes" : "Added to your likes!");
       setRestaurant(prev => prev ? { 
         ...prev, 
         likesCount: (prev.likesCount || 0) + (hasLiked ? -1 : 1) 
@@ -167,44 +194,68 @@ export const Restaurant: React.FC = () => {
   useEffect(() => {
     if (!restaurantId) return;
 
-    const fetchRestaurant = async () => {
+    let isMounted = true;
+    const fetchRestaurantData = async () => {
       try {
-        const restaurantDoc = await getDoc(doc(db, "restaurants", restaurantId));
-        if (restaurantDoc.exists()) {
-          setRestaurant(restaurantDoc.data() as RestaurantType);
+        // 1. Fetch restaurant from Supabase
+        const supaRest = await getRestaurantById(restaurantId);
+        if (!isMounted) return;
+        if (supaRest) {
+          setRestaurant(supaRest);
+        } else {
+          // Fallback check
+          const restaurantDoc = await getDoc(doc(db, "restaurants", restaurantId)).catch(() => null);
+          if (restaurantDoc && restaurantDoc.exists() && isMounted) {
+            setRestaurant(restaurantDoc.data() as RestaurantType);
+          }
         }
+
+        // 2. Fetch reviews from Supabase
+        const supaReviews = await getReviews(restaurantId);
+        if (!isMounted) return;
+        setReviews(supaReviews);
+        setLoading(false);
       } catch (error) {
-        console.error("Error fetching restaurant:", error);
+        console.error("Error fetching restaurant data:", error);
+        if (isMounted) setLoading(false);
       }
     };
 
-    fetchRestaurant();
+    fetchRestaurantData();
 
-    const q = query(
-      collection(db, "reviews"),
-      where("restaurantId", "==", restaurantId)
-    );
+    // 3. Fallback live listener for reviews from Firestore
+    try {
+      const q = query(
+        collection(db, "reviews"),
+        where("restaurantId", "==", restaurantId)
+      );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const reviewsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Review[];
-      
-      reviewsData.sort((a, b) => {
-        const timeA = a.createdAt?.toMillis?.() || 0;
-        const timeB = b.createdAt?.toMillis?.() || 0;
-        return timeB - timeA;
-      });
-      
-      setReviews(reviewsData);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching restaurant reviews:", error);
-      setLoading(false);
-    });
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        if (!isMounted) return;
+        const reviewsData = snapshot.docs.map(d => ({
+          id: d.id,
+          ...d.data()
+        })) as Review[];
 
-    return () => unsubscribe();
+        if (reviewsData.length > 0) {
+          reviewsData.sort((a, b) => {
+            const timeA = (a.createdAt as any)?.toMillis?.() || new Date(a.createdAt || 0).getTime();
+            const timeB = (b.createdAt as any)?.toMillis?.() || new Date(b.createdAt || 0).getTime();
+            return timeB - timeA;
+          });
+          setReviews(reviewsData);
+        }
+      }, () => {});
+
+      return () => {
+        isMounted = false;
+        unsubscribe();
+      };
+    } catch {
+      return () => {
+        isMounted = false;
+      };
+    }
   }, [restaurantId]);
 
   if (loading) {

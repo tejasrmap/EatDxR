@@ -38,6 +38,7 @@ import { DiaryEntryModal } from "./DiaryEntryModal";
 import { StoryCardModal } from "./StoryCardModal";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic } from "../services/nativeService";
+import { deleteReview, toggleLike as toggleSupabaseLike, addComment } from "../services/supabaseService";
 import { formatDistanceToNow } from "date-fns";
 import { parseFirebaseDate } from "../lib/utils";
 import { motion, AnimatePresence } from "motion/react";
@@ -102,6 +103,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
     if (!window.confirm("Are you sure you want to delete this diary entry? This action cannot be undone.")) return;
     
     try {
+      await deleteReview(review.id);
+
       const interactionsQuery = query(collection(db, "interactions"), where("reviewId", "==", review.id));
       const interactionsSnap = await getDocs(interactionsQuery);
       const deletePromises = interactionsSnap.docs.map(docSnap => deleteDoc(doc(db, "interactions", docSnap.id)));
@@ -184,6 +187,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
     }
 
     try {
+      await toggleSupabaseLike(review.id, 'review', currentUser.uid);
+
       const likeRef = doc(db, "interactions", likeId);
       if (!willLike) {
         await deleteDoc(likeRef);
@@ -230,7 +235,18 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
     if (!newComment.trim()) return;
 
     setIsCommentLoading(true);
+    const commentText = newComment.trim();
+
     try {
+      await addComment({
+        targetId: review.id,
+        targetType: "review",
+        userId: currentUser.uid,
+        userName: currentUser.displayName || "Critic",
+        userPhoto: currentUser.photoURL || undefined,
+        text: commentText
+      });
+
       const commentRef = doc(collection(db, "interactions"));
       await setDoc(commentRef, {
         id: commentRef.id,
@@ -239,7 +255,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
         userName: currentUser.displayName,
         userPhoto: currentUser.photoURL,
         type: "COMMENT",
-        content: newComment.trim(),
+        content: commentText,
         createdAt: serverTimestamp()
       });
 

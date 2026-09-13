@@ -9,6 +9,7 @@ import { useAuth } from "../App";
 import { toast } from "sonner";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic } from "../services/nativeService";
+import { getLists, createList } from "../services/supabaseService";
 
 export function FoodLists() {
   const { user, dishdUser, login } = useAuth();
@@ -27,27 +28,28 @@ export function FoodLists() {
   const [listItems, setListItems] = useState<{ id: string; name: string; type: "restaurant" | "dish"; note?: string }[]>([]);
 
   useEffect(() => {
-    const q = query(
-      collection(db, "lists"),
-      orderBy("createdAt", "desc"),
-      limit(20)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetched = snapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id
-      })) as FoodList[];
-
-      setLists(fetched);
-      setLoading(false);
-    }, (err) => {
-      console.warn("Lists fetch notice:", err);
-      setLists([]);
-      setLoading(false);
-    });
-
-    return unsubscribe;
+    getLists().then(supaLists => {
+      if (supaLists && supaLists.length > 0) {
+        setLists(supaLists);
+        setLoading(false);
+      } else {
+        // Fallback to Firestore lists if empty
+        const q = query(
+          collection(db, "lists"),
+          orderBy("createdAt", "desc"),
+          limit(20)
+        );
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+          const fetched = snapshot.docs.map(doc => ({
+            ...doc.data(),
+            id: doc.id
+          })) as FoodList[];
+          setLists(fetched);
+          setLoading(false);
+        }, () => setLoading(false));
+        return () => unsubscribe();
+      }
+    }).catch(() => setLoading(false));
   }, []);
 
   const tags = ["All", "Biryani", "Under ₹500", "Date Night", "Coffee", "Street Food", "Hyderabad"];
@@ -78,9 +80,9 @@ export function FoodLists() {
     }
 
     try {
-      const listRef = doc(collection(db, "lists"));
+      const newListId = `list-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       const newList: FoodList = {
-        id: listRef.id,
+        id: newListId,
         userId: user.uid,
         userName: dishdUser?.displayName || user.displayName || "Critic",
         userPhoto: dishdUser?.photoURL || user.photoURL || "",
@@ -94,10 +96,19 @@ export function FoodLists() {
         ],
         likes: 1,
         tags: ["Community", "Curated"],
-        createdAt: serverTimestamp()
+        createdAt: new Date().toISOString()
       };
 
-      await setDoc(listRef, newList);
+      // 1. Primary: Save to Supabase
+      await createList(newList);
+      setLists(prev => [newList, ...prev]);
+
+      // 2. Mirror to Firestore
+      try {
+        const listRef = doc(db, "lists", newListId);
+        await setDoc(listRef, { ...newList, createdAt: serverTimestamp() });
+      } catch {}
+
       toast.success("Curated list published!");
       setIsCreateModalOpen(false);
       setNewTitle("");

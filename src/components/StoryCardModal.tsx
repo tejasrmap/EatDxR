@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { safeFormatDate } from "../lib/utils";
 import { triggerHaptic } from "../services/nativeService";
 import { generateReviewStoryBlob, StoryTheme } from "../utils/storyCanvasGenerator";
+import { getShareUrl, openInstagramStoryDirect } from "../utils/shareUrl";
 
 interface StoryCardModalProps {
   isOpen: boolean;

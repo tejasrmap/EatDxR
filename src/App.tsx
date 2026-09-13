@@ -9,12 +9,18 @@ import { ThemeProvider } from "./components/ThemeProvider";
 import { AdminSeed } from "./components/AdminSeed";
 import { Toaster, toast } from "sonner";
 import { User as DishdUser } from "./types";
-import { auth, db } from "./firebase";
-import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, User as FirebaseUser } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth } from "./firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { EditProfileModal } from "./components/EditProfileModal";
 import { isNative } from "./services/nativeService";
-import { getProfile, upsertProfile } from "./services/supabaseService";
+import { 
+  getProfile, 
+  upsertProfile, 
+  ensureProfile, 
+  onSupabaseAuthStateChange, 
+  getCurrentSession, 
+  signOutUser 
+} from "./services/supabaseService";
 
 // Website Components
 import { WebsiteLayout } from "./components/website/WebsiteLayout";
@@ -90,8 +96,17 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 import { AuthModal } from "./components/AuthModal";
 
 // --- Auth Context ---
+export interface AuthUser {
+  uid: string;
+  id: string;
+  email?: string | null;
+  displayName?: string | null;
+  photoURL?: string | null;
+  emailVerified?: boolean;
+}
+
 interface AuthContextType {
-  user: FirebaseUser | null;
+  user: AuthUser | null;
   dishdUser: DishdUser | null;
   loading: boolean;
   login: (redirectUrl?: string) => void;
@@ -111,7 +126,7 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [dishdUser, setDishdUser] = useState<DishdUser | null>(() => {
     try {
       const cached = localStorage.getItem("madeater_dishd_user");
@@ -126,87 +141,144 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [onboardingDismissed, setOnboardingDismissed] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        try {
-          // 1. Primary: Check Firebase Firestore `users` collection
-          const userDocRef = doc(db, "users", currentUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
+    let isMounted = true;
 
-          if (userDocSnap.exists()) {
-            const firestoreUser = userDocSnap.data() as DishdUser;
-            setDishdUser(firestoreUser);
-            localStorage.setItem("madeater_dishd_user", JSON.stringify(firestoreUser));
-          } else {
-            // 2. Secondary check: Supabase profiles
-            const supabaseUser = await getProfile(currentUser.uid);
-            if (supabaseUser) {
-              setDishdUser(supabaseUser);
-              localStorage.setItem("madeater_dishd_user", JSON.stringify(supabaseUser));
-              // Sync back to Firebase Firestore
-              await setDoc(userDocRef, supabaseUser, { merge: true });
-            } else {
-              // 3. New User: Create full profile in Firebase Firestore & sync to Supabase
-              const defaultUsername = currentUser.displayName
-                ? currentUser.displayName.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 15)
-                : `critic_${currentUser.uid.slice(0, 6)}`;
-              const newUser: DishdUser = {
-                uid: currentUser.uid,
-                displayName: currentUser.displayName || "Food Lover",
-                email: currentUser.email || "",
-                photoURL: currentUser.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.uid}`,
-                username: defaultUsername,
-                bio: "Food critic on Madeater",
-                tasteDNA: {
-                  spice: 60,
-                  indian: 75,
-                  nonVeg: 50,
-                  asian: 40,
-                  desserts: 50,
-                  coffee: 70,
-                  personaTitle: "The Flavor Explorer"
-                },
-                stats: {
-                  mealsLogged: 0,
-                  reviewsWritten: 0,
-                  followers: 0,
-                  following: 0,
-                  followingList: []
-                },
-                createdAt: new Date().toISOString()
-              };
-              // Save directly to Firebase Firestore
-              await setDoc(userDocRef, newUser, { merge: true });
-              // Sync to Supabase
-              await upsertProfile(newUser);
-              setDishdUser(newUser);
-              localStorage.setItem("madeater_dishd_user", JSON.stringify(newUser));
-            }
+    const syncUser = async (sessionUser: any) => {
+      if (!sessionUser) {
+        // Also check if fallback firebase user is signed in
+        if (auth.currentUser) {
+          const fb = auth.currentUser;
+          const mapped: AuthUser = {
+            uid: fb.uid,
+            id: fb.uid,
+            email: fb.email,
+            displayName: fb.displayName,
+            photoURL: fb.photoURL,
+            emailVerified: fb.emailVerified
+          };
+          if (!isMounted) return;
+          setUser(mapped);
+          let profile = await getProfile(fb.uid);
+          if (!profile) {
+            await ensureProfile(fb.uid, fb.displayName || undefined, fb.photoURL || undefined, fb.email || undefined);
+            profile = await getProfile(fb.uid);
           }
-        } catch (error) {
-          console.error("Error fetching user profile from Firebase Firestore:", error);
+          if (profile && isMounted) {
+            setDishdUser(profile);
+            localStorage.setItem("madeater_dishd_user", JSON.stringify(profile));
+          }
+          if (isMounted) setLoading(false);
+          return;
         }
-      } else {
-        // Not logged in: Automatically open login directly on first launch so user signs in once and stays logged in forever
-        const prompted = sessionStorage.getItem("madeater_initial_login_prompted");
-        if (!prompted) {
-          sessionStorage.setItem("madeater_initial_login_prompted", "true");
-          setTimeout(() => {
-            setIsAuthModalOpen(true);
-          }, 400);
+
+        if (isMounted) {
+          setUser(null);
+          setDishdUser(null);
+          localStorage.removeItem("madeater_dishd_user");
+          setLoading(false);
+
+          const prompted = sessionStorage.getItem("madeater_initial_login_prompted");
+          if (!prompted) {
+            sessionStorage.setItem("madeater_initial_login_prompted", "true");
+            setTimeout(() => {
+              if (isMounted) setIsAuthModalOpen(true);
+            }, 400);
+          }
         }
+        return;
       }
-      setLoading(false);
+
+      const mapped: AuthUser = {
+        uid: sessionUser.id,
+        id: sessionUser.id,
+        email: sessionUser.email,
+        displayName: sessionUser.user_metadata?.display_name || sessionUser.user_metadata?.full_name || sessionUser.email?.split('@')[0] || "Food Lover",
+        photoURL: sessionUser.user_metadata?.avatar_url || sessionUser.user_metadata?.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${sessionUser.id}`,
+        emailVerified: !!sessionUser.email_confirmed_at
+      };
+
+      if (!isMounted) return;
+      setUser(mapped);
+
+      try {
+        let profile = await getProfile(sessionUser.id);
+        if (!profile) {
+          const defaultUsername = (mapped.displayName || 'critic').toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 15);
+          const newUser: DishdUser = {
+            uid: sessionUser.id,
+            displayName: mapped.displayName || "Food Lover",
+            email: sessionUser.email || "",
+            photoURL: mapped.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${sessionUser.id}`,
+            username: defaultUsername,
+            bio: "Food critic on Madeater",
+            tasteDNA: {
+              spice: 60,
+              indian: 75,
+              nonVeg: 50,
+              asian: 40,
+              desserts: 50,
+              coffee: 70,
+              personaTitle: "The Flavor Explorer"
+            },
+            stats: {
+              mealsLogged: 0,
+              reviewsWritten: 0,
+              followers: 0,
+              following: 0,
+              followingList: []
+            },
+            createdAt: new Date().toISOString()
+          };
+          await upsertProfile(newUser);
+          profile = newUser;
+        }
+        if (isMounted) {
+          setDishdUser(profile);
+          localStorage.setItem("madeater_dishd_user", JSON.stringify(profile));
+        }
+      } catch (err) {
+        console.warn("[App] Error syncing Supabase profile:", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    // 1. Check current Supabase session on startup
+    getCurrentSession().then(session => {
+      if (session?.user) {
+        syncUser(session.user);
+      } else {
+        // Fallback check to see if Firebase was active
+        const unsubscribeFb = onAuthStateChanged(auth, (fbUser) => {
+          syncUser(fbUser ? null : null);
+        });
+        return () => unsubscribeFb();
+      }
     });
 
-    return () => unsubscribe();
-  }, []);
+    // 2. Real-time Supabase auth state change subscription
+    const { data: authSub } = onSupabaseAuthStateChange((event, session) => {
+      if (session?.user) {
+        syncUser(session.user);
+      } else if (event === 'SIGNED_OUT') {
+        if (isMounted) {
+          setUser(null);
+          setDishdUser(null);
+          localStorage.removeItem("madeater_dishd_user");
+        }
+      }
+    });
 
+    return () => {
+      isMounted = false;
+      authSub?.subscription?.unsubscribe();
+    };
+  }, []);
 
   const logout = async () => {
     try {
-      await signOut(auth);
+      await signOutUser();
+      await signOut(auth).catch(() => {});
       setDishdUser(null);
       setUser(null);
       localStorage.removeItem("madeater_dishd_user");

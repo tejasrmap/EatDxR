@@ -8,6 +8,7 @@ import { Medal, Star, Users, Loader2, Award, TrendingUp, Search, Trophy, Sparkle
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic } from "../services/nativeService";
 import { CriticQuestsModal } from "./CriticQuestsModal";
+import { getTopCritics } from "../services/supabaseService";
 
 export function Critics() {
   const { getAppUrl } = useAppUrl();
@@ -16,26 +17,28 @@ export function Critics() {
   const [isQuestsOpen, setIsQuestsOpen] = useState(false);
 
   useEffect(() => {
-    const q = query(
-      collection(db, "users"),
-      orderBy("stats.reviewsWritten", "desc"),
-      limit(50)
-    );
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const fetchedUsers = snapshot.docs.map((doc) => doc.data() as User);
-        setCritics(fetchedUsers);
+    getTopCritics(50).then((topCritics) => {
+      if (topCritics && topCritics.length > 0) {
+        setCritics(topCritics);
         setLoading(false);
-      },
-      (error) => {
-        handleFirestoreError(error, OperationType.LIST, "users");
-        setLoading(false);
+      } else {
+        const q = query(
+          collection(db, "users"),
+          orderBy("stats.reviewsWritten", "desc"),
+          limit(50)
+        );
+        const unsubscribe = onSnapshot(
+          q,
+          (snapshot) => {
+            const fetchedUsers = snapshot.docs.map((doc) => doc.data() as User);
+            setCritics(fetchedUsers);
+            setLoading(false);
+          },
+          () => setLoading(false)
+        );
+        return () => unsubscribe();
       }
-    );
-
-    return unsubscribe;
+    }).catch(() => setLoading(false));
   }, []);
 
   const getRankColor = (index: number) => {

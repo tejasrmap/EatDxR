@@ -6,6 +6,7 @@ import { collection, query, where, orderBy, onSnapshot, doc, setDoc, serverTimes
 import { db } from "../firebase";
 import { Interaction, Review } from "../types";
 import { useAuth } from "../App";
+import { getComments, addComment } from "../services/supabaseService";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { parseFirebaseDate } from "../lib/utils";
@@ -39,27 +40,41 @@ export const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, rev
         window.dispatchEvent(new CustomEvent('MODAL_OPEN_STATE_CHANGE', { detail: { isOpen: true, type: 'COMMENT' } }));
     }
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedComments = snapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id
-      })) as Interaction[];
-      setComments(fetchedComments);
-      setLoading(false);
-      
-      // Auto-scroll to bottom on new comments
-      setTimeout(() => {
-        if (scrollRef.current) {
-          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
-      }, 100);
-    }, (error) => {
-      console.error("Comments error:", error);
-      setLoading(false);
-    });
+    // 1. Primary: Fetch comments from Supabase
+    getComments(review.id).then(supaComments => {
+      if (supaComments && supaComments.length > 0) {
+        setComments(supaComments.map(c => ({
+          id: c.id,
+          reviewId: c.targetId,
+          userId: c.userId,
+          userName: c.userName,
+          userPhoto: c.userPhoto,
+          type: "COMMENT",
+          content: c.text,
+          createdAt: c.createdAt
+        } as unknown as Interaction)));
+        setLoading(false);
+      } else {
+        // Fallback to Firestore comments
+        const q = query(
+          collection(db, "interactions"),
+          where("reviewId", "==", review.id),
+          where("type", "==", "COMMENT"),
+          orderBy("createdAt", "asc")
+        );
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+          const fetchedComments = snapshot.docs.map(doc => ({
+            ...doc.data(),
+            id: doc.id
+          })) as Interaction[];
+          setComments(fetchedComments);
+          setLoading(false);
+        }, () => setLoading(false));
+        return () => unsubscribe();
+      }
+    }).catch(() => setLoading(false));
 
     return () => {
-        unsubscribe();
         window.dispatchEvent(new CustomEvent('MODAL_OPEN_STATE_CHANGE', { detail: { isOpen: false, type: 'COMMENT' } }));
     };
   }, [isOpen, review.id]);
@@ -70,38 +85,67 @@ export const CommentModal: React.FC<CommentModalProps> = ({ isOpen, onClose, rev
     if (!newComment.trim()) return;
 
     setIsPosting(true);
-    const commentId = `comment_${currentUser.uid}_${Date.now()}`;
-    const commentRef = doc(db, "interactions", commentId);
+    const commentText = newComment.trim();
 
     try {
-      await setDoc(commentRef, {
-        id: commentId,
-        reviewId: review.id,
+      // 1. Primary: Save comment in Supabase
+      const savedComment = await addComment({
+        targetId: review.id,
+        targetType: "review",
         userId: currentUser.uid,
         userName: currentUser.displayName || "Critic",
-        userPhoto: currentUser.photoURL || "",
-        type: "COMMENT",
-        content: newComment.trim(),
-        createdAt: serverTimestamp()
+        userPhoto: currentUser.photoURL,
+        text: commentText
       });
 
-      // Notification logic: Notify the review owner if someone else comments
-      if (currentUser.uid !== review.userId) {
-        const notifId = `notif_comment_${currentUser.uid}_${Date.now()}`;
-        await setDoc(doc(db, "notifications", notifId), {
-          id: notifId,
-          recipientId: review.userId,
-          actorId: currentUser.uid,
-          actorName: currentUser.displayName || "Critic",
-          actorPhoto: currentUser.photoURL || "",
+      if (savedComment) {
+        setComments(prev => [...prev, {
+          id: savedComment.id,
+          reviewId: review.id,
+          userId: currentUser.uid,
+          userName: currentUser.displayName || "Critic",
+          userPhoto: currentUser.photoURL,
           type: "COMMENT",
-          targetId: review.id,
-          read: false,
+          content: commentText,
+          createdAt: savedComment.createdAt
+        } as unknown as Interaction]);
+      }
+
+      // 2. Mirror to Firestore for legacy sync
+      try {
+        const commentId = `comment_${currentUser.uid}_${Date.now()}`;
+        const commentRef = doc(db, "interactions", commentId);
+        await setDoc(commentRef, {
+          id: commentId,
+          reviewId: review.id,
+          userId: currentUser.uid,
+          userName: currentUser.displayName || "Critic",
+          userPhoto: currentUser.photoURL || "",
+          type: "COMMENT",
+          content: commentText,
           createdAt: serverTimestamp()
         });
+
+        if (currentUser.uid !== review.userId) {
+          const notifId = `notif_comment_${currentUser.uid}_${Date.now()}`;
+          await setDoc(doc(db, "notifications", notifId), {
+            id: notifId,
+            recipientId: review.userId,
+            actorId: currentUser.uid,
+            actorName: currentUser.displayName || "Critic",
+            actorPhoto: currentUser.photoURL || "",
+            type: "COMMENT",
+            targetId: review.id,
+            read: false,
+            createdAt: serverTimestamp()
+          });
+        }
+      } catch (fbErr) {
+        console.warn("Notice mirroring comment to Firebase:", fbErr);
       }
 
       setNewComment("");
+      toast.success("Comment posted!");
     } catch (error) {
       console.error("Post error:", error);
       toast.error("Failed to post comment");

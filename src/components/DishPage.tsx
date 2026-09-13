@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { MOCK_DISHES } from "../data/mockData";
-import { collection, query, limit, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
+import { getCravings } from "../services/supabaseService";
 import { Review } from "../types";
 import { Star, MapPin, ChevronLeft, Flame, Trophy, Utensils, Share2, Plus, Sparkles, ArrowRight, ShieldCheck } from "lucide-react";
 import { motion } from "motion/react";
@@ -29,9 +28,8 @@ export function DishPage() {
 
   useEffect(() => {
     if (!currentDish?.name) return;
-    getDocs(query(collection(db, "reviews"), limit(25))).then((snap) => {
-      const live = snap.docs.map(d => ({ ...d.data(), id: d.id })) as Review[];
-      const matched = live.filter(c => 
+    getCravings().then((cravings) => {
+      const matched = (cravings || []).filter(c => 
         (c.videoUrl || c.type === "craving") && (
           c.attachedDish?.toLowerCase().includes(currentDish.name.toLowerCase()) ||
           currentDish.name.toLowerCase().includes(c.attachedDish?.toLowerCase() || "") ||

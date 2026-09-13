@@ -8,7 +8,7 @@ import { collection, doc, setDoc, updateDoc, serverTimestamp, increment } from "
 import { toast } from "sonner";
 import { searchRestaurants } from "../services/mapsService";
 import { RestaurantSearchResult, CravingTag } from "../types";
-import { createCraving, uploadMedia } from "../services/supabaseService";
+import { createCraving, uploadMedia, upsertProfile } from "../services/supabaseService";
 import { triggerHaptic } from "../services/nativeService";
 
 const CRAVING_TAGS: CravingTag[] = [
@@ -242,7 +242,17 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
         throw new Error("Unable to save craving to remote database. Please check your network connection.");
       }
 
-      // Update user stats
+      // Update user stats in Supabase & Firestore
+      if (dishdUser) {
+        await upsertProfile({
+          uid: user.uid,
+          stats: {
+            ...dishdUser.stats,
+            mealsLogged: (dishdUser.stats?.mealsLogged || 0) + 1
+          }
+        }).catch(() => {});
+      }
+
       const userRef = doc(db, "users", user.uid);
       await updateDoc(userRef, { "stats.mealsLogged": increment(1) }).catch(async () => {
         await setDoc(userRef, { stats: { mealsLogged: 1 } }, { merge: true }).catch(() => {});

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { TasteDNA, User } from "../types";
 import { Sparkles, Flame, Coffee, Cake, Utensils, Award, Users, Share2, Dna, Trophy } from "lucide-react";
-import { collection, query, limit, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
+import { getTopCritics } from "../services/supabaseService";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { TasteQuizModal } from "./TasteQuizModal";
@@ -20,11 +19,8 @@ export function TasteDNAView({ user }: TasteDNAViewProps) {
   const [critics, setCritics] = useState<User[]>([]);
 
   useEffect(() => {
-    getDocs(query(collection(db, "users"), limit(6))).then((snap) => {
-      const list = snap.docs
-        .map(d => d.data() as User)
-        .filter(u => u.uid !== user.uid);
-      setCritics(list);
+    getTopCritics(6).then((topCritics) => {
+      setCritics(topCritics.filter(u => u.uid !== user.uid));
     }).catch(() => {});
   }, [user.uid]);
 

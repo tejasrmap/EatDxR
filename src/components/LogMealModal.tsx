@@ -12,7 +12,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { toast } from "sonner";
 import { searchRestaurants } from "../services/mapsService";
 import { RestaurantSearchResult, Review } from "../types";
-import { createReview, uploadMedia } from "../services/supabaseService";
+import { createReview, uploadMedia, upsertProfile } from "../services/supabaseService";
 import { offlineSyncService } from "../services/offlineSyncService";
 
 const logSchema = z.object({
@@ -350,12 +350,11 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
           likes: existingReview?.likes || 0
         });
         toast.success("Narrative updated!");
-      } else {
-        const reviewRef = doc(collection(db, "reviews"));
+        const reviewId = existingReview?.id || `rev-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
         const city = selectedRestaurant?.city || manualLocation.split(',').pop()?.trim() || "Nearby";
 
         const reviewData = {
-          id: reviewRef.id,
+          id: reviewId,
           userId: user.uid,
           userName: dishdUser?.displayName || user.displayName || "Anonymous Critic",
           userPhoto: dishdUser?.photoURL || user.photoURL || `https://ui-avatars.com/api/?name=${dishdUser?.displayName || user.displayName || 'User'}&background=random`,
@@ -367,9 +366,9 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
           dishes: uploadedDishes,
           rating: cleanRating,
           content: data.review || "",
-          type: "review",
+          type: "review" as const,
           isVerifiedVisit: isVerifiedVisit,
-          visitProofType: "receipt",
+          visitProofType: "receipt" as const,
           ...(ratingMode === "critic" ? {
             ratingsDetail: {
               taste: tasteScore,
@@ -381,23 +380,36 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
               ambience: ambienceScore
             }
           } : {}),
-          createdAt: serverTimestamp(),
-          likes: 0
+          likes: existingReview?.likes || 0
         };
 
-        await setDoc(reviewRef, reviewData);
-        await createReview({ 
-          ...reviewData, 
-          id: reviewRef.id, 
-          type: "review" as const,
-          visitProofType: "receipt" as const 
-        }).catch(err => console.warn("Supabase review sync notice:", err));
-        
-        const userRef = doc(db, "users", user.uid);
-        await updateDoc(userRef, { "stats.reviewsWritten": increment(1) }).catch(async () => {
-          await setDoc(userRef, { stats: { reviewsWritten: 1 } }, { merge: true }).catch(() => {});
-        });
-        toast.success("Narrative Live!");
+        // 1. Primary: Save to Supabase
+        await createReview(reviewData);
+
+        // 2. Update Supabase Profile stats
+        if (dishdUser) {
+          const currentCount = dishdUser.stats?.reviewsWritten || 0;
+          await upsertProfile({
+            uid: user.uid,
+            stats: {
+              ...dishdUser.stats,
+              reviewsWritten: currentCount + 1
+            }
+          });
+        }
+
+        // 3. Mirror to Firebase Firestore for backward compatibility
+        try {
+          const reviewRef = doc(db, "reviews", reviewId);
+          await setDoc(reviewRef, {
+            ...reviewData,
+            createdAt: serverTimestamp()
+          }, { merge: true });
+        } catch (fbErr) {
+          console.warn("Notice mirroring review to Firebase:", fbErr);
+        }
+
+        toast.success(existingReview ? "Narrative updated!" : "Narrative Live!");
       }
 
       reset();

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { collection, query, onSnapshot, orderBy, limit } from "firebase/firestore";
-import { db } from "../firebase";
+import { getReviews, subscribeToReviews } from "../services/supabaseService";
 import { Review } from "../types";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Loader2, LayoutGrid, PlayCircle, Info, MapPin, Flame } from "lucide-react";
@@ -26,25 +25,21 @@ export const Journal: React.FC = () => {
   };
 
   useEffect(() => {
-    const q = query(
-      collection(db, "reviews"),
-      orderBy("createdAt", "desc"),
-      limit(100)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedReviews = snapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id,
-      })) as Review[];
-      setReviews(fetchedReviews);
-      setLoading(false);
-    }, (error) => {
-      console.error("Feed subscription error:", error);
-      setLoading(false);
+    const sub = subscribeToReviews((fetchedReviews) => {
+      if (fetchedReviews && fetchedReviews.length > 0) {
+        setReviews(fetchedReviews);
+        setLoading(false);
+      } else {
+        getReviews().then((revs) => {
+          setReviews(revs || []);
+          setLoading(false);
+        }).catch(() => setLoading(false));
+      }
     });
 
-    return unsubscribe;
+    return () => {
+      sub?.unsubscribe();
+    };
   }, []);
 
   if (loading) {

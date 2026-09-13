@@ -5,7 +5,7 @@ import { doc, setDoc, updateDoc, collection, query, where, getDocs, writeBatch }
 import { updateProfile } from "firebase/auth";
 import { db, auth, storage } from "../firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { upsertProfile, uploadMedia } from "../services/supabaseService";
+import { upsertProfile, uploadMedia, getProfile } from "../services/supabaseService";
 import { toast } from "sonner";
 
 interface EditProfileModalProps {
@@ -117,16 +117,27 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
         .filter(c => c.length > 0);
 
       if (username.trim()) {
-        const usernameQuery = query(
-          collection(db, "users"),
-          where("username", "==", username.trim().toLowerCase())
-        );
-        const usernameSnap = await getDocs(usernameQuery);
-        
-        if (!usernameSnap.empty && usernameSnap.docs[0].id !== user.uid) {
+        const cleanUser = username.trim().toLowerCase();
+        const existingSupa = await getProfile(cleanUser);
+        if (existingSupa && existingSupa.uid !== user.uid) {
           toast.error("That username is already taken!");
           setIsSaving(false);
           return;
+        }
+
+        try {
+          const usernameQuery = query(
+            collection(db, "users"),
+            where("username", "==", cleanUser)
+          );
+          const usernameSnap = await getDocs(usernameQuery);
+          if (!usernameSnap.empty && usernameSnap.docs[0].id !== user.uid) {
+            toast.error("That username is already taken!");
+            setIsSaving(false);
+            return;
+          }
+        } catch (e) {
+          // Fallback ignore if firestore permissions block query
         }
       }
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../App';
 import { db } from '../firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { upsertRestaurant, createReview } from '../services/supabaseService';
 import { toast } from 'sonner';
 import { MapPin, Zap, Database, Loader2, Search, Map as MapIcon, ChevronRight, Timer, Lock, ShieldCheck } from 'lucide-react';
 
@@ -170,22 +171,57 @@ export const AdminSeed: React.FC = () => {
         const isReel = Math.random() > 0.5;
         const videoUrl = isReel ? foodVideos[Math.floor(Math.random() * foodVideos.length)] : "";
 
-        await setDoc(doc(db, 'restaurants', docId), {
-           id: docId, name, cuisine, location: _locationStr, rating: ratingNum, reviewCount: Math.floor(Math.random() * 200) + 10, image: randomImage, menuItems: [], lat: plat, lng: plon
+        // 1. Supabase upsert
+        await upsertRestaurant({
+          id: docId,
+          name,
+          cuisine,
+          location: _locationStr,
+          city: pinpointTown,
+          rating: ratingNum,
+          reviewCount: Math.floor(Math.random() * 200) + 10,
+          image: randomImage,
+          lat: plat,
+          lng: plon
         });
 
-        // Generate a sample review for this restaurant
+        // 2. Generate a sample review for this restaurant in Supabase
         const reviewId = `review_${docId}_${Date.now()}`;
-        await setDoc(doc(db, 'reviews', reviewId), {
-          id: reviewId, userId: user.uid, userName: user.displayName || "Regional Guide", userPhoto: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'G'}&background=random`,
-          restaurantId: docId, restaurantName: name, restaurantLocation: _locationStr, city: pinpointTown, rating: ratingNum,
+        await createReview({
+          id: reviewId,
+          userId: user.uid,
+          userName: user.displayName || "Regional Guide",
+          userPhoto: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'G')}&background=random`,
+          restaurantId: docId,
+          restaurantName: name,
+          restaurantLocation: _locationStr,
+          city: pinpointTown,
+          rating: ratingNum,
           content: "Absolutely phenomenal experience. The flavors were authentic and the service was impeccable. A true local gem.",
-          createdAt: serverTimestamp(), likes: Math.floor(Math.random() * 50), videoUrl: videoUrl,
+          likes: Math.floor(Math.random() * 50),
+          videoUrl: videoUrl,
           dishes: [
             { name: "Signature Dish", rating: 5, image: randomImage },
             { name: "House Special", rating: 4, image: foodImages[Math.floor(Math.random() * foodImages.length)] }
           ]
         });
+
+        // Legacy mirror
+        try {
+          await setDoc(doc(db, 'restaurants', docId), {
+            id: docId, name, cuisine, location: _locationStr, rating: ratingNum, reviewCount: Math.floor(Math.random() * 200) + 10, image: randomImage, menuItems: [], lat: plat, lng: plon
+          });
+          await setDoc(doc(db, 'reviews', reviewId), {
+            id: reviewId, userId: user.uid, userName: user.displayName || "Regional Guide", userPhoto: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'G'}&background=random`,
+            restaurantId: docId, restaurantName: name, restaurantLocation: _locationStr, city: pinpointTown, rating: ratingNum,
+            content: "Absolutely phenomenal experience. The flavors were authentic and the service was impeccable. A true local gem.",
+            createdAt: serverTimestamp(), likes: Math.floor(Math.random() * 50), videoUrl: videoUrl,
+            dishes: [
+              { name: "Signature Dish", rating: 5, image: randomImage },
+              { name: "House Special", rating: 4, image: foodImages[Math.floor(Math.random() * foodImages.length)] }
+            ]
+          });
+        } catch {}
 
         seedCount++;
         setProgress({ total: topPlaces.length, current: seedCount });

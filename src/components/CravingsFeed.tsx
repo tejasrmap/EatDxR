@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { collection, query, where, onSnapshot, limit } from "firebase/firestore";
-import { db } from "../firebase";
 import { Review, CravingTag } from "../types";
 import { CravingCard } from "./CravingCard";
 import { CravingUploadModal } from "./CravingUploadModal";
@@ -8,7 +6,7 @@ import { Flame, Plus, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../App";
 import { triggerHaptic } from "../services/nativeService";
-import { getCravings } from "../services/supabaseService";
+import { getCravings, subscribeToCravings } from "../services/supabaseService";
 
 const CATEGORIES: { label: string; tag?: CravingTag }[] = [
   { label: "All Cravings" },
@@ -32,61 +30,26 @@ export function CravingsFeed() {
   useEffect(() => {
     let isMounted = true;
 
-    // 1. Fetch from Supabase
-    getCravings()
-      .then((supaCravings) => {
-        if (!isMounted) return;
-        if (supaCravings && supaCravings.length > 0) {
-          setCravings((prev) => {
-            const map = new Map<string, Review>();
-            supaCravings.forEach(c => map.set(c.id, c));
-            prev.forEach(c => map.set(c.id, c));
-            return Array.from(map.values());
-          });
+    // Real-time listener from Supabase cravings table
+    const sub = subscribeToCravings((supaCravings) => {
+      if (!isMounted) return;
+      if (supaCravings && supaCravings.length > 0) {
+        setCravings(supaCravings);
+        setLoading(false);
+      } else {
+        getCravings().then(res => {
+          if (!isMounted) return;
+          setCravings(res || []);
           setLoading(false);
-        }
-      })
-      .catch((err) => console.warn("Supabase cravings fetch notice:", err));
-
-    // 2. Real-time listener from Firestore
-    const q = query(
-      collection(db, "reviews"),
-      where("type", "==", "craving"),
-      limit(50)
-    );
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        if (!isMounted) return;
-        const fetched = snapshot.docs.map((doc) => ({
-          ...doc.data(),
-          id: doc.id,
-        })) as Review[];
-
-        setCravings((prev) => {
-          const map = new Map<string, Review>();
-          prev.forEach((c) => map.set(c.id, c));
-          fetched.forEach((c) => map.set(c.id, c));
-          const merged = Array.from(map.values());
-          merged.sort((a, b) => {
-            const tA = (a.createdAt as any)?.toDate?.()?.getTime?.() || new Date(a.createdAt || 0).getTime();
-            const tB = (b.createdAt as any)?.toDate?.()?.getTime?.() || new Date(b.createdAt || 0).getTime();
-            return tB - tA;
-          });
-          return merged;
+        }).catch(() => {
+          if (isMounted) setLoading(false);
         });
-        setLoading(false);
-      },
-      (err) => {
-        console.warn("Cravings firestore notice:", err.message);
-        setLoading(false);
       }
-    );
+    });
 
     return () => {
       isMounted = false;
-      unsubscribe();
+      sub?.unsubscribe();
     };
   }, []);
 

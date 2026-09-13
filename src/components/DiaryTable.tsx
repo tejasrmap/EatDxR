@@ -10,6 +10,7 @@ import { db } from "../firebase";
 import { deleteDoc, doc, updateDoc, increment, collection, query, where, getDocs } from "firebase/firestore";
 import { toast } from "sonner";
 import { DiaryEntryModal } from "./DiaryEntryModal";
+import { deleteReview, upsertProfile } from "../services/supabaseService";
 
 interface DiaryTableProps {
   reviews: Review[];
@@ -38,20 +39,31 @@ export const DiaryTable: React.FC<DiaryTableProps> = ({ reviews, showUser = true
     if (!window.confirm("Are you sure you want to delete this diary entry? This action cannot be undone.")) return;
     
     try {
-      // 1. Delete all nested interaction documents (comments & likes)
-      const interactionsQuery = query(collection(db, "interactions"), where("reviewId", "==", review.id));
-      const interactionsSnap = await getDocs(interactionsQuery);
-      const deletePromises = interactionsSnap.docs.map(docSnap => deleteDoc(doc(db, "interactions", docSnap.id)));
-      await Promise.all(deletePromises);
-      
-      // 2. Decrement user's reviewsWritten natively
-      const userRef = doc(db, "users", currentUser.uid);
-      await updateDoc(userRef, {
-        "stats.reviewsWritten": increment(-1)
+      // 1. Delete review from Supabase
+      await deleteReview(review.id);
+
+      // 2. Decrement user reviewsWritten in Supabase
+      const currentCount = currentUser.stats?.reviewsWritten || 1;
+      await upsertProfile({
+        uid: currentUser.uid,
+        stats: {
+          ...currentUser.stats,
+          reviewsWritten: Math.max(0, currentCount - 1)
+        }
       });
-      
-      // 3. Delete the review natively
-      await deleteDoc(doc(db, "reviews", review.id));
+
+      // 3. Mirror delete to Firestore for legacy sync
+      try {
+        const interactionsQuery = query(collection(db, "interactions"), where("reviewId", "==", review.id));
+        const interactionsSnap = await getDocs(interactionsQuery);
+        const deletePromises = interactionsSnap.docs.map(docSnap => deleteDoc(doc(db, "interactions", docSnap.id)));
+        await Promise.all(deletePromises);
+        await deleteDoc(doc(db, "reviews", review.id));
+        const userRef = doc(db, "users", currentUser.uid);
+        await updateDoc(userRef, { "stats.reviewsWritten": increment(-1) }).catch(() => {});
+      } catch (fbErr) {
+        console.warn("Notice mirroring review deletion to Firebase:", fbErr);
+      }
       
       toast.success("Diary entry deleted successfully.");
     } catch (error) {

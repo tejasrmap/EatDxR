@@ -9,6 +9,7 @@ import { useAuth } from "../App";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic } from "../services/nativeService";
 import { getShareUrl } from "../utils/shareUrl";
+import { getListById } from "../services/supabaseService";
 
 export function ListDetail() {
   const { listId } = useParams<{ listId: string }>();
@@ -21,11 +22,19 @@ export function ListDetail() {
 
   useEffect(() => {
     if (listId) {
-      getDoc(doc(db, "lists", listId)).then(snap => {
-        if (snap.exists()) {
-          const data = snap.data() as FoodList;
-          setList({ ...data, id: snap.id });
-          setLikesCount(data.likes || 0);
+      getListById(listId).then(supaList => {
+        if (supaList) {
+          setList(supaList);
+          setLikesCount(supaList.likes || 0);
+        } else {
+          // Fallback to Firestore
+          getDoc(doc(db, "lists", listId)).then(snap => {
+            if (snap.exists()) {
+              const data = snap.data() as FoodList;
+              setList({ ...data, id: snap.id });
+              setLikesCount(data.likes || 0);
+            }
+          }).catch(() => {});
         }
       }).catch((err) => {
         console.warn("Failed to load list:", err);

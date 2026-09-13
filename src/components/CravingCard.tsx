@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../App";
 import { db } from "../firebase";
 import { collection, query, where, onSnapshot, doc, setDoc, deleteDoc, serverTimestamp, updateDoc, arrayUnion, arrayRemove, increment } from "firebase/firestore";
+import { toggleSupabaseLike, toggleSupabaseFollow, getProfile, getComments } from "../services/supabaseService";
 import { toast } from "sonner";
 import { CommentModal } from "./CommentModal";
 import { ShareMenu } from "./ShareMenu";
@@ -49,34 +50,21 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
 
   useEffect(() => {
     if (!currentUser) return;
-    const unsubscribe = onSnapshot(doc(db, "users", currentUser.uid), (snapshot) => {
-      const userData = snapshot.data();
-      if (userData?.stats?.followingList) {
-        setIsFollowing(userData.stats.followingList.includes(review.userId));
-      }
-    });
-    return unsubscribe;
+    if (currentUser.stats?.followingList) {
+      setIsFollowing(currentUser.stats.followingList.includes(review.userId));
+    } else {
+      getProfile(currentUser.uid).then(p => {
+        if (p?.stats?.followingList) {
+          setIsFollowing(p.stats.followingList.includes(review.userId));
+        }
+      });
+    }
   }, [currentUser, review.userId]);
 
   useEffect(() => {
-    const q = query(
-      collection(db, "interactions"),
-      where("reviewId", "==", review.id)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const interactions = snapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id
-      })) as Interaction[];
-      
-      setLikes(interactions.filter(i => i.type === "LIKE"));
-      setComments(interactions.filter(i => i.type === "COMMENT"));
-    }, (error) => {
-      console.warn("Craving interactions notice:", error.message);
+    getComments(review.id).then(c => {
+      setComments(c);
     });
-
-    return unsubscribe;
   }, [review.id]);
 
   useEffect(() => {
@@ -100,22 +88,45 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
       return;
     }
 
-    const likeId = `like_${currentUser.uid}_${review.id}`;
-    const likeRef = doc(db, "interactions", likeId);
-    
     try {
-      if (hasLiked) {
-        await deleteDoc(likeRef);
-      } else {
-        await setDoc(likeRef, {
-          id: likeId,
+      const isNowLiked = await toggleSupabaseLike(review.id, currentUser.uid, hasLiked, {
+        name: currentUser.displayName || undefined,
+        photo: currentUser.photoURL || undefined
+      });
+
+      if (isNowLiked) {
+        setLikes(prev => [...prev, {
+          id: `like_${currentUser.uid}_${review.id}`,
           reviewId: review.id,
           userId: currentUser.uid,
           userName: currentUser.displayName || "User",
           userPhoto: currentUser.photoURL || "",
           type: "LIKE",
-          createdAt: serverTimestamp()
-        });
+          createdAt: new Date()
+        }]);
+      } else {
+        setLikes(prev => prev.filter(l => l.userId !== currentUser.uid));
+      }
+
+      // Legacy mirror
+      try {
+        const likeId = `like_${currentUser.uid}_${review.id}`;
+        const likeRef = doc(db, "interactions", likeId);
+        if (hasLiked) {
+          await deleteDoc(likeRef);
+        } else {
+          await setDoc(likeRef, {
+            id: likeId,
+            reviewId: review.id,
+            userId: currentUser.uid,
+            userName: currentUser.displayName || "User",
+            userPhoto: currentUser.photoURL || "",
+            type: "LIKE",
+            createdAt: serverTimestamp()
+          });
+        }
+      } catch (fbErr) {
+        console.warn("Notice mirroring like to Firebase:", fbErr);
       }
     } catch (error) {
       console.error("Error toggling like:", error);
@@ -130,31 +141,45 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
     
     setIsUpdatingFollow(true);
     try {
-      const currentUserRef = doc(db, "users", currentUser.uid);
-      const targetUserRef = doc(db, "users", review.userId);
-      const notifId = `${currentUser.uid}_${review.userId}_FOLLOW`;
-      
-      if (isFollowing) {
-        await updateDoc(currentUserRef, { "stats.followingList": arrayRemove(review.userId) });
-        await updateDoc(currentUserRef, { "stats.following": increment(-1) });
-        await updateDoc(targetUserRef, { "stats.followers": increment(-1) });
-        await deleteDoc(doc(db, "notifications", notifId)).catch(() => {});
-        toast.success(`Unfollowed ${review.userName}`);
-      } else {
-        await updateDoc(currentUserRef, { "stats.followingList": arrayUnion(review.userId) });
-        await updateDoc(currentUserRef, { "stats.following": increment(1) });
-        await updateDoc(targetUserRef, { "stats.followers": increment(1) });
-        await setDoc(doc(db, "notifications", notifId), {
-          id: notifId,
-          recipientId: review.userId,
-          actorId: currentUser.uid,
-          actorName: currentUser.displayName,
-          actorPhoto: currentUser.photoURL,
-          type: "FOLLOW",
-          read: false,
-          createdAt: serverTimestamp()
-        });
-        toast.success(`Following ${review.userName}`);
+      const newFollowStatus = await toggleSupabaseFollow(
+        currentUser.uid,
+        review.userId,
+        isFollowing,
+        {
+          name: currentUser.displayName || undefined,
+          photo: currentUser.photoURL || undefined
+        }
+      );
+
+      setIsFollowing(newFollowStatus);
+      toast.success(newFollowStatus ? `Following ${review.userName}` : `Unfollowed ${review.userName}`);
+
+      // Legacy Firebase sync
+      try {
+        const currentUserRef = doc(db, "users", currentUser.uid);
+        const targetUserRef = doc(db, "users", review.userId);
+        const notifId = `${currentUser.uid}_${review.userId}_FOLLOW`;
+        if (!newFollowStatus) {
+          await updateDoc(currentUserRef, { "stats.followingList": arrayRemove(review.userId), "stats.following": increment(-1) });
+          await updateDoc(targetUserRef, { "stats.followers": increment(-1) });
+          await deleteDoc(doc(db, "notifications", notifId)).catch(() => {});
+        } else {
+          await updateDoc(currentUserRef, { "stats.followingList": arrayUnion(review.userId), "stats.following": increment(1) });
+          await updateDoc(currentUserRef, { "stats.following": increment(1) });
+          await updateDoc(targetUserRef, { "stats.followers": increment(1) });
+          await setDoc(doc(db, "notifications", notifId), {
+            id: notifId,
+            recipientId: review.userId,
+            actorId: currentUser.uid,
+            actorName: currentUser.displayName,
+            actorPhoto: currentUser.photoURL,
+            type: "FOLLOW",
+            read: false,
+            createdAt: serverTimestamp()
+          });
+        }
+      } catch (fbErr) {
+        console.warn("Notice mirroring follow to Firebase:", fbErr);
       }
     } catch (error) {
       console.error("Error following:", error);
