@@ -66,6 +66,10 @@ export function AppLayout({ children }: AppLayoutProps) {
   const showBack = isDetailPage;
   const pageTitle = isDetailPage ? getSubPageTitle(routerLocation.pathname) : undefined;
 
+  const isProfileView = 
+    routerLocation.pathname.startsWith("/app/profile") || 
+    routerLocation.pathname.startsWith("/profile");
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-white relative z-0 flex flex-col justify-between selection:bg-orange-500 selection:text-black overscroll-contain">
       {/* Background glow */}
@@ -73,8 +77,8 @@ export function AppLayout({ children }: AppLayoutProps) {
         <div className="aurora-gradient" />
       </div>
 
-      {/* App Header (hidden on full-screen reels) */}
-      {!isReelsView && (
+      {/* App Header (hidden on full-screen reels and Profile page) */}
+      {!isReelsView && !isProfileView && (
         <>
           <AppHeader 
             currentCity={currentCity} 

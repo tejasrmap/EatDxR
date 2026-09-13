@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 
 import { Review, User, Restaurant } from "../types";
 import { useAuth } from "../App";
-import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus, Edit3, Share2, UtensilsCrossed, Sparkles, ListOrdered, ShieldCheck, Award, Layers, Camera, CheckCircle2, Lock, Menu, TrendingUp, ChevronRight } from "lucide-react";
+import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus, Edit3, Share2, UtensilsCrossed, Sparkles, ListOrdered, ShieldCheck, Award, Layers, Camera, CheckCircle2, Lock, Menu, TrendingUp, ChevronRight, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { DiaryTable } from "./DiaryTable";
 import { FollowListModal } from "./FollowListModal";
@@ -23,6 +23,7 @@ import { getShareUrl } from "../utils/shareUrl";
 export const Profile: React.FC = () => {
   const { userId: identifier } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user: currentUser, dishdUser } = useAuth();
   const { getAppUrl } = useAppUrl();
   const [user, setUser] = useState<User | null>(null);
@@ -235,12 +236,26 @@ export const Profile: React.FC = () => {
     return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
   })();
 
-  return (
-    <div className="max-w-2xl mx-auto px-3 sm:px-6 pt-2 sm:pt-4 pb-28 elite-motion-safe">
-      {/* Instagram Top Profile Bar: Username + Actions */}
-      <div className="flex items-center justify-between py-2 mb-3 border-b border-white/[0.06]">
-        <div className="flex items-center gap-2 min-w-0">
-          <h2 className="text-base sm:text-lg font-black tracking-tight text-white truncate">
+    const isOwnProfile = currentUser?.uid === user.uid;
+    const isRootProfileTab = location.pathname === "/app/profile" || location.pathname === "/profile";
+    const showBackButton = (!isRootProfileTab || !isOwnProfile) && window.history.length > 1;
+
+    return (
+      <div className="max-w-2xl mx-auto px-3.5 sm:px-6 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] sm:pt-4 pb-28 elite-motion-safe">
+        {/* Instagram Single Profile Top Bar: Back (if deep/other user) + Username + Actions */}
+        <div className="flex items-center justify-between py-2 mb-3 border-b border-white/[0.06]">
+          <div className="flex items-center gap-2 min-w-0">
+            {showBackButton && (
+              <button
+                type="button"
+                onClick={() => { triggerHaptic(); navigate(-1); }}
+                className="p-1 -ml-1 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                title="Go back"
+              >
+                <ChevronLeft size={22} />
+              </button>
+            )}
+            <h2 className="text-base sm:text-lg font-black tracking-tight text-white truncate">
             @{user.username || user.displayName?.toLowerCase().replace(/\s+/g, '_') || "critic"}
           </h2>
           {localStorage.getItem("madeater_account_privacy") === "private" && (
@@ -251,36 +266,34 @@ export const Profile: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {currentUser?.uid === user.uid && (
-            <>
-              {/* Share Profile button */}
-              <button
-                onClick={shareProfile}
-                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/80 hover:text-white active:scale-95 transition-all cursor-pointer"
-                title="Share Profile"
-              >
-                <Share2 size={15} />
-              </button>
+          {/* Share Profile button */}
+          <button
+            onClick={shareProfile}
+            className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/80 hover:text-white active:scale-95 transition-all cursor-pointer"
+            title="Share Profile"
+          >
+            <Share2 size={15} />
+          </button>
 
-              {/* 3-Lines Hamburger Bar (Settings and Activity) ONLY on Profile Page */}
-              <button
-                onClick={() => {
-                  triggerHaptic();
-                  setIsSettingsOpen(true);
-                }}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all cursor-pointer shadow-sm"
-                title="Settings and activity"
-                aria-label="Settings and activity"
-              >
-                <Menu size={18} className="stroke-[2.2]" />
-              </button>
-            </>
+          {/* 3-Lines Hamburger Bar (Settings and Activity) ONLY on Profile Page for Owner */}
+          {currentUser?.uid === user.uid && (
+            <button
+              onClick={() => {
+                triggerHaptic();
+                setIsSettingsOpen(true);
+              }}
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all cursor-pointer shadow-sm"
+              title="Settings and activity"
+              aria-label="Settings and activity"
+            >
+              <Menu size={18} className="stroke-[2.2]" />
+            </button>
           )}
         </div>
       </div>
 
-      {/* 1. Instagram Profile Header Row (Avatar + 4 Stats) */}
-      <div className="flex items-center gap-4 sm:gap-7 mb-3">
+      {/* 1. Instagram Profile Header Row (Avatar + 4 Balanced Stats) */}
+      <div className="flex items-center gap-4 sm:gap-6 mb-3">
         {/* Left: Avatar with Instagram gradient ring */}
         <div className="relative shrink-0 select-none">
           <div className="p-[2.5px] bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 rounded-full shadow-lg">
@@ -288,7 +301,7 @@ export const Profile: React.FC = () => {
               <img
                 src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`}
                 alt={user.displayName}
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                className="w-20 h-20 sm:w-22 sm:h-22 rounded-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
                 referrerPolicy="no-referrer"
                 loading="lazy"
                 onClick={() => currentUser?.uid === user.uid && profileFileInputRef.current?.click()}
@@ -318,7 +331,7 @@ export const Profile: React.FC = () => {
           )}
         </div>
 
-        {/* Right: Instagram 4-Column Stats */}
+        {/* Right: Instagram 4-Column Balanced Stats (Uniform Heights, No Wrapping) */}
         <div className="flex-1 grid grid-cols-4 gap-1 text-center py-1 select-none">
           <div 
             onClick={() => { triggerHaptic(); setActiveTab("profile"); }} 
@@ -327,7 +340,7 @@ export const Profile: React.FC = () => {
             <span className="text-base sm:text-lg font-black text-white tracking-tight block leading-tight">
               {reviews.length}
             </span>
-            <span className="text-[10px] sm:text-[11px] text-zinc-400 font-medium tracking-tight block mt-0.5">
+            <span className="text-[10px] sm:text-xs text-zinc-400 font-semibold tracking-tight block mt-0.5 whitespace-nowrap">
               Logs
             </span>
           </div>
@@ -339,7 +352,7 @@ export const Profile: React.FC = () => {
             <span className="text-base sm:text-lg font-black text-white group-hover/stat:text-orange-400 tracking-tight block leading-tight transition-colors">
               {followerCount}
             </span>
-            <span className="text-[10px] sm:text-[11px] text-zinc-400 font-medium tracking-tight block mt-0.5">
+            <span className="text-[10px] sm:text-xs text-zinc-400 font-semibold tracking-tight block mt-0.5 whitespace-nowrap">
               Followers
             </span>
           </div>
@@ -351,7 +364,7 @@ export const Profile: React.FC = () => {
             <span className="text-base sm:text-lg font-black text-white group-hover/stat:text-orange-400 tracking-tight block leading-tight transition-colors">
               {user.stats?.followingList?.length || user.stats?.following || 0}
             </span>
-            <span className="text-[10px] sm:text-[11px] text-zinc-400 font-medium tracking-tight block mt-0.5">
+            <span className="text-[10px] sm:text-xs text-zinc-400 font-semibold tracking-tight block mt-0.5 whitespace-nowrap">
               Following
             </span>
           </div>
@@ -362,8 +375,8 @@ export const Profile: React.FC = () => {
                 ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
                 : "0.0"}
             </span>
-            <span className="text-[10px] sm:text-[11px] text-zinc-400 font-medium tracking-tight block mt-0.5">
-              Avg Rating
+            <span className="text-[10px] sm:text-xs text-zinc-400 font-semibold tracking-tight block mt-0.5 whitespace-nowrap">
+              Rating
             </span>
           </div>
         </div>
@@ -426,30 +439,30 @@ export const Profile: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. Instagram Action Buttons Row */}
+      {/* 3. Instagram Action Buttons Row (Balanced Heights & Consistent Styling) */}
       <div className="flex items-center gap-2 mb-3.5">
         {currentUser?.uid === user.uid ? (
           <>
             <button
               onClick={() => { triggerHaptic(); setIsEditModalOpen(true); }}
-              className="flex-1 py-1.5 px-3 bg-zinc-900 hover:bg-zinc-800 active:scale-[0.98] border border-white/15 rounded-lg text-xs font-bold text-white text-center transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              className="flex-1 h-9 px-3 bg-zinc-900 hover:bg-zinc-800 active:scale-[0.98] border border-white/10 rounded-xl text-xs font-bold text-white text-center transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
             >
               <Edit3 size={13} />
-              <span>Edit Profile</span>
+              <span>Edit profile</span>
             </button>
 
             <button
               onClick={shareProfile}
-              className="flex-1 py-1.5 px-3 bg-zinc-900 hover:bg-zinc-800 active:scale-[0.98] border border-white/15 rounded-lg text-xs font-bold text-white text-center transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              className="flex-1 h-9 px-3 bg-zinc-900 hover:bg-zinc-800 active:scale-[0.98] border border-white/10 rounded-xl text-xs font-bold text-white text-center transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
             >
               <Share2 size={13} />
-              <span>Share Profile</span>
+              <span>Share profile</span>
             </button>
 
             <Link
               to={getAppUrl('/wrapped')}
               onClick={() => triggerHaptic()}
-              className="py-1.5 px-3 bg-gradient-to-r from-orange-500/20 to-amber-500/20 hover:from-orange-500/30 border border-orange-500/30 rounded-lg text-xs font-black uppercase tracking-wider text-orange-400 flex items-center justify-center gap-1.5 shrink-0 transition-all active:scale-[0.98]"
+              className="h-9 px-3.5 bg-gradient-to-r from-orange-500/15 to-amber-500/15 hover:from-orange-500/25 hover:to-amber-500/25 border border-orange-500/30 rounded-xl text-xs font-bold text-orange-400 flex items-center justify-center gap-1.5 shrink-0 transition-all active:scale-[0.98] shadow-sm"
             >
               <Sparkles size={13} />
               <span>Wrapped</span>
@@ -460,9 +473,9 @@ export const Profile: React.FC = () => {
             <button
               onClick={() => { triggerHaptic(); toggleFollow(); }}
               disabled={isUpdatingFollow}
-              className={`flex-1 py-1.5 px-4 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-[0.98] cursor-pointer ${
+              className={`flex-1 h-9 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-[0.98] cursor-pointer shadow-sm ${
                 isFollowing
-                  ? "bg-zinc-900 text-white border border-white/15 hover:bg-zinc-800"
+                  ? "bg-zinc-900 text-white border border-white/10 hover:bg-zinc-800"
                   : "bg-gradient-to-r from-orange-500 to-amber-400 hover:brightness-110 text-black font-black shadow-md"
               }`}
             >
@@ -471,7 +484,7 @@ export const Profile: React.FC = () => {
 
             <button
               onClick={shareProfile}
-              className="py-1.5 px-4 bg-zinc-900 hover:bg-zinc-800 active:scale-[0.98] border border-white/15 rounded-lg text-xs font-bold text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              className="flex-1 h-9 px-4 bg-zinc-900 hover:bg-zinc-800 active:scale-[0.98] border border-white/10 rounded-xl text-xs font-bold text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
             >
               <Share2 size={13} />
               <span>Share</span>
@@ -487,7 +500,7 @@ export const Profile: React.FC = () => {
             triggerHaptic();
             setIsInsightsOpen(true);
           }}
-          className="mb-3.5 p-3 rounded-xl bg-[#18181b] hover:bg-[#202024] border border-white/[0.08] cursor-pointer transition-all active:scale-[0.99] flex items-center justify-between group"
+          className="mb-3.5 p-3 rounded-xl bg-[#18181b] hover:bg-[#202024] border border-white/[0.08] cursor-pointer transition-all active:scale-[0.99] flex items-center justify-between group shadow-sm"
         >
           <div className="space-y-0.5">
             <div className="flex items-center gap-1.5 text-xs font-bold text-white group-hover:text-orange-400 transition-colors">
@@ -505,13 +518,13 @@ export const Profile: React.FC = () => {
         </div>
       )}
 
-      {/* 4. Refined Balanced Segmented Tab Navigation */}
-      <div className="sticky top-14 z-30 bg-black/85 backdrop-blur-2xl border-b border-white/[0.08] -mx-3 sm:-mx-6 px-3 sm:px-6 py-2 mb-4 select-none">
-        <div className="flex items-center justify-center gap-1 sm:gap-1.5 max-w-xl mx-auto p-1 bg-white/[0.03] border border-white/[0.06] rounded-2xl shadow-sm">
+      {/* 4. Refined Balanced Segmented Tab Navigation (Single Top, 5 Columns, No Wrapping) */}
+      <div className="sticky top-0 z-30 bg-black/95 backdrop-blur-2xl border-b border-white/[0.08] -mx-3.5 sm:-mx-6 px-3.5 sm:px-6 py-2 mb-4 select-none">
+        <div className="grid grid-cols-5 gap-1 max-w-xl mx-auto p-1 bg-white/[0.03] border border-white/[0.06] rounded-2xl shadow-sm">
           {[
             { id: "profile", label: "Logs", icon: Grid },
             { id: "diary", label: "Diary", icon: Clock },
-            { id: "taste", label: "Taste DNA", icon: Sparkles },
+            { id: "taste", label: "Taste", icon: Sparkles },
             { id: "eatlist", label: "Saved", icon: Heart },
             { id: "lists", label: "Guides", icon: ListOrdered },
           ].map((tab) => {
@@ -520,15 +533,15 @@ export const Profile: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => { triggerHaptic(); setActiveTab(tab.id as any); }}
-                className={`flex-1 py-2 px-2 sm:px-3 rounded-xl flex items-center justify-center gap-1.5 relative transition-all cursor-pointer ${
+                className={`py-2 px-1 rounded-xl flex items-center justify-center gap-1 sm:gap-1.5 relative transition-all cursor-pointer ${
                   isActive 
                     ? "text-white font-bold" 
                     : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] font-medium"
                 }`}
                 title={tab.label}
               >
-                <tab.icon size={15} className={isActive ? "text-orange-400 stroke-[2.2]" : "stroke-[1.6]"} />
-                <span className="text-xs tracking-tight">{tab.label}</span>
+                <tab.icon size={14} className={isActive ? "text-orange-400 stroke-[2.2]" : "stroke-[1.6]"} />
+                <span className="text-[11px] sm:text-xs font-bold tracking-tight whitespace-nowrap">{tab.label}</span>
                 {isActive && (
                   <motion.div
                     layoutId="profileActiveTabPill"
