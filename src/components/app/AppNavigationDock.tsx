@@ -28,6 +28,8 @@ export function AppNavigationDock() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, dishdUser, login } = useAuth();
+  const currentPhoto = dishdUser?.photoURL || user?.photoURL;
+  const userDisplayName = dishdUser?.displayName || user?.displayName || "Profile";
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [isCravingModalOpen, setIsCravingModalOpen] = useState(false);
   const [isMatcherOpen, setIsMatcherOpen] = useState(false);
@@ -149,11 +151,20 @@ export function AppNavigationDock() {
                 isProfileActive ? 'text-orange-400' : 'text-white/45 hover:text-white'
               }`}
             >
-              {user?.photoURL ? (
+              {currentPhoto ? (
                 <div className={`w-5.5 h-5.5 rounded-full p-0.5 border transition-all ${
                   isProfileActive ? 'border-orange-400 shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'border-white/30'
                 }`}>
-                  <img src={user.photoURL} alt="Profile" className="w-full h-full rounded-full object-cover" />
+                  <img 
+                    src={currentPhoto} 
+                    alt="Profile" 
+                    referrerPolicy="no-referrer"
+                    loading="lazy"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userDisplayName)}&background=f97316&color=fff&bold=true`;
+                    }}
+                    className="w-full h-full rounded-full object-cover" 
+                  />
                 </div>
               ) : (
                 <User size={20} className={isProfileActive ? 'fill-orange-400/20 stroke-[2.5]' : 'stroke-[1.75]'} />

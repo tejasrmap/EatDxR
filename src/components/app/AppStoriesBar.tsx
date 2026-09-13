@@ -15,9 +15,12 @@ interface AppStoriesBarProps {
 }
 
 export function AppStoriesBar({ onLogClick, cravings: propCravings }: AppStoriesBarProps) {
-  const { user } = useAuth();
+  const { user, dishdUser } = useAuth();
   const [liveCravings, setLiveCravings] = useState<Review[]>([]);
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
+
+  const currentPhoto = dishdUser?.photoURL || user?.photoURL;
+  const userDisplayName = dishdUser?.displayName || user?.displayName || "You";
 
   useEffect(() => {
     if (propCravings) {
@@ -65,10 +68,15 @@ export function AppStoriesBar({ onLogClick, cravings: propCravings }: AppStories
           >
             <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-0.5 bg-gradient-to-tr from-orange-500 via-amber-400 to-rose-500 shadow-md group-hover:shadow-[0_0_16px_rgba(249,115,22,0.45)] transition-all">
               <div className="w-full h-full rounded-full overflow-hidden border-2 border-white dark:border-zinc-950 bg-slate-100 dark:bg-zinc-900 relative flex items-center justify-center">
-                {user?.photoURL ? (
+                {currentPhoto ? (
                   <img
-                    src={user.photoURL}
-                    alt={user.displayName || "You"}
+                    src={currentPhoto}
+                    alt={userDisplayName}
+                    referrerPolicy="no-referrer"
+                    loading="lazy"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userDisplayName)}&background=f97316&color=fff&bold=true`;
+                    }}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                   />
                 ) : (
@@ -77,7 +85,7 @@ export function AppStoriesBar({ onLogClick, cravings: propCravings }: AppStories
                   </div>
                 )}
               </div>
-              {user?.photoURL && (
+              {currentPhoto && (
                 <div className="absolute bottom-0 right-0 w-4 h-4 sm:w-4.5 sm:h-4.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white flex items-center justify-center font-black text-[11px] shadow-md border-2 border-white dark:border-zinc-950">
                   <Plus size={10} strokeWidth={3.5} />
                 </div>
@@ -113,6 +121,10 @@ export function AppStoriesBar({ onLogClick, cravings: propCravings }: AppStories
                     <img
                       src={mediaThumbnail}
                       alt={craving.restaurantName}
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=120";
+                      }}
                       onLoad={() => handleImageLoad(craving.id)}
                       className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-110 ${
                         isLoaded ? "opacity-100" : "opacity-0"

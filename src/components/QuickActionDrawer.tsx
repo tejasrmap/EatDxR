@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Plus, Flame, Navigation, Dna, Trophy, Wifi, WifiOff, 
@@ -53,10 +54,13 @@ export function QuickActionDrawer({
     }
   };
 
+  const location = useLocation();
+  const isReelsView = location.pathname.startsWith('/app/cravings') || location.pathname.startsWith('/cravings');
+
   return (
     <>
-      {/* Offline Status Badge (Visible when offline or items pending) */}
-      {(!isOnline || pendingCount > 0) && (
+      {/* Offline Status Badge (Visible when offline or items pending, but hidden on full-screen reels) */}
+      {(!isOnline || pendingCount > 0) && !isReelsView && (
         <div className="fixed top-3 inset-x-4 z-[200] max-w-sm mx-auto">
           <motion.div
             initial={{ y: -20, opacity: 0 }}

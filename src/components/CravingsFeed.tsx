@@ -62,12 +62,12 @@ export function CravingsFeed() {
   return (
     <div className="h-[100dvh] w-full bg-black text-white relative flex flex-col items-center justify-start overflow-hidden select-none">
       
-      {/* Top Sleek Control Bar (Floating right below notch / top edge, aligned to main content area) */}
-      <div className="absolute top-[calc(env(safe-area-inset-top,0px)+0.75rem)] inset-x-0 z-40 w-full max-w-md lg:max-w-xl mx-auto px-3 flex flex-col items-center gap-2 pointer-events-none">
-        <div className="w-full flex items-center justify-between pointer-events-auto bg-black/80 backdrop-blur-2xl border border-white/15 px-4 py-2 rounded-full shadow-2xl">
+      {/* Top Floating Control Bar (Translucent Glass, positioned below notch) */}
+      <div className="absolute top-[calc(env(safe-area-inset-top,0px)+0.75rem)] inset-x-0 z-40 w-full max-w-md lg:max-w-xl mx-auto px-3 flex flex-col items-center gap-1.5 pointer-events-none">
+        <div className="w-full flex items-center justify-between pointer-events-auto bg-black/55 backdrop-blur-xl border border-white/15 px-3.5 py-1.5 rounded-full shadow-2xl">
           <div className="flex items-center gap-2">
-            <Flame size={16} className="text-orange-500 fill-orange-500 animate-pulse" />
-            <span className="text-xs font-black uppercase tracking-widest text-white">Cravings</span>
+            <Flame size={15} className="text-orange-500 fill-orange-500 animate-pulse" />
+            <span className="text-[11px] font-black uppercase tracking-widest text-white">Cravings</span>
           </div>
 
           <button
@@ -75,14 +75,14 @@ export function CravingsFeed() {
               triggerHaptic();
               user ? setIsUploadOpen(true) : login();
             }}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-black text-[11px] font-black uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all shadow-md shadow-orange-500/25 cursor-pointer"
+            className="flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-black text-[10px] font-black uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all shadow-md shadow-orange-500/25 cursor-pointer"
           >
-            <Plus size={14} strokeWidth={3} />
+            <Plus size={13} strokeWidth={3} />
             <span>Post Reel</span>
           </button>
         </div>
 
-        {/* Category Filter Pills (Scrollable horizontally) */}
+        {/* Category Filter Pills (Compact, translucent) */}
         <div className="w-full flex items-center gap-1.5 overflow-x-auto no-scrollbar pointer-events-auto py-0.5 px-0.5">
           {CATEGORIES.map(cat => (
             <button
@@ -91,10 +91,10 @@ export function CravingsFeed() {
                 triggerHaptic();
                 setSelectedCategory(cat.label);
               }}
-              className={`px-3.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all border shrink-0 active:scale-95 cursor-pointer ${
+              className={`px-3 py-1 rounded-full text-[10px] font-bold whitespace-nowrap transition-all border shrink-0 active:scale-95 cursor-pointer ${
                 selectedCategory === cat.label
                   ? "bg-white text-black border-white shadow-lg font-black"
-                  : "bg-black/85 backdrop-blur-md text-white/65 border-white/10 hover:border-white/30 hover:text-white"
+                  : "bg-black/55 backdrop-blur-xl text-white/75 border-white/10 hover:border-white/30 hover:text-white"
               }`}
             >
               {cat.label}

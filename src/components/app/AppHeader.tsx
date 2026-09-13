@@ -23,6 +23,8 @@ import { Geolocation } from "@capacitor/geolocation";
 
 export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = false, title }: AppHeaderProps) {
   const { user, dishdUser, login, logout } = useAuth();
+  const currentPhoto = dishdUser?.photoURL || user?.photoURL;
+  const userDisplayName = dishdUser?.displayName || user?.displayName || "User";
   const { theme, setTheme } = useTheme();
   const routerLocation = useLocation();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -236,8 +238,17 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
                 className="w-8 h-8 rounded-full border border-orange-500/60 overflow-hidden hover:border-orange-400 active:scale-95 transition-all shrink-0 cursor-pointer shadow-sm flex items-center justify-center bg-zinc-900"
                 title={user ? "Account & Menu" : "Sign In"}
               >
-                {user?.photoURL ? (
-                  <img src={user.photoURL} alt={user.displayName || "User"} className="w-full h-full object-cover" />
+                {currentPhoto ? (
+                  <img 
+                    src={currentPhoto} 
+                    alt={userDisplayName} 
+                    referrerPolicy="no-referrer"
+                    loading="lazy"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userDisplayName)}&background=f97316&color=fff&bold=true`;
+                    }}
+                    className="w-full h-full object-cover" 
+                  />
                 ) : (
                   <User size={15} className="text-orange-400" />
                 )}

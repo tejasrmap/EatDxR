@@ -147,9 +147,18 @@ export function MobileBottomNav() {
               className={`flex flex-col items-center gap-1 transition-all active:translate-y-0.5 ${location.pathname.startsWith('/profile') ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
               {user ? (
-                 <div className={`w-6 h-6 rounded-full overflow-hidden border ${location.pathname.startsWith('/profile') ? 'border-orange-400' : 'border-border'}`}>
-                    <img src={dishdUser?.photoURL || user.photoURL || ""} alt="" className="w-full h-full object-cover" />
-                 </div>
+                  <div className={`w-6 h-6 rounded-full overflow-hidden border ${location.pathname.startsWith('/profile') ? 'border-orange-400' : 'border-border'}`}>
+                     <img 
+                       src={dishdUser?.photoURL || user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(dishdUser?.displayName || user?.displayName || 'U')}&background=f97316&color=fff&bold=true`} 
+                       alt="" 
+                       referrerPolicy="no-referrer"
+                       loading="lazy"
+                       onError={(e) => {
+                         (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(dishdUser?.displayName || user?.displayName || 'U')}&background=f97316&color=fff&bold=true`;
+                       }}
+                       className="w-full h-full object-cover" 
+                     />
+                  </div>
               ) : (
                  <User size={20} />
               )}

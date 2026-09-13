@@ -150,10 +150,15 @@ export function AppSidebar() {
                 : "text-slate-600 dark:text-white/70 hover:text-slate-950 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5 font-medium"
             }`}
           >
-            {user?.photoURL ? (
+            {(dishdUser?.photoURL || user?.photoURL) ? (
               <img
-                src={user.photoURL}
-                alt={user.displayName || "Profile"}
+                src={dishdUser?.photoURL || user?.photoURL}
+                alt={dishdUser?.displayName || user?.displayName || "Profile"}
+                referrerPolicy="no-referrer"
+                loading="lazy"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(dishdUser?.displayName || user?.displayName || "User")}&background=f97316&color=fff&bold=true`;
+                }}
                 className="w-5 h-5 rounded-full object-cover border border-slate-300 dark:border-white/20"
               />
             ) : (
