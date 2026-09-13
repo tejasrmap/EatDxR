@@ -54,6 +54,10 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
+  // Video meta
+  const [videoMeta, setVideoMeta] = useState<{ sizeMB: number; duration: number } | null>(null);
+  const [uploadStatusText, setUploadStatusText] = useState("");
+
   const videoInputRef = useRef<HTMLInputElement>(null);
 
   const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,6 +66,12 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
 
     if (!file.type.startsWith("video/")) {
       toast.error("Please upload a video file.");
+      return;
+    }
+
+    const sizeMB = file.size / (1024 * 1024);
+    if (sizeMB > 45) {
+      toast.error(`Video is too large (${sizeMB.toFixed(1)} MB). To ensure fast instant publishing, please select a short clip under 45 MB.`);
       return;
     }
 
@@ -74,6 +84,7 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
         return;
       }
       setVideoFile(file);
+      setVideoMeta({ sizeMB, duration: Math.round(video.duration) });
       setVideoPreview(URL.createObjectURL(file));
       setStep("details");
     };
@@ -130,7 +141,7 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
     setUploadProgress(10);
 
     try {
-      let finalVideoUrl = "https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-pizza-being-cut-with-a-slicer-44171-large.mp4";
+      let finalVideoUrl = "https://res.cloudinary.com/demo/video/upload/q_auto,w_720/breakfast.mp4";
 
       if (videoFile) {
         const ext = videoFile.name.split('.').pop() || 'mp4';
@@ -138,13 +149,20 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
 
         // Primary: Supabase Storage bucket 'cravings' with live progress
         try {
-          const supaUrl = await uploadMedia(videoFile, 'cravings', videoPath, (pct) => {
+          const supaUrl = await uploadMedia(videoFile, 'cravings', videoPath, (pct, loaded, total) => {
             setUploadProgress(pct);
+            if (loaded && total) {
+              const loadedMB = (loaded / (1024 * 1024)).toFixed(1);
+              const totalMB = (total / (1024 * 1024)).toFixed(1);
+              setUploadStatusText(`${pct}% (${loadedMB}/${totalMB} MB)`);
+            } else {
+              setUploadStatusText(`${pct}%`);
+            }
           });
           if (supaUrl) {
             finalVideoUrl = supaUrl;
           } else {
-            console.warn("Supabase video upload returned null, using default video");
+            console.warn("Supabase video upload returned null, using fallback URL");
           }
         } catch (uploadErr) {
           console.warn("Supabase video upload exception:", uploadErr);
@@ -152,6 +170,7 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
       }
 
       setUploadProgress(98);
+      setUploadStatusText("Saving...");
 
       const reviewRef = doc(collection(db, "reviews"));
       const cleanRating = Math.min(10, Math.max(1, Number(rating) || 9));
@@ -209,7 +228,6 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
           userPhoto: dishdUser?.photoURL || user.photoURL || "",
           restaurantName: restaurantName.trim(),
           attachedDish: dishName.trim(),
-          dishName: dishName.trim(),
           city: selectedRestaurant?.city || "Hyderabad",
           videoUrl: finalVideoUrl,
           content: reviewContent.trim(),
@@ -323,7 +341,8 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
                   <Video size={24} className="text-orange-400" />
                 </div>
                 <h3 className="text-xs font-black uppercase tracking-wider mb-1">Select Video Clip</h3>
-                <p className="text-[11px] text-white/40 mb-3">Vertical 9:16 format (under 90s)</p>
+                <p className="text-[11px] text-white/40 mb-1">Vertical 9:16 format (under 60s)</p>
+                <p className="text-[10px] text-orange-400 font-bold mb-3">⚡ Short clips under 35MB upload in seconds</p>
                 <span className="px-3.5 py-1.5 rounded-full bg-white text-black text-[11px] font-bold uppercase tracking-wider group-hover:bg-orange-400 transition-colors">
                   Browse Files
                 </span>
@@ -333,6 +352,8 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
                 <button
                   type="button"
                   onClick={() => {
+                    setVideoFile(null);
+                    setVideoMeta(null);
                     setVideoPreview("https://res.cloudinary.com/demo/video/upload/q_auto,w_720/breakfast.mp4");
                     setStep("details");
                   }}
@@ -353,9 +374,26 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
                   <div className="min-w-0 flex-1">
                     <span className="text-[9px] uppercase tracking-wider text-orange-400 font-bold">Attached Media</span>
                     <p className="text-xs font-bold truncate text-white">Food Reel Ready for Publishing</p>
+                    {videoMeta ? (
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] text-white/70 bg-white/10 px-2 py-0.5 rounded-md font-mono font-bold">
+                          {videoMeta.sizeMB.toFixed(1)} MB
+                        </span>
+                        <span className="text-[10px] text-white/70 bg-white/10 px-2 py-0.5 rounded-md font-mono font-bold">
+                          {videoMeta.duration}s
+                        </span>
+                        {videoMeta.sizeMB > 25 && (
+                          <span className="text-[10px] text-amber-400 font-bold">
+                            ⚡ High-res video
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-emerald-400 font-bold">Curated HD Sample Video</span>
+                    )}
                     <button 
                       onClick={() => setStep("media")}
-                      className="text-[10px] text-white/40 hover:text-white underline mt-0.5"
+                      className="text-[10px] text-white/40 hover:text-white underline mt-1 block cursor-pointer"
                     >
                       Change video
                     </button>
@@ -556,30 +594,41 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
 
         {/* Footer Actions */}
         {step === "details" && (
-          <div className="p-3.5 sm:p-4 border-t border-white/10 bg-zinc-900/50 backdrop-blur-md flex items-center justify-between">
-            <button
-              onClick={() => setStep("media")}
-              className="px-4 py-2 rounded-full text-xs font-bold text-white/60 hover:text-white transition-colors"
-            >
-              Back
-            </button>
-            <button
-              disabled={isUploading || !dishName.trim() || !restaurantName.trim()}
-              onClick={handlePublish}
-              className="px-6 py-2.5 rounded-full bg-orange-500 text-black font-black uppercase tracking-wider text-xs hover:bg-orange-400 disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-orange-500/20 active:scale-95"
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  <span>{uploadProgress > 0 && uploadProgress < 98 ? `Uploading ${uploadProgress}%...` : "Publishing..."}</span>
-                </>
-              ) : (
-                <>
-                  <Flame size={14} className="fill-black" />
-                  <span>Post Craving</span>
-                </>
-              )}
-            </button>
+          <div className="p-3.5 sm:p-4 border-t border-white/10 bg-zinc-900/50 backdrop-blur-md flex flex-col gap-2.5">
+            {isUploading && uploadProgress > 0 && (
+              <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                <div 
+                  className="bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-400 h-full transition-all duration-200 ease-out" 
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            )}
+            <div className="flex items-center justify-between">
+              <button
+                disabled={isUploading}
+                onClick={() => setStep("media")}
+                className="px-4 py-2 rounded-full text-xs font-bold text-white/60 hover:text-white transition-colors disabled:opacity-30 cursor-pointer"
+              >
+                Back
+              </button>
+              <button
+                disabled={isUploading || !dishName.trim() || !restaurantName.trim()}
+                onClick={handlePublish}
+                className="px-6 py-2.5 rounded-full bg-orange-500 text-black font-black uppercase tracking-wider text-xs hover:bg-orange-400 disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-orange-500/20 active:scale-95 cursor-pointer"
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>{uploadProgress > 0 && uploadProgress < 98 ? `Uploading ${uploadStatusText || `${uploadProgress}%`}` : "Saving to Database..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <Flame size={14} className="fill-black" />
+                    <span>Post Craving</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         )}
       </motion.div>
