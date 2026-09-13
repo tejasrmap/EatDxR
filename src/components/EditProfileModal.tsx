@@ -1,21 +1,26 @@
 import React, { useState, useRef } from "react";
 import { User } from "../types";
 import { X, Loader2, Save, Camera, ChevronRight } from "lucide-react";
-import { doc, setDoc, updateDoc, collection, query, where, getDocs, writeBatch } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
 import { db, auth, storage } from "../firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { upsertProfile, uploadMedia, getProfile } from "../services/supabaseService";
+import { upsertProfile, uploadMedia, getProfile, syncUserAuthorInfo } from "../services/supabaseService";
 import { toast } from "sonner";
+import { useAuth } from "../App";
+import { useNavigate } from "react-router-dom";
 
 interface EditProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User;
   isOnboarding?: boolean;
+  onSuccess?: (updatedUser: User) => void;
 }
 
-export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, user, isOnboarding }) => {
+export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, user, isOnboarding, onSuccess }) => {
+  const { updateDishdUser } = useAuth();
+  const navigate = useNavigate();
   const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [username, setUsername] = useState(user?.username || "");
   const [pronouns, setPronouns] = useState(user?.pronouns || "");
@@ -43,10 +48,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
 
       uploadTask.on('state_changed', 
         (snapshot) => {
-          const progress = (snapshot.bytesTransferred / (snapshot.totalBytes || 1)) * 100;
-          setUploadProgress(Math.round(progress));
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
         }, 
-        (error: any) => {
+        (error) => {
            clearTimeout(timeout);
            console.error("Upload failed", error);
            toast.error(`Upload Failed: ${error.code || error.message}`);
@@ -116,111 +121,74 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
         .map(c => c.trim())
         .filter(c => c.length > 0);
 
-      if (username.trim()) {
-        const cleanUser = username.trim().toLowerCase();
+      const cleanUser = username.replace(/^@+/, '').trim().toLowerCase();
+
+      if (cleanUser && cleanUser !== (user.username || '').toLowerCase()) {
         const existingSupa = await getProfile(cleanUser);
         if (existingSupa && existingSupa.uid !== user.uid) {
           toast.error("That username is already taken!");
           setIsSaving(false);
           return;
         }
-
-        try {
-          const usernameQuery = query(
-            collection(db, "users"),
-            where("username", "==", cleanUser)
-          );
-          const usernameSnap = await getDocs(usernameQuery);
-          if (!usernameSnap.empty && usernameSnap.docs[0].id !== user.uid) {
-            toast.error("That username is already taken!");
-            setIsSaving(false);
-            return;
-          }
-        } catch (e) {
-          // Fallback ignore if firestore permissions block query
-        }
       }
 
-      const currentUser = auth.currentUser;
-      if (currentUser) {
-        await updateProfile(currentUser, {
-          displayName: displayName.trim()
-        });
-      }
-
-      const userRef = doc(db, "users", user.uid);
-      const payload: Partial<User> = {
-        displayName: displayName.trim(),
-        photoURL: finalPhotoURL.trim(),
-        username: username.trim().toLowerCase() || undefined,
-        pronouns: pronouns.trim() || undefined,
-        bio: bio.trim() || undefined,
-        favoriteCuisines: favoriteCuisines.length > 0 ? favoriteCuisines : undefined
-      };
-
-      const cleanPayload = Object.fromEntries(Object.entries(payload).filter(([_, v]) => v !== undefined));
-      await setDoc(userRef, cleanPayload, { merge: true });
-
-      // --- Universal Sync to Supabase & LocalStorage ---
+      const targetUsername = cleanUser || user.username || `critic_${user.uid.slice(0, 6)}`;
       const updatedUserObj: User = {
         ...user,
         displayName: displayName.trim(),
         photoURL: finalPhotoURL.trim(),
-        username: username.trim().toLowerCase() || user.username || `critic_${user.uid.slice(0, 6)}`,
+        username: targetUsername,
         pronouns: pronouns.trim() || user.pronouns,
         bio: bio.trim() || user.bio,
         favoriteCuisines: favoriteCuisines.length > 0 ? favoriteCuisines : user.favoriteCuisines
       };
+
+      // 1. Primary: Save to Supabase (Profiles table)
       await upsertProfile(updatedUserObj);
+
+      // 2. Immediately sync in-memory App Context and local storage
+      updateDishdUser(updatedUserObj);
       try {
         localStorage.setItem("madeater_dishd_user", JSON.stringify(updatedUserObj));
       } catch (e) {}
 
-      // --- Universal Sync Engine (Infinite-Batch Capacity) ---
-      if (finalPhotoURL !== user.photoURL || displayName !== user.displayName) {
-        const updateTasks: { ref: any, data: any }[] = [];
-        
-        // 1. Prepare Reviews Sync
-        const reviewsQuery = query(collection(db, "reviews"), where("userId", "==", user.uid));
-        const reviewsSnap = await getDocs(reviewsQuery);
-        reviewsSnap.forEach((doc) => {
-          updateTasks.push({ 
-            ref: doc.ref, 
-            data: { userPhoto: finalPhotoURL, userName: displayName.trim() } 
-          });
-        });
-
-        // 2. Prepare Interactions Sync
-        const interactionsQuery = query(collection(db, "interactions"), where("userId", "==", user.uid));
-        const interactionsSnap = await getDocs(interactionsQuery);
-        interactionsSnap.forEach((doc) => {
-          updateTasks.push({ 
-            ref: doc.ref, 
-            data: { userPhoto: finalPhotoURL, userName: displayName.trim() } 
-          });
-        });
-
-        // 3. Prepare Notifications Sync
-        const notificationsQuery = query(collection(db, "notifications"), where("actorId", "==", user.uid));
-        const notificationsSnap = await getDocs(notificationsQuery);
-        notificationsSnap.forEach((doc) => {
-          updateTasks.push({ 
-            ref: doc.ref, 
-            data: { actorPhoto: finalPhotoURL, actorName: displayName.trim() } 
-          });
-        });
-
-        // Execute in 500-doc chunks (Firestore limit)
-        for (let i = 0; i < updateTasks.length; i += 500) {
-          const batch = writeBatch(db);
-          const chunk = updateTasks.slice(i, i + 500);
-          chunk.forEach(task => batch.update(task.ref, task.data));
-          await batch.commit();
-        }
+      // 3. Update author info across reviews and cravings in Supabase
+      if (finalPhotoURL !== user.photoURL || displayName.trim() !== user.displayName) {
+        syncUserAuthorInfo(user.uid, displayName.trim(), finalPhotoURL.trim());
       }
-      
+
+      // 4. Fire onSuccess callback
+      onSuccess?.(updatedUserObj);
+
       toast.success(isOnboarding ? "Welcome to Madeater! Profile set up." : "Profile updated successfully!");
       onClose();
+
+      // 5. If user changed their username/critic ID, navigate to their new profile URL
+      if (targetUsername && targetUsername !== user.username) {
+        const isAppRoute = window.location.pathname.startsWith('/app');
+        const newProfilePath = isAppRoute ? `/app/profile/${targetUsername}` : `/profile/${targetUsername}`;
+        navigate(newProfilePath, { replace: true });
+      }
+
+      // 6. Safe non-blocking mirror to Firestore
+      try {
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          updateProfile(currentUser, { displayName: displayName.trim() }).catch(() => {});
+        }
+        const userRef = doc(db, "users", user.uid);
+        const cleanPayload = Object.fromEntries(Object.entries({
+          displayName: displayName.trim(),
+          photoURL: finalPhotoURL.trim(),
+          username: targetUsername,
+          pronouns: pronouns.trim() || undefined,
+          bio: bio.trim() || undefined,
+          favoriteCuisines: favoriteCuisines.length > 0 ? favoriteCuisines : undefined
+        }).filter(([_, v]) => v !== undefined));
+        setDoc(userRef, cleanPayload, { merge: true }).catch(() => {});
+      } catch (fbErr) {
+        console.warn("Notice mirroring profile to Firestore:", fbErr);
+      }
     } catch (error: any) {
       console.error("Error updating profile:", error);
       toast.error("Failed to update profile.");

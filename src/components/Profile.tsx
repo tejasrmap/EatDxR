@@ -193,8 +193,9 @@ export const Profile: React.FC = () => {
         }
 
         if (resolvedUser) {
-          if (resolvedUser.username && identifier.toLowerCase() !== resolvedUser.username.toLowerCase()) {
-            const isAppRoute = isNative && window.location.pathname.startsWith('/app');
+          const cleanIdentifier = identifier?.replace(/^@+/, '') || '';
+          if (resolvedUser.username && cleanIdentifier.toLowerCase() !== resolvedUser.username.toLowerCase()) {
+            const isAppRoute = window.location.pathname.startsWith('/app');
             const targetPath = isAppRoute ? `/app/profile/${resolvedUser.username}` : `/profile/${resolvedUser.username}`;
             navigate(targetPath, { replace: true });
             return;
@@ -833,6 +834,9 @@ export const Profile: React.FC = () => {
       <EditProfileModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
+        onSuccess={(updatedUser) => {
+          setUser(updatedUser);
+        }}
         user={user}
       />
 

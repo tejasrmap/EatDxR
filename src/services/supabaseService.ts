@@ -95,17 +95,18 @@ export async function getProfile(idOrUsername: string): Promise<User | null> {
   if (!isSupabaseConfigured || !idOrUsername) return null;
 
   try {
+    const cleanIdentifier = idOrUsername.replace(/^@+/, '').trim();
     let { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', idOrUsername)
+      .eq('id', cleanIdentifier)
       .maybeSingle();
 
     if (!data) {
       const res = await supabase
         .from('profiles')
         .select('*')
-        .ilike('username', idOrUsername)
+        .ilike('username', cleanIdentifier)
         .maybeSingle();
       data = res.data;
       error = res.error;
@@ -160,7 +161,7 @@ export async function upsertProfile(user: Partial<User>): Promise<void> {
     };
 
     if (user.displayName !== undefined) updatePayload.display_name = user.displayName;
-    if (user.username !== undefined) updatePayload.username = user.username;
+    if (user.username !== undefined) updatePayload.username = user.username.trim().toLowerCase();
     if (user.email !== undefined) updatePayload.email = user.email;
     if (user.photoURL !== undefined) updatePayload.photo_url = user.photoURL;
     if (user.bio !== undefined) updatePayload.bio = user.bio;
@@ -172,10 +173,29 @@ export async function upsertProfile(user: Partial<User>): Promise<void> {
     if (user.tasteDNA !== undefined) updatePayload.taste_dna = user.tasteDNA;
     if (user.stats !== undefined) updatePayload.stats = user.stats;
 
-    const { error } = await supabase.from('profiles').upsert(updatePayload);
+    const { error } = await supabase.from('profiles').upsert(updatePayload, { onConflict: 'id' });
     if (error) throw error;
   } catch (err) {
-    console.warn('[Supabase] Error upserting profile:', err);
+    console.error('[Supabase] Error upserting profile:', err);
+    throw err;
+  }
+}
+
+export async function syncUserAuthorInfo(userId: string, displayName: string, photoURL: string): Promise<void> {
+  if (!isSupabaseConfigured || !userId) return;
+  try {
+    await Promise.all([
+      supabase.from('reviews').update({
+        user_name: displayName.trim(),
+        user_photo: photoURL.trim()
+      }).eq('user_id', userId),
+      supabase.from('cravings').update({
+        user_name: displayName.trim(),
+        user_photo: photoURL.trim()
+      }).eq('user_id', userId)
+    ]);
+  } catch (e) {
+    console.warn('[Supabase] syncUserAuthorInfo notice:', e);
   }
 }
 
@@ -183,20 +203,28 @@ export async function ensureProfile(userId: string, userName?: string, userPhoto
   if (!isSupabaseConfigured || !userId) return;
 
   try {
+    // CRITICAL: Check if profile already exists so we NEVER overwrite the user's custom username/critic ID!
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id, username')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (existing && existing.id) {
+      return;
+    }
+
     const cleanUsername = `critic_${userId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 10)}`;
     const { error } = await supabase
       .from('profiles')
-      .upsert(
-        {
-          id: userId,
-          display_name: userName || 'Food Critic',
-          photo_url: userPhoto || `https://api.dicebear.com/7.x/bottts/svg?seed=${userId}`,
-          username: cleanUsername,
-          email: email || '',
-          updated_at: new Date().toISOString()
-        },
-        { onConflict: 'id' }
-      );
+      .insert({
+        id: userId,
+        display_name: userName || 'Food Critic',
+        photo_url: userPhoto || `https://api.dicebear.com/7.x/bottts/svg?seed=${userId}`,
+        username: cleanUsername,
+        email: email || '',
+        updated_at: new Date().toISOString()
+      });
 
     if (error) {
       console.warn('[Supabase] Profile ensure notice:', error.message);
