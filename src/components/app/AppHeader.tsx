@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, Sparkles, MapPin, ChevronDown, ArrowLeft, Navigation, Heart } from "lucide-react";
+import { Search, Sparkles, MapPin, ChevronDown, ArrowLeft, Navigation, Heart, Send } from "lucide-react";
 import { useAuth } from "../../App";
 import { useTheme } from "../ThemeProvider";
 import { SearchOverlay } from "../SearchOverlay";
@@ -8,6 +8,7 @@ import { AIFoodAssistant } from "../AIFoodAssistant";
 import { LogMealModal } from "../LogMealModal";
 import { ModeSwitcher } from "../ModeSwitcher";
 import { NotificationsOverlay } from "../NotificationsOverlay";
+import { DirectMessagesOverlay } from "../DirectMessagesOverlay";
 import { triggerHaptic } from "../../services/nativeService";
 import { toast } from "sonner";
 
@@ -30,6 +31,8 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [showCityMenu, setShowCityMenu] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isDMOpen, setIsDMOpen] = useState(false);
+  const [unreadDMs, setUnreadDMs] = useState(1);
   const [unreadNotifs, setUnreadNotifs] = useState(() => {
     try {
       const saved = localStorage.getItem("madeater_activity_notifications");
@@ -241,6 +244,22 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
               )}
             </button>
 
+            {/* Instagram Direct Messages (DMs) Bar */}
+            <button
+              onClick={() => { 
+                triggerHaptic(); 
+                setIsDMOpen(true);
+              }}
+              className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all shrink-0 cursor-pointer shadow-sm group"
+              title="Foodie Direct Messages"
+              aria-label="Direct Messages"
+            >
+              <Send size={16} className="stroke-[2.2] group-hover:text-orange-400 -translate-x-0.5 translate-y-0.5 transition-colors" />
+              {unreadDMs > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-orange-500 border border-[#09090b] animate-pulse" />
+              )}
+            </button>
+
           </div>
 
         </div>
@@ -253,6 +272,11 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
         isOpen={isNotificationsOpen} 
         onClose={() => setIsNotificationsOpen(false)} 
         onCountChange={(cnt) => setUnreadNotifs(cnt)}
+      />
+      <DirectMessagesOverlay 
+        isOpen={isDMOpen} 
+        onClose={() => setIsDMOpen(false)} 
+        onUnreadChange={(cnt) => setUnreadDMs(cnt)}
       />
     </>
   );

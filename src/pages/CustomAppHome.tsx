@@ -24,6 +24,7 @@ const FEED_TABS = [
   { id: "following", label: "Friends" },
   { id: "trending", label: "Hot" },
   { id: "nearby", label: "Nearby" },
+  { id: "palate", label: "My Palate" },
 ] as const;
 
 function ReviewCardSkeleton() {
@@ -73,7 +74,7 @@ export function CustomAppHome() {
   const [suggestedCritics, setSuggestedCritics] = useState<User[]>([]);
   const [popularRestaurants, setPopularRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
-  const [feedTab, setFeedTab] = useState<"for-you" | "following" | "trending" | "nearby">("for-you");
+  const [feedTab, setFeedTab] = useState<"for-you" | "following" | "trending" | "nearby" | "palate">("for-you");
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [isCravingModalOpen, setIsCravingModalOpen] = useState(false);
   const [isMatcherOpen, setIsMatcherOpen] = useState(false);
@@ -128,6 +129,21 @@ export function CustomAppHome() {
       return (r.likes || 0) > 5 || r.rating >= 9.0;
     }
     if (feedTab === "nearby") {
+      return true;
+    }
+    if (feedTab === "palate") {
+      try {
+        const prefsStr = localStorage.getItem("madeater_content_preferences");
+        if (prefsStr) {
+          const prefs = JSON.parse(prefsStr);
+          const isVegOnly = prefs.dietary?.includes("Vegetarian") || prefs.dietary?.includes("Vegan") || prefs.dietary?.includes("Jain");
+          if (isVegOnly) {
+            const text = ((r.dishes?.[0]?.name || "") + " " + (r.content || "")).toLowerCase();
+            const isNonVeg = text.includes("chicken") || text.includes("mutton") || text.includes("fish") || text.includes("prawn") || text.includes("meat") || text.includes("beef") || text.includes("pork");
+            if (isNonVeg) return false;
+          }
+        }
+      } catch {}
       return true;
     }
     return true;

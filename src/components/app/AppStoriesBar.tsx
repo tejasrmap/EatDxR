@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { triggerHaptic } from "../../services/nativeService";
 import { Review } from "../../types";
 import { getCravings } from "../../services/supabaseService";
+import { StoryViewerModal, StoryItem } from "../StoryViewerModal";
 
 import { motion } from "motion/react";
 import { useAuth } from "../../App";
@@ -17,6 +18,8 @@ export function AppStoriesBar({ onLogClick, cravings: propCravings }: AppStories
   const { user, dishdUser } = useAuth();
   const [liveCravings, setLiveCravings] = useState<Review[]>([]);
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
+  const [isStoryViewerOpen, setIsStoryViewerOpen] = useState(false);
+  const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
 
   const currentPhoto = dishdUser?.photoURL || user?.photoURL;
   const userDisplayName = dishdUser?.displayName || user?.displayName || "You";
@@ -84,7 +87,7 @@ export function AppStoriesBar({ onLogClick, cravings: propCravings }: AppStories
         </motion.div>
 
         {/* Live Stories from Real User Cravings */}
-        {liveCravings.map((craving) => {
+        {liveCravings.map((craving, idx) => {
           const isLoaded = !!loadedImages[craving.id];
           const mediaThumbnail = craving.dishes?.[0]?.image || craving.userPhoto || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5";
           return (
@@ -94,9 +97,13 @@ export function AppStoriesBar({ onLogClick, cravings: propCravings }: AppStories
               whileTap={{ scale: 0.95 }}
               className="shrink-0 snap-start"
             >
-              <Link
-                to="/app/cravings"
-                onClick={() => triggerHaptic()}
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic();
+                  setSelectedStoryIndex(idx);
+                  setIsStoryViewerOpen(true);
+                }}
                 className="flex flex-col items-center gap-1.5 group text-center cursor-pointer block"
               >
                 <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-0.5 bg-gradient-to-tr from-orange-500 via-amber-400 to-rose-500 shadow-md group-hover:shadow-[0_0_16px_rgba(249,115,22,0.45)] transition-all">
@@ -125,12 +132,32 @@ export function AppStoriesBar({ onLogClick, cravings: propCravings }: AppStories
                 <span className="text-[10px] font-medium text-slate-700 dark:text-white/80 max-w-[68px] sm:max-w-[72px] truncate group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors block text-center">
                   {craving.dishes?.[0]?.name || craving.attachedDish || craving.restaurantName}
                 </span>
-              </Link>
+              </button>
             </motion.div>
           );
         })}
 
       </div>
+
+      {/* Full-Screen Instagram Story Player */}
+      <StoryViewerModal
+        isOpen={isStoryViewerOpen}
+        onClose={() => setIsStoryViewerOpen(false)}
+        initialIndex={selectedStoryIndex}
+        stories={liveCravings.map((c) => ({
+          id: c.id,
+          criticId: c.userId,
+          criticName: c.userName || "Food Critic",
+          criticUsername: c.userName?.toLowerCase().replace(/\s+/g, '_') || "critic",
+          criticPhoto: c.userPhoto || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+          mediaUrl: c.dishes?.[0]?.image || c.userPhoto || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600",
+          dishName: c.dishes?.[0]?.name || c.attachedDish,
+          restaurantName: c.restaurantName,
+          restaurantId: c.restaurantId,
+          rating: c.rating,
+          timestamp: "3h ago"
+        }))}
+      />
     </div>
   );
 }

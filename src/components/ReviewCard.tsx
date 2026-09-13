@@ -13,7 +13,9 @@ import {
   Loader2, 
   Sparkles,
   MapPin,
-  Bookmark
+  Bookmark,
+  EyeOff,
+  Crown
 } from "lucide-react";
 import { useAuth } from "../App";
 import { deleteReview, toggleLike as toggleSupabaseLike, addComment, getComments, createNotification } from "../services/supabaseService";
@@ -117,17 +119,66 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
     return typeof window !== 'undefined' && localStorage.getItem("madeater_hide_like_counts") === "true";
   });
 
+  const [hiddenWords, setHiddenWords] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("madeater_hidden_words");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [dataSaverActive, setDataSaverActive] = useState<boolean>(() => {
+    return typeof window !== 'undefined' && localStorage.getItem("madeater_data_saver") === "true";
+  });
+
+  const [isVipCritic, setIsVipCritic] = useState<boolean>(() => {
+    return typeof window !== 'undefined' && localStorage.getItem("madeater_vip_critic") === "true";
+  });
+
+  const [isContentRevealed, setIsContentRevealed] = useState(false);
+
   useEffect(() => {
     const handleLikeCountsChange = () => {
       setHideLikeCounts(localStorage.getItem("madeater_hide_like_counts") === "true");
     };
+    const handleHiddenWordsChange = () => {
+      try {
+        const saved = localStorage.getItem("madeater_hidden_words");
+        setHiddenWords(saved ? JSON.parse(saved) : []);
+      } catch {
+        setHiddenWords([]);
+      }
+    };
+    const handleVipChange = () => {
+      setIsVipCritic(localStorage.getItem("madeater_vip_critic") === "true");
+      setDataSaverActive(localStorage.getItem("madeater_data_saver") === "true");
+    };
+
     window.addEventListener("madeater_like_counts_changed", handleLikeCountsChange);
-    window.addEventListener("storage", handleLikeCountsChange);
+    window.addEventListener("madeater_hidden_words_changed", handleHiddenWordsChange);
+    window.addEventListener("madeater_vip_changed", handleVipChange);
+    window.addEventListener("storage", () => {
+      handleLikeCountsChange();
+      handleHiddenWordsChange();
+      handleVipChange();
+    });
+
     return () => {
       window.removeEventListener("madeater_like_counts_changed", handleLikeCountsChange);
-      window.removeEventListener("storage", handleLikeCountsChange);
+      window.removeEventListener("madeater_hidden_words_changed", handleHiddenWordsChange);
+      window.removeEventListener("madeater_vip_changed", handleVipChange);
     };
   }, []);
+
+  const matchingHiddenWord = hiddenWords.find(word => {
+    if (!word || !word.trim()) return false;
+    const w = word.toLowerCase().trim();
+    const text = `${review.content || ""} ${review.attachedDish || ""} ${review.dishes?.map(d => d?.name).join(" ") || ""}`.toLowerCase();
+    return text.includes(w);
+  });
+
+  const isAuthorVip = isVipCritic && currentUser && review.userId === currentUser.uid;
 
   const hasLiked = currentUser ? likes.some(l => l.userId === currentUser.uid) : false;
   const totalLikes = (review.likes || 0) + likes.length;
@@ -286,10 +337,16 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
             )}
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-xs font-bold text-slate-900 dark:text-white group-hover/author:text-orange-500 dark:group-hover/author:text-orange-400 transition-colors truncate leading-tight">
                 {review.userName}
               </span>
+              {isAuthorVip && (
+                <span className="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400/20 to-orange-500/20 border border-amber-400/40 text-amber-400 shadow-sm">
+                  <Crown size={9} className="text-amber-400 fill-amber-400" />
+                  VIP
+                </span>
+              )}
               {review.rating >= 9.0 && (
                 <span className="hidden sm:inline-flex items-center text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-300">
                   Critic's Choice
@@ -373,17 +430,36 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
           )}
 
           <img 
-            src={optimizeImage(firstImage, { width: 700, quality: 85 })} 
+            src={optimizeImage(firstImage, { width: dataSaverActive ? 400 : 700, quality: dataSaverActive ? 60 : 85 })} 
             alt={primaryDishName} 
             onLoad={() => setImageLoaded(true)}
             className={`w-full h-full object-cover group-hover/img:scale-105 transition-all duration-700 ease-out relative z-10 ${
               imageLoaded ? "opacity-100" : "opacity-0"
-            }`}
+            } ${matchingHiddenWord && !isContentRevealed ? "blur-2xl scale-110" : ""}`}
             referrerPolicy="no-referrer"
             loading="lazy"
             decoding="async"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity z-10 pointer-events-none" />
+
+          {/* Sensitive / Hidden Word Filter Overlay for Image */}
+          {matchingHiddenWord && !isContentRevealed && (
+            <div 
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsContentRevealed(true);
+              }}
+              className="absolute inset-0 z-20 backdrop-blur-md bg-black/65 flex flex-col items-center justify-center p-4 text-center cursor-pointer transition-all hover:bg-black/75 select-none"
+            >
+              <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 mb-2 shadow-lg">
+                <EyeOff size={18} />
+              </div>
+              <p className="text-xs font-bold text-white">Hidden Food Filter</p>
+              <p className="text-[11px] text-zinc-300 mt-0.5 max-w-[220px]">
+                Contains <span className="font-semibold text-amber-300">"{matchingHiddenWord}"</span>. Tap anywhere to reveal photo.
+              </p>
+            </div>
+          )}
 
           {/* Double-Tap Heart Burst Overlay */}
           <AnimatePresence>
@@ -423,12 +499,32 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
 
       {/* 4. REVIEW QUOTE */}
       {review.content && (
-        <p 
-          onClick={() => setIsDetailedViewOpen(true)}
-          className="text-slate-700 dark:text-white/70 text-xs sm:text-sm leading-relaxed mb-3 line-clamp-3 cursor-pointer font-normal"
-        >
-          {review.content}
-        </p>
+        matchingHiddenWord && !isContentRevealed ? (
+          <div 
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsContentRevealed(true);
+            }}
+            className="p-3 mb-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between gap-2 cursor-pointer hover:bg-amber-500/15 transition-colors"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <EyeOff size={14} className="text-amber-400 shrink-0" />
+              <span className="text-xs text-amber-300 font-medium truncate">
+                Hidden review (<span className="font-bold">{matchingHiddenWord}</span>)
+              </span>
+            </div>
+            <span className="text-[10px] font-bold text-amber-400 shrink-0 underline decoration-amber-400/50">
+              Tap to reveal
+            </span>
+          </div>
+        ) : (
+          <p 
+            onClick={() => setIsDetailedViewOpen(true)}
+            className="text-slate-700 dark:text-white/70 text-xs sm:text-sm leading-relaxed mb-3 line-clamp-3 cursor-pointer font-normal"
+          >
+            {review.content}
+          </p>
+        )
       )}
 
       {/* 5. DECLUTTERED ACTION BAR */}

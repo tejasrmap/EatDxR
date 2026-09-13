@@ -48,11 +48,17 @@ import {
   Flame,
   Utensils,
   CheckCircle2,
-  BellOff
+  BellOff,
+  Camera,
+  MapPin,
+  Crown
 } from "lucide-react";
 import { useAuth } from "../App";
 import { useTheme } from "./ThemeProvider";
 import { triggerHaptic, isNative } from "../services/nativeService";
+import { Geolocation } from "@capacitor/geolocation";
+import { Camera as CapCamera } from "@capacitor/camera";
+import { PushNotifications } from "@capacitor/push-notifications";
 import { toast } from "sonner";
 
 interface SettingsOverlayProps {
@@ -75,7 +81,17 @@ interface SettingSection {
   items: SettingItem[];
 }
 
-type SubView = null | "account_privacy" | "close_friends" | "notifications" | "like_counts" | "content_preferences";
+type SubView = 
+  | null 
+  | "account_privacy" 
+  | "close_friends" 
+  | "notifications" 
+  | "like_counts" 
+  | "content_preferences"
+  | "device_permissions"
+  | "data_saver"
+  | "hidden_words"
+  | "madeater_plus";
 
 // Sample critics for Close Friends picker
 const CRITICS_LIST = [
@@ -165,6 +181,25 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
         preferredCuisines: ["Biryani & Hyderabadi", "South Indian", "Pan-Asian"]
       };
     }
+  });
+
+  // 6. Additional Activated Settings States
+  const [dataSaver, setDataSaver] = useState<boolean>(() => {
+    return localStorage.getItem("madeater_data_saver") === "true";
+  });
+
+  const [hiddenWords, setHiddenWords] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("madeater_hidden_words");
+      return saved ? JSON.parse(saved) : ["stale", "spoiled", "raw egg"];
+    } catch {
+      return ["stale", "spoiled", "raw egg"];
+    }
+  });
+  const [newWordInput, setNewWordInput] = useState("");
+
+  const [isVip, setIsVip] = useState<boolean>(() => {
+    return localStorage.getItem("madeater_vip_critic") === "true";
   });
 
   useEffect(() => {
@@ -269,6 +304,94 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
       localStorage.setItem("madeater_content_preferences", JSON.stringify(next));
       return next;
     });
+  };
+
+  // Additional settings handlers
+  const handleToggleDataSaver = () => {
+    triggerHaptic();
+    const nextVal = !dataSaver;
+    setDataSaver(nextVal);
+    localStorage.setItem("madeater_data_saver", nextVal ? "true" : "false");
+    toast.success(nextVal ? "Data Saver activated (saving 70% data)" : "Full HD media streaming enabled");
+  };
+
+  const handleAddHiddenWord = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newWordInput.trim()) return;
+    triggerHaptic();
+    const word = newWordInput.trim().toLowerCase();
+    if (!hiddenWords.includes(word)) {
+      const next = [...hiddenWords, word];
+      setHiddenWords(next);
+      localStorage.setItem("madeater_hidden_words", JSON.stringify(next));
+      window.dispatchEvent(new Event("madeater_hidden_words_changed"));
+      window.dispatchEvent(new Event("storage"));
+      toast.success(`Added "${word}" to food filter`);
+    }
+    setNewWordInput("");
+  };
+
+  const handleRemoveHiddenWord = (word: string) => {
+    triggerHaptic();
+    const next = hiddenWords.filter(w => w !== word);
+    setHiddenWords(next);
+    localStorage.setItem("madeater_hidden_words", JSON.stringify(next));
+    window.dispatchEvent(new Event("madeater_hidden_words_changed"));
+    window.dispatchEvent(new Event("storage"));
+    toast.info(`Removed "${word}"`);
+  };
+
+  const handleToggleVip = () => {
+    triggerHaptic();
+    const nextVal = !isVip;
+    setIsVip(nextVal);
+    localStorage.setItem("madeater_vip_critic", nextVal ? "true" : "false");
+    window.dispatchEvent(new Event("madeater_vip_changed"));
+    window.dispatchEvent(new Event("storage"));
+    toast.success(nextVal ? "🎉 Madeater Plus VIP Pass Activated!" : "VIP Pass deactivated");
+  };
+
+  // Request native permissions
+  const handleRequestCamera = async () => {
+    triggerHaptic();
+    try {
+      if (isNative) {
+        await CapCamera.requestPermissions();
+        toast.success("Camera permission granted!");
+      } else {
+        toast.success("Web Camera access is active.");
+      }
+    } catch {
+      toast.error("Camera permission prompt cancelled.");
+    }
+  };
+
+  const handleRequestLocation = async () => {
+    triggerHaptic();
+    try {
+      if (isNative) {
+        await Geolocation.requestPermissions();
+        toast.success("GPS Location permission granted!");
+      } else {
+        navigator.geolocation?.getCurrentPosition(() => toast.success("GPS Location is active!"));
+      }
+    } catch {
+      toast.error("Location permission prompt cancelled.");
+    }
+  };
+
+  const handleRequestPush = async () => {
+    triggerHaptic();
+    try {
+      if (isNative) {
+        await PushNotifications.requestPermissions();
+        toast.success("Push Notifications permission granted!");
+      } else {
+        toast.success("Web Push Notifications are enabled.");
+      }
+    } catch {
+      toast.error("Push Notifications permission cancelled.");
+    }
   };
 
   // Instagram-style organized sections
@@ -442,10 +565,11 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
         },
         { 
           label: "Hidden Words", 
+          value: `${hiddenWords.length} Filtered`,
           icon: <Type size={20} className="text-zinc-200" />, 
           action: () => {
             triggerHaptic();
-            toast.info("Offensive food comment filter active.");
+            setActiveSubView("hidden_words");
           } 
         }
       ]
@@ -496,10 +620,11 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
       items: [
         { 
           label: "Device permissions", 
+          value: "3 Active",
           icon: <Smartphone size={20} className="text-zinc-200" />, 
           action: () => {
             triggerHaptic();
-            toast.info("Camera, Location GPS, and Storage permissions active.");
+            setActiveSubView("device_permissions");
           } 
         },
         { 
@@ -529,11 +654,11 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
         },
         { 
           label: "Data usage and media quality", 
-          value: "Full HD",
+          value: dataSaver ? "Data Saver" : "Full HD",
           icon: <BarChart2 size={20} className="text-zinc-200" />, 
           action: () => {
             triggerHaptic();
-            toast.info("Ultra-high fidelity food video streaming enabled.");
+            setActiveSubView("data_saver");
           } 
         },
         { 
@@ -567,11 +692,11 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
       items: [
         { 
           label: "Madeater Plus", 
-          value: "Not subscribed",
-          icon: <Sparkles size={20} className="text-amber-400" />, 
+          value: isVip ? "VIP Active" : "Not subscribed",
+          icon: <Crown size={20} className="text-amber-400" />, 
           action: () => {
             triggerHaptic();
-            toast.info("Madeater Plus: Unlimited AI dining queries & verified critic badge.");
+            setActiveSubView("madeater_plus");
           } 
         }
       ]
@@ -652,7 +777,6 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
       })).filter(sec => sec.items.length > 0)
     : sections;
 
-  // Filter critics in Close Friends sub-screen
   const filteredCritics = CRITICS_LIST.filter(c => 
     c.name.toLowerCase().includes(friendSearch.toLowerCase()) ||
     c.username.toLowerCase().includes(friendSearch.toLowerCase())
@@ -660,7 +784,6 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
 
   return createPortal(
     <div className="fixed inset-0 z-[99999] flex items-center justify-center overflow-hidden pointer-events-auto bg-black select-none">
-      {/* Container - full screen on mobile, elegant max-w-xl on desktop */}
       <div className="relative w-full h-full md:max-w-xl md:h-[92vh] md:rounded-3xl bg-[#09090b] text-white border-0 md:border md:border-white/10 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
         
         {/* ============================================================ */}
@@ -690,6 +813,10 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
             {activeSubView === "notifications" && "Notifications"}
             {activeSubView === "like_counts" && "Like and share counts"}
             {activeSubView === "content_preferences" && "Content preferences"}
+            {activeSubView === "device_permissions" && "Device permissions"}
+            {activeSubView === "data_saver" && "Data usage and media quality"}
+            {activeSubView === "hidden_words" && "Hidden Words"}
+            {activeSubView === "madeater_plus" && "Madeater Plus"}
             {!activeSubView && "Settings and activity"}
           </h1>
         </div>
@@ -724,7 +851,7 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
                 <strong className="text-white">When your account is public:</strong> Your profile, ratings, dish reviews, and dining trails can be seen by anyone on Madeater or shared via web link. People can follow you instantly.
               </p>
               <p>
-                <strong className="text-white">When your account is private:</strong> Only food critics you approve can follow you and view your dining logs, cravings, and food diary. Your existing followers won't be affected.
+                <strong className="text-white">When your account is private:</strong> Only food critics you approve can follow you and view your dining logs, cravings, and food diary.
               </p>
             </div>
           </div>
@@ -739,7 +866,6 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
               We don't send notifications when you edit your Close Friends list. Share secret foodie spots and private reviews only with this circle.
             </p>
 
-            {/* Search */}
             <div className="relative">
               <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
               <input
@@ -751,7 +877,6 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
               />
             </div>
 
-            {/* Counter and Clear */}
             <div className="flex items-center justify-between px-1 text-xs">
               <span className="text-zinc-400">
                 <strong className="text-orange-400 font-bold">{closeFriends.length}</strong> critics selected
@@ -772,7 +897,6 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
               )}
             </div>
 
-            {/* Critics List */}
             <div className="space-y-1 flex-1 overflow-y-auto divide-y divide-white/[0.04]">
               {filteredCritics.map(critic => {
                 const isSelected = closeFriends.includes(critic.id);
@@ -806,7 +930,6 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
               })}
             </div>
 
-            {/* Done button */}
             <div className="pt-2 sticky bottom-0 bg-[#09090b]">
               <button
                 type="button"
@@ -828,7 +951,6 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
         {/* ============================================================ */}
         {activeSubView === "notifications" && (
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 scrollbar-hide">
-            {/* Master Pause */}
             <div className="p-4 rounded-2xl bg-[#18181b] border border-white/[0.08] flex items-center justify-between">
               <div className="pr-4">
                 <span className="text-sm font-bold text-white block">Pause all</span>
@@ -847,7 +969,6 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
               </button>
             </div>
 
-            {/* Granular switches */}
             <div className="space-y-1">
               <h3 className="text-xs font-bold text-zinc-400 px-1 mb-2">Dishes, Reviews & Comments</h3>
               
@@ -968,7 +1089,6 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
         {/* ============================================================ */}
         {activeSubView === "content_preferences" && (
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 scrollbar-hide">
-            {/* Dietary lifestyle */}
             <div className="space-y-2">
               <h3 className="text-xs font-bold text-zinc-400 px-1">Dietary Lifestyle Rules</h3>
               <div className="flex flex-wrap gap-2">
@@ -993,7 +1113,6 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
               </div>
             </div>
 
-            {/* Spice tolerance */}
             <div className="space-y-2">
               <h3 className="text-xs font-bold text-zinc-400 px-1">Spice Tolerance</h3>
               <div className="grid grid-cols-2 gap-2">
@@ -1027,7 +1146,6 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
               </div>
             </div>
 
-            {/* Preferred Cuisines */}
             <div className="space-y-2">
               <h3 className="text-xs font-bold text-zinc-400 px-1">Preferred Regional Cuisines</h3>
               <div className="flex flex-wrap gap-2">
@@ -1064,12 +1182,244 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
         )}
 
         {/* ============================================================ */}
+        {/* 6. SUB-VIEW: DEVICE PERMISSIONS */}
+        {/* ============================================================ */}
+        {activeSubView === "device_permissions" && (
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-hide">
+            <p className="text-xs text-zinc-400 px-1 leading-relaxed">
+              Madeater requires device access to capture photos, pinpoint food stalls on the map, and notify you of dining drops.
+            </p>
+
+            <div className="p-4 rounded-2xl bg-[#18181b] border border-white/[0.08] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
+                  <Camera size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white">Camera & Photos</h4>
+                  <p className="text-xs text-zinc-400">Snap meal photos & scan QR menus</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleRequestCamera}
+                className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-all cursor-pointer active:scale-95"
+              >
+                Test
+              </button>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#18181b] border border-white/[0.08] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                  <MapPin size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white">GPS Precise Location</h4>
+                  <p className="text-xs text-zinc-400">Discover nearby stalls & accurate geo-pins</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleRequestLocation}
+                className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-all cursor-pointer active:scale-95"
+              >
+                Test
+              </button>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#18181b] border border-white/[0.08] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                  <Bell size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white">Push Notifications</h4>
+                  <p className="text-xs text-zinc-400">Critic comments, likes, and meal reminders</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleRequestPush}
+                className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-all cursor-pointer active:scale-95"
+              >
+                Test
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* 7. SUB-VIEW: DATA SAVER & MEDIA QUALITY */}
+        {/* ============================================================ */}
+        {activeSubView === "data_saver" && (
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 scrollbar-hide">
+            <div className="p-4 rounded-2xl bg-[#18181b] border border-white/[0.08] flex items-center justify-between">
+              <div className="pr-4 space-y-1">
+                <span className="text-sm font-bold text-white block">Data Saver Mode</span>
+                <span className="text-xs text-zinc-400 block">
+                  {dataSaver ? "Compresses high-res food photos by 70% to save cellular data." : "Streaming full-resolution 4K food media."}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleToggleDataSaver}
+                className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer p-0.5 shrink-0 ${
+                  dataSaver ? "bg-orange-500" : "bg-zinc-700"
+                }`}
+              >
+                <div className={`w-6 h-6 rounded-full bg-white transition-transform ${
+                  dataSaver ? "translate-x-5" : "translate-x-0"
+                }`} />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xs font-bold text-zinc-400 px-1">Upload at highest quality</h3>
+              <div className="p-4 rounded-2xl bg-[#18181b] border border-white/[0.08] space-y-1 text-xs text-zinc-300">
+                <p>Always upload high-resolution food review photography even if upload takes longer.</p>
+                <span className="text-emerald-400 font-bold block pt-1">Active</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* 8. SUB-VIEW: HIDDEN WORDS / INGREDIENT FILTER */}
+        {/* ============================================================ */}
+        {activeSubView === "hidden_words" && (
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-hide">
+            <p className="text-xs text-zinc-400 px-1 leading-relaxed">
+              Hide reviews and cravings that contain words or ingredients you don't want to see (allergens, specific meats, or offensive remarks).
+            </p>
+
+            <form onSubmit={handleAddHiddenWord} className="flex items-center gap-2">
+              <input
+                type="text"
+                value={newWordInput}
+                onChange={(e) => setNewWordInput(e.target.value)}
+                placeholder="Add keyword (e.g. Peanuts, Pork)..."
+                className="flex-1 bg-[#18181b] border border-white/[0.08] rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-zinc-500 focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={!newWordInput.trim()}
+                className="px-4 py-2.5 rounded-xl bg-orange-500 text-white text-xs font-bold cursor-pointer disabled:opacity-40"
+              >
+                Add
+              </button>
+            </form>
+
+            <div className="space-y-2 pt-2">
+              <h3 className="text-xs font-bold text-zinc-400 px-1">Active Filtered Words</h3>
+              <div className="flex flex-wrap gap-2">
+                {hiddenWords.map(word => (
+                  <span
+                    key={word}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800 text-zinc-200 border border-white/10 text-xs font-medium"
+                  >
+                    <span>{word}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveHiddenWord(word)}
+                      className="text-zinc-400 hover:text-white cursor-pointer"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* 9. SUB-VIEW: MADEATER PLUS (VIP CRITIC PASS) */}
+        {/* ============================================================ */}
+        {activeSubView === "madeater_plus" && (
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 scrollbar-hide">
+            {/* VIP Card Banner */}
+            <div className="p-5 rounded-3xl bg-gradient-to-tr from-amber-500/30 via-orange-500/20 to-rose-500/20 border border-amber-500/40 text-center space-y-3 shadow-2xl">
+              <div className="w-14 h-14 mx-auto rounded-full bg-gradient-to-tr from-amber-400 to-orange-500 flex items-center justify-center text-black shadow-lg">
+                <Crown size={28} />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-white tracking-tight">Madeater Plus</h3>
+                <p className="text-xs text-amber-300 font-semibold">The Ultimate VIP Food Critic Pass</p>
+              </div>
+
+              <div className="pt-1">
+                <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ${
+                  isVip 
+                    ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" 
+                    : "bg-white/10 text-zinc-300 border-white/10"
+                }`}>
+                  {isVip ? "✓ VIP Status Active" : "30-Day Free Trial Available"}
+                </span>
+              </div>
+            </div>
+
+            {/* Perks list */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold text-zinc-400 px-1">Exclusive VIP Privileges</h4>
+              <div className="p-4 rounded-2xl bg-[#18181b] border border-white/[0.08] space-y-3.5 text-xs">
+                <div className="flex items-center gap-3">
+                  <span className="text-base">⭐</span>
+                  <div>
+                    <span className="font-bold text-white block">Verified Gold Critic Badge</span>
+                    <span className="text-zinc-400">Stands out on all reviews and top lists</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-base">🤖</span>
+                  <div>
+                    <span className="font-bold text-white block">Unlimited Chef AI Assistant</span>
+                    <span className="text-zinc-400">Instant secret dish suggestions & wine pairings</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-base">🎟️</span>
+                  <div>
+                    <span className="font-bold text-white block">Secret Dining Drops</span>
+                    <span className="text-zinc-400">First access to underground pop-up tastings</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-base">🚫</span>
+                  <div>
+                    <span className="font-bold text-white block">100% Ad-Free Experience</span>
+                    <span className="text-zinc-400">Zero sponsored interruption in your feed</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Toggle VIP button */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={handleToggleVip}
+                className={`w-full py-3.5 rounded-2xl font-black text-sm shadow-xl transition-all cursor-pointer active:scale-[0.98] ${
+                  isVip 
+                    ? "bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-white/15" 
+                    : "bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 text-black shadow-orange-500/20"
+                }`}
+              >
+                {isVip ? "Cancel VIP Pass" : "Activate 30-Day VIP Pass (Free)"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================ */}
         {/* MAIN SETTINGS LIST */}
         {/* ============================================================ */}
         {!activeSubView && (
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-6 scrollbar-hide">
             
-            {/* Instagram-style Pill Search Bar */}
             <div className="relative">
               <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
               <input
@@ -1090,7 +1440,6 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
               )}
             </div>
 
-            {/* 1. Accounts Center Hero Card (Instagram 1:1) */}
             {!searchQuery && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between px-1">
@@ -1140,7 +1489,6 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
               </div>
             )}
 
-            {/* Categorized Settings List (Instagram 1:1) */}
             {filteredSections.map((section, sidx) => (
               <div key={sidx} className="space-y-1">
                 <h3 className="px-1 text-[11px] font-bold text-zinc-400 mb-1">
@@ -1187,7 +1535,6 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
               </div>
             ))}
 
-            {/* Footer Info */}
             <div className="pt-4 pb-8 text-center space-y-1 select-none border-t border-white/[0.06]">
               <p className="text-[10px] uppercase tracking-[0.3em] font-black text-zinc-500">Madeater v1.0.9</p>
               <p className="text-[10px] text-zinc-600">The Social Network for Food</p>

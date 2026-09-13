@@ -4,13 +4,14 @@ import { motion, AnimatePresence } from "motion/react";
 
 import { Review, User, Restaurant } from "../types";
 import { useAuth } from "../App";
-import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus, Edit3, Share2, UtensilsCrossed, Sparkles, ListOrdered, ShieldCheck, Award, Layers, Camera, CheckCircle2, Lock, Menu } from "lucide-react";
+import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus, Edit3, Share2, UtensilsCrossed, Sparkles, ListOrdered, ShieldCheck, Award, Layers, Camera, CheckCircle2, Lock, Menu, TrendingUp, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { DiaryTable } from "./DiaryTable";
 import { FollowListModal } from "./FollowListModal";
 import { EditProfileModal } from "./EditProfileModal";
 import { DiaryEntryModal } from "./DiaryEntryModal";
 import { SettingsOverlay } from "./SettingsOverlay";
+import { CriticInsightsModal } from "./CriticInsightsModal";
 import { StarRating } from "./StarRating";
 import { RatingGraph } from "./RatingGraph";
 import { TasteDNAView } from "./TasteDNAView";
@@ -33,6 +34,7 @@ export const Profile: React.FC = () => {
   const [followModalType, setFollowModalType] = useState<"followers" | "following" | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isInsightsOpen, setIsInsightsOpen] = useState(false);
   const [eatlistRestaurants, setEatlistRestaurants] = useState<Restaurant[]>([]);
   const [loadingEatlist, setLoadingEatlist] = useState(false);
   const profileFileInputRef = useRef<HTMLInputElement>(null);
@@ -450,7 +452,7 @@ export const Profile: React.FC = () => {
               className="py-1.5 px-3 bg-gradient-to-r from-orange-500/20 to-amber-500/20 hover:from-orange-500/30 border border-orange-500/30 rounded-lg text-xs font-black uppercase tracking-wider text-orange-400 flex items-center justify-center gap-1.5 shrink-0 transition-all active:scale-[0.98]"
             >
               <Sparkles size={13} />
-              <span className="hidden xs:inline">My Food Year</span>
+              <span>Wrapped</span>
             </Link>
           </>
         ) : (
@@ -477,6 +479,31 @@ export const Profile: React.FC = () => {
           </>
         )}
       </div>
+
+      {/* Instagram Professional Dashboard Card */}
+      {currentUser?.uid === user.uid && (
+        <div
+          onClick={() => {
+            triggerHaptic();
+            setIsInsightsOpen(true);
+          }}
+          className="mb-3.5 p-3 rounded-xl bg-[#18181b] hover:bg-[#202024] border border-white/[0.08] cursor-pointer transition-all active:scale-[0.99] flex items-center justify-between group"
+        >
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-white group-hover:text-orange-400 transition-colors">
+              <TrendingUp size={13} className="text-orange-400" />
+              <span>Professional Dashboard</span>
+            </div>
+            <p className="text-[11px] text-zinc-400">
+              <strong className="text-white">1,482</strong> critic impressions in the last 30 days
+            </p>
+          </div>
+          <div className="flex items-center gap-1 text-xs text-orange-400 font-semibold">
+            <span>Insights</span>
+            <ChevronRight size={14} />
+          </div>
+        </div>
+      )}
 
       {/* 4. Refined Balanced Segmented Tab Navigation */}
       <div className="sticky top-14 z-30 bg-black/85 backdrop-blur-2xl border-b border-white/[0.08] -mx-3 sm:-mx-6 px-3 sm:px-6 py-2 mb-4 select-none">
@@ -746,6 +773,12 @@ export const Profile: React.FC = () => {
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 
         onEditProfile={() => setIsEditModalOpen(true)} 
+      />
+
+      <CriticInsightsModal
+        isOpen={isInsightsOpen}
+        onClose={() => setIsInsightsOpen(false)}
+        userName={user.displayName || "Critic"}
       />
     </div>
   );
