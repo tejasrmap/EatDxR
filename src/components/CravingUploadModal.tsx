@@ -70,8 +70,8 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
     }
 
     const sizeMB = file.size / (1024 * 1024);
-    if (sizeMB > 45) {
-      toast.error(`Video is too large (${sizeMB.toFixed(1)} MB). To ensure fast instant publishing, please select a short clip under 45 MB.`);
+    if (sizeMB > 100) {
+      toast.error(`Video is too large (${sizeMB.toFixed(1)} MB). Please select a video under 100 MB.`);
       return;
     }
 
@@ -79,8 +79,8 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
     video.preload = "metadata";
     video.onloadedmetadata = () => {
       window.URL.revokeObjectURL(video.src);
-      if (video.duration > 90) {
-        toast.error("Cravings are short-form! Please select a clip under 90 seconds.");
+      if (video.duration > 180) {
+        toast.error("Cravings are short-form! Please select a clip under 3 minutes.");
         return;
       }
       setVideoFile(file);
@@ -351,8 +351,8 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
                   <Video size={24} className="text-orange-400" />
                 </div>
                 <h3 className="text-xs font-black uppercase tracking-wider mb-1">Select Video Clip</h3>
-                <p className="text-[11px] text-white/40 mb-1">Vertical 9:16 format (under 60s)</p>
-                <p className="text-[10px] text-orange-400 font-bold mb-3">⚡ Short clips under 35MB upload in seconds</p>
+                <p className="text-[11px] text-white/40 mb-1">Vertical 9:16 format (HD / 4K)</p>
+                <p className="text-[10px] text-orange-400 font-bold mb-3">⚡ Ultra-fast uploads up to 100MB supported</p>
                 <span className="px-3.5 py-1.5 rounded-full bg-white text-black text-[11px] font-bold uppercase tracking-wider group-hover:bg-orange-400 transition-colors">
                   Browse Files
                 </span>
@@ -392,9 +392,9 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
                         <span className="text-[10px] text-white/70 bg-white/10 px-2 py-0.5 rounded-md font-mono font-bold">
                           {videoMeta.duration}s
                         </span>
-                        {videoMeta.sizeMB > 25 && (
+                        {videoMeta.sizeMB > 45 && (
                           <span className="text-[10px] text-amber-400 font-bold">
-                            ⚡ High-res video
+                            ⚡ Large HD video ({videoMeta.sizeMB.toFixed(1)} MB)
                           </span>
                         )}
                       </div>

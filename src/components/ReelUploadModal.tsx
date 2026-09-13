@@ -64,13 +64,18 @@ export function ReelUploadModal({ isOpen, onClose }: ReelUploadModalProps) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // IG Style Clip Limit
+    const sizeMB = file.size / (1024 * 1024);
+    if (sizeMB > 100) {
+      toast.error(`Video is too large (${sizeMB.toFixed(1)} MB). Please select a video under 100 MB.`);
+      return;
+    }
+
     const video = document.createElement('video');
     video.preload = 'metadata';
     video.onloadedmetadata = () => {
       window.URL.revokeObjectURL(video.src);
-      if (video.duration > 70) {
-        toast.error("Elite Purity: Reels are limited to 70 seconds. Please select a shorter clip.");
+      if (video.duration > 180) {
+        toast.error("Reels are limited to 3 minutes. Please select a shorter clip.");
         return;
       }
       setVideoFile(file);
