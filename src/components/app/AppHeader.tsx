@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, Sparkles, MapPin, ChevronDown, ArrowLeft, Navigation, Menu } from "lucide-react";
+import { Search, Sparkles, MapPin, ChevronDown, ArrowLeft, Navigation, Heart } from "lucide-react";
 import { useAuth } from "../../App";
 import { useTheme } from "../ThemeProvider";
 import { SearchOverlay } from "../SearchOverlay";
 import { AIFoodAssistant } from "../AIFoodAssistant";
 import { LogMealModal } from "../LogMealModal";
 import { ModeSwitcher } from "../ModeSwitcher";
-import { SettingsOverlay } from "../SettingsOverlay";
+import { NotificationsOverlay } from "../NotificationsOverlay";
 import { triggerHaptic } from "../../services/nativeService";
 import { toast } from "sonner";
 
@@ -29,7 +29,19 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [showCityMenu, setShowCityMenu] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [unreadNotifs, setUnreadNotifs] = useState(() => {
+    try {
+      const saved = localStorage.getItem("madeater_activity_notifications");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.filter((n: any) => !n.isRead).length;
+      }
+      return 3;
+    } catch {
+      return 3;
+    }
+  });
   const [cityFilter, setCityFilter] = useState("");
   const [isLocating, setIsLocating] = useState(false);
   const navigate = useNavigate();
@@ -213,17 +225,20 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
               <Search size={15} />
             </button>
 
-            {/* Instagram 3-line bar (Settings and activity) */}
+            {/* Instagram Heart Activity Bar */}
             <button
               onClick={() => { 
                 triggerHaptic(); 
-                setIsSettingsOpen(true);
+                setIsNotificationsOpen(true);
               }}
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all shrink-0 cursor-pointer shadow-sm"
-              title="Settings and activity"
-              aria-label="Settings and activity"
+              className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all shrink-0 cursor-pointer shadow-sm group"
+              title="Notifications & Activity"
+              aria-label="Notifications"
             >
-              <Menu size={19} className="stroke-[2.2]" />
+              <Heart size={18} className="stroke-[2.2] group-hover:text-rose-400 group-hover:fill-rose-500/20 transition-colors" />
+              {unreadNotifs > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 border border-[#09090b] animate-pulse" />
+              )}
             </button>
 
           </div>
@@ -234,10 +249,10 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
       <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       <AIFoodAssistant isOpen={isAIOpen} onClose={() => setIsAIOpen(false)} />
       <LogMealModal isOpen={isLogModalOpen} onClose={() => setIsLogModalOpen(false)} />
-      <SettingsOverlay 
-        isOpen={isSettingsOpen} 
-        onClose={() => setIsSettingsOpen(false)} 
-        onEditProfile={() => navigate(user ? `/app/profile/${dishdUser?.username || user.uid}` : '/app')} 
+      <NotificationsOverlay 
+        isOpen={isNotificationsOpen} 
+        onClose={() => setIsNotificationsOpen(false)} 
+        onCountChange={(cnt) => setUnreadNotifs(cnt)}
       />
     </>
   );

@@ -113,6 +113,22 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
     }).catch(() => {});
   }, [review.id, isVisible, showComments]);
 
+  const [hideLikeCounts, setHideLikeCounts] = useState(() => {
+    return typeof window !== 'undefined' && localStorage.getItem("madeater_hide_like_counts") === "true";
+  });
+
+  useEffect(() => {
+    const handleLikeCountsChange = () => {
+      setHideLikeCounts(localStorage.getItem("madeater_hide_like_counts") === "true");
+    };
+    window.addEventListener("madeater_like_counts_changed", handleLikeCountsChange);
+    window.addEventListener("storage", handleLikeCountsChange);
+    return () => {
+      window.removeEventListener("madeater_like_counts_changed", handleLikeCountsChange);
+      window.removeEventListener("storage", handleLikeCountsChange);
+    };
+  }, []);
+
   const hasLiked = currentUser ? likes.some(l => l.userId === currentUser.uid) : false;
   const totalLikes = (review.likes || 0) + likes.length;
 
@@ -431,7 +447,9 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({ review }) => 
             }`}
           >
             <Heart size={16} className={hasLiked ? "fill-rose-500" : ""} />
-            <span className="text-[11px] font-bold">{totalLikes}</span>
+            <span className="text-[11px] font-bold">
+              {hideLikeCounts ? (hasLiked ? "Liked" : "") : totalLikes}
+            </span>
           </motion.button>
 
           <motion.button 

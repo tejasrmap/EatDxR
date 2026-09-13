@@ -65,6 +65,22 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
     }).catch(() => {});
   }, [review.id, isVisible]);
 
+  const [hideLikeCounts, setHideLikeCounts] = useState(() => {
+    return typeof window !== 'undefined' && localStorage.getItem("madeater_hide_like_counts") === "true";
+  });
+
+  useEffect(() => {
+    const handleLikeCountsChange = () => {
+      setHideLikeCounts(localStorage.getItem("madeater_hide_like_counts") === "true");
+    };
+    window.addEventListener("madeater_like_counts_changed", handleLikeCountsChange);
+    window.addEventListener("storage", handleLikeCountsChange);
+    return () => {
+      window.removeEventListener("madeater_like_counts_changed", handleLikeCountsChange);
+      window.removeEventListener("storage", handleLikeCountsChange);
+    };
+  }, []);
+
   const hasLiked = currentUser ? likes.some(l => l.userId === currentUser.uid) : false;
   const totalLikes = (review.likes || 0) + likes.length;
   
@@ -250,13 +266,15 @@ export const PostCard: React.FC<PostCardProps> = memo(({ review }) => {
       {/* Content Layer */}
       <div className="p-6">
         <div className="flex items-center gap-6 mb-4">
-           <button 
-             onClick={handleLike}
-             className={`flex items-center gap-2 transition-all ${hasLiked ? 'text-rose-500' : 'text-muted-foreground hover:text-rose-500'}`}
-           >
-             <Heart size={20} className={hasLiked ? "fill-rose-500" : ""} />
-             <span className="text-xs font-medium">{totalLikes}</span>
-           </button>
+            <button 
+              onClick={handleLike}
+              className={`flex items-center gap-2 transition-all ${hasLiked ? 'text-rose-500' : 'text-muted-foreground hover:text-rose-500'}`}
+            >
+              <Heart size={20} className={hasLiked ? "fill-rose-500" : ""} />
+              <span className="text-xs font-medium">
+                {hideLikeCounts ? (hasLiked ? "Liked" : "") : totalLikes}
+              </span>
+            </button>
            <button 
              onClick={() => setIsCommentModalOpen(true)}
              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-all"

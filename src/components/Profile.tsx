@@ -4,12 +4,13 @@ import { motion, AnimatePresence } from "motion/react";
 
 import { Review, User, Restaurant } from "../types";
 import { useAuth } from "../App";
-import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus, Edit3, Share2, UtensilsCrossed, Sparkles, ListOrdered, ShieldCheck, Award, Layers, Camera, CheckCircle2 } from "lucide-react";
+import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus, Edit3, Share2, UtensilsCrossed, Sparkles, ListOrdered, ShieldCheck, Award, Layers, Camera, CheckCircle2, Lock, Menu } from "lucide-react";
 import { toast } from "sonner";
 import { DiaryTable } from "./DiaryTable";
 import { FollowListModal } from "./FollowListModal";
 import { EditProfileModal } from "./EditProfileModal";
 import { DiaryEntryModal } from "./DiaryEntryModal";
+import { SettingsOverlay } from "./SettingsOverlay";
 import { StarRating } from "./StarRating";
 import { RatingGraph } from "./RatingGraph";
 import { TasteDNAView } from "./TasteDNAView";
@@ -31,6 +32,7 @@ export const Profile: React.FC = () => {
   const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
   const [followModalType, setFollowModalType] = useState<"followers" | "following" | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [eatlistRestaurants, setEatlistRestaurants] = useState<Restaurant[]>([]);
   const [loadingEatlist, setLoadingEatlist] = useState(false);
   const profileFileInputRef = useRef<HTMLInputElement>(null);
@@ -233,6 +235,48 @@ export const Profile: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto px-3 sm:px-6 pt-2 sm:pt-4 pb-28 elite-motion-safe">
+      {/* Instagram Top Profile Bar: Username + Actions */}
+      <div className="flex items-center justify-between py-2 mb-3 border-b border-white/[0.06]">
+        <div className="flex items-center gap-2 min-w-0">
+          <h2 className="text-base sm:text-lg font-black tracking-tight text-white truncate">
+            @{user.username || user.displayName?.toLowerCase().replace(/\s+/g, '_') || "critic"}
+          </h2>
+          {localStorage.getItem("madeater_account_privacy") === "private" && (
+            <span className="flex items-center gap-1 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-white/10">
+              <Lock size={10} /> Private
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {currentUser?.uid === user.uid && (
+            <>
+              {/* Share Profile button */}
+              <button
+                onClick={shareProfile}
+                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/80 hover:text-white active:scale-95 transition-all cursor-pointer"
+                title="Share Profile"
+              >
+                <Share2 size={15} />
+              </button>
+
+              {/* 3-Lines Hamburger Bar (Settings and Activity) ONLY on Profile Page */}
+              <button
+                onClick={() => {
+                  triggerHaptic();
+                  setIsSettingsOpen(true);
+                }}
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white active:scale-90 transition-all cursor-pointer shadow-sm"
+                title="Settings and activity"
+                aria-label="Settings and activity"
+              >
+                <Menu size={18} className="stroke-[2.2]" />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
       {/* 1. Instagram Profile Header Row (Avatar + 4 Stats) */}
       <div className="flex items-center gap-4 sm:gap-7 mb-3">
         {/* Left: Avatar with Instagram gradient ring */}
@@ -696,6 +740,12 @@ export const Profile: React.FC = () => {
         isOpen={selectedReview !== null}
         onClose={() => setSelectedReview(null)}
         review={selectedReview}
+      />
+
+      <SettingsOverlay 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+        onEditProfile={() => setIsEditModalOpen(true)} 
       />
     </div>
   );
