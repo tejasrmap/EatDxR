@@ -1016,6 +1016,88 @@ export async function upsertRestaurant(restaurant: {
   }
 }
 
+export async function createRestaurant(restaurant: {
+  id?: string;
+  name: string;
+  cuisine: string;
+  location: string;
+  city?: string;
+  rating?: number;
+  reviewCount?: number;
+  image?: string;
+  priceLevel?: string;
+  hours?: string;
+  signatureDish?: string;
+  lat?: number;
+  lng?: number;
+}): Promise<Restaurant> {
+  const generatedId = restaurant.id || `rest-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const cleanCity = restaurant.city || (restaurant.location ? restaurant.location.split(',').pop()?.trim() : 'Hyderabad') || 'Hyderabad';
+  const cleanImage = restaurant.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80';
+
+  const newRestaurant: Restaurant = {
+    id: generatedId,
+    name: restaurant.name.trim(),
+    cuisine: restaurant.cuisine.trim(),
+    location: restaurant.location.trim(),
+    city: cleanCity,
+    rating: restaurant.rating || 4.8,
+    reviewCount: restaurant.reviewCount || 1,
+    image: cleanImage,
+    priceLevel: restaurant.priceLevel || '₹₹',
+    hours: restaurant.hours || '11:00 AM - 11:00 PM',
+    signatureDish: restaurant.signatureDish?.trim() || undefined,
+    lat: restaurant.lat,
+    lng: restaurant.lng
+  };
+
+  if (isSupabaseConfigured) {
+    try {
+      const payload: any = {
+        id: newRestaurant.id,
+        name: newRestaurant.name,
+        cuisine: newRestaurant.cuisine,
+        location: newRestaurant.location,
+        city: newRestaurant.city,
+        rating: newRestaurant.rating,
+        review_count: newRestaurant.reviewCount,
+        image: newRestaurant.image,
+        price_level: newRestaurant.priceLevel,
+        hours: newRestaurant.hours,
+        signature_dish: newRestaurant.signatureDish || null,
+        lat: newRestaurant.lat || null,
+        lng: newRestaurant.lng || null
+      };
+
+      const { error } = await supabase.from('restaurants').insert(payload);
+      if (error) {
+        console.warn('[Supabase] Error inserting restaurant:', error);
+      }
+    } catch (err) {
+      console.warn('[Supabase] createRestaurant error:', err);
+    }
+  }
+
+  // Non-blocking mirror to Firestore
+  try {
+    const { db } = await import('../firebase');
+    const { doc, setDoc } = await import('firebase/firestore');
+    await setDoc(doc(db, 'restaurants', newRestaurant.id), {
+      id: newRestaurant.id,
+      name: newRestaurant.name,
+      cuisine: newRestaurant.cuisine,
+      location: newRestaurant.location,
+      rating: newRestaurant.rating,
+      reviewCount: newRestaurant.reviewCount,
+      image: newRestaurant.image
+    }, { merge: true });
+  } catch (err) {
+    console.warn('[Firestore] Restaurant mirror notice:', err);
+  }
+
+  return newRestaurant;
+}
+
 export async function getDishes(limit = 50): Promise<DishEntity[]> {
   if (!isSupabaseConfigured) {
     return MOCK_DISHES;

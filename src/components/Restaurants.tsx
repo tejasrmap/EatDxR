@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Restaurant } from "../types";
 import { Link } from "react-router-dom";
-import { Star, MapPin, Navigation, Loader2, Compass, UtensilsCrossed, Search, Globe, SlidersHorizontal } from "lucide-react";
+import { Star, MapPin, Navigation, Loader2, Compass, UtensilsCrossed, Search, Globe, SlidersHorizontal, Plus } from "lucide-react";
 import { getDistanceKM, formatDistance } from "../lib/distance";
 import { motion, AnimatePresence } from "motion/react";
 import { useAppUrl } from "../hooks/useAppUrl";
@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { GLOBAL_CITIES, GLOBAL_RESTAURANTS } from "../data/globalRestaurants";
 import { preloadAllRestaurants, getCurrentCity } from "../services/mapsService";
 import { Geolocation } from "@capacitor/geolocation";
+import { AddRestaurantModal } from "./AddRestaurantModal";
 
 export function Restaurants() {
   const { getAppUrl } = useAppUrl();
@@ -22,6 +23,7 @@ export function Restaurants() {
   const [radiusFilter, setRadiusFilter] = useState<number | null>(null); // null = all
   const [sortBy, setSortBy] = useState<"distance" | "rating" | "reviews">("distance");
   const [detectedCityName, setDetectedCityName] = useState<string | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   useEffect(() => {
     // 1. Request GPS Location
@@ -198,14 +200,23 @@ export function Restaurants() {
             </h1>
           </div>
 
-          {/* Quick GPS Calibrator */}
-          <button
-            onClick={useLiveGPS}
-            className="self-start sm:self-auto flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-orange-500/40 text-white/80 hover:text-white font-bold text-xs transition-all active:scale-95 cursor-pointer shadow-sm"
-          >
-            <Navigation size={12} className="text-orange-500 animate-pulse" />
-            <span>{detectedCityName ? `Near ${detectedCityName}` : "My Location"}</span>
-          </button>
+          {/* Quick Actions (Add Restaurant + Live GPS) */}
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <button
+              onClick={() => { triggerHaptic(); setIsAddModalOpen(true); }}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-110 text-black font-black text-xs uppercase tracking-wider transition-all active:scale-95 cursor-pointer shadow-md shadow-orange-500/20"
+            >
+              <Plus size={14} strokeWidth={3} />
+              <span>Add Spot</span>
+            </button>
+            <button
+              onClick={useLiveGPS}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-orange-500/40 text-white/80 hover:text-white font-bold text-xs transition-all active:scale-95 cursor-pointer shadow-sm"
+            >
+              <Navigation size={12} className="text-orange-500 animate-pulse" />
+              <span>{detectedCityName ? `Near ${detectedCityName}` : "My Location"}</span>
+            </button>
+          </div>
         </div>
 
         {/* 2. Unified Discovery Dock (Search + Top Cities + Sort) */}
@@ -312,15 +323,36 @@ export function Restaurants() {
             <UtensilsCrossed className="w-12 h-12 text-white/20 mx-auto mb-4" />
             <h3 className="text-white font-bold text-base mb-1">No Spots Found</h3>
             <p className="text-xs text-white/40 mb-5">Try resetting your search query or switching to "All Hubs".</p>
-            <button
-              onClick={() => { setSearchQuery(""); setSelectedCity("All"); }}
-              className="px-4 py-2 rounded-full bg-orange-500 text-black font-black text-xs uppercase tracking-wider hover:bg-orange-400 transition-all cursor-pointer"
-            >
-              Reset Filters
-            </button>
+            <div className="flex items-center justify-center gap-2.5">
+              {searchQuery && (
+                <button
+                  onClick={() => { triggerHaptic(); setIsAddModalOpen(true); }}
+                  className="px-4 py-2 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-black font-black text-xs uppercase tracking-wider hover:brightness-110 transition-all cursor-pointer flex items-center gap-1.5 shadow-md shadow-orange-500/20"
+                >
+                  <Plus size={13} strokeWidth={3} />
+                  <span>Add "{searchQuery}"</span>
+                </button>
+              )}
+              <button
+                onClick={() => { setSearchQuery(""); setSelectedCity("All"); }}
+                className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer border border-white/10"
+              >
+                Reset Filters
+              </button>
+            </div>
           </div>
         )}
       </main>
+
+      {/* Add Restaurant Modal */}
+      <AddRestaurantModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        initialName={searchQuery}
+        onSuccess={(newRest) => {
+          setRestaurants(prev => [newRest, ...prev]);
+        }}
+      />
 
     </div>
   );

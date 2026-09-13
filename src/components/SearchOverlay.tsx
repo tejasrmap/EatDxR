@@ -7,6 +7,7 @@ import { User, Restaurant } from "../types";
 import { Link, useNavigate } from "react-router-dom";
 import { searchRestaurants } from "../services/mapsService";
 import { searchProfiles, searchRestaurants as searchRestaurantsSupabase } from "../services/supabaseService";
+import { AddRestaurantModal } from "./AddRestaurantModal";
 
 interface SearchOverlayProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
   const [userResults, setUserResults] = useState<User[]>([]);
   const [restaurantResults, setRestaurantResults] = useState<Restaurant[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
@@ -270,15 +272,34 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
             </div>
 
             {/* Footer / Hint */}
-            <div className="px-3.5 py-2 border-t border-border bg-muted/20 text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider font-bold flex justify-between items-center">
-              <span>Universal Food Search</span>
-              <button onClick={onClose} className="text-orange-400 hover:underline">
+            <div className="px-3.5 py-2.5 border-t border-border bg-muted/20 text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider font-bold flex justify-between items-center">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  setIsAddModalOpen(true);
+                }}
+                className="text-orange-400 hover:text-orange-300 transition-colors flex items-center gap-1 cursor-pointer font-bold"
+              >
+                <span>+ Can't find a spot? Register Restaurant</span>
+              </button>
+              <button onClick={onClose} className="text-muted-foreground hover:text-white transition-colors cursor-pointer">
                 Close
               </button>
             </div>
           </motion.div>
         </div>
       )}
+
+      {/* Add Restaurant Modal */}
+      <AddRestaurantModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        initialName={searchQuery}
+        onSuccess={(newRest) => {
+          navigate(`/restaurant/${newRest.id}`);
+        }}
+      />
     </AnimatePresence>
   );
 };

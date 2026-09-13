@@ -61,6 +61,18 @@ export async function preloadAllRestaurants(): Promise<RestaurantSearchResult[]>
 }
 
 /**
+ * Instantly register a newly added restaurant in memory so search, maps, and listings reflect it without reloading
+ */
+export function registerNewRestaurantLocally(restaurant: RestaurantSearchResult) {
+  if (cachedRestaurants) {
+    cachedRestaurants = [restaurant, ...cachedRestaurants.filter(r => r.id !== restaurant.id)];
+  } else {
+    cachedRestaurants = [restaurant];
+  }
+  searchCache.clear();
+}
+
+/**
  * OpenRouter AI completion helper for worldwide food queries
  */
 async function fetchOpenRouter(prompt: string, expectJson: boolean = false): Promise<string> {

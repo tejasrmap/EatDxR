@@ -14,6 +14,7 @@ import { searchRestaurants } from "../services/mapsService";
 import { RestaurantSearchResult, Review } from "../types";
 import { createReview, uploadMedia, upsertProfile } from "../services/supabaseService";
 import { offlineSyncService } from "../services/offlineSyncService";
+import { AddRestaurantModal } from "./AddRestaurantModal";
 
 const logSchema = z.object({
   restaurant: z.string().min(1, "Restaurant is required"),
@@ -61,6 +62,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
   const [dishFiles, setDishFiles] = useState<Map<string, File>>(new Map());
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isAddRestaurantOpen, setIsAddRestaurantOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -516,12 +518,12 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                   {errors.restaurant && <p className="text-[9px] text-rose-500 font-black uppercase text-right mt-1">{errors.restaurant.message}</p>}
                   
                   <AnimatePresence>
-                    {showResults && (searchResults.length > 0 || isSearching) && (
+                    {showResults && (searchResults.length > 0 || isSearching || searchQuery.trim().length > 0) && (
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className="absolute z-50 left-0 right-0 mt-2 bg-background/95 backdrop-blur-3xl border border-border rounded-2xl shadow-2xl overflow-hidden max-h-64 overflow-y-auto"
+                        className="absolute z-50 left-0 right-0 mt-2 bg-background/95 backdrop-blur-3xl border border-border rounded-2xl shadow-2xl overflow-hidden max-h-64 overflow-y-auto divide-y divide-border"
                       >
                         {isSearching ? (
                           <div className="p-6 text-center text-[10px] text-muted-foreground italic flex items-center justify-center gap-2">
@@ -529,24 +531,48 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
                             Identifying Places...
                           </div>
                         ) : (
-                          searchResults.map((result) => (
+                          <>
+                            {searchResults.map((result) => (
+                              <button
+                                key={result.id}
+                                type="button"
+                                onClick={() => handleSelectRestaurant(result)}
+                                className="w-full text-left p-3.5 hover:bg-muted flex items-center gap-3.5 transition-all group"
+                              >
+                                <img 
+                                  src={result.image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=100&q=80`} 
+                                  className="w-10 h-10 rounded-lg object-cover opacity-50 group-hover:opacity-100 transition-all"
+                                  referrerPolicy="no-referrer"
+                                />
+                                <div>
+                                  <p className="font-bold text-xs text-foreground leading-none mb-1">{result.name}</p>
+                                  <p className="text-[9px] text-muted-foreground uppercase tracking-widest">{result.location}</p>
+                                </div>
+                              </button>
+                            ))}
+
+                            {/* Add New Restaurant Quick Action */}
                             <button
-                              key={result.id}
                               type="button"
-                              onClick={() => handleSelectRestaurant(result)}
-                              className="w-full text-left p-3.5 hover:bg-muted flex items-center gap-3.5 transition-all group border-b border-border last:border-0"
+                              onClick={() => {
+                                setShowResults(false);
+                                setIsAddRestaurantOpen(true);
+                              }}
+                              className="w-full text-left p-3.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 flex items-center gap-3 transition-all font-bold text-xs cursor-pointer"
                             >
-                              <img 
-                                src={result.image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=100&q=80`} 
-                                className="w-10 h-10 rounded-lg object-cover opacity-50 group-hover:opacity-100 transition-all"
-                                referrerPolicy="no-referrer"
-                              />
+                              <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center shrink-0">
+                                <Plus size={16} className="text-orange-400" />
+                              </div>
                               <div>
-                                <p className="font-bold text-xs text-foreground leading-none mb-1">{result.name}</p>
-                                <p className="text-[9px] text-muted-foreground uppercase tracking-widest">{result.location}</p>
+                                <p className="text-xs font-black text-orange-400">
+                                  {searchQuery.trim() ? `Can't find "${searchQuery.trim()}"?` : "Can't find your spot?"}
+                                </p>
+                                <p className="text-[9px] text-orange-400/70 uppercase tracking-widest font-mono">
+                                  + Register New Restaurant
+                                </p>
                               </div>
                             </button>
-                          ))
+                          </>
                         )}
                       </motion.div>
                     )}
@@ -825,6 +851,26 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
           </motion.div>
         </div>
       )}
+      
+      {/* Add Restaurant Modal */}
+      <AddRestaurantModal
+        isOpen={isAddRestaurantOpen}
+        onClose={() => setIsAddRestaurantOpen(false)}
+        initialName={searchQuery}
+        onSuccess={(newRest) => {
+          handleSelectRestaurant({
+            id: newRest.id,
+            name: newRest.name,
+            cuisine: newRest.cuisine,
+            location: newRest.location,
+            city: newRest.city,
+            image: newRest.image,
+            rating: newRest.rating,
+            priceLevel: newRest.priceLevel,
+            menuItems: newRest.signatureDish ? [newRest.signatureDish] : []
+          });
+        }}
+      />
     </AnimatePresence>,
     document.body
   );

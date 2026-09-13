@@ -10,6 +10,7 @@ import { searchRestaurants } from "../services/mapsService";
 import { RestaurantSearchResult, CravingTag } from "../types";
 import { createCraving, uploadMedia, upsertProfile } from "../services/supabaseService";
 import { triggerHaptic } from "../services/nativeService";
+import { AddRestaurantModal } from "./AddRestaurantModal";
 
 const CRAVING_TAGS: CravingTag[] = [
   "First bite reaction",
@@ -53,6 +54,7 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
   const [searchResults, setSearchResults] = useState<RestaurantSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isAddRestaurantOpen, setIsAddRestaurantOpen] = useState(false);
 
   // Video meta
   const [videoMeta, setVideoMeta] = useState<{ sizeMB: number; duration: number } | null>(null);
@@ -527,6 +529,24 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
                             </span>
                           </button>
                         ))}
+
+                        {/* Add New Restaurant Action */}
+                        <button
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            triggerHaptic();
+                            setShowDropdown(false);
+                            setIsAddRestaurantOpen(true);
+                          }}
+                          className="w-full text-left p-3 bg-orange-500/10 hover:bg-orange-500/20 flex items-center justify-between gap-2 transition-colors cursor-pointer text-orange-400 font-bold text-xs"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Plus size={14} className="text-orange-400" />
+                            <span>Register New Restaurant</span>
+                          </div>
+                          <span className="text-[10px] text-orange-400/70 font-mono">+ Add Spot</span>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -642,6 +662,26 @@ export function CravingUploadModal({ isOpen, onClose }: CravingUploadModalProps)
           </div>
         )}
       </motion.div>
+
+      {/* Add Restaurant Modal */}
+      <AddRestaurantModal
+        isOpen={isAddRestaurantOpen}
+        onClose={() => setIsAddRestaurantOpen(false)}
+        initialName={searchQuery || restaurantName}
+        onSuccess={(newRest) => {
+          handleSelectRestaurant({
+            id: newRest.id,
+            name: newRest.name,
+            cuisine: newRest.cuisine,
+            location: newRest.location,
+            city: newRest.city,
+            image: newRest.image,
+            rating: newRest.rating,
+            priceLevel: newRest.priceLevel,
+            menuItems: newRest.signatureDish ? [newRest.signatureDish] : []
+          });
+        }}
+      />
     </div>,
     document.body
   );
