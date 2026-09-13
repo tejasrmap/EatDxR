@@ -1536,7 +1536,7 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
             ))}
 
             <div className="pt-4 pb-8 text-center space-y-1 select-none border-t border-white/[0.06]">
-              <p className="text-[10px] uppercase tracking-[0.3em] font-black text-zinc-500">Madeater v1.1.0</p>
+              <p className="text-[10px] uppercase tracking-[0.3em] font-black text-zinc-500">Madeater v1.1.1</p>
               <p className="text-[10px] text-zinc-600">The Social Network for Food</p>
             </div>
 
