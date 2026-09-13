@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Plus, Play } from "lucide-react";
+import { Plus, Play, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { triggerHaptic } from "../../services/nativeService";
 import { Review } from "../../types";
 import { getCravings } from "../../services/supabaseService";
 import { StoryViewerModal, StoryItem } from "../StoryViewerModal";
+import { StoryCreatorModal } from "../StoryCreatorModal";
 
 import { motion } from "motion/react";
 import { useAuth } from "../../App";
@@ -19,10 +20,38 @@ export function AppStoriesBar({ onLogClick, cravings: propCravings }: AppStories
   const [liveCravings, setLiveCravings] = useState<Review[]>([]);
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
   const [isStoryViewerOpen, setIsStoryViewerOpen] = useState(false);
+  const [isStoryCreatorOpen, setIsStoryCreatorOpen] = useState(false);
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
+
+  const [userStories, setUserStories] = useState<StoryItem[]>(() => {
+    try {
+      const saved = localStorage.getItem("madeater_user_stories");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
   const currentPhoto = dishdUser?.photoURL || user?.photoURL;
   const userDisplayName = dishdUser?.displayName || user?.displayName || "You";
+
+  const refreshUserStories = () => {
+    try {
+      const saved = localStorage.getItem("madeater_user_stories");
+      setUserStories(saved ? JSON.parse(saved) : []);
+    } catch {
+      setUserStories([]);
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("madeater_story_created", refreshUserStories);
+    window.addEventListener("storage", refreshUserStories);
+    return () => {
+      window.removeEventListener("madeater_story_created", refreshUserStories);
+      window.removeEventListener("storage", refreshUserStories);
+    };
+  }, []);
 
   useEffect(() => {
     if (propCravings) {
@@ -37,27 +66,71 @@ export function AppStoriesBar({ onLogClick, cravings: propCravings }: AppStories
     }).catch(() => {});
   }, [propCravings]);
 
+  const hasUserStory = userStories.length > 0;
+
+  const handleYourStoryClick = () => {
+    triggerHaptic();
+    if (hasUserStory) {
+      setSelectedStoryIndex(0);
+      setIsStoryViewerOpen(true);
+    } else {
+      setIsStoryCreatorOpen(true);
+    }
+  };
+
+  const handleAddStoryPlusClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    triggerHaptic();
+    setIsStoryCreatorOpen(true);
+  };
+
   const handleImageLoad = (id: string) => {
     setLoadedImages((prev) => ({ ...prev, [id]: true }));
   };
+
+  const communityStories: StoryItem[] = liveCravings.map((c) => ({
+    id: c.id,
+    criticId: c.userId,
+    criticName: c.userName || "Food Critic",
+    criticUsername: c.userName?.toLowerCase().replace(/\s+/g, '_') || "critic",
+    criticPhoto: c.userPhoto || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+    mediaUrl: c.dishes?.[0]?.image || c.userPhoto || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600",
+    dishName: c.dishes?.[0]?.name || c.attachedDish,
+    restaurantName: c.restaurantName,
+    restaurantId: c.restaurantId,
+    rating: c.rating,
+    timestamp: "3h ago"
+  }));
+
+  const allStories: StoryItem[] = [...userStories, ...communityStories];
 
   return (
     <div className="w-full overflow-x-auto scrollbar-hide py-3.5 px-3 sm:px-4 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-zinc-950/70 backdrop-blur-md shadow-sm dark:shadow-xl mb-3 sm:mb-4 snap-x snap-mandatory">
       <div className="flex items-start gap-3.5 sm:gap-4 w-max">
         
-        {/* Your Story / Log Action */}
+        {/* Your Story / Story Creator Trigger */}
         <motion.div
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="shrink-0 snap-start"
         >
-          <button
-            onClick={() => { triggerHaptic(); onLogClick?.(); }}
+          <div
+            onClick={handleYourStoryClick}
             className="flex flex-col items-center gap-1.5 group text-center cursor-pointer block"
           >
-            <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-0.5 bg-gradient-to-tr from-orange-500 via-amber-400 to-rose-500 shadow-md group-hover:shadow-[0_0_16px_rgba(249,115,22,0.45)] transition-all">
+            <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-0.5 transition-all ${
+              hasUserStory 
+                ? "bg-gradient-to-tr from-amber-400 via-orange-500 to-rose-500 shadow-[0_0_16px_rgba(249,115,22,0.6)] animate-pulse" 
+                : "bg-gradient-to-tr from-orange-500/60 via-amber-400/50 to-rose-500/60 shadow-md group-hover:shadow-[0_0_16px_rgba(249,115,22,0.45)]"
+            }`}>
               <div className="w-full h-full rounded-full overflow-hidden border-2 border-white dark:border-zinc-950 bg-slate-100 dark:bg-zinc-900 relative flex items-center justify-center">
-                {currentPhoto ? (
+                {hasUserStory && userStories[0]?.mediaUrl ? (
+                  <img
+                    src={userStories[0].mediaUrl}
+                    alt="Your Story"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                  />
+                ) : currentPhoto ? (
                   <img
                     src={currentPhoto}
                     alt={userDisplayName}
@@ -74,16 +147,21 @@ export function AppStoriesBar({ onLogClick, cravings: propCravings }: AppStories
                   </div>
                 )}
               </div>
-              {currentPhoto && (
-                <div className="absolute bottom-0 right-0 w-4 h-4 sm:w-4.5 sm:h-4.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white flex items-center justify-center font-black text-[11px] shadow-md border-2 border-white dark:border-zinc-950">
-                  <Plus size={10} strokeWidth={3.5} />
-                </div>
-              )}
+
+              {/* Plus badge to create another story */}
+              <button
+                type="button"
+                onClick={handleAddStoryPlusClick}
+                className="absolute bottom-0 right-0 w-4 h-4 sm:w-4.5 sm:h-4.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white flex items-center justify-center font-black text-[11px] shadow-md border-2 border-white dark:border-zinc-950 cursor-pointer hover:scale-110 active:scale-90 transition-transform"
+                title="Create Food Story"
+              >
+                <Plus size={10} strokeWidth={3.5} />
+              </button>
             </div>
             <span className="text-[10px] font-semibold text-slate-700 dark:text-white/80 max-w-[68px] sm:max-w-[72px] truncate group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors block text-center">
-              Post Craving
+              {hasUserStory ? "Your Story" : "Add Story"}
             </span>
-          </button>
+          </div>
         </motion.div>
 
         {/* Live Stories from Real User Cravings */}
@@ -101,7 +179,7 @@ export function AppStoriesBar({ onLogClick, cravings: propCravings }: AppStories
                 type="button"
                 onClick={() => {
                   triggerHaptic();
-                  setSelectedStoryIndex(idx);
+                  setSelectedStoryIndex(userStories.length + idx);
                   setIsStoryViewerOpen(true);
                 }}
                 className="flex flex-col items-center gap-1.5 group text-center cursor-pointer block"
@@ -144,19 +222,14 @@ export function AppStoriesBar({ onLogClick, cravings: propCravings }: AppStories
         isOpen={isStoryViewerOpen}
         onClose={() => setIsStoryViewerOpen(false)}
         initialIndex={selectedStoryIndex}
-        stories={liveCravings.map((c) => ({
-          id: c.id,
-          criticId: c.userId,
-          criticName: c.userName || "Food Critic",
-          criticUsername: c.userName?.toLowerCase().replace(/\s+/g, '_') || "critic",
-          criticPhoto: c.userPhoto || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
-          mediaUrl: c.dishes?.[0]?.image || c.userPhoto || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600",
-          dishName: c.dishes?.[0]?.name || c.attachedDish,
-          restaurantName: c.restaurantName,
-          restaurantId: c.restaurantId,
-          rating: c.rating,
-          timestamp: "3h ago"
-        }))}
+        stories={allStories}
+      />
+
+      {/* Story Creator Studio Modal */}
+      <StoryCreatorModal
+        isOpen={isStoryCreatorOpen}
+        onClose={() => setIsStoryCreatorOpen(false)}
+        onStoryCreated={refreshUserStories}
       />
     </div>
   );

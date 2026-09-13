@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Star, Heart, MessageSquare, MapPin, Navigation, Volume2, VolumeX, Sparkles, Flame, ShieldCheck, Share2, Tag, Utensils, Play, Eye, EyeOff } from "lucide-react";
+import { Star, Heart, MessageSquare, MapPin, Navigation, Volume2, VolumeX, Sparkles, Flame, ShieldCheck, Share2, Tag, Utensils, Play, Eye, EyeOff, Bookmark, BookOpen } from "lucide-react";
 import { Review, Interaction } from "../types";
 import { Link } from "react-router-dom";
 import { useAuth } from "../App";
@@ -31,9 +31,42 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
   const [isCleanMode, setIsCleanMode] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [showHeartBurst, setShowHeartBurst] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
+  const [isBookmarked, setIsBookmarked] = useState(() => {
+    try {
+      const saved = localStorage.getItem("madeater_bookmarked_dishes");
+      const list = saved ? JSON.parse(saved) : [];
+      return list.includes(review.attachedDish || review.dishes?.[0]?.name || review.id);
+    } catch {
+      return false;
+    }
+  });
   const lastTapRef = useRef<number>(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current && videoRef.current.duration) {
+      const p = (videoRef.current.currentTime / videoRef.current.duration) * 100;
+      setVideoProgress(p);
+    }
+  };
+
+  const handleToggleBookmark = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    triggerHaptic();
+    const dishKey = review.attachedDish || review.dishes?.[0]?.name || review.restaurantName || review.id;
+    try {
+      const saved = localStorage.getItem("madeater_bookmarked_dishes");
+      const list: string[] = saved ? JSON.parse(saved) : [];
+      const next = isBookmarked ? list.filter(k => k !== dishKey) : [...list, dishKey];
+      localStorage.setItem("madeater_bookmarked_dishes", JSON.stringify(next));
+      setIsBookmarked(!isBookmarked);
+      toast.success(!isBookmarked ? `Saved "${dishKey}" to your Food Saves!` : `Removed "${dishKey}" from saves`);
+    } catch {
+      setIsBookmarked(!isBookmarked);
+    }
+  };
 
   useEffect(() => {
     const el = containerRef.current;
@@ -184,6 +217,7 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
             loop
             playsInline
             muted={isMuted}
+            onTimeUpdate={handleTimeUpdate}
           />
           {!isPlaying && (
             <div 
@@ -288,36 +322,65 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
           
           {/* Dish & Restaurant Sleek Floating Capsule */}
           {(attachedDish || review.restaurantName) && (
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-xl border border-white/15 rounded-full shadow-lg max-w-full truncate group/badge hover:border-orange-500/40 transition-all">
-              <div className="w-5 h-5 rounded-full bg-orange-500/20 flex items-center justify-center shrink-0">
-                <Utensils size={10} className="text-orange-400" />
-              </div>
-              <div className="flex items-center gap-1.5 min-w-0 truncate">
-                {attachedDish && (
-                  <Link 
-                    to={getAppUrl(`/dish/${encodeURIComponent(attachedDish)}`)}
-                    onClick={(e) => { e.stopPropagation(); triggerHaptic(); }}
-                    className="text-xs font-black uppercase tracking-tight text-white hover:text-orange-400 transition-colors truncate max-w-[140px]"
-                  >
-                    {attachedDish}
-                  </Link>
+            <div className="flex flex-col gap-1.5 items-start">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-xl border border-white/15 rounded-full shadow-lg max-w-full truncate group/badge hover:border-orange-500/40 transition-all">
+                <div className="w-5 h-5 rounded-full bg-orange-500/20 flex items-center justify-center shrink-0">
+                  <Utensils size={10} className="text-orange-400" />
+                </div>
+                <div className="flex items-center gap-1.5 min-w-0 truncate">
+                  {attachedDish && (
+                    <Link 
+                      to={getAppUrl(`/dish/${encodeURIComponent(attachedDish)}`)}
+                      onClick={(e) => { e.stopPropagation(); triggerHaptic(); }}
+                      className="text-xs font-black uppercase tracking-tight text-white hover:text-orange-400 transition-colors truncate max-w-[140px]"
+                    >
+                      {attachedDish}
+                    </Link>
+                  )}
+                  {review.restaurantName && (
+                    <Link
+                      to={getAppUrl(`/restaurant/${review.restaurantId}`)}
+                      onClick={(e) => { e.stopPropagation(); triggerHaptic(); }}
+                      className="text-[11px] font-medium text-white/75 hover:text-white transition-colors truncate max-w-[120px]"
+                    >
+                      • {review.restaurantName}
+                    </Link>
+                  )}
+                </div>
+                {cravingScore && (
+                  <div className="flex items-center gap-0.5 ml-1 pl-1.5 border-l border-white/20 text-amber-400 shrink-0">
+                    <Star size={10} className="fill-amber-400" />
+                    <span className="text-[11px] font-black text-white">{cravingScore.toFixed(1)}</span>
+                  </div>
                 )}
-                {review.restaurantName && (
+              </div>
+
+              {/* Quick Action Badges: Bookmark Dish & View Menu */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleToggleBookmark}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold backdrop-blur-md transition-all active:scale-90 cursor-pointer ${
+                    isBookmarked 
+                      ? 'bg-orange-500 text-black shadow-md shadow-orange-500/30' 
+                      : 'bg-black/60 text-white/90 border border-white/15 hover:bg-white/10'
+                  }`}
+                >
+                  <Bookmark size={11} className={isBookmarked ? "fill-black" : ""} />
+                  <span>{isBookmarked ? "Saved" : "Save Dish"}</span>
+                </button>
+
+                {review.restaurantId && (
                   <Link
                     to={getAppUrl(`/restaurant/${review.restaurantId}`)}
                     onClick={(e) => { e.stopPropagation(); triggerHaptic(); }}
-                    className="text-[11px] font-medium text-white/75 hover:text-white transition-colors truncate max-w-[120px]"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-black/60 text-white/90 border border-white/15 hover:bg-white/10 backdrop-blur-md transition-all active:scale-90"
                   >
-                    • {review.restaurantName}
+                    <BookOpen size={11} className="text-orange-400" />
+                    <span>View Menu</span>
                   </Link>
                 )}
               </div>
-              {cravingScore && (
-                <div className="flex items-center gap-0.5 ml-1 pl-1.5 border-l border-white/20 text-amber-400 shrink-0">
-                  <Star size={10} className="fill-amber-400" />
-                  <span className="text-[11px] font-black text-white">{cravingScore.toFixed(1)}</span>
-                </div>
-              )}
             </div>
           )}
 
@@ -456,6 +519,16 @@ export const CravingCard: React.FC<CravingCardProps> = ({ review, isActive = tru
         onClose={() => setIsShareMenuOpen(false)}
         review={review}
       />
+
+      {/* Reel Playback Progress Bar */}
+      {review.videoUrl && (
+        <div className="absolute bottom-0 inset-x-0 h-1 bg-white/20 z-40 pointer-events-none">
+          <div 
+            style={{ width: `${videoProgress}%` }} 
+            className="h-full bg-gradient-to-r from-orange-500 to-amber-400 transition-all duration-100 shadow-[0_0_8px_rgba(249,115,22,0.8)]" 
+          />
+        </div>
+      )}
     </div>
   );
 };

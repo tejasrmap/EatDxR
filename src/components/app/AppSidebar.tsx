@@ -52,7 +52,24 @@ export function AppSidebar() {
             <span>Home</span>
           </Link>
 
-          {/* 2. Search */}
+          {/* 2. Cravings (Reels) - Position #2 */}
+          <Link
+            to="/app/cravings"
+            onClick={() => triggerHaptic()}
+            className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl text-sm transition-all ${
+              isCravings 
+                ? "bg-slate-200/80 dark:bg-white/10 text-slate-950 dark:text-white font-bold shadow-sm border border-slate-300/70 dark:border-transparent" 
+                : "text-slate-600 dark:text-white/70 hover:text-slate-950 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5 font-medium"
+            }`}
+          >
+            <Clapperboard size={20} className={isCravings ? "text-orange-500 dark:text-orange-400" : ""} />
+            <div className="flex items-center gap-2">
+              <span>Cravings</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+            </div>
+          </Link>
+
+          {/* 3. Search */}
           <button
             onClick={() => { triggerHaptic(); setIsSearchOpen(true); }}
             className="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl text-slate-600 dark:text-white/70 hover:text-slate-950 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5 font-medium text-sm transition-all cursor-pointer text-left"
@@ -61,7 +78,7 @@ export function AppSidebar() {
             <span>Search</span>
           </button>
 
-          {/* 3. Explore Dishes */}
+          {/* 4. Explore Dishes */}
           <Link
             to="/app/dishes"
             onClick={() => triggerHaptic()}
@@ -75,7 +92,7 @@ export function AppSidebar() {
             <span>Explore Dishes</span>
           </Link>
 
-          {/* 4. Restaurants */}
+          {/* 5. Restaurants */}
           <Link
             to="/app/restaurants"
             onClick={() => triggerHaptic()}
@@ -87,20 +104,6 @@ export function AppSidebar() {
           >
             <UtensilsCrossed size={20} className={isRestaurants ? "text-orange-500 dark:text-orange-400" : ""} />
             <span>Restaurants</span>
-          </Link>
-
-          {/* 5. Cravings (Reels) */}
-          <Link
-            to="/app/cravings"
-            onClick={() => triggerHaptic()}
-            className={`flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl text-sm transition-all ${
-              isCravings 
-                ? "bg-slate-200/80 dark:bg-white/10 text-slate-950 dark:text-white font-bold shadow-sm border border-slate-300/70 dark:border-transparent" 
-                : "text-slate-600 dark:text-white/70 hover:text-slate-950 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5 font-medium"
-            }`}
-          >
-            <Clapperboard size={20} className={isCravings ? "text-orange-500 dark:text-orange-400" : ""} />
-            <span>Cravings</span>
           </Link>
 
           {/* 6. Food Radar */}

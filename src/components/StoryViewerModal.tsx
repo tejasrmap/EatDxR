@@ -29,6 +29,13 @@ export interface StoryItem {
   restaurantName?: string;
   restaurantId?: string;
   rating?: number;
+  spiceLevel?: number;
+  poll?: {
+    question: string;
+    yesVotes: number;
+    noVotes: number;
+    userVote?: "yes" | "no";
+  };
   timestamp: string;
 }
 
@@ -60,7 +67,23 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
   const [isMuted, setIsMuted] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [floatingEmojis, setFloatingEmojis] = useState<FloatingEmoji[]>([]);
+  const [pollVotes, setPollVotes] = useState<Record<string, "yes" | "no">>(() => {
+    try {
+      const saved = localStorage.getItem("madeater_story_poll_votes");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
   const progressInterval = useRef<any>(null);
+
+  const handleVotePoll = (storyId: string, choice: "yes" | "no") => {
+    triggerHaptic();
+    const updated = { ...pollVotes, [storyId]: choice };
+    setPollVotes(updated);
+    localStorage.setItem("madeater_story_poll_votes", JSON.stringify(updated));
+    toast.success(choice === "yes" ? "Voted: Yes! 🤤" : "Voted: Pass 🙅‍♂️");
+  };
 
   useEffect(() => {
     setCurrentIndex(initialIndex);
@@ -268,9 +291,10 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
           </div>
         </div>
 
-        {/* MIDDLE OVERLAY: Tagged Restaurant & Dish Pill */}
-        {currentStory.restaurantName && (
-          <div className="relative z-30 px-4 py-2 flex justify-center">
+        {/* MIDDLE OVERLAY: Interactive Food Stickers Layer */}
+        <div className="relative z-30 px-4 py-2 space-y-2 flex flex-col items-center pointer-events-none">
+          {/* 1. Tagged Restaurant & Dish Pill */}
+          {currentStory.restaurantName && (
             <div 
               onClick={() => {
                 triggerHaptic();
@@ -279,14 +303,14 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
                   navigate(`/restaurant/${currentStory.restaurantId}`);
                 }
               }}
-              className="px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-xl border border-white/20 flex items-center gap-2 shadow-2xl cursor-pointer hover:bg-black/80 transition-all active:scale-95"
+              className="px-3.5 py-1.5 rounded-full bg-black/65 backdrop-blur-xl border border-white/20 flex items-center gap-2 shadow-2xl cursor-pointer hover:bg-black/80 transition-all active:scale-95 pointer-events-auto"
             >
               <MapPin size={13} className="text-orange-400 shrink-0" />
-              <span className="text-xs font-bold text-white truncate">
+              <span className="text-xs font-bold text-white truncate max-w-[160px]">
                 {currentStory.restaurantName}
               </span>
               {currentStory.dishName && (
-                <span className="text-xs text-orange-400 font-semibold truncate">
+                <span className="text-xs text-orange-400 font-semibold truncate max-w-[120px]">
                   · {currentStory.dishName}
                 </span>
               )}
@@ -296,8 +320,84 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
                 </span>
               )}
             </div>
-          </div>
-        )}
+          )}
+
+          {/* 2. Spice Meter Sticker */}
+          {currentStory.spiceLevel && (
+            <div className="p-2.5 rounded-2xl bg-black/75 backdrop-blur-xl border border-orange-500/40 text-white shadow-2xl w-full max-w-[220px] pointer-events-auto">
+              <div className="flex items-center justify-between text-[11px] font-black">
+                <span className="text-orange-400 flex items-center gap-1">
+                  <Flame size={12} className="fill-orange-500" /> Spice Heat
+                </span>
+                <span>{["🌶️ Mild", "🌶️🌶️ Med", "🌶️🌶️🌶️ Hot", "🌶️🌶️🌶️🌶️ Fiery", "🌶️ Nuclear 🔥"][currentStory.spiceLevel - 1]}</span>
+              </div>
+              <div className="mt-1.5 h-1.5 rounded-full bg-white/20 overflow-hidden">
+                <div 
+                  style={{ width: `${(currentStory.spiceLevel / 5) * 100}%` }}
+                  className="h-full bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 rounded-full"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* 3. Interactive "Would You Eat This?" Poll */}
+          {currentStory.poll && (
+            <div className="p-3.5 rounded-2xl bg-black/80 backdrop-blur-2xl border border-white/25 text-white shadow-2xl w-full max-w-[260px] space-y-2 pointer-events-auto select-none">
+              <p className="text-xs font-black text-center text-white drop-shadow">
+                {currentStory.poll.question || "Would you eat this?"}
+              </p>
+              
+              {pollVotes[currentStory.id] ? (
+                // Results View with live animated percentages
+                <div className="space-y-1.5 pt-0.5">
+                  <div className="relative h-8 rounded-xl bg-white/10 overflow-hidden flex items-center px-3 justify-between text-xs font-bold">
+                    <div 
+                      style={{ width: `${currentStory.poll.yesVotes ? Math.round((currentStory.poll.yesVotes / (currentStory.poll.yesVotes + currentStory.poll.noVotes + 1)) * 100) : 75}%` }}
+                      className="absolute inset-y-0 left-0 bg-orange-500/50 rounded-xl transition-all duration-500"
+                    />
+                    <span className="relative z-10 flex items-center gap-1 text-white">
+                      Yes 🤤 {pollVotes[currentStory.id] === "yes" && "✓"}
+                    </span>
+                    <span className="relative z-10 font-black text-orange-200">
+                      {currentStory.poll.yesVotes ? Math.round((currentStory.poll.yesVotes / (currentStory.poll.yesVotes + currentStory.poll.noVotes + 1)) * 100) : 75}%
+                    </span>
+                  </div>
+
+                  <div className="relative h-8 rounded-xl bg-white/10 overflow-hidden flex items-center px-3 justify-between text-xs font-bold">
+                    <div 
+                      style={{ width: `${currentStory.poll.noVotes ? Math.round((currentStory.poll.noVotes / (currentStory.poll.yesVotes + currentStory.poll.noVotes + 1)) * 100) : 25}%` }}
+                      className="absolute inset-y-0 left-0 bg-zinc-600/50 rounded-xl transition-all duration-500"
+                    />
+                    <span className="relative z-10 flex items-center gap-1 text-white">
+                      Pass 🙅‍♂️ {pollVotes[currentStory.id] === "no" && "✓"}
+                    </span>
+                    <span className="relative z-10 font-black text-zinc-300">
+                      {currentStory.poll.noVotes ? Math.round((currentStory.poll.noVotes / (currentStory.poll.yesVotes + currentStory.poll.noVotes + 1)) * 100) : 25}%
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                // Interactive Voting Buttons
+                <div className="grid grid-cols-2 gap-2 pt-0.5 text-xs font-black">
+                  <button
+                    type="button"
+                    onClick={() => handleVotePoll(currentStory.id, "yes")}
+                    className="py-2 rounded-xl bg-orange-500 hover:bg-orange-400 text-black active:scale-95 transition-all shadow-lg cursor-pointer"
+                  >
+                    Yes 🤤
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleVotePoll(currentStory.id, "no")}
+                    className="py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white active:scale-95 transition-all border border-white/20 cursor-pointer"
+                  >
+                    Pass 🙅‍♂️
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* BOTTOM OVERLAY: Quick Emoji Reactions + Message Input */}
         <div className="relative z-30 p-3 sm:p-4 space-y-3">

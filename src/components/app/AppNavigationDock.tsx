@@ -79,20 +79,20 @@ export function AppNavigationDock() {
               )}
             </Link>
 
-            {/* 2. Food Radar (Live Map) */}
+            {/* 2. Cravings (Video Reels) - Slot #2 */}
             <Link
-              to="/app/map"
+              to="/app/cravings"
               onClick={() => triggerHaptic()}
               className={`flex-1 flex flex-col items-center justify-center py-1 rounded-full transition-all active:scale-90 relative ${
-                isRadarActive ? 'text-orange-400' : 'text-white/45 hover:text-white'
+                isCravingsActive ? 'text-orange-400' : 'text-white/45 hover:text-white'
               }`}
             >
               <div className="relative">
-                <MapPin size={20} className={isRadarActive ? 'fill-orange-400/20 stroke-[2.5]' : 'stroke-[1.75]'} />
+                <Clapperboard size={20} className={isCravingsActive ? 'fill-orange-400/20 stroke-[2.5]' : 'stroke-[1.75]'} />
                 <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
               </div>
-              <span className="text-[9px] font-bold tracking-tight mt-0.5">Radar</span>
-              {isRadarActive && (
+              <span className="text-[9px] font-bold tracking-tight mt-0.5">Cravings</span>
+              {isCravingsActive && (
                 <motion.div 
                   layoutId="dockActiveDot"
                   className="w-1 h-1 rounded-full bg-orange-500 absolute -bottom-0.5 shadow-[0_0_6px_rgba(249,115,22,1)]"
@@ -119,17 +119,17 @@ export function AppNavigationDock() {
               </motion.button>
             </div>
 
-            {/* 4. Cravings (Video Reels) */}
+            {/* 4. Food Radar (Live Map) - Slot #4 */}
             <Link
-              to="/app/cravings"
+              to="/app/map"
               onClick={() => triggerHaptic()}
               className={`flex-1 flex flex-col items-center justify-center py-1 rounded-full transition-all active:scale-90 relative ${
-                isCravingsActive ? 'text-orange-400' : 'text-white/45 hover:text-white'
+                isRadarActive ? 'text-orange-400' : 'text-white/45 hover:text-white'
               }`}
             >
-              <Clapperboard size={20} className={isCravingsActive ? 'fill-orange-400/20 stroke-[2.5]' : 'stroke-[1.75]'} />
-              <span className="text-[9px] font-bold tracking-tight mt-0.5">Cravings</span>
-              {isCravingsActive && (
+              <MapPin size={20} className={isRadarActive ? 'fill-orange-400/20 stroke-[2.5]' : 'stroke-[1.75]'} />
+              <span className="text-[9px] font-bold tracking-tight mt-0.5">Radar</span>
+              {isRadarActive && (
                 <motion.div 
                   layoutId="dockActiveDot"
                   className="w-1 h-1 rounded-full bg-orange-500 absolute -bottom-0.5 shadow-[0_0_6px_rgba(249,115,22,1)]"
