@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { LogMealModal } from "./LogMealModal";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic } from "../services/nativeService";
+import { getShareUrl } from "../utils/shareUrl";
 
 export const Restaurant: React.FC = () => {
   const { restaurantId } = useParams<{ restaurantId: string }>();
@@ -244,9 +245,22 @@ export const Restaurant: React.FC = () => {
 
           <div className="flex items-center gap-3">
             <button 
-              onClick={() => {
+              onClick={async () => {
                 triggerHaptic();
-                navigator.clipboard.writeText(window.location.href);
+                const url = getShareUrl(`/restaurant/${restaurantId}`);
+                if (navigator.share) {
+                  try {
+                    await navigator.share({
+                      title: `${restaurant?.name || "Restaurant"} on Madeater`,
+                      text: `Check out ${restaurant?.name || "this spot"} on Madeater!`,
+                      url,
+                    });
+                    return;
+                  } catch {
+                    // user cancelled or fallback
+                  }
+                }
+                navigator.clipboard.writeText(url);
                 toast.success("Restaurant link copied!");
               }}
               className="p-2 sm:p-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white transition-all active:scale-95 cursor-pointer"

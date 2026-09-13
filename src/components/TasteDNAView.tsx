@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { TasteQuizModal } from "./TasteQuizModal";
 import { CriticQuestsModal, INITIAL_QUEST_BADGES } from "./CriticQuestsModal";
 import { triggerHaptic } from "../services/nativeService";
+import { getShareUrl } from "../utils/shareUrl";
 
 interface TasteDNAViewProps {
   user: User;
@@ -47,9 +48,22 @@ export function TasteDNAView({ user }: TasteDNAViewProps) {
     { label: "Coffee Connoisseur", val: dna.coffee, icon: "☕", color: "from-amber-600 to-yellow-800" },
   ];
 
-  const handleShareDNA = () => {
+  const handleShareDNA = async () => {
     triggerHaptic();
-    navigator.clipboard.writeText(window.location.href);
+    const url = getShareUrl(`/app/profile/${user.username || user.uid}?tab=taste`);
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${user.displayName || "Critic"}'s Taste DNA`,
+          text: `Check out my Taste DNA flavor persona on Madeater!`,
+          url,
+        });
+        return;
+      } catch {
+        // fallback
+      }
+    }
+    navigator.clipboard.writeText(url);
     toast.success("Taste DNA profile link copied!");
   };
 

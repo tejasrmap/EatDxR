@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useAuth } from "../App";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic } from "../services/nativeService";
+import { getShareUrl } from "../utils/shareUrl";
 
 export function ListDetail() {
   const { listId } = useParams<{ listId: string }>();
@@ -46,8 +47,22 @@ export function ListDetail() {
     toast.success("All list items saved to your Want-to-Eat!");
   };
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
+  const handleShare = async () => {
+    triggerHaptic();
+    const url = getShareUrl(`/lists/${listId}`);
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${list?.title || "Food List"} on Madeater`,
+          text: `Check out ${list?.title || "this curated food list"} on Madeater!`,
+          url,
+        });
+        return;
+      } catch {
+        // fallback
+      }
+    }
+    navigator.clipboard.writeText(url);
     toast.success("List link copied to clipboard!");
   };
 

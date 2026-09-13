@@ -37,10 +37,7 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
 
   if (!isOpen || typeof document === "undefined") return null;
 
-  const baseUrl = (typeof window !== "undefined" && window.location.origin && !window.location.origin.includes("localhost"))
-    ? window.location.origin
-    : "https://madeater.in";
-  const reviewUrl = `${baseUrl}/restaurant/${review.restaurantId}`;
+  const reviewUrl = getShareUrl(`/restaurant/${review.restaurantId}`);
   const shareTitle = `${review.restaurantName} on Madeater`;
   const shareText = `Check out this review of ${review.restaurantName} (${review.rating}★) on Madeater! 🍽️✨`;
 
@@ -68,26 +65,44 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
     handleCopyLink();
   };
 
-  // 2. Download 9:16 Canvas Story Card
-  const handleDownloadStory = async () => {
+  // 2. Share directly to Instagram Story with 9:16 Story Card
+  const handleInstagramStoryShare = async () => {
     triggerHaptic();
     setIsGenerating(true);
     try {
       const blob = await generateReviewStoryBlob(review, 'cinematic');
       if (!blob) throw new Error("Could not generate story card");
 
+      const filename = `Madeater-Story-${(review.restaurantName || "Review").replace(/\s+/g, '_')}.png`;
+
+      // Download/save copy to device
       const link = document.createElement("a");
-      link.download = `Madeater-Story-${(review.restaurantName || "Review").replace(/\s+/g, '_')}.png`;
+      link.download = filename;
       link.href = URL.createObjectURL(blob);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
 
-      toast.success("Story card downloaded!");
+      // Copy image to clipboard so user can paste into story if desired
+      if (navigator.clipboard && (window as any).ClipboardItem) {
+        try {
+          await navigator.clipboard.write([
+            new (window as any).ClipboardItem({ "image/png": blob })
+          ]);
+        } catch {
+          // ignore clipboard errors
+        }
+      }
+
+      toast.success("Story card saved! Opening Instagram Story...");
+      setTimeout(() => {
+        openInstagramStoryDirect();
+      }, 350);
     } catch (error) {
       console.error("Story generation error:", error);
-      toast.error("Failed to generate Story card. Image proxy error.");
+      toast.success("Opening Instagram Story...");
+      openInstagramStoryDirect();
     } finally {
       setIsGenerating(false);
     }
@@ -187,21 +202,21 @@ export const ShareMenu: React.FC<ShareMenuProps> = ({ isOpen, onClose, review })
             </button>
           )}
 
-          {/* 2. Download 9:16 Instagram Story Card */}
+          {/* 2. Direct Instagram Story Action */}
           <button 
             type="button"
-            onClick={handleDownloadStory}
+            onClick={handleInstagramStoryShare}
             disabled={isGenerating}
             className="w-full h-14 flex items-center justify-between px-5 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-pink-500/20 active:scale-98 transition-all cursor-pointer disabled:opacity-50"
           >
             <div className="flex items-center gap-3">
               <Instagram size={18} />
               <div className="flex flex-col text-left">
-                <span>Instagram Story Card</span>
-                <span className="text-[9px] text-white/70 font-mono normal-case">9:16 High-Res Poster</span>
+                <span>Share to Instagram Story</span>
+                <span className="text-[9px] text-white/70 font-mono normal-case">Direct 9:16 Story Poster</span>
               </div>
             </div>
-            {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+            {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Instagram size={16} />}
           </button>
 
           {/* 3. Quick Share Grid */}

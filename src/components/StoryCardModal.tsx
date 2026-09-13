@@ -69,16 +69,7 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
   const city = review.city || "Bangalore";
 
   const openInstagramDirect = () => {
-    triggerHaptic();
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isMobile) {
-      window.location.href = "instagram://story-camera";
-      setTimeout(() => {
-        window.location.href = "https://instagram.com";
-      }, 1000);
-    } else {
-      window.open("https://www.instagram.com", "_blank", "noopener,noreferrer");
-    }
+    openInstagramStoryDirect();
   };
 
   // 1. Download to device
@@ -126,20 +117,26 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
       document.body.removeChild(link);
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: `Madeater Critic: ${restaurantName}`,
-          text: `Rated ${ratingScore}/10 on Madeater! Check out my food review.`,
-        });
-        toast.success("Shared! Opening Instagram...");
+        try {
+          await navigator.share({
+            files: [file],
+            title: `Madeater Critic: ${restaurantName}`,
+            text: `Rated ${ratingScore}/10 on Madeater! Check out my food review.`,
+          });
+          toast.success("Shared! Opening Instagram...");
+        } catch (sErr: any) {
+          if (sErr.name !== "AbortError") {
+            openInstagramStoryDirect();
+          }
+        }
       } else {
-        toast.success("Story card saved! Redirecting to Instagram...");
-        setTimeout(openInstagramDirect, 400);
+        toast.success("Story card saved! Opening Instagram Story...");
+        setTimeout(openInstagramStoryDirect, 300);
       }
     } catch (err: any) {
       if (err.name !== "AbortError") {
         toast.success("Story card saved! Opening Instagram...");
-        setTimeout(openInstagramDirect, 300);
+        setTimeout(openInstagramStoryDirect, 300);
       }
     } finally {
       setIsGenerating(false);
@@ -162,11 +159,11 @@ export const StoryCardModal: React.FC<StoryCardModalProps> = ({ isOpen, onClose,
         toast.success("9:16 Story card copied to clipboard! Paste into Instagram.");
         setTimeout(() => setCopied(false), 2500);
       } else {
-        await navigator.clipboard.writeText(window.location.href);
+        await navigator.clipboard.writeText(getShareUrl(`/restaurant/${review.restaurantId}`));
         toast.success("Review link copied to clipboard!");
       }
     } catch (err) {
-      navigator.clipboard.writeText(window.location.href);
+      navigator.clipboard.writeText(getShareUrl(`/restaurant/${review.restaurantId}`));
       toast.success("Review link copied to clipboard!");
     } finally {
       setIsGenerating(false);

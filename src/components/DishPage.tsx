@@ -11,6 +11,7 @@ import { LogMealModal } from "./LogMealModal";
 import { useAuth } from "../App";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic } from "../services/nativeService";
+import { getShareUrl } from "../utils/shareUrl";
 
 export function DishPage() {
   const { dishId } = useParams<{ dishId: string }>();
@@ -41,9 +42,22 @@ export function DishPage() {
     }).catch(() => {});
   }, [currentDish?.name]);
 
-  const handleShare = () => {
+  const handleShare = async () => {
     triggerHaptic();
-    navigator.clipboard.writeText(window.location.href);
+    const url = getShareUrl(`/dish/${dishId || currentDish?.id}`);
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${currentDish?.name || "Dish"} on Madeater`,
+          text: `Check out ${currentDish?.name || "this iconic dish"} on Madeater!`,
+          url,
+        });
+        return;
+      } catch {
+        // fallback
+      }
+    }
+    navigator.clipboard.writeText(url);
     toast.success("Dish link copied to clipboard!");
   };
 

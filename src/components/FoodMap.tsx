@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { GLOBAL_RESTAURANTS, GLOBAL_CITIES, GlobalRestaurant } from "../data/globalRestaurants";
 import { getDistanceKM, formatDistance } from "../lib/distance";
+import { getShareUrl } from "../utils/shareUrl";
 import { triggerHaptic } from "../services/nativeService";
 
 export function FoodMap() {
@@ -278,8 +279,20 @@ export function FoodMap() {
     return formatDistance(km);
   }, [activeSpot, userCoords]);
 
-  const handleShareSpot = (spot: GlobalRestaurant) => {
-    const url = window.location.origin + `/restaurant/${spot.id}`;
+  const handleShareSpot = async (spot: GlobalRestaurant) => {
+    const url = getShareUrl(`/restaurant/${spot.id}`);
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${spot.name} on Madeater`,
+          text: `Check out ${spot.name} in ${spot.city} on Madeater!`,
+          url,
+        });
+        return;
+      } catch {
+        // fallback
+      }
+    }
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url);
       setCopiedLink(true);

@@ -4,6 +4,7 @@ import { Trophy, Star, Download, Share2, Flame, MapPin, Sparkles, UtensilsCrosse
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
+import { getShareUrl } from "../utils/shareUrl";
 
 export function YearInFood() {
   const { user, dishdUser } = useAuth();
@@ -48,8 +49,21 @@ export function YearInFood() {
     }
   };
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
+  const handleShare = async () => {
+    const url = getShareUrl("/app/year-in-food");
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "My Year in Food on Madeater",
+          text: "Check out my Year in Food culinary recap on Madeater!",
+          url,
+        });
+        return;
+      } catch {
+        // fallback
+      }
+    }
+    navigator.clipboard.writeText(url);
     toast.success("My Food Year link copied!");
   };
 

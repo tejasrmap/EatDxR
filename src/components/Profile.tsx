@@ -17,6 +17,7 @@ import { TasteDNAView } from "./TasteDNAView";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic, isNative } from "../services/nativeService";
 import { uploadMedia, upsertProfile } from "../services/supabaseService";
+import { getShareUrl } from "../utils/shareUrl";
 
 export const Profile: React.FC = () => {
   const { userId: identifier } = useParams<{ userId: string }>();
@@ -120,7 +121,15 @@ export const Profile: React.FC = () => {
 
   const shareProfile = async () => {
     triggerHaptic();
-    const url = window.location.href;
+    const profilePath = identifier 
+      ? `/app/profile/${identifier}` 
+      : user?.username 
+      ? `/app/profile/${user.username}` 
+      : user?.uid 
+      ? `/app/profile/${user.uid}` 
+      : window.location.pathname;
+    const url = getShareUrl(profilePath);
+
     if (navigator.share) {
       try {
         await navigator.share({

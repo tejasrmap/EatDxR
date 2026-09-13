@@ -10,6 +10,7 @@ import { FoodTrail } from '../types';
 import { triggerHaptic } from '../services/nativeService';
 import { toast } from 'sonner';
 import { generateTrailStoryBlob, StoryTheme } from '../utils/storyCanvasGenerator';
+import { getShareUrl, openInstagramStoryDirect } from '../utils/shareUrl';
 
 interface TrailCardModalProps {
   isOpen: boolean;
@@ -25,16 +26,7 @@ export function TrailCardModal({ isOpen, onClose, trail }: TrailCardModalProps) 
   if (!isOpen || !trail) return null;
 
   const openInstagramDirect = () => {
-    triggerHaptic();
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isMobile) {
-      window.location.href = "instagram://story-camera";
-      setTimeout(() => {
-        window.location.href = "https://instagram.com";
-      }, 1000);
-    } else {
-      window.open("https://www.instagram.com", "_blank", "noopener,noreferrer");
-    }
+    openInstagramStoryDirect();
   };
 
   const handleDownload = async () => {
@@ -79,20 +71,26 @@ export function TrailCardModal({ isOpen, onClose, trail }: TrailCardModalProps) 
       document.body.removeChild(link);
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: `Food Trail: ${trail.title}`,
-          text: `Check out the ${trail.title} food trail in ${trail.city} on Madeater!`,
-        });
-        toast.success('Shared! Opening Instagram...');
+        try {
+          await navigator.share({
+            files: [file],
+            title: `Food Trail: ${trail.title}`,
+            text: `Check out the ${trail.title} food trail in ${trail.city} on Madeater!`,
+          });
+          toast.success('Shared! Opening Instagram...');
+        } catch (sErr: any) {
+          if (sErr.name !== 'AbortError') {
+            openInstagramStoryDirect();
+          }
+        }
       } else {
         toast.success('Trail card saved! Opening Instagram...');
-        setTimeout(openInstagramDirect, 400);
+        setTimeout(openInstagramStoryDirect, 300);
       }
     } catch (err: any) {
       if (err.name !== 'AbortError') {
         toast.success('Trail card saved! Opening Instagram...');
-        setTimeout(openInstagramDirect, 300);
+        setTimeout(openInstagramStoryDirect, 300);
       }
     } finally {
       setIsExporting(false);
@@ -114,11 +112,11 @@ export function TrailCardModal({ isOpen, onClose, trail }: TrailCardModalProps) 
         toast.success('Trail story card copied to clipboard!');
         setTimeout(() => setCopied(false), 2500);
       } else {
-        await navigator.clipboard.writeText(window.location.href);
+        await navigator.clipboard.writeText(getShareUrl(`/trails/${trail.id}`));
         toast.success('Trail link copied to clipboard!');
       }
     } catch (err) {
-      navigator.clipboard.writeText(window.location.href);
+      navigator.clipboard.writeText(getShareUrl(`/trails/${trail.id}`));
       toast.success('Trail link copied to clipboard!');
     } finally {
       setIsExporting(false);
