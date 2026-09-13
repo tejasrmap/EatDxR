@@ -70,6 +70,11 @@ export function registerNewRestaurantLocally(restaurant: RestaurantSearchResult)
     cachedRestaurants = [restaurant];
   }
   searchCache.clear();
+
+  // Notify active map and list listeners
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("restaurant-registered", { detail: restaurant }));
+  }
 }
 
 /**
@@ -293,5 +298,30 @@ export async function getCurrentCity(latitude: number, longitude: number): Promi
     console.warn("AI Geocoder failed", e);
   }
 
+  return null;
+}
+
+/**
+ * High-precision reverse geocoder down to street/building level (zoom 18)
+ */
+export async function getPreciseAddress(latitude: number, longitude: number): Promise<{ address: string; city?: string } | null> {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`, {
+      headers: { "Accept-Language": "en" }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const addr = data.address || {};
+      const road = addr.road || addr.pedestrian || addr.building || addr.amenity || addr.suburb || addr.neighbourhood;
+      const city = addr.city || addr.town || addr.village || addr.county || addr.state_district;
+      const formatted = [road, city].filter(Boolean).join(", ");
+      return {
+        address: formatted || data.display_name?.split(',').slice(0, 2).join(',').trim() || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`,
+        city: city || "Hyderabad"
+      };
+    }
+  } catch (e) {
+    console.warn("Precise address reverse geocoding notice:", e);
+  }
   return null;
 }

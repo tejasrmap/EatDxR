@@ -5,16 +5,21 @@ import {
   X, MapPin, Utensils, Star, DollarSign, Clock, 
   Sparkles, Navigation, Loader2, Upload, Camera, 
   Check, ChevronDown, CheckCircle2, Image as ImageIcon,
-  BookOpen, Plus
+  BookOpen, Plus, Crosshair, Compass
 } from "lucide-react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { triggerHaptic } from "../services/nativeService";
 import { createRestaurant } from "../services/supabaseService";
-import { registerNewRestaurantLocally, getCurrentCity } from "../services/mapsService";
+import { registerNewRestaurantLocally, getCurrentCity, getPreciseAddress } from "../services/mapsService";
 import { Restaurant } from "../types";
 import { toast } from "sonner";
 import { Geolocation } from "@capacitor/geolocation";
 
 const POPULAR_CUISINES = [
+  "Hostel Mess & Dining",
+  "Night Canteen & Maggi Point",
+  "Student Mess & Tiffins",
   "Hyderabadi Biryani",
   "South Indian Deluxe",
   "North Indian & Mughlai",
@@ -22,9 +27,9 @@ const POPULAR_CUISINES = [
   "Pan-Asian & Sushi",
   "Italian & Pizza",
   "Street Food & Chaat",
-  "Fine Dining & Grills",
   "Burgers & Fast Food",
   "Desserts & Ice Cream",
+  "Fine Dining & Grills",
   "Cocktails & Lounge"
 ];
 
@@ -87,12 +92,16 @@ export const AddRestaurantModal: React.FC<AddRestaurantModalProps> = ({
   const [selectedImage, setSelectedImage] = useState(PRESET_COVERS[0].url);
   const [customImageUrl, setCustomImageUrl] = useState("");
   const [menuCardImages, setMenuCardImages] = useState<string[]>([]);
-  const [coords, setCoords] = useState<{ lat?: number; lng?: number }>({});
+  const [coords, setCoords] = useState<{ lat?: number; lng?: number }>({ lat: 16.4819, lng: 80.5050 });
   const [isLocating, setIsLocating] = useState(false);
+  const [isReverseGeocoding, setIsReverseGeocoding] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const menuCardInputRef = useRef<HTMLInputElement>(null);
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const leafletMapRef = useRef<L.Map | null>(null);
+  const pinMarkerRef = useRef<L.Marker | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -108,37 +117,153 @@ export const AddRestaurantModal: React.FC<AddRestaurantModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Auto-detect GPS Coordinates & City
+  // Interactive Leaflet Pinpoint Mini-Map
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const timer = setTimeout(() => {
+      if (!mapContainerRef.current || leafletMapRef.current) return;
+
+      const initialLat = coords.lat || 16.4819;
+      const initialLng = coords.lng || 80.5050;
+
+      const map = L.map(mapContainerRef.current, {
+        center: [initialLat, initialLng],
+        zoom: coords.lat ? 17 : 14,
+        zoomControl: false,
+        attributionControl: false
+      });
+
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        className: "dark-map-tiles"
+      }).addTo(map);
+
+      const pinIcon = L.divIcon({
+        className: "custom-pinpoint-marker",
+        iconSize: [36, 44],
+        iconAnchor: [18, 42],
+        html: `
+          <div class="relative flex flex-col items-center cursor-pointer">
+            <div class="w-8 h-8 rounded-full bg-orange-500 border-2 border-white shadow-xl shadow-orange-500/80 flex items-center justify-center text-sm font-black animate-pulse">
+              📍
+            </div>
+            <div class="w-2.5 h-2.5 bg-orange-500 rotate-45 -mt-1 shadow-sm"></div>
+          </div>
+        `
+      });
+
+      const marker = L.marker([initialLat, initialLng], {
+        icon: pinIcon,
+        draggable: true,
+        zIndexOffset: 1000
+      }).addTo(map);
+
+      pinMarkerRef.current = marker;
+      leafletMapRef.current = map;
+
+      const updatePinLocation = async (lat: number, lng: number) => {
+        setCoords({ lat, lng });
+        setIsReverseGeocoding(true);
+        try {
+          const res = await getPreciseAddress(lat, lng);
+          if (res) {
+            if (res.city) setCity(res.city);
+            if (res.address) setLocation(res.address);
+          }
+        } catch {
+          // ignore
+        } finally {
+          setIsReverseGeocoding(false);
+        }
+      };
+
+      marker.on("dragend", () => {
+        triggerHaptic();
+        const pos = marker.getLatLng();
+        updatePinLocation(pos.lat, pos.lng);
+      });
+
+      map.on("click", (e) => {
+        triggerHaptic();
+        marker.setLatLng(e.latlng);
+        updatePinLocation(e.latlng.lat, e.latlng.lng);
+      });
+
+      // Attempt silent device location on first open if user hasn't explicitly moved pin
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const uLat = pos.coords.latitude;
+            const uLng = pos.coords.longitude;
+            setCoords({ lat: uLat, lng: uLng });
+            marker.setLatLng([uLat, uLng]);
+            map.flyTo([uLat, uLng], 17, { duration: 1 });
+            updatePinLocation(uLat, uLng);
+          },
+          () => {},
+          { enableHighAccuracy: true, timeout: 6000 }
+        );
+      }
+
+      map.invalidateSize();
+    }, 200);
+
+    return () => {
+      clearTimeout(timer);
+      if (leafletMapRef.current) {
+        leafletMapRef.current.remove();
+        leafletMapRef.current = null;
+        pinMarkerRef.current = null;
+      }
+    };
+  }, [isOpen]);
+
+  // Auto-detect GPS Coordinates & City with Pin Snap
   const handleDetectLocation = async () => {
     triggerHaptic();
     setIsLocating(true);
+    setIsReverseGeocoding(true);
     try {
       let lat: number, lng: number;
       try {
-        const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 7000 });
+        const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 8000 });
         lat = pos.coords.latitude;
         lng = pos.coords.longitude;
       } catch {
         const webPos = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 7000 });
+          navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 8000 });
         });
         lat = webPos.coords.latitude;
         lng = webPos.coords.longitude;
       }
 
       setCoords({ lat, lng });
-      const detectedCity = await getCurrentCity(lat, lng);
-      if (detectedCity) {
-        setCity(detectedCity);
-        if (!location) {
-          setLocation(`Near ${detectedCity}`);
+
+      if (pinMarkerRef.current) {
+        pinMarkerRef.current.setLatLng([lat, lng]);
+      }
+      if (leafletMapRef.current) {
+        leafletMapRef.current.flyTo([lat, lng], 18, { duration: 1.2 });
+      }
+
+      const res = await getPreciseAddress(lat, lng);
+      if (res) {
+        if (res.city) setCity(res.city);
+        if (res.address) setLocation(res.address);
+      } else {
+        const detectedCity = await getCurrentCity(lat, lng);
+        if (detectedCity) {
+          setCity(detectedCity);
+          if (!location) setLocation(`Near ${detectedCity}`);
         }
       }
-      toast.success("📍 GPS location captured");
+      toast.success("📍 Exact pinpoint locked from device GPS!");
     } catch {
-      toast.error("Could not obtain GPS permission. Please type the address manually.");
+      toast.error("Could not obtain device GPS. You can tap or drag the pin on the map to pinpoint.");
     } finally {
       setIsLocating(false);
+      setIsReverseGeocoding(false);
     }
   };
 
@@ -201,6 +326,9 @@ export const AddRestaurantModal: React.FC<AddRestaurantModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      const finalLat = coords.lat ?? (leafletMapRef.current ? leafletMapRef.current.getCenter().lat : 16.4819);
+      const finalLng = coords.lng ?? (leafletMapRef.current ? leafletMapRef.current.getCenter().lng : 80.5050);
+
       const newRestaurant = await createRestaurant({
         name: name.trim(),
         cuisine: finalCuisine,
@@ -210,8 +338,8 @@ export const AddRestaurantModal: React.FC<AddRestaurantModalProps> = ({
         signatureDish: signatureDish.trim() || undefined,
         hours: hours.trim() || "11:00 AM - 11:00 PM",
         image: customImageUrl || selectedImage,
-        lat: coords.lat,
-        lng: coords.lng,
+        lat: finalLat,
+        lng: finalLng,
         rating: 4.8,
         reviewCount: 1,
         menuCards: menuCardImages
@@ -400,6 +528,55 @@ export const AddRestaurantModal: React.FC<AddRestaurantModalProps> = ({
                   onChange={(e) => setCity(e.target.value)}
                   className="w-full bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none font-medium"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Accurate Interactive Pinpoint Map Picker */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-wider text-white/70 flex items-center gap-1.5">
+                <MapPin size={13} className="text-orange-400" />
+                <span>Pinpoint Exact Entrance on Map</span>
+                <span className="text-[10px] text-orange-400 font-mono">(Visible on live map)</span>
+              </label>
+              {coords.lat && coords.lng && (
+                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1">
+                  <Check size={11} strokeWidth={3} />
+                  <span>Pinpoint Locked ({coords.lat.toFixed(4)}, {coords.lng.toFixed(4)})</span>
+                </span>
+              )}
+            </div>
+
+            <div className="relative w-full h-44 sm:h-52 rounded-2xl overflow-hidden border border-white/15 bg-zinc-950 shadow-inner group">
+              <div ref={mapContainerRef} className="w-full h-full z-0" />
+
+              {/* Floating Snap to GPS Button */}
+              <div className="absolute top-2.5 right-2.5 z-[400]">
+                <button
+                  type="button"
+                  onClick={handleDetectLocation}
+                  disabled={isLocating}
+                  className="px-2.5 py-1.5 rounded-xl bg-black/80 hover:bg-orange-500 text-white hover:text-black border border-white/20 text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-lg backdrop-blur-md cursor-pointer"
+                  title="Snap Pinpoint to My Device GPS"
+                >
+                  {isLocating ? (
+                    <Loader2 size={12} className="animate-spin text-orange-400" />
+                  ) : (
+                    <Crosshair size={12} className="text-orange-400" />
+                  )}
+                  <span>Snap My GPS</span>
+                </button>
+              </div>
+
+              {/* Bottom Instructions Banner */}
+              <div className="absolute bottom-2 inset-x-2 z-[400] bg-black/80 backdrop-blur-md rounded-xl p-1.5 px-3 border border-white/10 flex items-center justify-between text-[11px] text-white/70 pointer-events-none">
+                <span className="truncate mr-2">📍 Drag pin or tap on map to position at hostel / food spot entrance</span>
+                {isReverseGeocoding && (
+                  <span className="text-orange-400 flex items-center gap-1 text-[10px] shrink-0">
+                    <Loader2 size={10} className="animate-spin" /> Resolving...
+                  </span>
+                )}
               </div>
             </div>
           </div>

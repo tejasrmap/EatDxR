@@ -25,6 +25,7 @@ import { GLOBAL_RESTAURANTS, GLOBAL_CITIES, GlobalRestaurant } from "../data/glo
 import { getDistanceKM, formatDistance } from "../lib/distance";
 import { getShareUrl } from "../utils/shareUrl";
 import { triggerHaptic } from "../services/nativeService";
+import { preloadAllRestaurants } from "../services/mapsService";
 
 export function FoodMap() {
   const location = useLocation();
@@ -35,6 +36,7 @@ export function FoodMap() {
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const userMarkerRef = useRef<L.Marker | null>(null);
 
+  const [allSpots, setAllSpots] = useState<GlobalRestaurant[]>(GLOBAL_RESTAURANTS);
   const [selectedCity, setSelectedCity] = useState("All");
   const [filterType, setFilterType] = useState<"all" | "critic" | "trending">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,21 +45,101 @@ export function FoodMap() {
   const [isLocating, setIsLocating] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // Load all community and newly registered spots
+  useEffect(() => {
+    let isMounted = true;
+    const fetchAllSpots = async () => {
+      try {
+        const loaded = await preloadAllRestaurants();
+        if (!isMounted) return;
+
+        const converted: GlobalRestaurant[] = loaded
+          .filter(r => typeof (r as any).lat === 'number' && typeof (r as any).lng === 'number')
+          .map(r => ({
+            id: r.id,
+            name: r.name,
+            cuisine: r.cuisine || "Specialty",
+            location: r.location || "Local Spot",
+            city: r.city || "Unknown",
+            country: "India",
+            lat: (r as any).lat,
+            lng: (r as any).lng,
+            rating: (r as any).rating || 4.8,
+            reviewCount: (r as any).reviewCount || 1,
+            priceLevel: (r as any).priceLevel || "₹₹",
+            image: r.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80",
+            signatureDishes: (r as any).menuItems || [],
+            tags: (r as any).tags || ["Community Spot"]
+          }));
+
+        const existingIds = new Set(converted.map(c => c.id));
+        const merged = [...converted, ...GLOBAL_RESTAURANTS.filter(g => !existingIds.has(g.id))];
+        setAllSpots(merged);
+      } catch (err) {
+        console.warn("Could not load community spots for map:", err);
+      }
+    };
+
+    fetchAllSpots();
+
+    const handleNewSpot = (e: Event) => {
+      const customEv = e as CustomEvent;
+      const newRest = customEv.detail;
+      if (newRest && typeof newRest.lat === 'number' && typeof newRest.lng === 'number') {
+        const spot: GlobalRestaurant = {
+          id: newRest.id,
+          name: newRest.name,
+          cuisine: newRest.cuisine || "Specialty",
+          location: newRest.location || "Local Spot",
+          city: newRest.city || "Unknown",
+          country: "India",
+          lat: newRest.lat,
+          lng: newRest.lng,
+          rating: newRest.rating || 4.8,
+          reviewCount: newRest.reviewCount || 1,
+          priceLevel: newRest.priceLevel || "₹₹",
+          image: newRest.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80",
+          signatureDishes: newRest.menuItems || [],
+          tags: ["Newly Added", "Community Spot"]
+        };
+        setAllSpots(prev => [spot, ...prev.filter(p => p.id !== spot.id)]);
+        setActiveSpot(spot);
+        if (leafletMapRef.current) {
+          leafletMapRef.current.flyTo([spot.lat, spot.lng], 16, { duration: 1.2 });
+        }
+      }
+    };
+
+    window.addEventListener("restaurant-registered", handleNewSpot);
+    return () => {
+      isMounted = false;
+      window.removeEventListener("restaurant-registered", handleNewSpot);
+    };
+  }, []);
+
   // Available city shortcuts
-  const cities = useMemo(() => [
-    "All",
-    "Hyderabad",
-    "Bangalore",
-    "Mumbai",
-    "Delhi",
-    "Amaravati (SRMAP)",
-    "Tokyo",
-    "New York"
-  ], []);
+  const cities = useMemo(() => {
+    const base = [
+      "All",
+      "Hyderabad",
+      "Bangalore",
+      "Mumbai",
+      "Delhi",
+      "Amaravati (SRMAP)",
+      "Tokyo",
+      "New York"
+    ];
+    allSpots.forEach(s => {
+      if (s.city && !base.some(b => b.toLowerCase() === s.city.toLowerCase())) {
+        base.push(s.city);
+      }
+    });
+    return base;
+  }, [allSpots]);
 
   // Filtered spots based on City, FilterType, and Search Query
   const filteredSpots = useMemo(() => {
-    return GLOBAL_RESTAURANTS.filter((spot) => {
+    return allSpots.filter((spot) => {
       const matchesCity = selectedCity === "All" || spot.city.toLowerCase().includes(selectedCity.toLowerCase());
       const matchesFilter =
         filterType === "all"
@@ -75,7 +157,7 @@ export function FoodMap() {
 
       return matchesCity && matchesFilter && matchesSearch;
     });
-  }, [selectedCity, filterType, searchQuery]);
+  }, [allSpots, selectedCity, filterType, searchQuery]);
 
   // Request user live GPS coordinates
   const handleLocateMe = () => {
