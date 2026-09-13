@@ -103,13 +103,25 @@ export async function getProfile(idOrUsername: string): Promise<User | null> {
       .maybeSingle();
 
     if (!data) {
-      const res = await supabase
+      // 1. Try exact lowercase username match
+      const resExact = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('username', cleanIdentifier.toLowerCase())
+        .maybeSingle();
+      data = resExact.data;
+      error = resExact.error;
+    }
+
+    if (!data) {
+      // 2. Fallback to case-insensitive ilike match
+      const resIlike = await supabase
         .from('profiles')
         .select('*')
         .ilike('username', cleanIdentifier)
         .maybeSingle();
-      data = res.data;
-      error = res.error;
+      data = resIlike.data;
+      error = resIlike.error;
     }
 
     if (error) throw error;
@@ -156,7 +168,6 @@ export async function upsertProfile(user: Partial<User>): Promise<void> {
 
   try {
     const updatePayload: Record<string, any> = {
-      id: user.uid,
       updated_at: new Date().toISOString()
     };
 
@@ -173,8 +184,32 @@ export async function upsertProfile(user: Partial<User>): Promise<void> {
     if (user.tasteDNA !== undefined) updatePayload.taste_dna = user.tasteDNA;
     if (user.stats !== undefined) updatePayload.stats = user.stats;
 
-    const { error } = await supabase.from('profiles').upsert(updatePayload, { onConflict: 'id' });
-    if (error) throw error;
+    // First check if profile already exists in Supabase
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', user.uid)
+      .maybeSingle();
+
+    if (existing && existing.id) {
+      // Use UPDATE so partial updates succeed without failing NOT NULL constraints on other columns
+      const { error } = await supabase
+        .from('profiles')
+        .update(updatePayload)
+        .eq('id', user.uid);
+      if (error) throw error;
+    } else {
+      // Use INSERT with safe defaults for NOT NULL columns
+      const insertPayload = {
+        ...updatePayload,
+        id: user.uid,
+        display_name: user.displayName || 'Food Critic',
+        username: updatePayload.username || `critic_${user.uid.replace(/[^a-zA-Z0-9]/g, '').slice(0, 10)}`,
+        created_at: new Date().toISOString()
+      };
+      const { error } = await supabase.from('profiles').insert(insertPayload);
+      if (error) throw error;
+    }
   } catch (err) {
     console.error('[Supabase] Error upserting profile:', err);
     throw err;

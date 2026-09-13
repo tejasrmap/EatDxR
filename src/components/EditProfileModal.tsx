@@ -33,6 +33,17 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  React.useEffect(() => {
+    if (isOpen && user) {
+      setDisplayName(user.displayName || "");
+      setUsername(user.username || "");
+      setPronouns(user.pronouns || "");
+      setPhotoURL(user.photoURL || "");
+      setBio(user.bio || "");
+      setCuisines(user.favoriteCuisines?.join(", ") || "");
+    }
+  }, [isOpen, user]);
+
   if (!isOpen) return null;
 
   const uploadFileWithProgress = (file: File, path: string): Promise<string> => {
@@ -164,7 +175,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
       onClose();
 
       // 5. If user changed their username/critic ID, navigate to their new profile URL
-      if (targetUsername && targetUsername !== user.username) {
+      if (targetUsername && targetUsername.toLowerCase() !== (user.username || '').toLowerCase()) {
         const isAppRoute = window.location.pathname.startsWith('/app');
         const newProfilePath = isAppRoute ? `/app/profile/${targetUsername}` : `/profile/${targetUsername}`;
         navigate(newProfilePath, { replace: true });
