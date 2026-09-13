@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { User } from "../types";
 import { X, Loader2, Save, Camera, ChevronRight } from "lucide-react";
 import { doc, setDoc } from "firebase/firestore";
@@ -209,8 +210,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[700] flex items-center justify-center">
+  return createPortal(
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-0 md:p-6 overflow-hidden">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-background/95 backdrop-blur-2xl transition-opacity animate-in fade-in"
@@ -218,19 +219,19 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
       />
       
       {/* Edit Panel */}
-      <div className="relative w-full h-full md:h-[90vh] md:max-w-xl md:rounded-3xl bg-background border border-border shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 duration-300">
+      <div className="relative w-full h-full md:h-[90vh] md:max-w-xl md:rounded-3xl bg-background border-0 md:border md:border-border shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 duration-300 z-10">
         
-        {/* Instagram-Style Header */}
-        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-md px-4 py-4 md:px-6 md:py-6 border-b border-border flex items-center justify-between">
+        {/* Instagram-Style Header with Safe Area Inset Support */}
+        <div className="shrink-0 z-20 bg-background/95 backdrop-blur-xl px-4 py-3 sm:px-6 sm:py-4 border-b border-border flex items-center justify-between pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] md:pt-4">
           <button 
             type="button"
             onClick={onClose} 
-            className="text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
+            className="text-xs font-bold text-muted-foreground hover:text-foreground transition-colors py-1.5 px-3 rounded-lg active:bg-muted"
           >
             {isOnboarding ? "Skip for now" : "Cancel"}
           </button>
           
-          <h2 className="text-sm font-black tracking-[0.2em] uppercase text-foreground">
+          <h2 className="text-xs sm:text-sm font-black tracking-[0.2em] uppercase text-foreground">
             {isOnboarding ? "Critic Profile" : "Edit Profile"}
           </h2>
           
@@ -238,15 +239,16 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
             type="button"
             onClick={() => handleSave()}
             disabled={isSaving}
-            className="text-xs font-bold text-orange-500 hover:text-orange-400 transition-colors disabled:opacity-50"
+            className="py-1.5 px-4 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-black font-black text-xs uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all shadow-md flex items-center gap-1.5 disabled:opacity-50"
           >
-            {isSaving ? "Saving..." : "Done"}
+            {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+            <span>{isSaving ? "Saving..." : "Done"}</span>
           </button>
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide">
-          <form onSubmit={handleSave} className="pb-20">
+        <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
+          <form onSubmit={handleSave} className="pb-8">
             
             {/* Avatar Section */}
             <div className="flex flex-col items-center py-8 bg-muted border-b border-border">
@@ -366,7 +368,38 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
             </div>
           </form>
         </div>
+
+        {/* Floating Bottom Action Bar for Guaranteed Visibility on Mobile */}
+        <div className="shrink-0 p-3 sm:p-4 bg-background/95 backdrop-blur-xl border-t border-border flex items-center gap-3 z-20 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] md:pb-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="py-2.5 px-4 rounded-xl border border-border bg-muted/40 hover:bg-muted text-xs font-bold text-muted-foreground transition-all active:scale-[0.98]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSave()}
+            disabled={isSaving}
+            className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-black text-xs font-black uppercase tracking-wider shadow-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 size={15} className="animate-spin" />
+                <span>Saving Profile...</span>
+              </>
+            ) : (
+              <>
+                <Save size={15} />
+                <span>Save Changes</span>
+              </>
+            )}
+          </button>
+        </div>
+
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
