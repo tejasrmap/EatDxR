@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured, supabaseUrl, supabaseAnonKey } from '../supabase';
-import { User, Review, Restaurant, DishEntity, FoodList, AppNotification } from '../types';
+import { User, Review, Restaurant, DishEntity, FoodList, AppNotification, MenuItem } from '../types';
 import { MOCK_DISHES } from '../data/mockData';
 import { GLOBAL_RESTAURANTS } from '../data/globalRestaurants';
 
@@ -902,39 +902,65 @@ export async function getRestaurants(city?: string, limit = 60): Promise<Restaur
 }
 
 export async function getRestaurantById(id: string): Promise<Restaurant | null> {
-  if (!isSupabaseConfigured || !id) {
-    return DEFAULT_FALLBACK_RESTAURANTS.find(r => r.id === id) || null;
-  }
+  if (!id) return null;
 
-  try {
-    const { data, error } = await supabase
-      .from('restaurants')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
+  let rest: Restaurant | null = null;
 
-    if (error) throw error;
-    if (data) {
-      return {
-        id: data.id,
-        name: data.name,
-        cuisine: data.cuisine,
-        location: data.location,
-        city: data.city,
-        rating: Number(data.rating) || 4.5,
-        reviewCount: data.review_count || 0,
-        image: data.image,
-        priceLevel: data.price_level,
-        hours: data.hours,
-        signatureDish: data.signature_dish,
-        lat: data.lat ? Number(data.lat) : undefined,
-        lng: data.lng ? Number(data.lng) : undefined
-      };
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (!error && data) {
+        rest = {
+          id: data.id,
+          name: data.name,
+          cuisine: data.cuisine,
+          location: data.location,
+          city: data.city,
+          rating: Number(data.rating) || 4.5,
+          reviewCount: data.review_count || 0,
+          image: data.image,
+          priceLevel: data.price_level,
+          hours: data.hours,
+          signatureDish: data.signature_dish,
+          lat: data.lat ? Number(data.lat) : undefined,
+          lng: data.lng ? Number(data.lng) : undefined
+        };
+      }
+    } catch {
+      // ignore
     }
-    return DEFAULT_FALLBACK_RESTAURANTS.find(r => r.id === id) || null;
-  } catch {
-    return DEFAULT_FALLBACK_RESTAURANTS.find(r => r.id === id) || null;
   }
+
+  if (!rest) {
+    rest = DEFAULT_FALLBACK_RESTAURANTS.find(r => r.id === id) || null;
+  }
+
+  // Enrich with Firestore custom fields (menuCards, menuList) if saved
+  try {
+    const { db } = await import('../firebase');
+    const { doc, getDoc } = await import('firebase/firestore');
+    const snap = await getDoc(doc(db, 'restaurants', id)).catch(() => null);
+    if (snap && snap.exists()) {
+      const data = snap.data();
+      if (rest) {
+        if (data.menuCards && Array.isArray(data.menuCards)) {
+          rest.menuCards = data.menuCards;
+        }
+        if (data.menuList && Array.isArray(data.menuList)) {
+          rest.menuList = data.menuList;
+        }
+      } else {
+        rest = data as Restaurant;
+      }
+    }
+  } catch {}
+
+  return rest;
 }
 
 export async function searchRestaurants(queryText: string): Promise<Restaurant[]> {
@@ -1030,6 +1056,8 @@ export async function createRestaurant(restaurant: {
   signatureDish?: string;
   lat?: number;
   lng?: number;
+  menuCards?: string[];
+  menuList?: MenuItem[];
 }): Promise<Restaurant> {
   const generatedId = restaurant.id || `rest-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   const cleanCity = restaurant.city || (restaurant.location ? restaurant.location.split(',').pop()?.trim() : 'Hyderabad') || 'Hyderabad';
@@ -1048,7 +1076,9 @@ export async function createRestaurant(restaurant: {
     hours: restaurant.hours || '11:00 AM - 11:00 PM',
     signatureDish: restaurant.signatureDish?.trim() || undefined,
     lat: restaurant.lat,
-    lng: restaurant.lng
+    lng: restaurant.lng,
+    menuCards: restaurant.menuCards || [],
+    menuList: restaurant.menuList || []
   };
 
   if (isSupabaseConfigured) {
@@ -1089,13 +1119,28 @@ export async function createRestaurant(restaurant: {
       location: newRestaurant.location,
       rating: newRestaurant.rating,
       reviewCount: newRestaurant.reviewCount,
-      image: newRestaurant.image
+      image: newRestaurant.image,
+      menuCards: newRestaurant.menuCards || [],
+      menuList: newRestaurant.menuList || []
     }, { merge: true });
   } catch (err) {
     console.warn('[Firestore] Restaurant mirror notice:', err);
   }
 
   return newRestaurant;
+}
+
+export async function uploadRestaurantMenuCard(restaurantId: string, imageUrl: string): Promise<void> {
+  try {
+    const { db } = await import('../firebase');
+    const { doc, setDoc, arrayUnion } = await import('firebase/firestore');
+    const restRef = doc(db, 'restaurants', restaurantId);
+    await setDoc(restRef, {
+      menuCards: arrayUnion(imageUrl)
+    }, { merge: true });
+  } catch (err) {
+    console.warn('[Firestore] Error saving menu card:', err);
+  }
 }
 
 export async function getDishes(limit = 50): Promise<DishEntity[]> {

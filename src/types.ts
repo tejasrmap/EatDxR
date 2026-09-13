@@ -59,6 +59,17 @@ export interface RankedDishSummary {
   recommendationRate?: number; // e.g. 96%
 }
 
+export interface MenuItem {
+  id: string;
+  name: string;
+  price?: string | number;
+  category?: string;
+  isVeg?: boolean;
+  isMustOrder?: boolean;
+  description?: string;
+  image?: string;
+}
+
 export interface Restaurant {
   id: string;
   name: string;
@@ -70,6 +81,8 @@ export interface Restaurant {
   image?: string;
   likesCount?: number;
   menuItems?: string[];
+  menuCards?: string[]; // Physical scanned menu card photo URLs
+  menuList?: MenuItem[]; // Structured digital dishes with prices
   mustOrderDishes?: RankedDishSummary[];
   lat?: number;
   lng?: number;

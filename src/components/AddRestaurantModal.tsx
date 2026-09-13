@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { 
   X, MapPin, Utensils, Star, DollarSign, Clock, 
   Sparkles, Navigation, Loader2, Upload, Camera, 
-  Check, ChevronDown, CheckCircle2, Image as ImageIcon
+  Check, ChevronDown, CheckCircle2, Image as ImageIcon,
+  BookOpen, Plus
 } from "lucide-react";
 import { triggerHaptic } from "../services/nativeService";
 import { createRestaurant } from "../services/supabaseService";
@@ -85,11 +86,13 @@ export const AddRestaurantModal: React.FC<AddRestaurantModalProps> = ({
   const [hours, setHours] = useState("11:00 AM - 11:00 PM");
   const [selectedImage, setSelectedImage] = useState(PRESET_COVERS[0].url);
   const [customImageUrl, setCustomImageUrl] = useState("");
+  const [menuCardImages, setMenuCardImages] = useState<string[]>([]);
   const [coords, setCoords] = useState<{ lat?: number; lng?: number }>({});
   const [isLocating, setIsLocating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const menuCardInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -158,6 +161,24 @@ export const AddRestaurantModal: React.FC<AddRestaurantModalProps> = ({
     reader.readAsDataURL(file);
   };
 
+  const handleMenuCardFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 4 * 1024 * 1024) {
+      toast.error("Menu image too large (max 4MB).");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setMenuCardImages(prev => [...prev, dataUrl]);
+      toast.success("Menu card scan attached!");
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     triggerHaptic();
@@ -192,7 +213,8 @@ export const AddRestaurantModal: React.FC<AddRestaurantModalProps> = ({
         lat: coords.lat,
         lng: coords.lng,
         rating: 4.8,
-        reviewCount: 1
+        reviewCount: 1,
+        menuCards: menuCardImages
       });
 
       // Register into maps cache for instant live lookups
@@ -424,7 +446,69 @@ export const AddRestaurantModal: React.FC<AddRestaurantModalProps> = ({
             </div>
           </div>
 
-          {/* 5. Cover Photo & Ambiance Presets */}
+          {/* 5. Menu Card Scans (Optional) */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-white/70 flex items-center gap-1.5">
+                <BookOpen size={13} className="text-orange-400" />
+                <span>Attach Menu Card Scans (Optional)</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => menuCardInputRef.current?.click()}
+                className="flex items-center gap-1 text-[11px] text-orange-400 hover:text-orange-300 font-semibold cursor-pointer"
+              >
+                <Upload size={12} />
+                <span>Add Menu Page</span>
+              </button>
+              <input
+                ref={menuCardInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleMenuCardFile}
+                className="hidden"
+              />
+            </div>
+
+            {menuCardImages.length > 0 ? (
+              <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none">
+                {menuCardImages.map((img, idx) => (
+                  <div key={idx} className="relative w-16 h-20 rounded-xl overflow-hidden border border-white/20 shrink-0 group">
+                    <img src={img} alt={`Menu page ${idx + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setMenuCardImages(prev => prev.filter((_, i) => i !== idx))}
+                      className="absolute top-1 right-1 w-4 h-4 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px]"
+                      title="Remove"
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => menuCardInputRef.current?.click()}
+                  className="w-16 h-20 rounded-xl border border-dashed border-white/20 hover:border-orange-500/50 bg-white/5 flex flex-col items-center justify-center text-white/40 hover:text-orange-400 transition-all shrink-0 cursor-pointer"
+                >
+                  <Plus size={16} />
+                  <span className="text-[9px] mt-1">Add</span>
+                </button>
+              </div>
+            ) : (
+              <div 
+                onClick={() => menuCardInputRef.current?.click()}
+                className="py-2.5 px-3.5 rounded-2xl bg-white/5 border border-dashed border-white/10 hover:border-orange-500/30 flex items-center justify-between cursor-pointer transition-all"
+              >
+                <div className="flex items-center gap-2 text-xs text-white/50">
+                  <Camera size={14} className="text-orange-400" />
+                  <span>Upload physical menu card scans or price sheet</span>
+                </div>
+                <span className="text-[10px] text-orange-400 uppercase font-bold tracking-wider">Browse</span>
+              </div>
+            )}
+          </div>
+
+          {/* 6. Cover Photo & Ambiance Presets */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-bold uppercase tracking-wider text-white/70">

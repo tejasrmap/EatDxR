@@ -36,9 +36,10 @@ interface LogMealModalProps {
   onClose: () => void;
   existingReview?: Review;
   initialRestaurant?: RestaurantSearchResult;
+  initialDishName?: string;
 }
 
-export function LogMealModal({ isOpen, onClose, existingReview, initialRestaurant }: LogMealModalProps) {
+export function LogMealModal({ isOpen, onClose, existingReview, initialRestaurant, initialDishName }: LogMealModalProps) {
   const [rating, setRating] = useState(5);
   const [ratingMode, setRatingMode] = useState<"simple" | "critic">("simple");
   const [tasteScore, setTasteScore] = useState(9.2);
@@ -113,17 +114,17 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
       reset({
         restaurant: initialRestaurant.name,
         rating: initialRestaurant.rating || 5,
-        dishes: [{ name: "", image: "", rating: 5 }],
+        dishes: [{ name: initialDishName || "", image: "", rating: 5 }],
         review: ""
       });
     } else if (isOpen && !existingReview) {
-      reset({ rating: 0, dishes: [{ name: "", image: "", rating: 5 }], restaurant: "", review: "" });
+      reset({ rating: 0, dishes: [{ name: initialDishName || "", image: "", rating: 5 }], restaurant: "", review: "" });
       setRating(0);
       setSearchQuery("");
       setManualLocation("");
       setSelectedRestaurant(null);
     }
-  }, [isOpen, existingReview, initialRestaurant, reset, setValue]);
+  }, [isOpen, existingReview, initialRestaurant, initialDishName, reset, setValue]);
 
   useEffect(() => {
     if (navigator.geolocation) {

@@ -5,10 +5,11 @@ import { collection, query, where, onSnapshot, doc, getDoc, updateDoc, arrayUnio
 import { db } from "../firebase";
 import { Review, Restaurant as RestaurantType } from "../types";
 import { ReviewCard } from "./ReviewCard";
-import { Star, Bookmark, Heart, Edit3, Map as MapIcon, ChevronLeft, Share2, Info, UtensilsCrossed, Trophy, Flame, MapPin } from "lucide-react";
+import { Star, Bookmark, Heart, Edit3, Map as MapIcon, ChevronLeft, Share2, Info, UtensilsCrossed, Trophy, Flame, MapPin, BookOpen } from "lucide-react";
 import { useAuth } from "../App";
 import { toast } from "sonner";
 import { LogMealModal } from "./LogMealModal";
+import { MenuCardSection } from "./MenuCardSection";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic } from "../services/nativeService";
 import { getShareUrl } from "../utils/shareUrl";
@@ -25,6 +26,7 @@ export const Restaurant: React.FC = () => {
   const [isUpdatingEatlist, setIsUpdatingEatlist] = useState(false);
   const [isUpdatingLike, setIsUpdatingLike] = useState(false);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+  const [selectedDishToLog, setSelectedDishToLog] = useState<string | undefined>(undefined);
   const [scrollY, setScrollY] = useState(0);
  
   const isInEatlist = dishdUser?.eatlist?.includes(restaurantId || "");
@@ -442,6 +444,18 @@ export const Restaurant: React.FC = () => {
                  </button>
 
                  <button 
+                  onClick={() => {
+                    triggerHaptic();
+                    document.getElementById('restaurant-menu-card-section')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl border bg-white/5 border-white/10 text-white/70 hover:text-white hover:border-white/20 transition-all active:scale-95 cursor-pointer"
+                  title="View Menu Card & Scans"
+                 >
+                   <BookOpen size={14} className="text-orange-400" />
+                   <span className="font-bold text-xs">Menu</span>
+                 </button>
+
+                 <button 
                   onClick={() => (user ? setIsLogModalOpen(true) : login())}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white hover:bg-orange-500 text-black font-black text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer"
                  >
@@ -546,6 +560,21 @@ export const Restaurant: React.FC = () => {
                 </section>
               )}
 
+              {/* Menu Card & Digital Dishes Explorer */}
+              <div id="restaurant-menu-card-section">
+                <MenuCardSection 
+                  restaurant={restaurant}
+                  onLogDish={(dishName) => {
+                    setSelectedDishToLog(dishName);
+                    if (user) setIsLogModalOpen(true);
+                    else login();
+                  }}
+                  onMenuUpdated={(newCards) => {
+                    setRestaurant(prev => prev ? { ...prev, menuCards: newCards } : null);
+                  }}
+                />
+              </div>
+
              {/* Experiences */}
              <section>
                 <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10">
@@ -633,7 +662,11 @@ export const Restaurant: React.FC = () => {
 
       <LogMealModal 
         isOpen={isLogModalOpen}
-        onClose={() => setIsLogModalOpen(false)}
+        onClose={() => {
+          setIsLogModalOpen(false);
+          setSelectedDishToLog(undefined);
+        }}
+        initialDishName={selectedDishToLog}
         initialRestaurant={{
           id: restaurantId || "",
           name: restaurant.name,
