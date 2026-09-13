@@ -15,6 +15,7 @@ import { EditProfileModal } from "./components/EditProfileModal";
 import { isNative } from "./services/nativeService";
 import { 
   getProfile, 
+  getProfileByEmail,
   upsertProfile, 
   ensureProfile, 
   onSupabaseAuthStateChange, 
@@ -202,6 +203,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       try {
         let profile = await getProfile(sessionUser.id);
+
+        // If no profile found by auth ID, check if an existing profile exists for this email!
+        if (!profile && sessionUser.email) {
+          const existingByEmail = await getProfileByEmail(sessionUser.email);
+          if (existingByEmail) {
+            profile = { ...existingByEmail, uid: sessionUser.id };
+            // Auto-link existing profile in Supabase to this session auth ID
+            if (existingByEmail.uid !== sessionUser.id) {
+              try {
+                const { supabase } = await import("./supabase");
+                await supabase.from('profiles').update({ id: sessionUser.id }).eq('id', existingByEmail.uid);
+                await supabase.from('cravings').update({ user_id: sessionUser.id }).eq('user_id', existingByEmail.uid);
+                await supabase.from('reviews').update({ user_id: sessionUser.id }).eq('user_id', existingByEmail.uid);
+                await supabase.from('lists').update({ user_id: sessionUser.id }).eq('user_id', existingByEmail.uid);
+              } catch (linkErr) {
+                console.warn("[App] Error auto-linking profile by email:", linkErr);
+              }
+            }
+          }
+        }
+
         if (!profile) {
           const defaultUsername = (mapped.displayName || 'critic').toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 15);
           const newUser: DishdUser = {

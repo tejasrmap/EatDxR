@@ -5,6 +5,8 @@ import { auth } from "../firebase";
 import { 
   signInWithEmail, 
   signUpWithEmail, 
+  resendVerificationEmail,
+  resolveEmailFromIdentifier,
   signInWithGoogleOAuth, 
   resetUserPassword, 
   upsertProfile,
@@ -186,16 +188,48 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
           }
         }
       } else {
-        // Sign in with Supabase Auth
+        // Sign in with Supabase Auth (supports Email, Username, or Critic ID)
+        let loginEmail = email.trim();
+
+        // If not a standard email format, resolve email via username/critic ID
+        if (!loginEmail.includes('@') || loginEmail.startsWith('@')) {
+          const resolved = await resolveEmailFromIdentifier(loginEmail);
+          if (resolved) {
+            loginEmail = resolved;
+          } else {
+            // Check Firestore fallback in case account only exists in legacy Firebase
+            try {
+              const { collection, query, where, getDocs } = await import("firebase/firestore");
+              const cleanId = loginEmail.replace(/^@/, '').toLowerCase();
+              const q = query(collection(db, "users"), where("username", "==", cleanId));
+              const snap = await getDocs(q);
+              if (!snap.empty) {
+                const fbData = snap.docs[0].data();
+                if (fbData.email) {
+                  loginEmail = fbData.email;
+                }
+              }
+            } catch (err) {
+              console.warn("Firestore username fallback check failed:", err);
+            }
+
+            if (!loginEmail.includes('@')) {
+              setErrorMessage(`No account found for "${email.trim()}". Please check your username or use your registered email.`);
+              setLoading(false);
+              return;
+            }
+          }
+        }
+
         try {
-          await signInWithEmail(email.trim(), password);
+          await signInWithEmail(loginEmail, password);
           handleSuccess("Welcome back to Madeater!");
         } catch (supaErr: any) {
           // If user exists in Firebase but not yet Supabase, try Firebase fallback & auto-migrate!
           try {
-            const fbCred = await signInWithEmailAndPassword(auth, email.trim(), password);
+            const fbCred = await signInWithEmailAndPassword(auth, loginEmail, password);
             if (fbCred.user) {
-              await signUpWithEmail(email.trim(), password, fbCred.user.displayName || "Critic").catch(() => {});
+              await signUpWithEmail(loginEmail, password, fbCred.user.displayName || "Critic").catch(() => {});
               handleSuccess("Welcome back to Madeater!");
               return;
             }
@@ -203,7 +237,7 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
 
           const msg = supaErr?.message || "";
           if (msg.toLowerCase().includes("invalid login") || msg.toLowerCase().includes("invalid_grant")) {
-            setErrorMessage("Invalid email or password. Please check your credentials or click 'Forgot password?'.");
+            setErrorMessage("Invalid credentials. Please check your username/email and password, or click 'Forgot password?'.");
           } else if (msg.toLowerCase().includes("email not confirmed")) {
             setErrorMessage("Please confirm your email address before signing in. Check your inbox.");
           } else {
@@ -225,8 +259,8 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
     triggerHaptic();
     setIsResending(true);
     try {
-      await resetUserPassword(registeredEmail || email.trim());
-      toast.success(`New link sent to ${registeredEmail || email.trim()}!`);
+      await resendVerificationEmail(registeredEmail || email.trim());
+      toast.success(`New verification link sent to ${registeredEmail || email.trim()}!`);
       setResendCooldown(60);
     } catch (err: any) {
       console.error("Resend error:", err);
@@ -572,18 +606,22 @@ export function AuthModal({ isOpen, onClose, redirectUrl, onRedirectDone }: Auth
 
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-white/70 mb-1.5">
-                    Email Address
+                    {authMode === "signin" ? "Email, Username, or Critic ID" : "Email Address"}
                   </label>
                   <div className="relative flex items-center h-13 rounded-2xl bg-zinc-900/90 border border-white/10 hover:border-white/20 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all overflow-hidden">
-                    <Mail size={18} className="absolute left-4 text-white/40 pointer-events-none z-10" />
+                    {authMode === "signin" && !email.includes('@') ? (
+                      <User size={18} className="absolute left-4 text-orange-400 pointer-events-none z-10" />
+                    ) : (
+                      <Mail size={18} className="absolute left-4 text-white/40 pointer-events-none z-10" />
+                    )}
                     <input
-                      type="email"
+                      type={authMode === "signup" ? "email" : "text"}
                       name="email"
-                      autoComplete="email"
+                      autoComplete={authMode === "signup" ? "email" : "username"}
                       autoCapitalize="none"
                       spellCheck={false}
                       required
-                      placeholder="yourname@gmail.com"
+                      placeholder={authMode === "signin" ? "e.g. teja_g or you@gmail.com" : "yourname@gmail.com"}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full h-full bg-zinc-900/90 rounded-2xl pl-12 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none font-medium z-0"

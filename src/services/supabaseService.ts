@@ -9,12 +9,24 @@ const DEFAULT_FALLBACK_RESTAURANTS: Restaurant[] = GLOBAL_RESTAURANTS;
 // 1. SUPABASE AUTHENTICATION API
 // ============================================================================
 
+function getPublicRedirectUrl(path: string = '/app'): string {
+  if (typeof window === 'undefined') return `https://www.madeater.in${path}`;
+  const origin = window.location.origin;
+  // If running in Capacitor native app, local server, or mobile webview, always route confirmation emails to public production domain
+  if (origin.includes('localhost') || origin.includes('127.0.0.1') || origin.includes('capacitor://')) {
+    return `https://www.madeater.in${path}`;
+  }
+  return `${origin}${path}`;
+}
+
 export async function signUpWithEmail(email: string, password: string, displayName: string) {
   if (!isSupabaseConfigured) throw new Error("Supabase is not configured.");
+  const redirectUrl = getPublicRedirectUrl('/app');
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
+      emailRedirectTo: redirectUrl,
       data: {
         display_name: displayName,
         full_name: displayName
@@ -30,6 +42,47 @@ export async function signUpWithEmail(email: string, password: string, displayNa
   return data;
 }
 
+export async function resendVerificationEmail(email: string): Promise<void> {
+  if (!isSupabaseConfigured) throw new Error("Supabase is not configured.");
+  const redirectUrl = getPublicRedirectUrl('/app');
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email: email.trim(),
+    options: {
+      emailRedirectTo: redirectUrl
+    }
+  });
+  if (error) throw error;
+}
+
+export async function resolveEmailFromIdentifier(identifier: string): Promise<string | null> {
+  if (!isSupabaseConfigured || !identifier || !identifier.trim()) return null;
+  const clean = identifier.trim().replace(/^@/, '');
+  const cleanLower = clean.toLowerCase();
+
+  // If it's already a standard email format, return it
+  if (clean.includes('@') && clean.includes('.') && !clean.startsWith('@')) {
+    return clean;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('email, username, id')
+      .or(`username.ilike.${cleanLower},id.eq.${clean}`)
+      .limit(1)
+      .maybeSingle();
+
+    if (!error && data?.email) {
+      return data.email;
+    }
+  } catch (err) {
+    console.warn('[Supabase Auth] Error resolving email from username/ID:', err);
+  }
+
+  return null;
+}
+
 export async function signInWithEmail(email: string, password: string) {
   if (!isSupabaseConfigured) throw new Error("Supabase is not configured.");
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -42,7 +95,7 @@ export async function signInWithEmail(email: string, password: string) {
 
 export async function signInWithGoogleOAuth() {
   if (!isSupabaseConfigured) throw new Error("Supabase is not configured.");
-  const redirectUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.madeater.in';
+  const redirectUrl = getPublicRedirectUrl('/app');
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
@@ -61,7 +114,7 @@ export async function signOutUser(): Promise<void> {
 
 export async function resetUserPassword(email: string): Promise<void> {
   if (!isSupabaseConfigured) throw new Error("Supabase is not configured.");
-  const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/app/profile` : 'https://www.madeater.in/app/profile';
+  const redirectUrl = getPublicRedirectUrl('/app/profile');
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: redirectUrl
   });
@@ -124,6 +177,18 @@ export async function getProfile(idOrUsername: string): Promise<User | null> {
       error = resIlike.error;
     }
 
+    if (!data) {
+      // 3. Fallback to email match
+      const resEmail = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', cleanIdentifier.toLowerCase())
+        .limit(1)
+        .maybeSingle();
+      data = resEmail.data;
+      error = resEmail.error;
+    }
+
     if (error) throw error;
     if (!data) return null;
 
@@ -159,6 +224,53 @@ export async function getProfile(idOrUsername: string): Promise<User | null> {
     };
   } catch (err) {
     console.warn('[Supabase] Failed to fetch profile:', err);
+    return null;
+  }
+}
+
+export async function getProfileByEmail(email: string): Promise<User | null> {
+  if (!isSupabaseConfigured || !email || !email.trim()) return null;
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('email', email.trim().toLowerCase())
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    return {
+      uid: data.id,
+      displayName: data.display_name,
+      username: data.username,
+      email: data.email,
+      photoURL: data.photo_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${data.id}`,
+      bio: data.bio,
+      pronouns: data.pronouns,
+      favoriteCuisines: data.favorite_cuisines || [],
+      criticLevel: data.critic_level || 'Foodie',
+      credibilityScore: data.credibility_score ?? 50,
+      isVerifiedCritic: data.is_verified_critic || false,
+      tasteDNA: data.taste_dna || {
+        spice: 60,
+        indian: 75,
+        nonVeg: 50,
+        asian: 40,
+        desserts: 50,
+        coffee: 70,
+        personaTitle: 'The Flavor Explorer'
+      },
+      stats: data.stats || {
+        mealsLogged: 0,
+        reviewsWritten: 0,
+        followers: 0,
+        following: 0,
+        followingList: []
+      },
+      createdAt: data.created_at
+    };
+  } catch {
     return null;
   }
 }
@@ -247,6 +359,26 @@ export async function ensureProfile(userId: string, userName?: string, userPhoto
 
     if (existing && existing.id) {
       return;
+    }
+
+    // Check if profile already exists by email so we NEVER create duplicate profiles for the same user!
+    if (email && email.trim()) {
+      const { data: existingEmail } = await supabase
+        .from('profiles')
+        .select('id, username')
+        .eq('email', email.trim().toLowerCase())
+        .maybeSingle();
+
+      if (existingEmail && existingEmail.id) {
+        if (existingEmail.id !== userId) {
+          // Auto-link old profile to new auth ID
+          await supabase.from('profiles').update({ id: userId }).eq('id', existingEmail.id);
+          await supabase.from('cravings').update({ user_id: userId }).eq('user_id', existingEmail.id);
+          await supabase.from('reviews').update({ user_id: userId }).eq('user_id', existingEmail.id);
+          await supabase.from('lists').update({ user_id: userId }).eq('user_id', existingEmail.id);
+        }
+        return;
+      }
     }
 
     const cleanUsername = `critic_${userId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 10)}`;
