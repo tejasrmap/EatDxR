@@ -1673,7 +1673,7 @@ export async function dispatchPushNotification(payload: {
   const body = payload.text || (payload.sharedDishName ? `Shared a dish: ${payload.sharedDishName}` : 'Sent you a direct message');
 
   // 1. OneSignal REST API Key (from Vite environment or Settings localStorage)
-  const restKey = (import.meta as any).env?.VITE_ONESIGNAL_REST_KEY
+  const restKey = import.meta.env.VITE_ONESIGNAL_REST_KEY
     || (typeof localStorage !== 'undefined' ? localStorage.getItem('madeater_onesignal_rest_key') : '')
     || '';
 
@@ -1758,7 +1758,7 @@ export async function dispatchPushNotification(payload: {
  * Send a test WhatsApp-style lock-screen notification to the current user's device
  */
 export async function sendTestOneSignalPush(userId: string, userName: string): Promise<{ success: boolean; message: string }> {
-  const restKey = (import.meta as any).env?.VITE_ONESIGNAL_REST_KEY
+  const restKey = import.meta.env.VITE_ONESIGNAL_REST_KEY
     || (typeof localStorage !== 'undefined' ? localStorage.getItem('madeater_onesignal_rest_key') : '')
     || '';
 

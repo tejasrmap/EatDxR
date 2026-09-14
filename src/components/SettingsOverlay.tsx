@@ -213,7 +213,7 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
 
   // OneSignal Push & Lock Screen Diagnostics State
   const [oneSignalRestKey, setOneSignalRestKey] = useState<string>(() => {
-    return localStorage.getItem("madeater_onesignal_rest_key") || (import.meta as any).env?.VITE_ONESIGNAL_REST_KEY || "";
+    return localStorage.getItem("madeater_onesignal_rest_key") || import.meta.env.VITE_ONESIGNAL_REST_KEY || "";
   });
   const [oneSignalSubId, setOneSignalSubId] = useState<string>("");
   const [hasNotifPerm, setHasNotifPerm] = useState<boolean>(true);
