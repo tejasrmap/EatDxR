@@ -4,7 +4,7 @@
  * WhatsApp-style High Importance push notifications directly to Android devices.
  */
 
-import serviceAccount from '../config/firebaseServiceAccount.json';
+import serviceAccount from '../config/serviceAccount';
 
 interface FcmPushPayload {
   token: string;
