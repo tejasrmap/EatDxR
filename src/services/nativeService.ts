@@ -71,12 +71,47 @@ export async function getNativeLocation(): Promise<{ latitude: number; longitude
 }
 
 /**
+ * Save device FCM token to user's profile in Supabase
+ */
+export async function syncDeviceToken(userId: string, tokenVal?: string): Promise<void> {
+  if (!userId) return;
+  const token = tokenVal || (typeof localStorage !== 'undefined' ? localStorage.getItem('madeater_fcm_token') : null);
+  if (!token) return;
+
+  try {
+    const { supabase } = await import('./supabaseService');
+    await supabase.from('profiles').update({ fcm_token: token }).eq('id', userId);
+    console.log('[Push] Synced FCM token to profile for user:', userId);
+  } catch (err) {
+    console.warn('[Push] Error syncing FCM token to profile:', err);
+  }
+}
+
+/**
  * Initialize Push Notifications on mobile device
  */
 export async function setupPushNotifications(userId?: string): Promise<string | null> {
   if (!isNative) return null;
 
   try {
+    // 1. Create WhatsApp-style High Importance Android Notification Channel (heads-up / lock screen)
+    try {
+      await PushNotifications.createChannel({
+        id: 'madeater_messages',
+        name: 'Direct Messages',
+        description: 'Instant food critic and direct messages',
+        importance: 5, // Heads-up notification on Android
+        visibility: 1, // Visible on lock screen
+        sound: 'default',
+        vibration: true,
+        lights: true,
+        lightColor: '#F97316'
+      });
+    } catch (chanErr) {
+      console.warn('Could not create notification channel:', chanErr);
+    }
+
+    // 2. Check and request push notification permissions
     let permStatus = await PushNotifications.checkPermissions();
 
     if (permStatus.receive === 'prompt') {
@@ -88,22 +123,41 @@ export async function setupPushNotifications(userId?: string): Promise<string | 
       return null;
     }
 
+    // 3. Register with Apple / Google APNs & FCM
     await PushNotifications.register();
 
-    PushNotifications.addListener('registration', (token: Token) => {
+    // 4. Listen for device token registration
+    PushNotifications.addListener('registration', async (token: Token) => {
       console.log('Push registration success, token:', token.value);
+      try {
+        localStorage.setItem('madeater_fcm_token', token.value);
+        if (userId) {
+          await syncDeviceToken(userId, token.value);
+        }
+      } catch {}
     });
 
     PushNotifications.addListener('registrationError', (error: any) => {
       console.warn('Error on push registration:', error);
     });
 
+    // 5. Handle in-app push notification reception
     PushNotifications.addListener('pushNotificationReceived', (notification) => {
       console.log('Push notification received:', notification);
+      window.dispatchEvent(new CustomEvent('madeater_push_received', { detail: notification }));
     });
 
-    PushNotifications.addListener('pushNotificationActionPerformed', (notification: ActionPerformed) => {
-      console.log('Push action performed:', notification.actionId);
+    // 6. Handle notification click from lock screen / notification drawer
+    PushNotifications.addListener('pushNotificationActionPerformed', (action: ActionPerformed) => {
+      console.log('Push action performed:', action.actionId, action.notification.data);
+      const data = action.notification.data || {};
+      const partnerId = data.senderId || data.partnerId;
+      const partnerName = data.senderName || 'Food Critic';
+      if (partnerId) {
+        window.dispatchEvent(new CustomEvent('madeater_open_chat', {
+          detail: { critic: { uid: partnerId, displayName: partnerName } }
+        }));
+      }
     });
   } catch (err) {
     console.warn('Push notification setup warning:', err);
@@ -115,7 +169,7 @@ export async function setupPushNotifications(userId?: string): Promise<string | 
 /**
  * Configure native Android status bar, splash screen, and push notifications
  */
-export async function initializeNativeApp(): Promise<void> {
+export async function initializeNativeApp(userId?: string): Promise<void> {
   if (!isNative) return;
 
   try {
@@ -132,5 +186,5 @@ export async function initializeNativeApp(): Promise<void> {
   }
 
   // Register push notifications
-  setupPushNotifications().catch(() => {});
+  setupPushNotifications(userId).catch(() => {});
 }

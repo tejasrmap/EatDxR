@@ -19,9 +19,12 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   is_verified_critic BOOLEAN DEFAULT FALSE,
   taste_dna JSONB DEFAULT '{"spice":60,"indian":75,"nonVeg":50,"asian":40,"desserts":50,"coffee":70,"personaTitle":"The Flavor Explorer"}'::jsonb,
   stats JSONB DEFAULT '{"mealsLogged":0,"reviewsWritten":0,"followers":0,"following":0,"followingList":[]}'::jsonb,
+  fcm_token TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS fcm_token TEXT;
 
 -- 2. RESTAURANTS TABLE
 CREATE TABLE IF NOT EXISTS public.restaurants (

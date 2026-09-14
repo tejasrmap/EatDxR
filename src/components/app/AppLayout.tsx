@@ -7,19 +7,21 @@ import { useLocation as useRouterLocation } from "react-router-dom";
 import { useLocation } from "../../hooks/useLocation";
 import { getCurrentCity } from "../../services/mapsService";
 import { initializeNativeApp } from "../../services/nativeService";
+import { useAuth } from "../../App";
 
 interface AppLayoutProps {
   children: ReactNode;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
+  const { user } = useAuth();
   const [currentCity, setCurrentCity] = useState("Hyderabad");
   const { location } = useLocation();
   const routerLocation = useRouterLocation();
 
   useEffect(() => {
-    initializeNativeApp();
-  }, []);
+    initializeNativeApp(user?.uid);
+  }, [user?.uid]);
 
   useEffect(() => {
     if (location) {

@@ -1644,7 +1644,65 @@ export async function sendDirectMessage(message: {
     window.dispatchEvent(new CustomEvent('madeater_dm_received', { detail: row }));
   } catch {}
 
+  // 3. Dispatch Push Notification to Recipient's mobile phone
+  if (isSupabaseConfigured && message.recipientId) {
+    dispatchPushNotification({
+      recipientId: message.recipientId,
+      senderName: message.senderName || 'Food Critic',
+      senderId: message.senderId,
+      text: message.text,
+      sharedDishName: message.sharedDish?.dishName
+    }).catch(() => {});
+  }
+
   return row;
+}
+
+export async function dispatchPushNotification(payload: {
+  recipientId: string;
+  senderName: string;
+  senderId: string;
+  text?: string;
+  sharedDishName?: string;
+}): Promise<void> {
+  if (!isSupabaseConfigured || !payload.recipientId) return;
+
+  try {
+    // 1. Fetch recipient's registered device FCM token
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('fcm_token')
+      .eq('id', payload.recipientId)
+      .maybeSingle();
+
+    const fcmToken = profile?.fcm_token;
+    if (!fcmToken) {
+      return;
+    }
+
+    const title = `@${payload.senderName}`;
+    const body = payload.text || (payload.sharedDishName ? `Shared a dish: ${payload.sharedDishName}` : 'Sent you a direct message');
+
+    // 2. Invoke Supabase Edge Function 'send-push' if deployed
+    try {
+      await supabase.functions.invoke('send-push', {
+        body: {
+          token: fcmToken,
+          title,
+          body,
+          data: {
+            senderId: payload.senderId,
+            senderName: payload.senderName,
+            type: 'direct_message'
+          }
+        }
+      });
+    } catch {
+      // Fallback handled gracefully
+    }
+  } catch (err) {
+    console.warn('[Push] Error dispatching push notification:', err);
+  }
 }
 
 export async function getDirectMessages(userId: string): Promise<DirectMessageRow[]> {
