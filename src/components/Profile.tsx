@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 
 import { Review, User, Restaurant } from "../types";
 import { useAuth } from "../App";
-import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus, Edit3, Share2, UtensilsCrossed, Sparkles, ListOrdered, ShieldCheck, Award, Layers, Camera, CheckCircle2, Lock, Menu, TrendingUp, ChevronRight, ChevronLeft } from "lucide-react";
+import { Star, Loader2, MapPin, Calendar, Edit2, Grid, List as ListIcon, Clock, MessageSquare, Heart, Settings, Plus, Edit3, Share2, UtensilsCrossed, Sparkles, ListOrdered, ShieldCheck, Award, Layers, Camera, CheckCircle2, Lock, Menu, TrendingUp, ChevronRight, ChevronLeft, Flame, Play, Film, Video } from "lucide-react";
 import { toast } from "sonner";
 import { FollowListModal } from "./FollowListModal";
 import { EditProfileModal } from "./EditProfileModal";
@@ -16,7 +16,7 @@ import { RatingGraph } from "./RatingGraph";
 import { TasteDNAView } from "./TasteDNAView";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic, isNative } from "../services/nativeService";
-import { uploadMedia, upsertProfile, getProfile, getFollowers, getUserReviews, toggleFollow as toggleFollowUser, getRestaurantById } from "../services/supabaseService";
+import { uploadMedia, upsertProfile, getProfile, getFollowers, getUserReviews, getUserCravings, toggleFollow as toggleFollowUser, getRestaurantById } from "../services/supabaseService";
 import { getShareUrl } from "../utils/shareUrl";
 
 export const Profile: React.FC = () => {
@@ -27,6 +27,8 @@ export const Profile: React.FC = () => {
   const { getAppUrl } = useAppUrl();
   const [user, setUser] = useState<User | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [cravings, setCravings] = useState<Review[]>([]);
+  const [mediaSubFilter, setMediaSubFilter] = useState<"all" | "reviews" | "cravings" | "videos">("all");
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"profile" | "taste" | "eatlist" | "lists">("profile");
   const [followerCount, setFollowerCount] = useState(0);
@@ -177,10 +179,14 @@ export const Profile: React.FC = () => {
             }).catch(() => {});
           }
 
-          // 3. Fetch user reviews directly from Supabase
-          const supaReviews = await getUserReviews(resolvedUser.uid);
+          // 3. Fetch user reviews & cravings directly from Supabase
+          const [supaReviews, supaCravings] = await Promise.all([
+            getUserReviews(resolvedUser.uid),
+            getUserCravings(resolvedUser.uid)
+          ]);
           if (!isMounted) return;
           setReviews(supaReviews);
+          setCravings(supaCravings);
           setLoading(false);
         } else {
           setLoading(false);
@@ -197,6 +203,28 @@ export const Profile: React.FC = () => {
       isMounted = false;
     };
   }, [identifier, navigate]);
+
+  const allPosts = React.useMemo(() => {
+    const combined = [...reviews, ...cravings];
+    combined.sort((a, b) => {
+      const timeA = new Date(a.createdAt || 0).getTime();
+      const timeB = new Date(b.createdAt || 0).getTime();
+      return timeB - timeA;
+    });
+    const seen = new Set<string>();
+    return combined.filter(item => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+  }, [reviews, cravings]);
+
+  const displayedPosts = React.useMemo(() => {
+    if (mediaSubFilter === "reviews") return reviews;
+    if (mediaSubFilter === "cravings") return cravings;
+    if (mediaSubFilter === "videos") return allPosts.filter(p => !!p.videoUrl);
+    return allPosts;
+  }, [mediaSubFilter, reviews, cravings, allPosts]);
 
   useEffect(() => {
     if (activeTab === "eatlist" && user?.eatlist && user.eatlist.length > 0) {
@@ -351,10 +379,10 @@ export const Profile: React.FC = () => {
             className="cursor-pointer active:scale-95 transition-transform"
           >
             <span className="text-base sm:text-lg font-black text-white tracking-tight block leading-tight">
-              {reviews.length}
+              {allPosts.length}
             </span>
             <span className="text-[10px] sm:text-xs text-zinc-400 font-semibold tracking-tight block mt-0.5 whitespace-nowrap">
-              Logs
+              Posts
             </span>
           </div>
 
@@ -589,65 +617,129 @@ export const Profile: React.FC = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="w-full"
+            className="w-full space-y-3"
           >
-            {reviews.length > 0 ? (
+            {/* Instagram Sub-Filter Pills */}
+            {allPosts.length > 0 && (
+              <div className="flex items-center justify-center gap-1.5 overflow-x-auto scrollbar-hide py-1">
+                {[
+                  { id: "all", label: `All (${allPosts.length})`, icon: Grid },
+                  { id: "reviews", label: `Logs (${reviews.length})`, icon: UtensilsCrossed },
+                  { id: "cravings", label: `Cravings (${cravings.length})`, icon: Flame },
+                  { id: "videos", label: `Reels (${allPosts.filter(p => !!p.videoUrl).length})`, icon: Film }
+                ].map(filter => {
+                  const isSelected = mediaSubFilter === filter.id;
+                  return (
+                    <button
+                      key={filter.id}
+                      onClick={() => { triggerHaptic(); setMediaSubFilter(filter.id as any); }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                        isSelected
+                          ? "bg-orange-500 text-black shadow-md font-black"
+                          : "bg-white/5 hover:bg-white/10 text-zinc-400 border border-white/10"
+                      }`}
+                    >
+                      <filter.icon size={13} className={isSelected ? "stroke-[2.5]" : "stroke-[1.8]"} />
+                      <span>{filter.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {displayedPosts.length > 0 ? (
               <div className="grid grid-cols-3 gap-0.5 sm:gap-1">
-                {reviews.map((review, i) => {
-                  const allImages = review.dishes?.filter(d => d.image).map(d => d.image) || [];
+                {displayedPosts.map((post, i) => {
+                  const allImages = post.dishes?.filter(d => d.image).map(d => d.image) || [];
                   const firstImage = allImages[0];
+                  const isCraving = post.type === 'craving';
+                  const hasVideo = !!post.videoUrl;
+
                   return (
                     <motion.div
-                      key={review.id}
+                      key={post.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: Math.min(i * 0.02, 0.2) }}
-                      onClick={() => { triggerHaptic(); setSelectedReview(review); }}
+                      onClick={() => { triggerHaptic(); setSelectedReview(post); }}
                       className="aspect-square bg-zinc-900 relative group overflow-hidden cursor-pointer active:scale-[0.98] transition-transform select-none rounded-none sm:rounded-md"
                     >
                       {firstImage ? (
                         <img
                           src={firstImage}
-                          alt={review.restaurantName}
+                          alt={post.restaurantName || post.attachedDish || "Post"}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           referrerPolicy="no-referrer"
                           loading="lazy"
                         />
+                      ) : hasVideo ? (
+                        <div className="w-full h-full relative bg-zinc-950 flex flex-col items-center justify-center p-2 text-center overflow-hidden">
+                          <video src={post.videoUrl} className="w-full h-full object-cover opacity-60 pointer-events-none" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 flex flex-col items-center justify-center p-2">
+                            <Film size={22} className="text-orange-400 mb-1 drop-shadow-md" />
+                            <span className="text-[10px] font-bold text-white line-clamp-1 px-1">
+                              {post.attachedDish || post.restaurantName}
+                            </span>
+                          </div>
+                        </div>
+                      ) : isCraving ? (
+                        <div className="w-full h-full bg-gradient-to-br from-orange-950/60 via-zinc-900 to-amber-950/40 p-2.5 flex flex-col justify-between border border-orange-500/20">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] font-black uppercase text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20">
+                              {post.cravingTag || "Craving"}
+                            </span>
+                            <Flame size={13} className="text-orange-500 fill-orange-500" />
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-black text-white line-clamp-2 leading-tight">
+                              {post.attachedDish || post.restaurantName}
+                            </p>
+                            <p className="text-[9px] text-zinc-400 truncate mt-0.5">
+                              @{post.userName}
+                            </p>
+                          </div>
+                        </div>
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center bg-zinc-900">
                           <UtensilsCrossed size={18} className="text-zinc-600 mb-1" />
                           <span className="text-[10px] font-bold text-zinc-400 line-clamp-2 px-1 leading-tight">
-                            {review.restaurantName}
+                            {post.restaurantName}
                           </span>
                         </div>
                       )}
 
-                      {/* Rating Badge in Corner */}
-                      <div className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 px-1.5 py-0.5 rounded-md bg-black/75 backdrop-blur-md border border-white/10 text-[9px] sm:text-[10px] font-black text-amber-400 flex items-center gap-0.5 shadow-sm">
-                        <Star size={9} className="fill-amber-400 text-amber-400" />
-                        <span>{review.rating.toFixed(1)}</span>
-                      </div>
+                      {/* Top Right Media Type Badge */}
+                      {hasVideo ? (
+                        <div className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 p-1 rounded-md bg-black/80 backdrop-blur-md text-orange-400 border border-orange-500/30 shadow-md">
+                          <Film size={11} />
+                        </div>
+                      ) : isCraving ? (
+                        <div className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 p-1 rounded-md bg-black/80 backdrop-blur-md text-orange-400 border border-orange-500/30 shadow-md">
+                          <Flame size={11} className="fill-orange-400" />
+                        </div>
+                      ) : (
+                        <div className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 px-1.5 py-0.5 rounded-md bg-black/75 backdrop-blur-md border border-white/10 text-[9px] sm:text-[10px] font-black text-amber-400 flex items-center gap-0.5 shadow-sm">
+                          <Star size={9} className="fill-amber-400 text-amber-400" />
+                          <span>{post.rating.toFixed(1)}</span>
+                        </div>
+                      )}
 
-                      {/* Multiple Photos Indicator if > 1 */}
+                      {/* Multiple Photos Indicator */}
                       {allImages.length > 1 && (
                         <div className="absolute top-1 left-1 sm:top-1.5 sm:left-1.5 p-1 rounded-md bg-black/60 backdrop-blur-md text-white/80">
                           <Layers size={11} />
                         </div>
                       )}
 
-                      {/* Hover / Tap overlay showing restaurant name & stats */}
+                      {/* Hover / Tap overlay showing title & stats */}
                       <div className="absolute inset-0 bg-black/65 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center p-2 text-center transition-opacity duration-200">
                         <p className="text-[11px] font-bold text-white line-clamp-2 leading-tight mb-1.5">
-                          {review.restaurantName}
+                          {post.attachedDish || post.restaurantName}
                         </p>
                         <div className="flex items-center gap-3 text-white/90 text-[10px] font-bold">
                           <span className="flex items-center gap-1">
                             <Heart size={11} className="fill-white text-white" />
-                            {review.likes || 0}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <MessageSquare size={11} className="fill-white text-white" />
-                            4
+                            {post.likes || 0}
                           </span>
                         </div>
                       </div>
@@ -656,14 +748,14 @@ export const Profile: React.FC = () => {
                 })}
               </div>
             ) : (
-              /* Instagram-Style Empty State */
+              /* Empty State */
               <div className="py-14 px-4 text-center flex flex-col items-center justify-center border border-dashed border-zinc-800 rounded-2xl bg-zinc-950/40 my-3">
                 <div className="w-13 h-13 rounded-full border border-white/15 flex items-center justify-center text-zinc-400 mb-2.5 bg-zinc-900">
                   <Camera size={24} />
                 </div>
-                <h3 className="text-sm font-bold text-white mb-1">No Food Logs Yet</h3>
+                <h3 className="text-sm font-bold text-white mb-1">No Posts Found</h3>
                 <p className="text-xs text-zinc-400 max-w-xs mb-3.5">
-                  When you critique dining experiences and snap dish photos, they will appear here on your profile grid.
+                  When you post food critiques or cravings, they will appear here on your profile grid.
                 </p>
                 <Link
                   to={getAppUrl("/app")}

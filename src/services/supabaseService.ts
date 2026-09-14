@@ -829,6 +829,44 @@ export async function getCravings(limit = 50): Promise<Review[]> {
   }
 }
 
+export async function getUserCravings(userId: string): Promise<Review[]> {
+  if (!isSupabaseConfigured || !userId) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('cravings')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    if (!data || data.length === 0) return [];
+
+    return data.map((c: any) => ({
+      id: c.id,
+      userId: c.user_id,
+      userName: c.user_name || 'Food Critic',
+      userPhoto: c.user_photo,
+      restaurantId: c.restaurant_id || 'crav-rest',
+      restaurantName: c.restaurant_name || c.dish_name || 'Craving',
+      attachedDish: c.dish_name,
+      city: c.city || 'Hyderabad',
+      videoUrl: c.video_url,
+      content: c.content || '',
+      dishes: c.dishes || (c.image_url ? [{ name: c.dish_name || 'Craving', image: c.image_url, rating: 5 }] : [{ name: c.dish_name || 'Craving', rating: 5 }]),
+      rating: 9.5,
+      attachedScore: 9.5,
+      likes: c.likes || 0,
+      cravingTag: c.craving_tag || 'Street Food',
+      type: 'craving' as const,
+      createdAt: c.created_at
+    }));
+  } catch (err) {
+    console.warn('[Supabase] Error fetching user cravings:', err);
+    return [];
+  }
+}
+
 export async function createCraving(craving: Partial<Review>): Promise<void> {
   if (!isSupabaseConfigured) return;
 
