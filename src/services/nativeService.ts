@@ -79,7 +79,7 @@ export async function syncDeviceToken(userId: string, tokenVal?: string): Promis
   if (!token) return;
 
   try {
-    const { supabase } = await import('./supabaseService');
+    const { supabase } = await import('../supabase');
     await supabase.from('profiles').update({ fcm_token: token }).eq('id', userId);
     console.log('[Push] Synced FCM token to profile for user:', userId);
   } catch (err) {
@@ -167,6 +167,72 @@ export async function setupPushNotifications(userId?: string): Promise<string | 
 }
 
 /**
+ * Link logged-in Supabase user ID with OneSignal native SDK
+ */
+export function syncOneSignalUser(userId?: string): void {
+  if (!userId) return;
+  try {
+    if (typeof window !== 'undefined' && (window as any).NativeOneSignal) {
+      (window as any).NativeOneSignal.login(userId);
+      console.log('[OneSignal] Native user login synchronized:', userId);
+    }
+  } catch (err) {
+    console.warn('[OneSignal] Error synchronizing user login:', err);
+  }
+}
+
+/**
+ * Read current OneSignal Push Subscription ID from native SDK
+ */
+export function getOneSignalSubscriptionId(): string {
+  try {
+    if (typeof window !== 'undefined' && (window as any).NativeOneSignal?.getSubscriptionId) {
+      return (window as any).NativeOneSignal.getSubscriptionId() || '';
+    }
+  } catch {}
+  return '';
+}
+
+/**
+ * Check if Android 13+ push notification permission is granted
+ */
+export function hasOneSignalPermission(): boolean {
+  try {
+    if (typeof window !== 'undefined' && (window as any).NativeOneSignal?.hasPermission) {
+      return (window as any).NativeOneSignal.hasPermission();
+    }
+  } catch {}
+  return false;
+}
+
+/**
+ * Request native Android notification permission dialog
+ */
+export function promptOneSignalPermission(): void {
+  try {
+    if (typeof window !== 'undefined' && (window as any).NativeOneSignal?.promptPermission) {
+      (window as any).NativeOneSignal.promptPermission();
+    }
+  } catch {}
+}
+
+// Global listener for OneSignal lock screen notification tap
+if (typeof window !== 'undefined') {
+  window.addEventListener('madeater_onesignal_click', (event: any) => {
+    try {
+      const data = event.detail || {};
+      const partnerId = data.senderId || data.partnerId;
+      const partnerName = data.senderName || 'Food Critic';
+      if (partnerId) {
+        window.dispatchEvent(new CustomEvent('madeater_open_chat', {
+          detail: { critic: { uid: partnerId, displayName: partnerName } }
+        }));
+      }
+    } catch {}
+  });
+}
+
+/**
  * Configure native Android status bar, splash screen, and push notifications
  */
 export async function initializeNativeApp(userId?: string): Promise<void> {
@@ -185,6 +251,7 @@ export async function initializeNativeApp(userId?: string): Promise<void> {
     console.warn("SplashScreen hide warning:", e);
   }
 
-  // Register push notifications
+  // Register push notifications and link OneSignal identity
   setupPushNotifications(userId).catch(() => {});
+  syncOneSignalUser(userId);
 }

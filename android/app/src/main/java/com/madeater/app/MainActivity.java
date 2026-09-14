@@ -21,6 +21,65 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
 
         setupPushSubscriptionObserver();
+
+        // OneSignal Lock Screen Notification Click Listener
+        OneSignal.getNotifications().addClickListener(event -> {
+            try {
+                if (event != null && event.getNotification() != null && event.getNotification().getAdditionalData() != null) {
+                    String jsonData = event.getNotification().getAdditionalData().toString();
+                    if (bridge != null && bridge.getWebView() != null) {
+                        bridge.getWebView().post(() -> {
+                            bridge.getWebView().evaluateJavascript(
+                                "window.dispatchEvent(new CustomEvent('madeater_onesignal_click', { detail: " + jsonData + " }));",
+                                null
+                            );
+                        });
+                    }
+                }
+            } catch (Exception ignored) {}
+        });
+
+        // Expose NativeOneSignal interface to webview so React can link logged-in user and query push diagnostics
+        if (bridge != null && bridge.getWebView() != null) {
+            bridge.getWebView().addJavascriptInterface(new Object() {
+                @android.webkit.JavascriptInterface
+                public void login(String userId) {
+                    if (userId != null && !userId.trim().isEmpty()) {
+                        OneSignal.login(userId.trim());
+                    }
+                }
+
+                @android.webkit.JavascriptInterface
+                public void logout() {
+                    OneSignal.logout();
+                }
+
+                @android.webkit.JavascriptInterface
+                public String getSubscriptionId() {
+                    try {
+                        return OneSignal.getUser().getPushSubscription().getId();
+                    } catch (Exception e) {
+                        return "";
+                    }
+                }
+
+                @android.webkit.JavascriptInterface
+                public boolean hasPermission() {
+                    try {
+                        return OneSignal.getNotifications().getPermission();
+                    } catch (Exception e) {
+                        return false;
+                    }
+                }
+
+                @android.webkit.JavascriptInterface
+                public void promptPermission() {
+                    runOnUiThread(() -> {
+                        OneSignal.getNotifications().requestPermission(true, Continue.none());
+                    });
+                }
+            }, "NativeOneSignal");
+        }
     }
 
     private void setupPushSubscriptionObserver() {

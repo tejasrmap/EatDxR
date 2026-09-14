@@ -1658,50 +1658,161 @@ export async function sendDirectMessage(message: {
   return row;
 }
 
+export const ONESIGNAL_APP_ID = "56fec73b-c36f-4a1b-be32-272b1f4d6729";
+
 export async function dispatchPushNotification(payload: {
   recipientId: string;
   senderName: string;
   senderId: string;
   text?: string;
   sharedDishName?: string;
-}): Promise<void> {
-  if (!isSupabaseConfigured || !payload.recipientId) return;
+}): Promise<boolean> {
+  if (!payload.recipientId) return false;
 
-  try {
-    // 1. Fetch recipient's registered device FCM token
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('fcm_token')
-      .eq('id', payload.recipientId)
-      .maybeSingle();
+  const title = `@${payload.senderName || 'Food Critic'}`;
+  const body = payload.text || (payload.sharedDishName ? `Shared a dish: ${payload.sharedDishName}` : 'Sent you a direct message');
 
-    const fcmToken = profile?.fcm_token;
-    if (!fcmToken) {
-      return;
-    }
+  // 1. OneSignal REST API Key (from Vite environment or Settings localStorage)
+  const restKey = (import.meta as any).env?.VITE_ONESIGNAL_REST_KEY
+    || (typeof localStorage !== 'undefined' ? localStorage.getItem('madeater_onesignal_rest_key') : '')
+    || '';
 
-    const title = `@${payload.senderName}`;
-    const body = payload.text || (payload.sharedDishName ? `Shared a dish: ${payload.sharedDishName}` : 'Sent you a direct message');
-
-    // 2. Invoke Supabase Edge Function 'send-push' if deployed
+  // 2. Dispatch via OneSignal REST API (Targets device by user external_id)
+  if (restKey) {
     try {
-      await supabase.functions.invoke('send-push', {
-        body: {
-          token: fcmToken,
-          title,
-          body,
+      const resp = await fetch('https://onesignal.com/api/v1/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Key ${restKey.trim()}`
+        },
+        body: JSON.stringify({
+          app_id: ONESIGNAL_APP_ID,
+          include_aliases: { external_id: [payload.recipientId] },
+          include_external_user_ids: [payload.recipientId],
+          target_channel: 'push',
+          channel_for_external_user_ids: 'push',
+          headings: { en: title },
+          contents: { en: body },
+          android_channel_id: 'madeater_messages',
+          priority: 10,
+          android_visibility: 1, // Visible on Lock Screen
+          android_accent_color: 'FFF97316',
           data: {
             senderId: payload.senderId,
             senderName: payload.senderName,
-            type: 'direct_message'
+            type: 'direct_message',
+            timestamp: Date.now()
           }
-        }
+        })
       });
-    } catch {
-      // Fallback handled gracefully
+
+      const data = await resp.json();
+      console.log('[OneSignal] Push notification dispatch response:', data);
+
+      if (resp.ok && (data.id || data.recipients > 0)) {
+        return true;
+      }
+      if (data.errors) {
+        console.warn('[OneSignal] Push dispatch warning:', data.errors);
+      }
+    } catch (err) {
+      console.warn('[OneSignal] Push network error:', err);
     }
-  } catch (err) {
-    console.warn('[Push] Error dispatching push notification:', err);
+  } else {
+    console.warn('[OneSignal] REST API Key missing. Set VITE_ONESIGNAL_REST_KEY in .env or in Settings -> Notifications.');
+  }
+
+  // 3. Fallback to Supabase FCM Edge Function if profile has fcm_token
+  if (isSupabaseConfigured) {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('fcm_token')
+        .eq('id', payload.recipientId)
+        .maybeSingle();
+
+      const fcmToken = profile?.fcm_token;
+      if (fcmToken) {
+        await supabase.functions.invoke('send-push', {
+          body: {
+            token: fcmToken,
+            title,
+            body,
+            data: {
+              senderId: payload.senderId,
+              senderName: payload.senderName,
+              type: 'direct_message'
+            }
+          }
+        });
+        return true;
+      }
+    } catch {}
+  }
+
+  return false;
+}
+
+/**
+ * Send a test WhatsApp-style lock-screen notification to the current user's device
+ */
+export async function sendTestOneSignalPush(userId: string, userName: string): Promise<{ success: boolean; message: string }> {
+  const restKey = (import.meta as any).env?.VITE_ONESIGNAL_REST_KEY
+    || (typeof localStorage !== 'undefined' ? localStorage.getItem('madeater_onesignal_rest_key') : '')
+    || '';
+
+  if (!restKey) {
+    return {
+      success: false,
+      message: 'OneSignal REST API Key is required. Please enter it in the field below.'
+    };
+  }
+
+  try {
+    const resp = await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Key ${restKey.trim()}`
+      },
+      body: JSON.stringify({
+        app_id: ONESIGNAL_APP_ID,
+        include_aliases: { external_id: [userId] },
+        include_external_user_ids: [userId],
+        target_channel: 'push',
+        channel_for_external_user_ids: 'push',
+        headings: { en: 'EatDxR Food Critic 🍔' },
+        contents: { en: `@${userName || 'critic'}, your WhatsApp-style lock screen notifications are working!` },
+        android_channel_id: 'madeater_messages',
+        priority: 10,
+        android_visibility: 1,
+        android_accent_color: 'FFF97316',
+        data: {
+          senderId: 'system',
+          senderName: 'EatDxR',
+          type: 'test_notification',
+          timestamp: Date.now()
+        }
+      })
+    });
+
+    const data = await resp.json();
+    if (resp.ok && (data.id || data.recipients > 0)) {
+      return {
+        success: true,
+        message: `Notification sent! Delivered to ${data.recipients ?? 1} device(s). Lock your phone or check notification shade.`
+      };
+    }
+    return {
+      success: false,
+      message: data.errors ? (Array.isArray(data.errors) ? data.errors.join(', ') : JSON.stringify(data.errors)) : 'Failed to deliver notification.'
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err?.message || 'Network error sending notification.'
+    };
   }
 }
 

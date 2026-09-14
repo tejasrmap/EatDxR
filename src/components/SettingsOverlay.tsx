@@ -55,7 +55,14 @@ import {
 } from "lucide-react";
 import { useAuth } from "../App";
 import { useTheme } from "./ThemeProvider";
-import { triggerHaptic, isNative } from "../services/nativeService";
+import { 
+  triggerHaptic, 
+  isNative, 
+  getOneSignalSubscriptionId, 
+  hasOneSignalPermission, 
+  promptOneSignalPermission 
+} from "../services/nativeService";
+import { ONESIGNAL_APP_ID, sendTestOneSignalPush } from "../services/supabaseService";
 import { Geolocation } from "@capacitor/geolocation";
 import { Camera as CapCamera } from "@capacitor/camera";
 import { PushNotifications } from "@capacitor/push-notifications";
@@ -203,6 +210,21 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
   const [isVip, setIsVip] = useState<boolean>(() => {
     return localStorage.getItem("madeater_vip_critic") === "true";
   });
+
+  // OneSignal Push & Lock Screen Diagnostics State
+  const [oneSignalRestKey, setOneSignalRestKey] = useState<string>(() => {
+    return localStorage.getItem("madeater_onesignal_rest_key") || (import.meta as any).env?.VITE_ONESIGNAL_REST_KEY || "";
+  });
+  const [oneSignalSubId, setOneSignalSubId] = useState<string>("");
+  const [hasNotifPerm, setHasNotifPerm] = useState<boolean>(true);
+  const [isSendingTest, setIsSendingTest] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (isOpen && activeSubView === "notifications") {
+      setOneSignalSubId(getOneSignalSubscriptionId());
+      setHasNotifPerm(hasOneSignalPermission());
+    }
+  }, [isOpen, activeSubView]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -953,6 +975,113 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
         {/* ============================================================ */}
         {activeSubView === "notifications" && (
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 scrollbar-hide">
+            {/* WhatsApp-Style Push Notifications Status & Diagnostic Card */}
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-[#18181b] to-[#121215] border border-orange-500/20 space-y-3.5 shadow-lg relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
+                    <Smartphone size={18} />
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold text-white block">WhatsApp-Style Push Notifications</span>
+                    <span className="text-[11px] text-zinc-400 block">Heads-up banner, lock screen display & vibration</span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                  {isNative ? "Android Native" : "Web Preview"}
+                </span>
+              </div>
+
+              {/* Status Indicators */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-2.5 rounded-xl bg-black/40 border border-white/[0.05]">
+                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider block mb-0.5">OneSignal App ID</span>
+                  <span className="font-mono text-[11px] text-zinc-200 truncate block">{ONESIGNAL_APP_ID.slice(0, 13)}...</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-black/40 border border-white/[0.05]">
+                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider block mb-0.5">Push Permission</span>
+                  <div className="flex items-center gap-1.5">
+                    <div className={`w-2 h-2 rounded-full ${hasNotifPerm ? "bg-emerald-500" : "bg-amber-500"}`} />
+                    <span className="text-[11px] font-medium text-zinc-200">
+                      {hasNotifPerm ? "Granted" : "Needs Permission"}
+                    </span>
+                    {!hasNotifPerm && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          promptOneSignalPermission();
+                          setTimeout(() => setHasNotifPerm(hasOneSignalPermission()), 1500);
+                        }}
+                        className="ml-auto text-[10px] text-orange-400 underline font-bold"
+                      >
+                        Enable
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* REST API Key Input */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-medium text-zinc-300">OneSignal REST API Key</label>
+                  <span className="text-[10px] text-zinc-400">Settings ➔ Keys & IDs</span>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    value={oneSignalRestKey}
+                    onChange={(e) => {
+                      const val = e.target.value.trim();
+                      setOneSignalRestKey(val);
+                      localStorage.setItem("madeater_onesignal_rest_key", val);
+                    }}
+                    placeholder="Paste REST API Key (e.g. os_v2_app_...)"
+                    className="flex-1 bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-orange-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic();
+                      localStorage.setItem("madeater_onesignal_rest_key", oneSignalRestKey.trim());
+                      toast.success("REST API Key saved!");
+                    }}
+                    className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold rounded-xl border border-white/10 transition-colors"
+                  >
+                    Save
+                  </button>
+                </div>
+                <p className="text-[10px] text-zinc-400">
+                  Required to authorize outbound lock-screen notifications to other devices.
+                </p>
+              </div>
+
+              {/* Test Push Button */}
+              <button
+                type="button"
+                disabled={isSendingTest}
+                onClick={async () => {
+                  triggerHaptic();
+                  if (!user?.uid) {
+                    toast.error("Please sign in first to receive a test notification.");
+                    return;
+                  }
+                  setIsSendingTest(true);
+                  const result = await sendTestOneSignalPush(user.uid, username);
+                  setIsSendingTest(false);
+                  if (result.success) {
+                    toast.success(result.message);
+                  } else {
+                    toast.error(result.message);
+                  }
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 active:scale-[0.99] text-white text-xs font-bold transition-all shadow-md shadow-orange-500/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                <Sparkles size={14} />
+                <span>{isSendingTest ? "Dispatching to Lock Screen..." : "⚡ Send WhatsApp-Style Test Notification to My Phone"}</span>
+              </button>
+            </div>
+
             <div className="p-4 rounded-2xl bg-[#18181b] border border-white/[0.08] flex items-center justify-between">
               <div className="pr-4">
                 <span className="text-sm font-bold text-white block">Pause all</span>
