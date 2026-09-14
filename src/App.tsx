@@ -27,6 +27,7 @@ import {
 import { WebsiteLayout } from "./components/website/WebsiteLayout";
 import { WebsiteHome } from "./pages/WebsiteHome";
 import { MadeaterSplashIntro } from "./components/MadeaterSplashIntro";
+import { NativeBackHandler } from "./components/NativeBackHandler";
 
 // Custom App Components
 import { AppLayout } from "./components/app/AppLayout";
@@ -408,6 +409,7 @@ export function App() {
         <Router>
           <AuthProvider>
             <MadeaterSplashIntro />
+            <NativeBackHandler />
             <Routes>
               {/* 1. PUBLIC WEBSITE ROUTES (Wrapped in WebsiteLayout on web, AppLayout on Native APK) */}
               <Route 
