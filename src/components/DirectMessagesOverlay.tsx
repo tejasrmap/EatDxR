@@ -15,7 +15,8 @@ import {
   ChevronRight,
   X,
   MessageSquare,
-  Users
+  Users,
+  LogIn
 } from "lucide-react";
 import { useAuth } from "../App";
 import { triggerHaptic } from "../services/nativeService";
@@ -92,13 +93,15 @@ export const DirectMessagesOverlay: React.FC<DirectMessagesOverlayProps> = ({
   onUnreadChange,
   initialSharedDish
 }) => {
-  const { user, dishdUser } = useAuth();
+  const { user, dishdUser, openAuthModal } = useAuth();
   const navigate = useNavigate();
 
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+  const [activePartner, setActivePartner] = useState<User | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [inputText, setInputText] = useState("");
+  const [sharedDish, setSharedDish] = useState<SharedDishData | undefined>(initialSharedDish);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // New Chat Composer State
@@ -107,6 +110,13 @@ export const DirectMessagesOverlay: React.FC<DirectMessagesOverlayProps> = ({
   const [composerResults, setComposerResults] = useState<User[]>([]);
   const [suggestedCritics, setSuggestedCritics] = useState<User[]>([]);
   const [isSearchingCritics, setIsSearchingCritics] = useState(false);
+
+  // Sync initialSharedDish prop changes into local state
+  useEffect(() => {
+    if (initialSharedDish) {
+      setSharedDish(initialSharedDish);
+    }
+  }, [initialSharedDish]);
 
   // Helper to convert rows into grouped threads
   const buildThreadsFromRows = (rows: DirectMessageRow[], currentUserId: string): ChatThread[] => {
@@ -191,21 +201,34 @@ export const DirectMessagesOverlay: React.FC<DirectMessagesOverlayProps> = ({
     // Load initial messages
     getDirectMessages(user.uid).then((rows) => {
       const built = buildThreadsFromRows(rows, user.uid);
-      setThreads(built);
+      setThreads(prev => {
+        // Preserve any active thread that has no rows in DB yet
+        if (activeThreadId && !built.some(t => t.id === activeThreadId)) {
+          const inMem = prev.find(t => t.id === activeThreadId);
+          if (inMem) return [inMem, ...built];
+        }
+        return built;
+      });
     }).catch((err) => {
       console.warn("[DirectMessages] Error loading DMs:", err);
     });
 
-    // Realtime subscription
+    // Realtime subscription & sync
     const sub = subscribeToDirectMessages(user.uid, (rows) => {
       const built = buildThreadsFromRows(rows, user.uid);
-      setThreads(built);
+      setThreads(prev => {
+        if (activeThreadId && !built.some(t => t.id === activeThreadId)) {
+          const inMem = prev.find(t => t.id === activeThreadId);
+          if (inMem) return [inMem, ...built];
+        }
+        return built;
+      });
     });
 
     return () => {
       sub?.unsubscribe();
     };
-  }, [user?.uid]);
+  }, [user?.uid, activeThreadId]);
 
   // 3. Load Suggested Critics for the composer
   useEffect(() => {
@@ -236,7 +259,19 @@ export const DirectMessagesOverlay: React.FC<DirectMessagesOverlayProps> = ({
     return () => clearTimeout(timer);
   }, [composerSearch, user?.uid]);
 
-  // 5. Sync unread count to parent header
+  // 5. Global event listener to open chat from any component (e.g. Critic Profile)
+  useEffect(() => {
+    const handleOpenChat = (e: any) => {
+      const critic = e.detail?.critic;
+      if (critic) {
+        handleStartChatWithCritic(critic);
+      }
+    };
+    window.addEventListener('madeater_open_chat', handleOpenChat);
+    return () => window.removeEventListener('madeater_open_chat', handleOpenChat);
+  }, [threads]);
+
+  // 6. Sync unread count to parent header
   useEffect(() => {
     const totalUnread = threads.reduce((acc, t) => acc + (t.unreadCount || 0), 0);
     onUnreadChange?.(totalUnread);
@@ -253,6 +288,7 @@ export const DirectMessagesOverlay: React.FC<DirectMessagesOverlayProps> = ({
   useEffect(() => {
     if (!isOpen) {
       setActiveThreadId(null);
+      setActivePartner(null);
       setSearchQuery("");
       setIsComposerOpen(false);
       return;
@@ -263,7 +299,10 @@ export const DirectMessagesOverlay: React.FC<DirectMessagesOverlayProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         if (isComposerOpen) setIsComposerOpen(false);
-        else if (activeThreadId) setActiveThreadId(null);
+        else if (activeThreadId) {
+          setActiveThreadId(null);
+          setActivePartner(null);
+        }
         else onClose();
       }
     };
@@ -276,10 +315,38 @@ export const DirectMessagesOverlay: React.FC<DirectMessagesOverlayProps> = ({
 
   if (!isOpen || typeof document === "undefined") return null;
 
-  const activeThread = threads.find(t => t.id === activeThreadId);
+  // Resilient activeThread resolution: checks threads list, or falls back to activePartner
+  const activeThread: ChatThread | null = (() => {
+    if (!activeThreadId) return null;
+    const found = threads.find(t => t.id === activeThreadId);
+    if (found) return found;
+    if (activePartner && activePartner.uid === activeThreadId) {
+      return {
+        id: activePartner.uid,
+        criticId: activePartner.uid,
+        criticName: activePartner.displayName || activePartner.username || "Food Critic",
+        criticUsername: activePartner.username || activePartner.displayName?.toLowerCase().replace(/\s+/g, '_') || "critic",
+        criticPhoto: activePartner.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${activePartner.uid}`,
+        lastMessage: "Start a conversation",
+        lastTimestamp: "Just now",
+        unreadCount: 0,
+        messages: []
+      };
+    }
+    return null;
+  })();
 
   const handleOpenThread = (threadId: string) => {
     triggerHaptic();
+    const thread = threads.find(t => t.id === threadId);
+    if (thread) {
+      setActivePartner({
+        uid: thread.criticId,
+        displayName: thread.criticName,
+        username: thread.criticUsername,
+        photoURL: thread.criticPhoto
+      } as User);
+    }
     setActiveThreadId(threadId);
     if (user?.uid) {
       markDirectMessagesRead(user.uid, threadId);
@@ -291,11 +358,15 @@ export const DirectMessagesOverlay: React.FC<DirectMessagesOverlayProps> = ({
     triggerHaptic();
     setIsComposerOpen(false);
     setComposerSearch("");
+    setActivePartner(critic);
+    setActiveThreadId(critic.uid);
 
     // Check if thread already exists
     const existing = threads.find(t => t.criticId === critic.uid);
     if (existing) {
-      handleOpenThread(existing.id);
+      if (user?.uid) {
+        markDirectMessagesRead(user.uid, critic.uid);
+      }
       return;
     }
 
@@ -312,42 +383,63 @@ export const DirectMessagesOverlay: React.FC<DirectMessagesOverlayProps> = ({
       messages: []
     };
 
-    setThreads(prev => [newThread, ...prev]);
-    setActiveThreadId(critic.uid);
+    setThreads(prev => {
+      if (prev.some(t => t.id === critic.uid)) return prev;
+      return [newThread, ...prev];
+    });
   };
 
   const handleSendMessage = async () => {
-    if (!inputText.trim() && !initialSharedDish) return;
-    if (!activeThread || !user?.uid) return;
+    if (!inputText.trim() && !sharedDish) return;
+    if (!user?.uid) {
+      openAuthModal();
+      return;
+    }
+    if (!activeThread) return;
 
     triggerHaptic();
     const textToSend = inputText.trim();
+    const dishToSend = sharedDish;
     setInputText("");
+    setSharedDish(undefined);
 
     const myName = dishdUser?.displayName || user.displayName || "Food Critic";
     const myPhoto = dishdUser?.photoURL || user.photoURL || "";
 
     const optimisticMsg: ChatMessage = {
-      id: `msg-${Date.now()}`,
+      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       senderId: user.uid,
       text: textToSend,
-      sharedDish: initialSharedDish,
+      sharedDish: dishToSend,
       timestamp: "Just now",
       isMe: true
     };
 
     // Optimistically update UI
-    setThreads(prev => prev.map(t => {
-      if (t.id === activeThread.id) {
-        return {
-          ...t,
-          lastMessage: textToSend || (initialSharedDish ? `Shared a dish: ${initialSharedDish.dishName}` : ""),
+    setThreads(prev => {
+      const exists = prev.some(t => t.id === activeThread.id);
+      if (exists) {
+        return prev.map(t => {
+          if (t.id === activeThread.id) {
+            return {
+              ...t,
+              lastMessage: textToSend || (dishToSend ? `Shared a dish: ${dishToSend.dishName}` : ""),
+              lastTimestamp: "Just now",
+              messages: [...t.messages, optimisticMsg]
+            };
+          }
+          return t;
+        });
+      } else {
+        const newEntry: ChatThread = {
+          ...activeThread,
+          lastMessage: textToSend || (dishToSend ? `Shared a dish: ${dishToSend.dishName}` : ""),
           lastTimestamp: "Just now",
-          messages: [...t.messages, optimisticMsg]
+          messages: [optimisticMsg]
         };
+        return [newEntry, ...prev];
       }
-      return t;
-    }));
+    });
 
     // Send real direct message to Supabase & local storage
     try {
@@ -359,7 +451,7 @@ export const DirectMessagesOverlay: React.FC<DirectMessagesOverlayProps> = ({
         recipientName: activeThread.criticName,
         recipientPhoto: activeThread.criticPhoto,
         text: textToSend,
-        sharedDish: initialSharedDish
+        sharedDish: dishToSend
       });
     } catch (err) {
       console.error("[DirectMessages] Failed to send message:", err);
@@ -386,7 +478,10 @@ export const DirectMessagesOverlay: React.FC<DirectMessagesOverlayProps> = ({
               onClick={() => {
                 triggerHaptic();
                 if (isComposerOpen) setIsComposerOpen(false);
-                else if (activeThreadId) setActiveThreadId(null);
+                else if (activeThreadId) {
+                  setActiveThreadId(null);
+                  setActivePartner(null);
+                }
                 else onClose();
               }} 
               className="w-10 h-10 -ml-1 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-90 transition-all cursor-pointer text-white"
@@ -431,7 +526,7 @@ export const DirectMessagesOverlay: React.FC<DirectMessagesOverlayProps> = ({
             )}
           </div>
 
-          {!activeThread && !isComposerOpen && (
+          {!activeThread && !isComposerOpen && user && (
             <button
               onClick={() => {
                 triggerHaptic();
@@ -455,9 +550,36 @@ export const DirectMessagesOverlay: React.FC<DirectMessagesOverlayProps> = ({
         </div>
 
         {/* ========================================================== */}
+        {/* NON-AUTHENTICATED STATE                                    */}
+        {/* ========================================================== */}
+        {!user && (
+          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 flex items-center justify-center shadow-lg">
+              <MessageSquare size={30} />
+            </div>
+            <div className="space-y-1.5 max-w-xs">
+              <h3 className="text-lg font-black text-white">Sign In to Message Critics</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Direct message verified food critics, ask for insider dining tips, and share noteworthy dishes.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                triggerHaptic();
+                openAuthModal();
+              }}
+              className="px-6 py-3 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold shadow-lg hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center gap-2"
+            >
+              <LogIn size={16} />
+              <span>Sign In with Google or Email</span>
+            </button>
+          </div>
+        )}
+
+        {/* ========================================================== */}
         {/* VIEW 0: COMPOSER MODAL (Search real users & top critics)    */}
         {/* ========================================================== */}
-        {isComposerOpen && (
+        {user && isComposerOpen && (
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4 scrollbar-hide">
             <div className="relative">
               <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
@@ -547,7 +669,7 @@ export const DirectMessagesOverlay: React.FC<DirectMessagesOverlayProps> = ({
         {/* ========================================================== */}
         {/* VIEW 1: THREADS LIST                                      */}
         {/* ========================================================== */}
-        {!activeThread && !isComposerOpen && (
+        {user && !activeThread && !isComposerOpen && (
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4 scrollbar-hide">
             
             {/* Search */}
@@ -650,7 +772,7 @@ export const DirectMessagesOverlay: React.FC<DirectMessagesOverlayProps> = ({
         {/* ========================================================== */}
         {/* VIEW 2: ACTIVE CONVERSATION CHAT                          */}
         {/* ========================================================== */}
-        {activeThread && !isComposerOpen && (
+        {user && activeThread && !isComposerOpen && (
           <div className="flex-1 flex flex-col overflow-hidden bg-[#09090b]">
             
             {/* Messages Scroll Area */}
@@ -724,6 +846,29 @@ export const DirectMessagesOverlay: React.FC<DirectMessagesOverlayProps> = ({
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Shared Dish Attachment Preview */}
+            {sharedDish && (
+              <div className="mx-3 mb-2 px-3 py-2 bg-[#18181b] border border-orange-500/30 rounded-xl flex items-center justify-between text-xs animate-in fade-in">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {sharedDish.image && (
+                    <img src={sharedDish.image} alt={sharedDish.dishName} className="w-8 h-8 rounded-lg object-cover border border-white/10" />
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-bold text-white truncate text-xs">{sharedDish.dishName}</p>
+                    <p className="text-[11px] text-zinc-400 truncate">{sharedDish.restaurantName}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSharedDish(undefined)}
+                  className="p-1 text-zinc-400 hover:text-white rounded-full hover:bg-white/10 transition-colors"
+                  title="Remove dish attachment"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
             {/* Input Bar */}
             <div className="p-3 border-t border-white/[0.08] bg-[#09090b]/95 backdrop-blur-md flex items-center gap-2">
               <button
@@ -746,10 +891,10 @@ export const DirectMessagesOverlay: React.FC<DirectMessagesOverlayProps> = ({
               <button
                 type="button"
                 onClick={handleSendMessage}
-                disabled={!inputText.trim()}
-                className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer shrink-0 ${
-                  inputText.trim() 
-                    ? "bg-orange-500 text-white active:scale-90 shadow-md" 
+                disabled={!inputText.trim() && !sharedDish}
+                className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shrink-0 ${
+                  (inputText.trim() || sharedDish)
+                    ? "bg-orange-500 text-white active:scale-90 shadow-md cursor-pointer" 
                     : "text-zinc-600 pointer-events-none"
                 }`}
               >

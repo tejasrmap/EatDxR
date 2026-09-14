@@ -1587,39 +1587,61 @@ export async function sendDirectMessage(message: {
   };
 
   if (isSupabaseConfigured) {
+    const conversationId = [message.senderId, message.recipientId].sort().join('::');
+
+    // Ensure sender profile exists in profiles table so foreign key constraint on comments passes
     try {
-      await supabase.from('direct_messages').insert(row);
-    } catch (e) {
-      console.warn('[Supabase] direct_messages insert note:', e);
+      await ensureProfile(message.senderId, message.senderName, message.senderPhoto);
+    } catch {}
+
+    // Ensure recipient profile exists if info is provided
+    if (message.recipientId && message.recipientName) {
+      try {
+        await ensureProfile(message.recipientId, message.recipientName, message.recipientPhoto);
+      } catch {}
     }
 
+    // 1. Try direct_messages table
     try {
-      await supabase.from('notifications').insert({
-        id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        recipient_id: message.recipientId,
-        sender_id: message.senderId,
-        sender_name: message.senderName,
-        sender_photo: message.senderPhoto || '',
-        type: 'COMMENT',
-        message: message.text ? `Sent you a message: "${message.text.slice(0, 40)}"` : 'Shared a dish recommendation with you',
-        target_id: message.senderId,
-        is_read: false,
+      await supabase.from('direct_messages').insert(row);
+    } catch {}
+
+    // 2. Always persist into comments table (guaranteed active and open in Supabase)
+    try {
+      await supabase.from('comments').insert({
+        id,
+        target_id: conversationId,
+        target_type: 'direct_message',
+        user_id: message.senderId,
+        user_name: message.senderName,
+        user_photo: message.senderPhoto || '',
+        text: JSON.stringify({
+          recipientId: message.recipientId,
+          recipientName: message.recipientName || '',
+          recipientPhoto: message.recipientPhoto || '',
+          text: message.text || '',
+          sharedDish: message.sharedDish || null
+        }),
         created_at: now
       });
-    } catch {}
+    } catch (err) {
+      console.warn('[Supabase] Chat comments backup note:', err);
+    }
   }
 
-  // Persist locally for sender & recipient offline sync
+  // Dual-write locally for instantaneous zero-latency UI update on sender & recipient
   try {
     const senderKey = `madeater_real_dms_${message.senderId}`;
     const senderList: DirectMessageRow[] = JSON.parse(localStorage.getItem(senderKey) || '[]');
-    senderList.push(row);
+    if (!senderList.some(r => r.id === row.id)) senderList.push(row);
     localStorage.setItem(senderKey, JSON.stringify(senderList));
 
     const recipientKey = `madeater_real_dms_${message.recipientId}`;
     const recipientList: DirectMessageRow[] = JSON.parse(localStorage.getItem(recipientKey) || '[]');
-    recipientList.push(row);
+    if (!recipientList.some(r => r.id === row.id)) recipientList.push(row);
     localStorage.setItem(recipientKey, JSON.stringify(recipientList));
+
+    window.dispatchEvent(new CustomEvent('madeater_dm_received', { detail: row }));
   } catch {}
 
   return row;
@@ -1627,9 +1649,18 @@ export async function sendDirectMessage(message: {
 
 export async function getDirectMessages(userId: string): Promise<DirectMessageRow[]> {
   if (!userId) return [];
-  let serverRows: DirectMessageRow[] = [];
+  const map = new Map<string, DirectMessageRow>();
 
+  // 1. Check local cache first
+  try {
+    const localKey = `madeater_real_dms_${userId}`;
+    const localRows: DirectMessageRow[] = JSON.parse(localStorage.getItem(localKey) || '[]');
+    localRows.forEach(r => map.set(r.id, r));
+  } catch {}
+
+  // 2. Fetch from Supabase
   if (isSupabaseConfigured) {
+    // Try direct_messages table
     try {
       const { data, error } = await supabase
         .from('direct_messages')
@@ -1637,31 +1668,80 @@ export async function getDirectMessages(userId: string): Promise<DirectMessageRo
         .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
         .order('created_at', { ascending: true });
       if (!error && data) {
-        serverRows = data;
+        data.forEach((r: any) => map.set(r.id, r));
       }
-    } catch (e) {
-      console.warn('[Supabase] getDirectMessages note:', e);
-    }
+    } catch {}
+
+    // Also fetch from comments table (live fallback)
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .select('*')
+        .eq('target_type', 'direct_message')
+        .ilike('target_id', `%${userId}%`)
+        .order('created_at', { ascending: true });
+
+      if (!error && data) {
+        data.forEach((c: any) => {
+          try {
+            const payload = JSON.parse(c.text);
+            const partnerId = c.user_id === userId ? payload.recipientId : c.user_id;
+            // Strict participation verification: user must be sender or recipient
+            if (c.user_id === userId || payload.recipientId === userId) {
+              const row: DirectMessageRow = {
+                id: c.id,
+                sender_id: c.user_id,
+                sender_name: c.user_name || 'Critic',
+                sender_photo: c.user_photo || '',
+                recipient_id: payload.recipientId,
+                recipient_name: payload.recipientName || 'Critic',
+                recipient_photo: payload.recipientPhoto || '',
+                text: payload.text || '',
+                shared_dish: payload.sharedDish || null,
+                is_read: false,
+                created_at: c.created_at
+              };
+              map.set(row.id, row);
+            }
+          } catch {}
+        });
+      }
+    } catch {}
   }
+
+  const merged = Array.from(map.values()).map(r => {
+    try {
+      const isMe = r.sender_id === userId;
+      const partnerId = isMe ? r.recipient_id : r.sender_id;
+      const readKey = `madeater_dm_read_time_${userId}_${partnerId}`;
+      const readTime = Number(localStorage.getItem(readKey) || '0');
+      const msgTime = new Date(r.created_at).getTime();
+      const isRead = r.is_read || isMe || (readTime > 0 && msgTime <= readTime);
+      return { ...r, is_read: isRead };
+    } catch {
+      return r;
+    }
+  }).sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
 
   try {
     const localKey = `madeater_real_dms_${userId}`;
-    const localRows: DirectMessageRow[] = JSON.parse(localStorage.getItem(localKey) || '[]');
-    const map = new Map<string, DirectMessageRow>();
-    serverRows.forEach(r => map.set(r.id, r));
-    localRows.forEach(r => map.set(r.id, r));
-    const merged = Array.from(map.values()).sort(
-      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-    );
     localStorage.setItem(localKey, JSON.stringify(merged));
-    return merged;
-  } catch {
-    return serverRows;
-  }
+  } catch {}
+
+  return merged;
 }
 
 export async function markDirectMessagesRead(userId: string, otherUserId: string): Promise<void> {
   if (!userId || !otherUserId) return;
+  const now = Date.now();
+
+  try {
+    const key = `madeater_dm_read_time_${userId}_${otherUserId}`;
+    localStorage.setItem(key, String(now));
+  } catch {}
+
   if (isSupabaseConfigured) {
     try {
       await supabase
@@ -1684,30 +1764,74 @@ export async function markDirectMessagesRead(userId: string, otherUserId: string
   } catch {}
 }
 
-export function subscribeToDirectMessages(userId: string, callback: () => void) {
-  if (!isSupabaseConfigured || !userId) {
+export function subscribeToDirectMessages(userId: string, callback: (messages: DirectMessageRow[]) => void) {
+  if (!userId) {
     return { unsubscribe: () => {} };
   }
 
-  const channel = supabase
-    .channel(`public:dms_${userId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'direct_messages',
-        filter: `recipient_id=eq.${userId}`
-      },
-      () => {
-        callback();
-      }
-    )
-    .subscribe();
+  // 1. Call immediately with current messages
+  getDirectMessages(userId).then(callback).catch(() => {});
+
+  // 2. Listen to local tab & cross-tab events
+  const onLocalMessage = () => {
+    getDirectMessages(userId).then(callback).catch(() => {});
+  };
+  window.addEventListener('madeater_dm_received', onLocalMessage);
+  window.addEventListener('storage', onLocalMessage);
+
+  // 3. Fallback periodic polling every 3.5 seconds to guarantee live synchronization
+  const pollInterval = setInterval(() => {
+    getDirectMessages(userId).then(callback).catch(() => {});
+  }, 3500);
+
+  // 4. Supabase Realtime Channels
+  let channelComments: any = null;
+  let channelDMs: any = null;
+
+  if (isSupabaseConfigured) {
+    try {
+      channelComments = supabase
+        .channel(`public:chat_comments_${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'comments',
+            filter: 'target_type=eq.direct_message'
+          },
+          () => {
+            getDirectMessages(userId).then(callback).catch(() => {});
+          }
+        )
+        .subscribe();
+    } catch {}
+
+    try {
+      channelDMs = supabase
+        .channel(`public:chat_dms_${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'direct_messages'
+          },
+          () => {
+            getDirectMessages(userId).then(callback).catch(() => {});
+          }
+        )
+        .subscribe();
+    } catch {}
+  }
 
   return {
     unsubscribe: () => {
-      supabase.removeChannel(channel);
+      window.removeEventListener('madeater_dm_received', onLocalMessage);
+      window.removeEventListener('storage', onLocalMessage);
+      clearInterval(pollInterval);
+      if (channelComments) supabase.removeChannel(channelComments);
+      if (channelDMs) supabase.removeChannel(channelDMs);
     }
   };
 }

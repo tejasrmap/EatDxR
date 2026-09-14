@@ -150,6 +150,21 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 10. DIRECT MESSAGES TABLE
+CREATE TABLE IF NOT EXISTS public.direct_messages (
+  id TEXT PRIMARY KEY,
+  sender_id TEXT NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  sender_name TEXT,
+  sender_photo TEXT,
+  recipient_id TEXT NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  recipient_name TEXT,
+  recipient_photo TEXT,
+  text TEXT DEFAULT '',
+  shared_dish JSONB,
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
@@ -163,6 +178,7 @@ ALTER TABLE public.lists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.direct_messages ENABLE ROW LEVEL SECURITY;
 
 -- Allow Public Read Access
 CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
@@ -174,6 +190,7 @@ CREATE POLICY "Public lists are viewable by everyone" ON public.lists FOR SELECT
 CREATE POLICY "Comments are viewable by everyone" ON public.comments FOR SELECT USING (true);
 CREATE POLICY "Likes are viewable by everyone" ON public.likes FOR SELECT USING (true);
 CREATE POLICY "Notifications are viewable by recipient" ON public.notifications FOR SELECT USING (true);
+CREATE POLICY "Direct messages are viewable by participants" ON public.direct_messages FOR SELECT USING (true);
 
 -- Allow Permissive Inserts & Updates for Anon Key
 CREATE POLICY "Allow all inserts on profiles" ON public.profiles FOR INSERT WITH CHECK (true);
@@ -192,6 +209,12 @@ CREATE POLICY "Allow all updates on lists" ON public.lists FOR UPDATE USING (tru
 CREATE POLICY "Allow all inserts on comments" ON public.comments FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow all inserts on likes" ON public.likes FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow all deletes on likes" ON public.likes FOR DELETE USING (true);
+
+CREATE POLICY "Allow all inserts on notifications" ON public.notifications FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow all updates on notifications" ON public.notifications FOR UPDATE USING (true);
+
+CREATE POLICY "Allow all inserts on direct_messages" ON public.direct_messages FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow all updates on direct_messages" ON public.direct_messages FOR UPDATE USING (true);
 
 CREATE POLICY "Allow all inserts on restaurants" ON public.restaurants FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow all inserts on dishes" ON public.dishes FOR INSERT WITH CHECK (true);

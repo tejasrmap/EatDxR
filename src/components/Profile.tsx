@@ -472,7 +472,7 @@ export const Profile: React.FC = () => {
             <button
               onClick={() => { triggerHaptic(); toggleFollow(); }}
               disabled={isUpdatingFollow}
-              className={`flex-1 h-9 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-[0.98] cursor-pointer shadow-sm ${
+              className={`flex-1 h-9 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-[0.98] cursor-pointer shadow-sm ${
                 isFollowing
                   ? "bg-zinc-900 text-white border border-white/10 hover:bg-zinc-800"
                   : "bg-gradient-to-r from-orange-500 to-amber-400 hover:brightness-110 text-black font-black shadow-md"
@@ -482,11 +482,23 @@ export const Profile: React.FC = () => {
             </button>
 
             <button
+              onClick={() => {
+                triggerHaptic();
+                window.dispatchEvent(new CustomEvent('madeater_open_chat', { detail: { critic: user } }));
+              }}
+              className="flex-1 h-9 px-3 bg-zinc-900 hover:bg-zinc-800 active:scale-[0.98] border border-white/10 rounded-xl text-xs font-bold text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+              title={`Message ${user.displayName}`}
+            >
+              <MessageSquare size={13} className="text-orange-400" />
+              <span>Message</span>
+            </button>
+
+            <button
               onClick={shareProfile}
-              className="flex-1 h-9 px-4 bg-zinc-900 hover:bg-zinc-800 active:scale-[0.98] border border-white/10 rounded-xl text-xs font-bold text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+              className="h-9 px-3 bg-zinc-900 hover:bg-zinc-800 active:scale-[0.98] border border-white/10 rounded-xl text-xs font-bold text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+              title="Share profile"
             >
               <Share2 size={13} />
-              <span>Share</span>
             </button>
           </>
         )}

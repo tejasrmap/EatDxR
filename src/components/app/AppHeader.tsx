@@ -47,6 +47,15 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
     });
   }, [user?.uid]);
 
+  // Listen for global event to open chat overlay (e.g. from Critic Profile or Review)
+  useEffect(() => {
+    const handleOpenChat = () => {
+      setIsDMOpen(true);
+    };
+    window.addEventListener('madeater_open_chat', handleOpenChat);
+    return () => window.removeEventListener('madeater_open_chat', handleOpenChat);
+  }, []);
+
   return (
     <>
       <header className="sticky top-0 left-0 right-0 z-40 bg-zinc-950/95 border-b border-white/10 pt-[env(safe-area-inset-top,0px)]">
