@@ -58,6 +58,7 @@ import { useTheme } from "./ThemeProvider";
 import { 
   triggerHaptic, 
   isNative, 
+  syncOneSignalUser,
   getOneSignalSubscriptionId, 
   hasOneSignalPermission, 
   promptOneSignalPermission 
@@ -220,11 +221,14 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
   const [isSendingTest, setIsSendingTest] = useState<boolean>(false);
 
   useEffect(() => {
-    if (isOpen && activeSubView === "notifications") {
+    if (isOpen) {
+      if (user?.uid) {
+        syncOneSignalUser(user.uid);
+      }
       setOneSignalSubId(getOneSignalSubscriptionId());
       setHasNotifPerm(hasOneSignalPermission());
     }
-  }, [isOpen, activeSubView]);
+  }, [isOpen, activeSubView, user?.uid]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -1067,7 +1071,8 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
                     return;
                   }
                   setIsSendingTest(true);
-                  const result = await sendTestOneSignalPush(user.uid, username);
+                  const subId = getOneSignalSubscriptionId();
+                  const result = await sendTestOneSignalPush(user.uid, username, subId);
                   setIsSendingTest(false);
                   if (result.success) {
                     toast.success(result.message);

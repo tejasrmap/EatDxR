@@ -1694,7 +1694,6 @@ export async function dispatchPushNotification(payload: {
           channel_for_external_user_ids: 'push',
           headings: { en: title },
           contents: { en: body },
-          android_channel_id: 'madeater_messages',
           priority: 10,
           android_visibility: 1, // Visible on Lock Screen
           android_accent_color: 'FFF97316',
@@ -1757,7 +1756,7 @@ export async function dispatchPushNotification(payload: {
 /**
  * Send a test WhatsApp-style lock-screen notification to the current user's device
  */
-export async function sendTestOneSignalPush(userId: string, userName: string): Promise<{ success: boolean; message: string }> {
+export async function sendTestOneSignalPush(userId: string, userName: string, subscriptionId?: string): Promise<{ success: boolean; message: string }> {
   const restKey = import.meta.env.VITE_ONESIGNAL_REST_KEY
     || (typeof localStorage !== 'undefined' ? localStorage.getItem('madeater_onesignal_rest_key') : '')
     || '';
@@ -1770,31 +1769,39 @@ export async function sendTestOneSignalPush(userId: string, userName: string): P
   }
 
   try {
+    const payload: Record<string, any> = {
+      app_id: ONESIGNAL_APP_ID,
+      headings: { en: 'EatDxR Food Critic 🍔' },
+      contents: { en: `@${userName || 'critic'}, your WhatsApp-style lock screen notifications are working!` },
+      priority: 10,
+      android_visibility: 1,
+      android_accent_color: 'FFF97316',
+      data: {
+        senderId: 'system',
+        senderName: 'EatDxR',
+        type: 'test_notification',
+        timestamp: Date.now()
+      }
+    };
+
+    // If device subscription ID (player ID) is provided directly, target it for guaranteed immediate delivery
+    if (subscriptionId && !subscriptionId.startsWith('local-')) {
+      payload.include_player_ids = [subscriptionId];
+      payload.include_aliases = { external_id: [userId] };
+    } else {
+      payload.include_aliases = { external_id: [userId] };
+      payload.include_external_user_ids = [userId];
+      payload.target_channel = 'push';
+      payload.channel_for_external_user_ids = 'push';
+    }
+
     const resp = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Key ${restKey.trim()}`
       },
-      body: JSON.stringify({
-        app_id: ONESIGNAL_APP_ID,
-        include_aliases: { external_id: [userId] },
-        include_external_user_ids: [userId],
-        target_channel: 'push',
-        channel_for_external_user_ids: 'push',
-        headings: { en: 'EatDxR Food Critic 🍔' },
-        contents: { en: `@${userName || 'critic'}, your WhatsApp-style lock screen notifications are working!` },
-        android_channel_id: 'madeater_messages',
-        priority: 10,
-        android_visibility: 1,
-        android_accent_color: 'FFF97316',
-        data: {
-          senderId: 'system',
-          senderName: 'EatDxR',
-          type: 'test_notification',
-          timestamp: Date.now()
-        }
-      })
+      body: JSON.stringify(payload)
     });
 
     const data = await resp.json();
