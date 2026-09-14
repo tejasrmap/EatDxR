@@ -44,6 +44,9 @@ dependencies {
     // Import the Firebase BoM
     implementation platform('com.google.firebase:firebase-bom:33.10.0')
     implementation 'com.google.firebase:firebase-analytics'
+
+    // OneSignal Android SDK (v5.9.2 from releases.json)
+    implementation 'com.onesignal:OneSignal:5.9.2'
 }
 
 apply from: 'capacitor.build.gradle'
