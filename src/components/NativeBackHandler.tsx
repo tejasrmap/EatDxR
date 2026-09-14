@@ -21,9 +21,13 @@ export function NativeBackHandler() {
 
     // 1. Check if any overlay, drawer, or modal is currently active in DOM
     const bodyIsLocked = document.body.style.overflow === "hidden";
-    const openModalElements = document.querySelectorAll(
-      '.fixed.inset-0.z-\\[99999\\], .fixed.inset-0.z-\\[700\\], .fixed.inset-0.z-\\[600\\], .fixed.inset-0.z-\\[500\\], [role="dialog"], [data-modal-open="true"]'
-    );
+    const openModalElements = Array.from(
+      document.querySelectorAll('.fixed.inset-0, [role="dialog"], [data-modal-open="true"]')
+    ).filter(el => {
+      const zIndexStr = window.getComputedStyle(el).zIndex;
+      const zIndex = parseInt(zIndexStr, 10);
+      return !isNaN(zIndex) && zIndex >= 50;
+    });
 
     if (bodyIsLocked || openModalElements.length > 0) {
       triggerHaptic();

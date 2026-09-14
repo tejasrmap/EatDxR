@@ -331,15 +331,34 @@ export async function upsertProfile(user: Partial<User>): Promise<void> {
 
 export async function syncUserAuthorInfo(userId: string, displayName: string, photoURL: string): Promise<void> {
   if (!isSupabaseConfigured || !userId) return;
+  const cleanName = displayName.trim();
+  const cleanPhoto = photoURL.trim();
+
   try {
     await Promise.all([
       supabase.from('reviews').update({
-        user_name: displayName.trim(),
-        user_photo: photoURL.trim()
+        user_name: cleanName,
+        user_photo: cleanPhoto
       }).eq('user_id', userId),
       supabase.from('cravings').update({
-        user_name: displayName.trim(),
-        user_photo: photoURL.trim()
+        user_name: cleanName,
+        user_photo: cleanPhoto
+      }).eq('user_id', userId),
+      supabase.from('comments').update({
+        user_name: cleanName,
+        user_photo: cleanPhoto
+      }).eq('user_id', userId),
+      supabase.from('direct_messages').update({
+        sender_name: cleanName,
+        sender_photo: cleanPhoto
+      }).eq('sender_id', userId),
+      supabase.from('direct_messages').update({
+        recipient_name: cleanName,
+        recipient_photo: cleanPhoto
+      }).eq('recipient_id', userId),
+      supabase.from('trails').update({
+        user_name: cleanName,
+        user_photo: cleanPhoto
       }).eq('user_id', userId)
     ]);
   } catch (e) {
