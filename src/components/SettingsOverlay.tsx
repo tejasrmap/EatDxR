@@ -93,21 +93,7 @@ type SubView =
   | "hidden_words"
   | "madeater_plus";
 
-// Sample critics for Close Friends picker
-const CRITICS_LIST = [
-  { id: "priya_eats", name: "Priya Raman", username: "priya_eats", photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" },
-  { id: "vikram_critic", name: "Vikram Sethi", username: "vikram_critic", photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80" },
-  { id: "ananya_foodie", name: "Ananya Roy", username: "ananya_foodie", photo: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80" },
-  { id: "karan_bites", name: "Karan Mehta", username: "karan_bites", photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80" },
-  { id: "sneha_gastronomy", name: "Sneha Reddy", username: "sneha_gastronomy", photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80" },
-  { id: "rahul_tasting", name: "Rahul Sharma", username: "rahul_tasting", photo: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=150&q=80" },
-  { id: "arjun_palate", name: "Arjun Kapoor", username: "arjun_palate", photo: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80" },
-  { id: "divya_michelin", name: "Divya Nambiar", username: "divya_michelin", photo: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80" },
-  { id: "rohit_streetfood", name: "Rohit Verma", username: "rohit_streetfood", photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80" },
-  { id: "meera_spice", name: "Meera Iyer", username: "meera_spice", photo: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=150&q=80" }
-];
-
-const DEFAULT_CLOSE_FRIENDS = ["priya_eats", "vikram_critic", "ananya_foodie"];
+import { getTopCritics } from "../services/supabaseService";
 
 export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ 
   isOpen, 
@@ -129,12 +115,28 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
   const [closeFriends, setCloseFriends] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem("madeater_close_friends");
-      return saved ? JSON.parse(saved) : DEFAULT_CLOSE_FRIENDS;
+      if (saved && saved.includes("priya_eats")) {
+        localStorage.removeItem("madeater_close_friends");
+        return [];
+      }
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return DEFAULT_CLOSE_FRIENDS;
+      return [];
     }
   });
   const [friendSearch, setFriendSearch] = useState("");
+  const [criticsList, setCriticsList] = useState<{ id: string; name: string; username: string; photo: string }[]>([]);
+
+  useEffect(() => {
+    getTopCritics(30).then((users) => {
+      setCriticsList(users.filter(u => u.uid !== user?.uid).map(u => ({
+        id: u.uid,
+        name: u.displayName || u.username || "Food Critic",
+        username: u.username || "critic",
+        photo: u.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${u.uid}`
+      })));
+    }).catch(() => {});
+  }, [user?.uid]);
 
   // 3. Notifications Config State
   const [notifConfig, setNotifConfig] = useState(() => {
@@ -777,7 +779,7 @@ export const SettingsOverlay: React.FC<SettingsOverlayProps> = ({
       })).filter(sec => sec.items.length > 0)
     : sections;
 
-  const filteredCritics = CRITICS_LIST.filter(c => 
+  const filteredCritics = criticsList.filter(c => 
     c.name.toLowerCase().includes(friendSearch.toLowerCase()) ||
     c.username.toLowerCase().includes(friendSearch.toLowerCase())
   );

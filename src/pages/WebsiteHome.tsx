@@ -38,7 +38,7 @@ export function WebsiteHome() {
   const displayedReviews = reviews.filter((r) => {
     if (feedFilter === "for-you") return true;
     if (feedFilter === "following") {
-      const followingList = dishdUser?.stats?.followingList || ["teja", "priya"];
+      const followingList = dishdUser?.stats?.followingList || [];
       return followingList.includes(r.userId);
     }
     if (feedFilter === "trending") {

@@ -1503,6 +1503,15 @@ export async function markNotificationRead(id: string): Promise<void> {
   }
 }
 
+export async function markAllNotificationsRead(recipientId: string): Promise<void> {
+  if (!isSupabaseConfigured || !recipientId) return;
+  try {
+    await supabase.from('notifications').update({ is_read: true }).eq('recipient_id', recipientId);
+  } catch (err) {
+    console.warn('[Supabase] Error marking all notifications read:', err);
+  }
+}
+
 export function subscribeToNotifications(recipientId: string, callback: (notifications: AppNotification[]) => void) {
   if (!isSupabaseConfigured || !recipientId) {
     return { unsubscribe: () => {} };
@@ -1522,6 +1531,176 @@ export function subscribeToNotifications(recipientId: string, callback: (notific
       },
       () => {
         getNotifications(recipientId).then(callback);
+      }
+    )
+    .subscribe();
+
+  return {
+    unsubscribe: () => {
+      supabase.removeChannel(channel);
+    }
+  };
+}
+
+// ============================================================================
+// 7.5. REAL DIRECT MESSAGES (CHAT)
+// ============================================================================
+
+export interface DirectMessageRow {
+  id: string;
+  sender_id: string;
+  sender_name?: string;
+  sender_photo?: string;
+  recipient_id: string;
+  recipient_name?: string;
+  recipient_photo?: string;
+  text?: string;
+  shared_dish?: any;
+  is_read?: boolean;
+  created_at: string;
+}
+
+export async function sendDirectMessage(message: {
+  senderId: string;
+  senderName: string;
+  senderPhoto?: string;
+  recipientId: string;
+  recipientName?: string;
+  recipientPhoto?: string;
+  text?: string;
+  sharedDish?: any;
+}): Promise<DirectMessageRow> {
+  const id = `dm-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const now = new Date().toISOString();
+  const row: DirectMessageRow = {
+    id,
+    sender_id: message.senderId,
+    sender_name: message.senderName,
+    sender_photo: message.senderPhoto || '',
+    recipient_id: message.recipientId,
+    recipient_name: message.recipientName || '',
+    recipient_photo: message.recipientPhoto || '',
+    text: message.text || '',
+    shared_dish: message.sharedDish || null,
+    is_read: false,
+    created_at: now
+  };
+
+  if (isSupabaseConfigured) {
+    try {
+      await supabase.from('direct_messages').insert(row);
+    } catch (e) {
+      console.warn('[Supabase] direct_messages insert note:', e);
+    }
+
+    try {
+      await supabase.from('notifications').insert({
+        id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        recipient_id: message.recipientId,
+        sender_id: message.senderId,
+        sender_name: message.senderName,
+        sender_photo: message.senderPhoto || '',
+        type: 'COMMENT',
+        message: message.text ? `Sent you a message: "${message.text.slice(0, 40)}"` : 'Shared a dish recommendation with you',
+        target_id: message.senderId,
+        is_read: false,
+        created_at: now
+      });
+    } catch {}
+  }
+
+  // Persist locally for sender & recipient offline sync
+  try {
+    const senderKey = `madeater_real_dms_${message.senderId}`;
+    const senderList: DirectMessageRow[] = JSON.parse(localStorage.getItem(senderKey) || '[]');
+    senderList.push(row);
+    localStorage.setItem(senderKey, JSON.stringify(senderList));
+
+    const recipientKey = `madeater_real_dms_${message.recipientId}`;
+    const recipientList: DirectMessageRow[] = JSON.parse(localStorage.getItem(recipientKey) || '[]');
+    recipientList.push(row);
+    localStorage.setItem(recipientKey, JSON.stringify(recipientList));
+  } catch {}
+
+  return row;
+}
+
+export async function getDirectMessages(userId: string): Promise<DirectMessageRow[]> {
+  if (!userId) return [];
+  let serverRows: DirectMessageRow[] = [];
+
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('direct_messages')
+        .select('*')
+        .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
+        .order('created_at', { ascending: true });
+      if (!error && data) {
+        serverRows = data;
+      }
+    } catch (e) {
+      console.warn('[Supabase] getDirectMessages note:', e);
+    }
+  }
+
+  try {
+    const localKey = `madeater_real_dms_${userId}`;
+    const localRows: DirectMessageRow[] = JSON.parse(localStorage.getItem(localKey) || '[]');
+    const map = new Map<string, DirectMessageRow>();
+    serverRows.forEach(r => map.set(r.id, r));
+    localRows.forEach(r => map.set(r.id, r));
+    const merged = Array.from(map.values()).sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+    localStorage.setItem(localKey, JSON.stringify(merged));
+    return merged;
+  } catch {
+    return serverRows;
+  }
+}
+
+export async function markDirectMessagesRead(userId: string, otherUserId: string): Promise<void> {
+  if (!userId || !otherUserId) return;
+  if (isSupabaseConfigured) {
+    try {
+      await supabase
+        .from('direct_messages')
+        .update({ is_read: true })
+        .eq('recipient_id', userId)
+        .eq('sender_id', otherUserId);
+    } catch {}
+  }
+
+  try {
+    const key = `madeater_real_dms_${userId}`;
+    const existing: DirectMessageRow[] = JSON.parse(localStorage.getItem(key) || '[]');
+    existing.forEach(r => {
+      if (r.recipient_id === userId && r.sender_id === otherUserId) {
+        r.is_read = true;
+      }
+    });
+    localStorage.setItem(key, JSON.stringify(existing));
+  } catch {}
+}
+
+export function subscribeToDirectMessages(userId: string, callback: () => void) {
+  if (!isSupabaseConfigured || !userId) {
+    return { unsubscribe: () => {} };
+  }
+
+  const channel = supabase
+    .channel(`public:dms_${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'direct_messages',
+        filter: `recipient_id=eq.${userId}`
+      },
+      () => {
+        callback();
       }
     )
     .subscribe();

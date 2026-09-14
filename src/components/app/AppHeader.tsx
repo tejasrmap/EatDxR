@@ -27,20 +27,25 @@ export function AppHeader({ currentCity = "Hyderabad", onCityChange, showBack = 
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isDMOpen, setIsDMOpen] = useState(false);
-  const [unreadDMs, setUnreadDMs] = useState(1);
-  const [unreadNotifs, setUnreadNotifs] = useState(() => {
-    try {
-      const saved = localStorage.getItem("madeater_activity_notifications");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed.filter((n: any) => !n.isRead).length;
-      }
-      return 3;
-    } catch {
-      return 3;
-    }
-  });
+  const [unreadDMs, setUnreadDMs] = useState(0);
+  const [unreadNotifs, setUnreadNotifs] = useState(0);
   const navigate = useNavigate();
+
+  // Load real unread counts on mount
+  useEffect(() => {
+    if (!user?.uid) return;
+    import("../../services/supabaseService").then(({ getNotifications, getDirectMessages }) => {
+      getNotifications(user.uid).then((notifs) => {
+        const unreadCount = notifs.filter(n => !n.read).length;
+        setUnreadNotifs(unreadCount);
+      }).catch(() => {});
+
+      getDirectMessages(user.uid).then((msgs) => {
+        const unreadCount = msgs.filter(m => m.recipient_id === user.uid && !m.is_read).length;
+        setUnreadDMs(unreadCount);
+      }).catch(() => {});
+    });
+  }, [user?.uid]);
 
   return (
     <>

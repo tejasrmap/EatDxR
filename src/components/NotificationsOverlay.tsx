@@ -9,7 +9,15 @@ import {
   CheckCheck, 
   Sparkles
 } from "lucide-react";
+import { useAuth } from "../App";
 import { triggerHaptic } from "../services/nativeService";
+import { 
+  getNotifications, 
+  markNotificationRead, 
+  markAllNotificationsRead, 
+  subscribeToNotifications,
+  toggleFollow
+} from "../services/supabaseService";
 import { toast } from "sonner";
 
 export interface ActivityNotification {
@@ -29,102 +37,48 @@ export interface ActivityNotification {
   isFollowing?: boolean;
 }
 
-const DEFAULT_NOTIFICATIONS: ActivityNotification[] = [
-  {
-    id: "notif-1",
-    type: "LIKE",
-    actorId: "critic_priya",
-    actorName: "Priya Raman",
-    actorUsername: "priya_eats",
-    actorPhoto: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
-    targetId: "dish-1",
-    targetTitle: "Truffle Butter Chicken at Jewel of Nizam",
-    targetImage: "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?auto=format&fit=crop&w=150&q=80",
-    timestamp: "12m ago",
-    timeGroup: "Today",
-    isRead: false
-  },
-  {
-    id: "notif-2",
-    type: "FOLLOW",
-    actorId: "critic_vikram",
-    actorName: "Vikram Sethi",
-    actorUsername: "vikram_critic",
-    actorPhoto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
-    timestamp: "1h ago",
-    timeGroup: "Today",
-    isRead: false,
-    isFollowing: false
-  },
-  {
-    id: "notif-3",
-    type: "COMMENT",
-    actorId: "critic_ananya",
-    actorName: "Ananya Roy",
-    actorUsername: "ananya_foodie",
-    actorPhoto: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80",
-    targetId: "craving-1",
-    targetTitle: "Mutton Dum Biryani Craving",
-    targetImage: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=150&q=80",
-    commentText: "That spice blend looks unreal! Have you tried the double masala version?",
-    timestamp: "3h ago",
-    timeGroup: "Today",
-    isRead: false
-  },
-  {
-    id: "notif-4",
-    type: "LIKE",
-    actorId: "critic_karan",
-    actorName: "Karan Mehta",
-    actorUsername: "karan_bites",
-    actorPhoto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80",
-    targetId: "review-2",
-    targetTitle: "Guntur Chili Fish",
-    targetImage: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=150&q=80",
-    timestamp: "Yesterday",
-    timeGroup: "Yesterday",
-    isRead: true
-  },
-  {
-    id: "notif-5",
-    type: "FOLLOW",
-    actorId: "critic_sneha",
-    actorName: "Sneha Reddy",
-    actorUsername: "sneha_gastronomy",
-    actorPhoto: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
-    timestamp: "Yesterday",
-    timeGroup: "Yesterday",
-    isRead: true,
-    isFollowing: true
-  },
-  {
-    id: "notif-6",
-    type: "VISIT",
-    actorId: "madeater_bot",
-    actorName: "Madeater Radar",
-    actorUsername: "radar",
-    actorPhoto: "",
-    targetTitle: "Rayalaseema Ruchulu is trending in Banjara Hills",
-    targetImage: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=150&q=80",
-    timestamp: "3d ago",
-    timeGroup: "This week",
-    isRead: true
-  },
-  {
-    id: "notif-7",
-    type: "LIKE",
-    actorId: "critic_rahul",
-    actorName: "Rahul Sharma",
-    actorUsername: "rahul_tasting",
-    actorPhoto: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=150&q=80",
-    targetId: "review-3",
-    targetTitle: "Filter Coffee & Idli Platter",
-    targetImage: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=150&q=80",
-    timestamp: "5d ago",
-    timeGroup: "This week",
-    isRead: true
-  }
-];
+function formatNotificationItem(n: any, followingList: string[] = []): ActivityNotification {
+  const createdDate = new Date(n.created_at || n.createdAt || Date.now());
+  const now = new Date();
+  const diffMs = Math.max(0, now.getTime() - createdDate.getTime());
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  let timestamp = "Just now";
+  if (diffMins < 1) timestamp = "Just now";
+  else if (diffMins < 60) timestamp = `${diffMins}m ago`;
+  else if (diffHours < 24) timestamp = `${diffHours}h ago`;
+  else if (diffDays === 1) timestamp = "Yesterday";
+  else timestamp = `${diffDays}d ago`;
+
+  let timeGroup: ActivityNotification["timeGroup"] = "Today";
+  if (diffDays === 0) timeGroup = "Today";
+  else if (diffDays === 1) timeGroup = "Yesterday";
+  else if (diffDays <= 7) timeGroup = "This week";
+  else timeGroup = "Earlier";
+
+  const actorId = n.sender_id || n.actorId || "";
+  const actorName = n.sender_name || n.actorName || "Critic";
+  const actorUsername = n.sender_username || actorName.toLowerCase().replace(/\s+/g, '_');
+
+  return {
+    id: n.id,
+    type: (n.type?.toUpperCase() || "LIKE") as any,
+    actorId,
+    actorName,
+    actorUsername,
+    actorPhoto: n.sender_photo || n.actorPhoto || "",
+    targetId: n.target_id || n.targetId,
+    targetTitle: n.target_title || n.message || undefined,
+    targetImage: n.target_image,
+    commentText: n.comment_text || n.commentText,
+    timestamp,
+    timeGroup,
+    isRead: !!(n.is_read || n.read),
+    isFollowing: followingList.includes(actorId)
+  };
+}
 
 interface NotificationsOverlayProps {
   isOpen: boolean;
@@ -137,25 +91,65 @@ export const NotificationsOverlay: React.FC<NotificationsOverlayProps> = ({
   onClose,
   onCountChange
 }) => {
+  const { user: currentUser, dishdUser } = useAuth();
   const navigate = useNavigate();
   const [filter, setFilter] = useState<"ALL" | "FOLLOWS" | "LIKES" | "COMMENTS">("ALL");
   const [notifications, setNotifications] = useState<ActivityNotification[]>(() => {
+    // Purge any old fake mock notifications cache
     try {
-      const saved = localStorage.getItem("madeater_activity_notifications");
-      return saved ? JSON.parse(saved) : DEFAULT_NOTIFICATIONS;
-    } catch {
-      return DEFAULT_NOTIFICATIONS;
-    }
+      const oldCache = localStorage.getItem("madeater_activity_notifications");
+      if (oldCache && oldCache.includes("critic_priya")) {
+        localStorage.removeItem("madeater_activity_notifications");
+      }
+      if (currentUser?.uid) {
+        const saved = localStorage.getItem(`madeater_real_notifications_${currentUser.uid}`);
+        if (saved) return JSON.parse(saved);
+      }
+    } catch {}
+    return [];
   });
 
+  // Load real notifications from Supabase
   useEffect(() => {
-    try {
-      localStorage.setItem("madeater_activity_notifications", JSON.stringify(notifications));
-      const unread = notifications.filter(n => !n.isRead).length;
-      onCountChange?.(unread);
-    } catch (e) {
-      console.error(e);
+    if (!currentUser?.uid) {
+      setNotifications([]);
+      onCountChange?.(0);
+      return;
     }
+
+    const following = dishdUser?.stats?.followingList || [];
+
+    const loadRealNotifications = async () => {
+      try {
+        const raw = await getNotifications(currentUser.uid);
+        const mapped = raw.map(n => formatNotificationItem(n, following));
+        setNotifications(mapped);
+        localStorage.setItem(`madeater_real_notifications_${currentUser.uid}`, JSON.stringify(mapped));
+        const unread = mapped.filter(n => !n.isRead).length;
+        onCountChange?.(unread);
+      } catch (err) {
+        console.warn("[Notifications] Fetch error:", err);
+      }
+    };
+
+    loadRealNotifications();
+
+    const sub = subscribeToNotifications(currentUser.uid, (raw) => {
+      const mapped = raw.map(n => formatNotificationItem(n, following));
+      setNotifications(mapped);
+      localStorage.setItem(`madeater_real_notifications_${currentUser.uid}`, JSON.stringify(mapped));
+      const unread = mapped.filter(n => !n.isRead).length;
+      onCountChange?.(unread);
+    });
+
+    return () => {
+      sub.unsubscribe();
+    };
+  }, [currentUser?.uid, dishdUser?.stats?.followingList, onCountChange]);
+
+  useEffect(() => {
+    const unread = notifications.filter(n => !n.isRead).length;
+    onCountChange?.(unread);
   }, [notifications, onCountChange]);
 
   useEffect(() => {
@@ -178,30 +172,41 @@ export const NotificationsOverlay: React.FC<NotificationsOverlayProps> = ({
   const handleMarkAllRead = () => {
     triggerHaptic();
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    if (currentUser?.uid) {
+      markAllNotificationsRead(currentUser.uid);
+      try {
+        localStorage.setItem(`madeater_real_notifications_${currentUser.uid}`, JSON.stringify(notifications.map(n => ({ ...n, isRead: true }))));
+      } catch {}
+    }
     toast.success("All notifications marked as read");
   };
 
-  const handleToggleFollow = (id: string, e: React.MouseEvent) => {
+  const handleToggleFollow = async (notif: ActivityNotification, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!currentUser) return;
     triggerHaptic();
-    setNotifications(prev => prev.map(n => {
-      if (n.id === id) {
-        const nextState = !n.isFollowing;
-        toast.success(nextState ? `Following @${n.actorUsername}` : `Unfollowed @${n.actorUsername}`);
-        return { ...n, isFollowing: nextState, isRead: true };
-      }
-      return n;
-    }));
+    const nextState = !notif.isFollowing;
+    setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, isFollowing: nextState, isRead: true } : n));
+    try {
+      await toggleFollow(currentUser.uid, notif.actorId, !!notif.isFollowing, {
+        name: currentUser.displayName || undefined,
+        photo: currentUser.photoURL || undefined
+      });
+      toast.success(nextState ? `Following @${notif.actorUsername}` : `Unfollowed @${notif.actorUsername}`);
+    } catch {
+      setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, isFollowing: notif.isFollowing } : n));
+    }
   };
 
   const handleNotificationClick = (notif: ActivityNotification) => {
     triggerHaptic();
     setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n));
+    if (currentUser?.uid) {
+      markNotificationRead(notif.id);
+    }
     onClose();
 
-    if (notif.type === "FOLLOW") {
-      navigate(`/app/profile/${notif.actorUsername}`);
-    } else if (notif.targetId) {
+    if (notif.actorUsername) {
       navigate(`/app/profile/${notif.actorUsername}`);
     } else {
       navigate("/app/feed");
@@ -388,7 +393,7 @@ export const NotificationsOverlay: React.FC<NotificationsOverlayProps> = ({
                           {notif.type === "FOLLOW" ? (
                             <button
                               type="button"
-                              onClick={(e) => handleToggleFollow(notif.id, e)}
+                              onClick={(e) => handleToggleFollow(notif, e)}
                               className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer ${
                                 notif.isFollowing
                                   ? "bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-white/10"
