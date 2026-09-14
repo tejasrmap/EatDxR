@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { triggerHaptic } from "../services/nativeService";
 import { toast } from "sonner";
+import { useAuth } from "../App";
+import { sendDirectMessage } from "../services/supabaseService";
 
 export interface StoryItem {
   id: string;
@@ -151,6 +153,8 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
     }
   };
 
+  const { user, dishdUser } = useAuth();
+
   const handleSendReaction = (emoji: string) => {
     triggerHaptic();
     const newEmoji: FloatingEmoji = {
@@ -160,6 +164,20 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
     };
     setFloatingEmojis(prev => [...prev, newEmoji]);
     toast.success(`Sent ${emoji} to @${currentStory.criticUsername}`);
+
+    if (user?.uid && currentStory.criticId) {
+      const senderName = dishdUser?.displayName || user.displayName || "Food Critic";
+      const senderPhoto = dishdUser?.photoURL || user.photoURL || "";
+      sendDirectMessage({
+        senderId: user.uid,
+        senderName,
+        senderPhoto,
+        recipientId: currentStory.criticId,
+        recipientName: currentStory.criticName,
+        recipientPhoto: currentStory.criticPhoto,
+        text: `Reacted ${emoji} to your story "${currentStory.dishName || currentStory.restaurantName || "Food Story"}"`
+      }).catch(() => {});
+    }
 
     // Remove emoji after animation completes
     setTimeout(() => {
@@ -172,8 +190,23 @@ export const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
     if (!replyText.trim()) return;
 
     triggerHaptic();
-    toast.success(`Replied to @${currentStory.criticUsername}: "${replyText}"`);
+    const textToSend = replyText.trim();
     setReplyText("");
+    toast.success(`Replied to @${currentStory.criticUsername}: "${textToSend}"`);
+
+    if (user?.uid && currentStory.criticId) {
+      const senderName = dishdUser?.displayName || user.displayName || "Food Critic";
+      const senderPhoto = dishdUser?.photoURL || user.photoURL || "";
+      sendDirectMessage({
+        senderId: user.uid,
+        senderName,
+        senderPhoto,
+        recipientId: currentStory.criticId,
+        recipientName: currentStory.criticName,
+        recipientPhoto: currentStory.criticPhoto,
+        text: `Replying to story (${currentStory.dishName || currentStory.restaurantName || "Food Story"}): "${textToSend}"`
+      }).catch(() => {});
+    }
   };
 
   return createPortal(

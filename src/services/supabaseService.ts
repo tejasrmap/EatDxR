@@ -1315,7 +1315,77 @@ export async function deleteList(id: string): Promise<boolean> {
 
 export const toggleSupabaseFollow = toggleFollow;
 
-export async function toggleLike(targetId: string, targetType: string, userId: string): Promise<boolean> {
+// Helper to resolve entity owner & title across all entity types
+async function resolveEntityOwner(targetId: string, targetType?: string): Promise<{ recipientId: string | null; targetTitle: string | null; targetImage: string | null }> {
+  if (!isSupabaseConfigured || !targetId) return { recipientId: null, targetTitle: null, targetImage: null };
+
+  try {
+    // 1. Check reviews table (reviews, reels, posts)
+    const { data: rev } = await supabase
+      .from('reviews')
+      .select('user_id, restaurant_name, dishes')
+      .eq('id', targetId)
+      .maybeSingle();
+
+    if (rev) {
+      return {
+        recipientId: rev.user_id,
+        targetTitle: rev.restaurant_name || rev.dishes?.[0]?.name || 'Review',
+        targetImage: rev.dishes?.[0]?.image || null
+      };
+    }
+
+    // 2. Check cravings table
+    const { data: crav } = await supabase
+      .from('cravings')
+      .select('user_id, restaurant_name, dish_name, image_url')
+      .eq('id', targetId)
+      .maybeSingle();
+
+    if (crav) {
+      return {
+        recipientId: crav.user_id,
+        targetTitle: crav.dish_name || crav.restaurant_name || 'Craving',
+        targetImage: crav.image_url || null
+      };
+    }
+
+    // 3. Check food trails table
+    const { data: trail } = await supabase
+      .from('trails')
+      .select('user_id, title, cover_image')
+      .eq('id', targetId)
+      .maybeSingle();
+
+    if (trail) {
+      return {
+        recipientId: trail.user_id,
+        targetTitle: trail.title || 'Food Trail',
+        targetImage: trail.cover_image || null
+      };
+    }
+  } catch (err) {
+    console.warn('[Supabase] resolveEntityOwner lookup notice:', err);
+  }
+
+  return { recipientId: null, targetTitle: null, targetImage: null };
+}
+
+export async function toggleLike(
+  targetId: string,
+  targetTypeOrUserId: string,
+  maybeUserId?: string
+): Promise<boolean> {
+  let targetType = 'review';
+  let userId = '';
+
+  if (maybeUserId && typeof maybeUserId === 'string' && maybeUserId.trim().length > 0) {
+    targetType = targetTypeOrUserId || 'review';
+    userId = maybeUserId;
+  } else {
+    userId = targetTypeOrUserId;
+  }
+
   if (!isSupabaseConfigured || !targetId || !userId) return true;
 
   try {
@@ -1340,24 +1410,7 @@ export async function toggleLike(targetId: string, targetType: string, userId: s
 
       // Automatically trigger notification for target author
       try {
-        let recipientId: string | null = null;
-        let targetTitle: string | null = null;
-        let targetImage: string | null = null;
-
-        if (targetType === 'review' || !targetType) {
-          const { data: rev } = await supabase.from('reviews').select('user_id, restaurant_name, dishes').eq('id', targetId).maybeSingle();
-          if (rev) {
-            recipientId = rev.user_id;
-            targetTitle = rev.restaurant_name || (rev.dishes?.[0]?.name);
-            targetImage = rev.dishes?.[0]?.image;
-          }
-        } else if (targetType === 'craving') {
-          const { data: crav } = await supabase.from('cravings').select('user_id, restaurant_name, dish_name').eq('id', targetId).maybeSingle();
-          if (crav) {
-            recipientId = crav.user_id;
-            targetTitle = crav.dish_name || crav.restaurant_name;
-          }
-        }
+        const { recipientId, targetTitle, targetImage } = await resolveEntityOwner(targetId, targetType);
 
         if (recipientId && recipientId !== userId) {
           const actorProfile = await getProfile(userId);
@@ -1388,11 +1441,14 @@ export async function toggleLike(targetId: string, targetType: string, userId: s
 
 export async function toggleSupabaseLike(
   targetId: string,
-  userId: string,
-  _isCurrentlyLiked?: boolean,
+  arg2: string,
+  arg3?: string | boolean,
   _actorInfo?: { name?: string; photo?: string }
 ): Promise<boolean> {
-  return toggleLike(targetId, 'review', userId);
+  if (typeof arg3 === 'string' && arg3.trim().length > 0) {
+    return toggleLike(targetId, arg2, arg3);
+  }
+  return toggleLike(targetId, 'review', arg2);
 }
 
 export async function getComments(targetId: string): Promise<any[]> {
@@ -1460,22 +1516,7 @@ export async function addComment(comment: {
 
     // Automatically trigger notification for target author
     try {
-      let recipientId: string | null = null;
-      let targetTitle: string | null = null;
-
-      if (targetType === 'review' || !targetType) {
-        const { data: rev } = await supabase.from('reviews').select('user_id, restaurant_name, dishes').eq('id', targetId).maybeSingle();
-        if (rev) {
-          recipientId = rev.user_id;
-          targetTitle = rev.restaurant_name || (rev.dishes?.[0]?.name);
-        }
-      } else if (targetType === 'craving') {
-        const { data: crav } = await supabase.from('cravings').select('user_id, restaurant_name, dish_name').eq('id', targetId).maybeSingle();
-        if (crav) {
-          recipientId = crav.user_id;
-          targetTitle = crav.dish_name || crav.restaurant_name;
-        }
-      }
+      const { recipientId, targetTitle, targetImage } = await resolveEntityOwner(targetId, targetType);
 
       if (recipientId && recipientId !== comment.userId) {
         createNotification({
@@ -1486,7 +1527,8 @@ export async function addComment(comment: {
           type: 'COMMENT',
           targetId,
           commentText: text.trim(),
-          targetTitle: targetTitle || undefined
+          targetTitle: targetTitle || undefined,
+          targetImage: targetImage || undefined
         });
       }
     } catch (notifErr) {
@@ -1752,8 +1794,19 @@ export async function sendDirectMessage(message: {
     window.dispatchEvent(new CustomEvent('madeater_dm_received', { detail: row }));
   } catch {}
 
-  // 3. Dispatch Push Notification to Recipient's mobile phone
+  // 3. Dispatch Notification & Push Notification to Recipient
   if (isSupabaseConfigured && message.recipientId) {
+    createNotification({
+      recipientId: message.recipientId,
+      actorId: message.senderId,
+      actorName: message.senderName || 'Food Critic',
+      actorPhoto: message.senderPhoto,
+      type: 'COMMENT',
+      targetId: row.id,
+      commentText: message.text || (message.sharedDish ? `Shared a dish: ${message.sharedDish.dishName}` : 'Sent a direct message'),
+      targetTitle: 'Direct Message'
+    }).catch(() => {});
+
     dispatchPushNotification({
       recipientId: message.recipientId,
       senderName: message.senderName || 'Food Critic',

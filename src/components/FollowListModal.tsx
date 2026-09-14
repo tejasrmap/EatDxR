@@ -81,7 +81,7 @@ export const FollowListModal: React.FC<FollowListModalProps> = ({ isOpen, onClos
               {users.map(u => (
                 <div key={u.uid} className="flex items-center gap-3">
                   <Link 
-                    to={`/profile/${u.uid}`} 
+                    to={`/app/profile/${u.uid}`} 
                     onClick={onClose} // Auto-close modal when navigating away
                     className="w-10 h-10 rounded-full border-2 border-transparent hover:border-orange-500 transition-colors shrink-0 overflow-hidden"
                   >
@@ -94,7 +94,7 @@ export const FollowListModal: React.FC<FollowListModalProps> = ({ isOpen, onClos
                   </Link>
                   <div className="flex-1 min-w-0">
                     <Link 
-                      to={`/profile/${u.uid}`}
+                      to={`/app/profile/${u.uid}`}
                       onClick={onClose}
                       className="text-sm font-bold text-foreground hover:text-orange-500 transition-colors truncate block"
                     >
