@@ -1,18 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { MOCK_DISHES } from "../data/mockData";
+import { getDishes } from "../services/supabaseService";
+import { DishEntity } from "../types";
 import { Star, Utensils, Search, Flame, ArrowRight, Trophy } from "lucide-react";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic } from "../services/nativeService";
 
 export function DishesDirectory() {
   const { getAppUrl } = useAppUrl();
+  const [dishes, setDishes] = useState<DishEntity[]>([]);
   const [search, setSearch] = useState("");
   const [selectedCuisine, setSelectedCuisine] = useState("All");
 
+  useEffect(() => {
+    getDishes(50).then(setDishes).catch(() => {});
+  }, []);
+
   const cuisines = ["All", "Hyderabadi / Mughlai", "South Indian", "Seafood / Konkan", "Beverage / Heritage", "Andhra"];
 
-  const filteredDishes = MOCK_DISHES.filter(dish => {
+  const filteredDishes = dishes.filter(dish => {
     const matchesSearch = dish.name.toLowerCase().includes(search.toLowerCase()) || 
                           dish.description.toLowerCase().includes(search.toLowerCase());
     const matchesCuisine = selectedCuisine === "All" || dish.cuisine === selectedCuisine;

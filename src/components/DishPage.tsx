@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { MOCK_DISHES } from "../data/mockData";
-import { getCravings } from "../services/supabaseService";
-import { Review } from "../types";
+import { getCravings, getDishes } from "../services/supabaseService";
+import { Review, DishEntity } from "../types";
 import { Star, MapPin, ChevronLeft, Flame, Trophy, Utensils, Share2, Plus, Sparkles, ArrowRight, ShieldCheck } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -18,13 +17,18 @@ export function DishPage() {
   const { user, login } = useAuth();
   const { getAppUrl, isAppMode } = useAppUrl();
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+  const [currentDish, setCurrentDish] = useState<DishEntity | null>(null);
   const [relatedCravings, setRelatedCravings] = useState<Review[]>([]);
 
-  // Find dish by id or normalized name
-  const currentDish = MOCK_DISHES.find(d => 
-    d.id === dishId || 
-    d.name.toLowerCase().includes((dishId || "").toLowerCase().replace("-", " "))
-  ) || MOCK_DISHES[0];
+  useEffect(() => {
+    getDishes(100).then((allDishes) => {
+      const found = allDishes.find(d => 
+        d.id === dishId || 
+        d.name.toLowerCase().includes((dishId || "").toLowerCase().replace("-", " "))
+      ) || allDishes[0];
+      if (found) setCurrentDish(found);
+    }).catch(() => {});
+  }, [dishId]);
 
   useEffect(() => {
     if (!currentDish?.name) return;
@@ -58,6 +62,14 @@ export function DishPage() {
     navigator.clipboard.writeText(url);
     toast.success("Dish link copied to clipboard!");
   };
+
+  if (!currentDish) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white py-4 sm:py-8 md:py-12">

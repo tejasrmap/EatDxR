@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Sparkles, X, Send, Bot, Utensils, Star, MapPin, ArrowRight, Loader2, Compass } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
-import { MOCK_DISHES } from "../data/mockData";
 
 interface Message {
   role: "user" | "assistant";

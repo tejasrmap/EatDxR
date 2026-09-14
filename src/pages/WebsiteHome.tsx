@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Hero } from "../components/Hero";
-import { MOCK_DISHES, MOCK_LISTS, MOCK_CRITICS_DATA, MOCK_CRAVINGS } from "../data/mockData";
 import { ReviewCard } from "../components/ReviewCard";
 import { LogMealModal } from "../components/LogMealModal";
 import { CravingUploadModal } from "../components/CravingUploadModal";
 import { AIFoodAssistant } from "../components/AIFoodAssistant";
-import { getReviews } from "../services/supabaseService";
-import { Review } from "../types";
+import { getReviews, getTopCritics, getLists, getDishes } from "../services/supabaseService";
+import { Review, User, FoodList, DishEntity } from "../types";
 import { useAuth } from "../App";
 import { 
   Star, ArrowRight, Flame, Sparkles, MapPin, 
@@ -20,6 +19,9 @@ const CITIES = ["All", "Hyderabad", "Mumbai", "Delhi", "Bangalore", "Goa"];
 export function WebsiteHome() {
   const { user, dishdUser, login } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [critics, setCritics] = useState<User[]>([]);
+  const [lists, setLists] = useState<FoodList[]>([]);
+  const [dishes, setDishes] = useState<DishEntity[]>([]);
   const [loading, setLoading] = useState(true);
   const [mainView, setMainView] = useState<"feed" | "dishes" | "lists" | "critics">("feed");
   const [feedFilter, setFeedFilter] = useState<"trending" | "for-you" | "following" | "nearby">("trending");
@@ -33,6 +35,9 @@ export function WebsiteHome() {
       setReviews(data);
       setLoading(false);
     });
+    getTopCritics(10).then(setCritics).catch(() => {});
+    getLists(undefined, 8).then(setLists).catch(() => {});
+    getDishes(12).then(setDishes).catch(() => {});
   }, [selectedCity]);
 
   const displayedReviews = reviews.filter((r) => {
@@ -210,7 +215,7 @@ export function WebsiteHome() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {MOCK_DISHES.map((dish) => (
+              {dishes.map((dish) => (
                 <Link
                   key={dish.id}
                   to={`/dish/${dish.id}`}
@@ -236,7 +241,7 @@ export function WebsiteHome() {
                     </p>
                   </div>
                   <p className="text-[11px] text-white/40 mt-3 pt-3 border-t border-white/10 truncate">
-                    at {dish.topRestaurants[0]?.name || "Featured Venue"}
+                    at {dish.topRestaurants?.[0]?.name || "Featured Spot"}
                   </p>
                 </Link>
               ))}
@@ -258,7 +263,7 @@ export function WebsiteHome() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {MOCK_LISTS.map((list) => (
+              {lists.map((list) => (
                 <Link 
                   to={`/list/${list.id}`} 
                   key={list.id}
@@ -306,7 +311,7 @@ export function WebsiteHome() {
             </div>
 
             <div className="space-y-3">
-              {MOCK_CRITICS_DATA.map((critic, i) => (
+              {critics.map((critic, i) => (
                 <Link
                   key={critic.uid}
                   to={`/profile/${critic.username || critic.uid}`}
