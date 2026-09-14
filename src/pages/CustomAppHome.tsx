@@ -17,7 +17,7 @@ import {
   User as UserIcon, Star
 } from "lucide-react";
 import { toast } from "sonner";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 
 const FEED_TABS = [
   { id: "for-you", label: "For You" },
@@ -191,36 +191,45 @@ export function CustomAppHome() {
             </div>
           </div>
 
-          {/* Review Cards Feed */}
-          <div className="space-y-4">
-            {loading ? (
-              <div className="space-y-4">
-                <ReviewCardSkeleton />
-                <ReviewCardSkeleton />
-                <ReviewCardSkeleton />
-              </div>
-            ) : displayedReviews.length === 0 ? (
-              <div className="py-16 text-center text-white/50 space-y-4 bg-zinc-950/80 border border-white/10 rounded-3xl p-8 shadow-xl">
-                <div className="w-12 h-12 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 flex items-center justify-center mx-auto">
-                  <Sparkles size={22} />
+          {/* Review Cards Feed with Smooth Tab Transitions */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={feedTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="space-y-4"
+            >
+              {loading ? (
+                <div className="space-y-4">
+                  <ReviewCardSkeleton />
+                  <ReviewCardSkeleton />
+                  <ReviewCardSkeleton />
                 </div>
-                <p className="text-base font-black text-white">No reviews found in this view.</p>
-                <p className="text-xs text-white/40 max-w-sm mx-auto">
-                  Be the first food critic to log an experience or switch filter tabs to discover more.
-                </p>
-                <button
-                  onClick={() => setIsLogModalOpen(true)}
-                  className="px-6 py-2.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-black font-black text-xs uppercase tracking-wider shadow-lg hover:from-orange-400 hover:to-amber-400 transition-all cursor-pointer active:scale-95"
-                >
-                  Log A Meal Now
-                </button>
-              </div>
-            ) : (
-              displayedReviews.map((review) => (
-                <ReviewCard key={review.id} review={review} />
-              ))
-            )}
-          </div>
+              ) : displayedReviews.length === 0 ? (
+                <div className="py-16 text-center text-white/50 space-y-4 bg-zinc-950/80 border border-white/10 rounded-3xl p-8 shadow-xl">
+                  <div className="w-12 h-12 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 flex items-center justify-center mx-auto">
+                    <Sparkles size={22} />
+                  </div>
+                  <p className="text-base font-black text-white">No reviews found in this view.</p>
+                  <p className="text-xs text-white/40 max-w-sm mx-auto">
+                    Be the first food critic to log an experience or switch filter tabs to discover more.
+                  </p>
+                  <button
+                    onClick={() => setIsLogModalOpen(true)}
+                    className="px-6 py-2.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-black font-black text-xs uppercase tracking-wider shadow-lg hover:from-orange-400 hover:to-amber-400 transition-all cursor-pointer active:scale-95"
+                  >
+                    Log A Meal Now
+                  </button>
+                </div>
+              ) : (
+                displayedReviews.map((review) => (
+                  <ReviewCard key={review.id} review={review} />
+                ))
+              )}
+            </motion.div>
+          </AnimatePresence>
 
         </section>
 
