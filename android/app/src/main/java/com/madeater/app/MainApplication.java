@@ -8,26 +8,16 @@ import android.media.AudioAttributes;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
-import com.onesignal.OneSignal;
-import com.onesignal.debug.LogLevel;
 
 public class MainApplication extends Application {
-    // OneSignal App ID provided by user
-    public static final String ONESIGNAL_APP_ID = "56fec73b-c36f-4a1b-be32-272b1f4d6729";
     public static final String CHANNEL_ID = "madeater_messages";
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        // Create high-importance WhatsApp-style notification channel natively
+        // Create high-importance WhatsApp-style notification channel natively for FCM
         createNotificationChannel();
-
-        // Verbose logging for debug verification
-        OneSignal.getDebug().setLogLevel(LogLevel.VERBOSE);
-
-        // OneSignal Initialization
-        OneSignal.initWithContext(this, ONESIGNAL_APP_ID);
     }
 
     private void createNotificationChannel() {

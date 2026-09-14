@@ -249,6 +249,9 @@ export interface AppNotification {
   actorPhoto: string;
   type: "LIKE" | "COMMENT" | "FOLLOW";
   targetId?: string; // ID of the review if applicable
+  targetTitle?: string;
+  targetImage?: string;
+  commentText?: string;
   read: boolean;
   createdAt: any;
 }

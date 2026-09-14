@@ -142,8 +142,18 @@ export const NotificationsOverlay: React.FC<NotificationsOverlayProps> = ({
       onCountChange?.(unread);
     });
 
+    const handleNewNotification = (e: any) => {
+      const notifData = e.detail;
+      if (notifData && notifData.recipient_id === currentUser.uid) {
+        loadRealNotifications();
+      }
+    };
+
+    window.addEventListener('madeater_new_notification', handleNewNotification);
+
     return () => {
       sub.unsubscribe();
+      window.removeEventListener('madeater_new_notification', handleNewNotification);
     };
   }, [currentUser?.uid, dishdUser?.stats?.followingList, onCountChange]);
 

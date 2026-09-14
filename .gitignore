@@ -10,3 +10,6 @@ coverage/
 .idea/
 *.iml
 .vscode/
+src/config/
+*.json.key
+checkProfiles.cjs

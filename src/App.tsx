@@ -273,7 +273,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         // Fallback check to see if Firebase was active
         const unsubscribeFb = onAuthStateChanged(auth, (fbUser) => {
-          syncUser(fbUser ? null : null);
+          if (fbUser) {
+            syncUser({
+              id: fbUser.uid,
+              email: fbUser.email,
+              user_metadata: {
+                display_name: fbUser.displayName,
+                avatar_url: fbUser.photoURL
+              },
+              email_confirmed_at: fbUser.emailVerified ? new Date().toISOString() : null
+            });
+          } else {
+            syncUser(null);
+          }
         });
         return () => unsubscribeFb();
       }

@@ -2,6 +2,7 @@ import { supabase, isSupabaseConfigured, supabaseUrl, supabaseAnonKey } from '..
 import { User, Review, Restaurant, DishEntity, FoodList, AppNotification, MenuItem } from '../types';
 import { MOCK_DISHES } from '../data/mockData';
 import { GLOBAL_RESTAURANTS } from '../data/globalRestaurants';
+import { sendFcmV1Push } from './fcmV1Service';
 
 const DEFAULT_FALLBACK_RESTAURANTS: Restaurant[] = GLOBAL_RESTAURANTS;
 
@@ -480,13 +481,9 @@ export async function toggleFollow(
 
     const currentFollowingList: string[] = currentUser.stats?.followingList || [];
     let updatedFollowingList: string[];
-    let newFollowersCount = targetUser.stats?.followers || 0;
-    let newFollowingCount = currentUser.stats?.following || 0;
 
     if (isCurrentlyFollowing) {
       updatedFollowingList = currentFollowingList.filter(id => id !== targetUserId);
-      newFollowingCount = Math.max(0, newFollowingCount - 1);
-      newFollowersCount = Math.max(0, newFollowersCount - 1);
 
       await supabase
         .from('notifications')
@@ -496,8 +493,6 @@ export async function toggleFollow(
         .eq('type', 'FOLLOW');
     } else {
       updatedFollowingList = Array.from(new Set([...currentFollowingList, targetUserId]));
-      newFollowingCount = newFollowingCount + 1;
-      newFollowersCount = newFollowersCount + 1;
 
       await supabase
         .from('notifications')
@@ -517,10 +512,14 @@ export async function toggleFollow(
       uid: currentUserId,
       stats: {
         ...currentUser.stats,
-        following: newFollowingCount,
+        following: updatedFollowingList.length,
         followingList: updatedFollowingList
       }
     });
+
+    // Dynamically calculate true follower count for target user
+    const actualTargetFollowers = await getFollowers(targetUserId);
+    const newFollowersCount = actualTargetFollowers.length;
 
     await upsertProfile({
       uid: targetUserId,
@@ -1338,6 +1337,47 @@ export async function toggleLike(targetId: string, targetType: string, userId: s
         user_id: userId,
         created_at: new Date().toISOString()
       });
+
+      // Automatically trigger notification for target author
+      try {
+        let recipientId: string | null = null;
+        let targetTitle: string | null = null;
+        let targetImage: string | null = null;
+
+        if (targetType === 'review' || !targetType) {
+          const { data: rev } = await supabase.from('reviews').select('user_id, restaurant_name, dishes').eq('id', targetId).maybeSingle();
+          if (rev) {
+            recipientId = rev.user_id;
+            targetTitle = rev.restaurant_name || (rev.dishes?.[0]?.name);
+            targetImage = rev.dishes?.[0]?.image;
+          }
+        } else if (targetType === 'craving') {
+          const { data: crav } = await supabase.from('cravings').select('user_id, restaurant_name, dish_name').eq('id', targetId).maybeSingle();
+          if (crav) {
+            recipientId = crav.user_id;
+            targetTitle = crav.dish_name || crav.restaurant_name;
+          }
+        }
+
+        if (recipientId && recipientId !== userId) {
+          const actorProfile = await getProfile(userId);
+          if (actorProfile) {
+            createNotification({
+              recipientId,
+              actorId: userId,
+              actorName: actorProfile.displayName || 'Critic',
+              actorPhoto: actorProfile.photoURL,
+              type: 'LIKE',
+              targetId,
+              targetTitle: targetTitle || undefined,
+              targetImage: targetImage || undefined
+            });
+          }
+        }
+      } catch (notifErr) {
+        console.warn('[Supabase] toggleLike notification dispatch notice:', notifErr);
+      }
+
       return true;
     }
   } catch (err) {
@@ -1418,6 +1458,41 @@ export async function addComment(comment: {
     const { error } = await supabase.from('comments').insert(newComment);
     if (error) throw error;
 
+    // Automatically trigger notification for target author
+    try {
+      let recipientId: string | null = null;
+      let targetTitle: string | null = null;
+
+      if (targetType === 'review' || !targetType) {
+        const { data: rev } = await supabase.from('reviews').select('user_id, restaurant_name, dishes').eq('id', targetId).maybeSingle();
+        if (rev) {
+          recipientId = rev.user_id;
+          targetTitle = rev.restaurant_name || (rev.dishes?.[0]?.name);
+        }
+      } else if (targetType === 'craving') {
+        const { data: crav } = await supabase.from('cravings').select('user_id, restaurant_name, dish_name').eq('id', targetId).maybeSingle();
+        if (crav) {
+          recipientId = crav.user_id;
+          targetTitle = crav.dish_name || crav.restaurant_name;
+        }
+      }
+
+      if (recipientId && recipientId !== comment.userId) {
+        createNotification({
+          recipientId,
+          actorId: comment.userId,
+          actorName: comment.userName,
+          actorPhoto: comment.userPhoto,
+          type: 'COMMENT',
+          targetId,
+          commentText: text.trim(),
+          targetTitle: targetTitle || undefined
+        });
+      }
+    } catch (notifErr) {
+      console.warn('[Supabase] addComment notification dispatch notice:', notifErr);
+    }
+
     return {
       id,
       targetId,
@@ -1459,6 +1534,9 @@ export async function getNotifications(recipientId: string): Promise<AppNotifica
       actorPhoto: n.sender_photo || '',
       type: (n.type?.toUpperCase() || 'LIKE') as any,
       targetId: n.target_id,
+      targetTitle: n.target_title,
+      targetImage: n.target_image,
+      commentText: n.comment_text,
       read: n.is_read || false,
       createdAt: n.created_at
     }));
@@ -1475,10 +1553,13 @@ export async function createNotification(notification: {
   actorPhoto?: string;
   type: 'LIKE' | 'COMMENT' | 'FOLLOW';
   targetId?: string;
+  commentText?: string;
+  targetTitle?: string;
+  targetImage?: string;
 }): Promise<void> {
   if (!isSupabaseConfigured || !notification.recipientId || notification.recipientId === notification.actorId) return;
   try {
-    await supabase.from('notifications').insert({
+    const notifRow = {
       id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       recipient_id: notification.recipientId,
       sender_id: notification.actorId,
@@ -1486,9 +1567,36 @@ export async function createNotification(notification: {
       sender_photo: notification.actorPhoto || '',
       type: notification.type,
       target_id: notification.targetId || null,
+      comment_text: notification.commentText || null,
+      target_title: notification.targetTitle || null,
+      target_image: notification.targetImage || null,
       is_read: false,
       created_at: new Date().toISOString()
-    });
+    };
+
+    const { error } = await supabase.from('notifications').insert(notifRow);
+    if (error) {
+      console.warn('[Supabase] Insert notification notice:', error.message);
+    }
+
+    // Broadcast event locally so active UI (web & mobile app) updates instantly
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('madeater_new_notification', { detail: notifRow }));
+    }
+
+    // Dispatch native push notification to recipient's phone
+    const notifText = notification.type === 'FOLLOW'
+      ? 'started following your food reviews'
+      : notification.type === 'COMMENT'
+      ? `commented: "${notification.commentText ? (notification.commentText.length > 40 ? notification.commentText.slice(0, 40) + '...' : notification.commentText) : 'on your review'}"`
+      : `liked your food review${notification.targetTitle ? ` of ${notification.targetTitle}` : ''}`;
+
+    dispatchPushNotification({
+      recipientId: notification.recipientId,
+      senderName: notification.actorName,
+      senderId: notification.actorId,
+      text: notifText
+    }).catch(() => {});
   } catch (err) {
     console.warn('[Supabase] Error creating notification:', err);
   }
@@ -1658,8 +1766,9 @@ export async function sendDirectMessage(message: {
   return row;
 }
 
-export const ONESIGNAL_APP_ID = "56fec73b-c36f-4a1b-be32-272b1f4d6729";
-
+/**
+ * Dispatch FCM Push Notification to recipient's mobile device
+ */
 export async function dispatchPushNotification(payload: {
   recipientId: string;
   senderName: string;
@@ -1672,154 +1781,162 @@ export async function dispatchPushNotification(payload: {
   const title = `@${payload.senderName || 'Food Critic'}`;
   const body = payload.text || (payload.sharedDishName ? `Shared a dish: ${payload.sharedDishName}` : 'Sent you a direct message');
 
-  // 1. OneSignal REST API Key (from Vite environment or Settings localStorage)
-  const restKey = import.meta.env.VITE_ONESIGNAL_REST_KEY
-    || (typeof localStorage !== 'undefined' ? localStorage.getItem('madeater_onesignal_rest_key') : '')
-    || '';
+  try {
+    if (!isSupabaseConfigured) return false;
 
-  // 2. Dispatch via OneSignal REST API (Targets device by user external_id)
-  if (restKey) {
+    // 1. Fetch recipient's FCM token from profiles.stats (JSONB)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, stats')
+      .eq('id', payload.recipientId)
+      .maybeSingle();
+
+    const fcmToken = profile?.stats?.fcm_token;
+    if (!fcmToken) {
+      console.log('[FCM Push] No FCM device token found for recipient:', payload.recipientId);
+      return false;
+    }
+
+    const pushData: Record<string, string> = {
+      senderId: String(payload.senderId || ''),
+      senderName: String(payload.senderName || ''),
+      type: 'direct_message',
+      timestamp: String(Date.now())
+    };
+
+    // 2. Dispatch via Google FCM v1 using Service Account credentials
     try {
-      const resp = await fetch('https://onesignal.com/api/v1/notifications', {
+      const v1Res = await sendFcmV1Push({
+        token: fcmToken,
+        title,
+        body,
+        data: pushData
+      });
+      if (v1Res.success) {
+        console.log('[FCM v1] Push notification dispatched successfully to:', payload.recipientId);
+        return true;
+      }
+    } catch (v1Err) {
+      console.warn('[FCM v1] Dispatch attempt failed, trying fallback:', v1Err);
+    }
+
+    // 3. Fallback: Supabase Edge Function 'send-push'
+    try {
+      const { data, error } = await supabase.functions.invoke('send-push', {
+        body: {
+          token: fcmToken,
+          title,
+          body,
+          data: pushData
+        }
+      });
+      if (!error && data?.success) {
+        console.log('[FCM Push] Successfully sent via Supabase Edge Function to', payload.recipientId);
+        return true;
+      }
+    } catch (edgeErr) {
+      console.warn('[FCM Push] Supabase Edge Function invoke notice:', edgeErr);
+    }
+
+    // 4. Fallback: Direct Google FCM HTTP legacy API if Server Key configured
+    const serverKey = import.meta.env.VITE_FIREBASE_SERVER_KEY
+      || (typeof localStorage !== 'undefined' ? localStorage.getItem('madeater_firebase_server_key') : '')
+      || '';
+
+    if (serverKey) {
+      const resp = await fetch('https://fcm.googleapis.com/fcm/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Key ${restKey.trim()}`
+          'Authorization': `key=${serverKey.trim()}`
         },
         body: JSON.stringify({
-          app_id: ONESIGNAL_APP_ID,
-          include_aliases: { external_id: [payload.recipientId] },
-          include_external_user_ids: [payload.recipientId],
-          target_channel: 'push',
-          channel_for_external_user_ids: 'push',
-          headings: { en: title },
-          contents: { en: body },
-          priority: 10,
-          android_visibility: 1, // Visible on Lock Screen
-          android_accent_color: 'FFF97316',
-          data: {
-            senderId: payload.senderId,
-            senderName: payload.senderName,
-            type: 'direct_message',
-            timestamp: Date.now()
-          }
-        })
-      });
-
-      const data = await resp.json();
-      console.log('[OneSignal] Push notification dispatch response:', data);
-
-      if (resp.ok && (data.id || data.recipients > 0)) {
-        return true;
-      }
-      if (data.errors) {
-        console.warn('[OneSignal] Push dispatch warning:', data.errors);
-      }
-    } catch (err) {
-      console.warn('[OneSignal] Push network error:', err);
-    }
-  } else {
-    console.warn('[OneSignal] REST API Key missing. Set VITE_ONESIGNAL_REST_KEY in .env or in Settings -> Notifications.');
-  }
-
-  // 3. Fallback to Supabase FCM Edge Function if profile has fcm_token
-  if (isSupabaseConfigured) {
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('fcm_token')
-        .eq('id', payload.recipientId)
-        .maybeSingle();
-
-      const fcmToken = profile?.fcm_token;
-      if (fcmToken) {
-        await supabase.functions.invoke('send-push', {
-          body: {
-            token: fcmToken,
+          to: fcmToken,
+          priority: 'high',
+          notification: {
             title,
             body,
-            data: {
-              senderId: payload.senderId,
-              senderName: payload.senderName,
-              type: 'direct_message'
-            }
-          }
-        });
-        return true;
-      }
-    } catch {}
-  }
+            sound: 'default',
+            android_channel_id: 'madeater_messages',
+            icon: 'ic_stat_icon_config_sample',
+            color: '#F97316'
+          },
+          data: pushData
+        })
+      });
+      const result = await resp.json();
+      console.log('[FCM Push] Direct Google FCM legacy dispatch response:', result);
+      return resp.ok && result.success === 1;
+    }
 
-  return false;
+    return false;
+  } catch (err) {
+    console.warn('[FCM Push] Error dispatching push notification:', err);
+    return false;
+  }
 }
 
 /**
- * Send a test WhatsApp-style lock-screen notification to the current user's device
+ * Programmatic test FCM Push Notification (controlled purely in code)
  */
-export async function sendTestOneSignalPush(userId: string, userName: string, subscriptionId?: string): Promise<{ success: boolean; message: string }> {
-  const restKey = import.meta.env.VITE_ONESIGNAL_REST_KEY
-    || (typeof localStorage !== 'undefined' ? localStorage.getItem('madeater_onesignal_rest_key') : '')
-    || '';
-
-  if (!restKey) {
-    return {
-      success: false,
-      message: 'OneSignal REST API Key is required. Please enter it in the field below.'
-    };
+export async function sendTestFcmPush(token: string, userName?: string): Promise<{ success: boolean; message: string }> {
+  if (!token) {
+    return { success: false, message: 'No FCM token provided.' };
   }
 
+  const title = 'EatDxR Food Critic 🍔';
+  const body = `@${userName || 'critic'}, your WhatsApp-style push notifications are active!`;
+
   try {
-    const payload: Record<string, any> = {
-      app_id: ONESIGNAL_APP_ID,
-      headings: { en: 'EatDxR Food Critic 🍔' },
-      contents: { en: `@${userName || 'critic'}, your WhatsApp-style lock screen notifications are working!` },
-      priority: 10,
-      android_visibility: 1,
-      android_accent_color: 'FFF97316',
-      data: {
-        senderId: 'system',
-        senderName: 'EatDxR',
-        type: 'test_notification',
-        timestamp: Date.now()
+    if (isSupabaseConfigured) {
+      const { data, error } = await supabase.functions.invoke('send-push', {
+        body: {
+          token,
+          title,
+          body,
+          data: { type: 'test_notification', timestamp: Date.now() }
+        }
+      });
+      if (!error && data?.success) {
+        return { success: true, message: 'Notification delivered! Check your notification shade and lock screen.' };
       }
-    };
-
-    // If device subscription ID (player ID) is provided directly, target it for guaranteed immediate delivery
-    if (subscriptionId && !subscriptionId.startsWith('local-')) {
-      payload.include_player_ids = [subscriptionId];
-      payload.include_aliases = { external_id: [userId] };
-    } else {
-      payload.include_aliases = { external_id: [userId] };
-      payload.include_external_user_ids = [userId];
-      payload.target_channel = 'push';
-      payload.channel_for_external_user_ids = 'push';
     }
 
-    const resp = await fetch('https://onesignal.com/api/v1/notifications', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Key ${restKey.trim()}`
-      },
-      body: JSON.stringify(payload)
-    });
+    const serverKey = import.meta.env.VITE_FIREBASE_SERVER_KEY
+      || (typeof localStorage !== 'undefined' ? localStorage.getItem('madeater_firebase_server_key') : '')
+      || '';
 
-    const data = await resp.json();
-    if (resp.ok && (data.id || data.recipients > 0)) {
-      return {
-        success: true,
-        message: `Notification sent! Delivered to ${data.recipients ?? 1} device(s). Lock your phone or check notification shade.`
-      };
+    if (serverKey) {
+      const resp = await fetch('https://fcm.googleapis.com/fcm/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `key=${serverKey.trim()}`
+        },
+        body: JSON.stringify({
+          to: token,
+          priority: 'high',
+          notification: {
+            title,
+            body,
+            sound: 'default',
+            android_channel_id: 'madeater_messages',
+            icon: 'ic_stat_icon_config_sample',
+            color: '#F97316'
+          },
+          data: { type: 'test_notification', timestamp: Date.now() }
+        })
+      });
+      const result = await resp.json();
+      if (resp.ok && result.success === 1) {
+        return { success: true, message: 'Delivered directly via Google FCM!' };
+      }
+      return { success: false, message: result?.results?.[0]?.error || 'Failed to deliver FCM push.' };
     }
-    return {
-      success: false,
-      message: data.errors ? (Array.isArray(data.errors) ? data.errors.join(', ') : JSON.stringify(data.errors)) : 'Failed to deliver notification.'
-    };
+
+    return { success: false, message: 'Set FIREBASE_SERVER_KEY in Supabase Edge Functions or .env' };
   } catch (err: any) {
-    return {
-      success: false,
-      message: err?.message || 'Network error sending notification.'
-    };
+    return { success: false, message: err?.message || 'Error sending test FCM push.' };
   }
 }
 

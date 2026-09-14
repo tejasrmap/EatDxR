@@ -65,7 +65,7 @@ export function LogMealModal({ isOpen, onClose, existingReview, initialRestauran
   const [isAddRestaurantOpen, setIsAddRestaurantOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { user, dishdUser } = useAuth();
   
   const { register, handleSubmit, formState: { errors }, setValue, reset, control, watch } = useForm<LogFormValues>({

@@ -16,7 +16,7 @@ import { RatingGraph } from "./RatingGraph";
 import { TasteDNAView } from "./TasteDNAView";
 import { useAppUrl } from "../hooks/useAppUrl";
 import { triggerHaptic, isNative } from "../services/nativeService";
-import { uploadMedia, upsertProfile, getProfile, getUserReviews, toggleFollow as toggleFollowUser, getRestaurantById } from "../services/supabaseService";
+import { uploadMedia, upsertProfile, getProfile, getFollowers, getUserReviews, toggleFollow as toggleFollowUser, getRestaurantById } from "../services/supabaseService";
 import { getShareUrl } from "../utils/shareUrl";
 
 export const Profile: React.FC = () => {
@@ -161,9 +161,23 @@ export const Profile: React.FC = () => {
           }
 
           setUser(resolvedUser);
-          setFollowerCount(resolvedUser.stats?.followers || 0);
 
-          // 2. Fetch user reviews directly from Supabase
+          // 2. Fetch actual followers list to calculate true follower count & auto-heal DB stats if out-of-sync
+          const actualFollowers = await getFollowers(resolvedUser.uid);
+          const trueFollowerCount = actualFollowers.length;
+          setFollowerCount(trueFollowerCount);
+
+          if (resolvedUser.stats?.followers !== trueFollowerCount) {
+            upsertProfile({
+              uid: resolvedUser.uid,
+              stats: {
+                ...resolvedUser.stats,
+                followers: trueFollowerCount
+              }
+            }).catch(() => {});
+          }
+
+          // 3. Fetch user reviews directly from Supabase
           const supaReviews = await getUserReviews(resolvedUser.uid);
           if (!isMounted) return;
           setReviews(supaReviews);
